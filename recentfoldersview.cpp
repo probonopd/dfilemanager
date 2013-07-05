@@ -56,8 +56,7 @@ RecentFoldersView::folderEntered(const QString &folder)
                 return;
             }
 
-    MainWindow *mainWin = static_cast<MainWindow*>(static_cast<Application*>(QApplication::instance())->mainWindow());
-    const ViewContainer *vc = mainWin->activeContainer();
+    const ViewContainer *vc = MAINWINDOW->activeContainer();
     const FileSystemModel *fsModel = static_cast<const FileSystemModel*>(vc->model());
     if (!fsModel)
         return;
@@ -73,6 +72,6 @@ RecentFoldersView::folderEntered(const QString &folder)
 void
 RecentFoldersView::itemActivated(const QModelIndex &index)
 {
-    QStandardItem *item = m_model->itemFromIndex(index);
-    emit recentFolderClicked( item->data().toString() );
+    if ( index.isValid() )
+        emit recentFolderClicked( m_model->itemFromIndex(index)->data().toString() );
 }

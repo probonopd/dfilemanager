@@ -20,30 +20,142 @@
 
 
 #include "devicemanager.h"
+#include "viewanimator.h"
+
 
 using namespace DFM;
 
-static inline bool isPartition(const QString &device)
+DeviceItem::DeviceItem(QTreeWidgetItem *parentItem, QTreeWidget *view, Solid::Device solid )
+    : QTreeWidgetItem( parentItem )
+    , m_view(view)
+    , m_mainWin(APP->mainWindow())
+    , m_parentItem(parentItem)
+    , m_tb(new QToolButton(m_view))
+    , m_usedBytes(0)
+    , m_freeBytes(0)
+    , m_totalBytes(0)
+    , m_timer(new QTimer(this))
+    , m_solid(solid)
 {
-    QDBusMessage msg = QDBusMessage::createMethodCall(SERVICE, device,"org.freedesktop.DBus.Properties", "Get");
-    msg << "org.freedesktop.UDisks.Device" << "DeviceIsPartition";
-    return qvariant_cast<QDBusVariant>(QDBusConnection::systemBus().call(msg).arguments().at(0)).variant().toBool();
+    m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole())));
+    m_tb->setVisible(true);
+    m_tb->setFixedSize(16, 16);
+    m_tb->setToolTip( isMounted() ? "Unmount" : "Mount" );
+    connect (m_tb, SIGNAL(clicked()), this, SLOT(toggleMount()));
+    connect (m_timer, SIGNAL(timeout()), this, SLOT(updateSpace()));
+    m_timer->start(1000);
+    if ( isMounted() )
+    {
+//        mountPath() = DbusCalls::deviceInfo( m_devPath, "DeviceMountPaths" ).toString();
+        setText(PlacesView::Path, mountPath());
+        setText(PlacesView::Name, mountPath());
+    }
+    else
+    {
+        setText(PlacesView::Name, m_solid.description());
+    }
+    connect (m_solid.as<Solid::StorageAccess>(), SIGNAL(accessibilityChanged(bool, const QString &)),
+             this, SLOT(changeState()));
+    updateSpace();
+
+    //try and catch everything so the mount button is always on the right place...
+    connect (m_view, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(viewEvent()));
+    connect (m_view, SIGNAL(itemActivated(QTreeWidgetItem*,int)), this, SLOT(viewEvent()));
+    connect (m_view, SIGNAL(itemChanged(QTreeWidgetItem*,int)), this, SLOT(viewEvent()));
+    connect (m_view, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(viewEvent()));
+    connect (m_view, SIGNAL(itemCollapsed(QTreeWidgetItem*)), this, SLOT(viewEvent()));
+    connect (m_view, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), this, SLOT(viewEvent()));
+    connect (m_view, SIGNAL(itemExpanded(QTreeWidgetItem*)), this, SLOT(viewEvent()));
+    connect (m_view, SIGNAL(viewportEntered()), this, SLOT(viewEvent()));
+//    m_view->update(m_view->indexAt(m_view->visualItemRect(this).center()));
 }
 
-static inline bool isSwapDevice(const QString &device)
+void
+DeviceItem::setMounted(bool mount)
 {
-    return DbusCalls::deviceInfo(device, "PartitionType").toString() == "0x82";
+    if ( !m_solid.isValid() )
+        return;
+
+    if ( mount )
+        m_solid.as<Solid::StorageAccess>()->setup();
+    else
+        m_solid.as<Solid::StorageAccess>()->teardown();
+}
+
+void
+DeviceItem::updateSpace()
+{
+    if ( isMounted() )
+    {
+        if ( m_usedBytes != Operations::getDriveInfo(mountPath(), Operations::Used) )
+        {
+            m_usedBytes = Operations::getDriveInfo(mountPath(), Operations::Used);
+            emit usageChanged( this );
+        }
+        if ( m_freeBytes != Operations::getDriveInfo(mountPath(), Operations::Free) )
+        {
+            m_freeBytes = Operations::getDriveInfo(mountPath(), Operations::Free);
+            int t = 0;
+            QString free(QString::number(realSize((float)m_freeBytes, &t)));
+            setToolTip(0, free + spaceType[t] + " Free");
+        }
+        if ( m_totalBytes != Operations::getDriveInfo(mountPath(), Operations::Total) )
+            m_totalBytes = Operations::getDriveInfo(mountPath(), Operations::Total);
+    }
+}
+
+void
+DeviceItem::changeState()
+{
+    if (isMounted())
+    {
+        for (int i = 0; i < 2; ++i)
+            setText(i, mountPath());
+        int t = 0;
+        setToolTip(0, QString::number(realSize((float)m_freeBytes, &t)) + spaceType[t] + " Free");
+    }
+    else
+    {
+//        ViewAnimator::animator(m_view)->clear();
+        setText(PlacesView::Name, m_solid.description());
+    }
+    m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole())));
+    m_tb->setToolTip( isMounted() ? "Unmount" : "Mount" );
+}
+
+void
+DeviceItem::viewEvent()
+{
+    const QRect &r(m_view->visualItemRect(this));
+    int y = r.y()+((r.height()-m_tb->height())/2), x = r.x()+8;
+    m_tb->setVisible(m_parentItem->isExpanded());
+    m_tb->move(x, y);
 }
 
 DeviceManager *instance = 0;
 
-DeviceManager::DeviceManager(QObject *parent) : QObject(parent)
+DeviceManager::DeviceManager(QObject *parent) : QObject(parent),
+    m_tree(static_cast<QTreeWidget*>(parent))
 {
-    QDBusConnection::systemBus().connect(SERVICE, PATH, INTERFACE_DISKS, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
-    QDBusConnection::systemBus().connect(SERVICE, PATH, INTERFACE_DISKS, "DeviceRemoved", this, SLOT(deviceRemoved(QDBusObjectPath)));
-    QDBusConnection::systemBus().connect(SERVICE, PATH, INTERFACE_DISKS, "DeviceChanged", this, SLOT(deviceChanged(QDBusObjectPath)));
-    m_tree = static_cast<QTreeWidget*>(parent);
     QTimer::singleShot(200, this, SLOT(populateLater()));
+
+    connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceAdded(QString)), this, SLOT(deviceAdded(QString)));
+    connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceRemoved(QString)), this, SLOT(deviceRemoved(QString)));
+}
+
+void
+DeviceManager::deviceAdded(const QString &dev)
+{
+    Solid::Device device = Solid::Device(dev);
+    if ( device.is<Solid::StorageAccess>() )
+        m_items.insert(dev, new DeviceItem(m_devicesParent, m_tree, device));
+}
+
+void
+DeviceManager::deviceRemoved(const QString &dev)
+{
+    if ( m_items.contains(dev) )
+        delete m_items.take(dev);
 }
 
 DeviceManager
@@ -54,44 +166,22 @@ DeviceManager
 }
 
 void
-DeviceManager::deviceAdded(const QDBusObjectPath &device)
-{
-    if (isPartition(device.path()))
-    {
-        qDebug() << "device" << realDevPath(device.path()) << "added";
-        const QString devPath(realDevPath(device.path()));
-        m_items[devPath] = DeviceItem::initItem(m_devicesParent, devPath, m_tree);;
-    }
-}
-
-void
-DeviceManager::deviceRemoved(const QDBusObjectPath &device)
-{
-    qDebug() << "device" << realDevPath(device.path()) << "removed";
-    delete m_items.take(realDevPath(device.path()));
-}
-
-void
-DeviceManager::deviceChanged(const QDBusObjectPath &device)
-{
-    if ( DeviceItem *d = m_items[realDevPath(device.path())] )
-        d->changeState();
-}
-
-void
 DeviceManager::populateLater()
 {
     m_devicesParent = new QTreeWidgetItem(m_tree);
     for (int i = 0; i<4; ++i)
         m_devicesParent->setText( i, "Devices" );
-    foreach ( const QString &devPath, DbusCalls::devices() )
-        if (!isSwapDevice(devPath)) //no swap devices.... you don't exactly mount those
-        {
-            DeviceItem *d = DeviceItem::initItem(m_devicesParent, devPath, m_tree);
-            connect (d, SIGNAL(usageChanged(QTreeWidgetItem*)), this, SIGNAL(usageChanged(QTreeWidgetItem*)));
-            m_items[devPath] = d;
-        }
+
     m_devicesParent->setExpanded(true);
+
+    foreach ( Solid::Device dev, Solid::Device::listFromType(Solid::DeviceInterface::StorageAccess) )
+    {
+        DeviceItem *d = new DeviceItem(m_devicesParent, m_tree, dev );
+        for ( int i = 2; i<4; ++i )
+            d->setText( i, "Devices" );
+        connect (d, SIGNAL(usageChanged(QTreeWidgetItem*)), this, SIGNAL(usageChanged(QTreeWidgetItem*)));
+        m_items.insert(dev.udi(), d);
+    }
 }
 
 DeviceItem

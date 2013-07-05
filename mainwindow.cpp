@@ -720,3 +720,16 @@ MainWindow::stackChanged(int)
     if (m_activeContainer)
         m_filterBox->setText(m_activeContainer->currentFilter());
 }
+
+void
+MainWindow::moveEvent(QMoveEvent *)
+{
+//    qDebug() << "moveevent" << pos();
+}
+
+bool
+MainWindow::x11Event(XEvent *xe)
+{
+//    qDebug() << xe->type;
+    return QMainWindow::x11Event(xe);
+}

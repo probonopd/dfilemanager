@@ -38,21 +38,44 @@ namespace DFM
 namespace DbusCalls
 {
 
-inline static QStringList devices()
+#define SERVICE                 "org.freedesktop.UDisks"
+#define PATH                    "/org/freedesktop/UDisks"
+#define INTERFACE_DISKS         "org.freedesktop.UDisks"
+#define INTERFACE_DISKS_DEVICE  "org.freedesktop.UDisks.Device"
+#define UDI_DISKS_PREFIX        "/org/freedesktop/UDisks"
+
+static inline QDBusMessage methodCall(const QString &devName, const QString &method)
+{
+    return QDBusMessage::createMethodCall( SERVICE, QString( "/org/freedesktop/UDisks/devices/%1" ).arg( devName ), INTERFACE_DISKS_DEVICE, method );
+}
+
+static inline QString realDevPath( const QString &path )
+{
+    return QString("/dev" + path.mid(path.lastIndexOf("/")));
+}
+
+static inline bool isPartition(const QString &device)
+{
+    QDBusMessage msg = QDBusMessage::createMethodCall(SERVICE, device,"org.freedesktop.DBus.Properties", "Get");
+    msg << "org.freedesktop.UDisks.Device" << "DeviceIsPartition";
+    return qvariant_cast<QDBusVariant>(QDBusConnection::systemBus().call(msg).arguments().at(0)).variant().toBool();
+}
+
+static inline QStringList devices()
 {
     QStringList devFile;
     QDBusConnection bus = QDBusConnection::systemBus();
-    QDBusMessage m = QDBusMessage::createMethodCall("org.freedesktop.UDisks", "/org/freedesktop/UDisks","org.freedesktop.UDisks", "EnumerateDevices");
+    QDBusMessage m = QDBusMessage::createMethodCall("org.freedesktop.UDisks", "/org/freedesktop/UDisks", "org.freedesktop.UDisks", "EnumerateDevices");
     QDBusReply<QList<QDBusObjectPath> > reply = bus.call(m);
-    if(reply.isValid())
-        foreach(QDBusObjectPath path,reply.value())
+    if (reply.isValid())
+        foreach (QDBusObjectPath path, reply.value())
         {
-            QDBusMessage msg = QDBusMessage::createMethodCall("org.freedesktop.UDisks", path.path(),"org.freedesktop.DBus.Properties", "Get");
+            QDBusMessage msg = QDBusMessage::createMethodCall("org.freedesktop.UDisks", path.path(), "org.freedesktop.DBus.Properties", "Get");
             msg << "org.freedesktop.UDisks.Device" << "DeviceIsPartition";
             QDBusMessage rply = bus.call(msg);
-            if(QVariant(qvariant_cast<QDBusVariant>(rply.arguments().at(0)).variant()).toBool())  //if isPartition
+            if (QVariant(qvariant_cast<QDBusVariant>(rply.arguments().at(0)).variant()).toBool())  //if isPartition
             {
-                QDBusMessage m = QDBusMessage::createMethodCall("org.freedesktop.UDisks", path.path(),"org.freedesktop.DBus.Properties", "Get");
+                QDBusMessage m = QDBusMessage::createMethodCall("org.freedesktop.UDisks", path.path(), "org.freedesktop.DBus.Properties", "Get");
                 m << "org.freedesktop.UDisks.Device" << "DeviceFile";
                 devFile << qvariant_cast<QDBusVariant>(bus.call(m).arguments().at(0)).variant().toString();
             }
@@ -60,7 +83,7 @@ inline static QStringList devices()
     return devFile;
 }
 
-inline static QVariant deviceInfo(QString dev, QString arg)
+static inline QVariant deviceInfo(QString dev, QString arg)
 {
     QDBusConnection bus = QDBusConnection::systemBus();
     const QString devName = QFileInfo(dev).fileName();
@@ -68,6 +91,21 @@ inline static QVariant deviceInfo(QString dev, QString arg)
     me << "org.freedesktop.UDisks.Device" << arg;
     return qvariant_cast<QDBusVariant>( bus.call( me ).arguments().at(0) ).variant();
 }
+
+//static QString fsMount[2] = { "FilesystemUnmount", "FilesystemMount" };
+
+//static inline void setMounted( const bool &mount, const QString &devPath, QString *error )
+//{
+//    const QString devName = QFileInfo( devPath ).fileName();
+//    QDBusMessage m = methodCall(devName, fsMount[mount]);
+//    if (mount)
+//        m << QString(); //filesystem
+//    m << QStringList(); //options
+//    QDBusMessage reply = QDBusConnection::systemBus().call( m );
+//    if ( !reply.errorMessage().isEmpty() )
+//        *error = reply.errorMessage();
+//}
+
 }
 }
 

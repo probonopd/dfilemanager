@@ -63,6 +63,10 @@ public slots:
 protected:
     void closeEvent(QCloseEvent *event);
     bool eventFilter(QObject *obj, QEvent *ev);
+    void contextMenuEvent(QContextMenuEvent *event);
+    void keyPressEvent(QKeyEvent *ke);
+    void moveEvent(QMoveEvent *);
+    bool x11Event(XEvent *);
     void updateIcons();
     void createActions();
     void createMenus();
@@ -102,8 +106,6 @@ private slots:
     void updateStatusBar(QString index);
     void rootFromPlaces(QTreeWidgetItem*,int);
     void createDirectory();
-    void contextMenuEvent(QContextMenuEvent *event);
-    void keyPressEvent(QKeyEvent *ke);
     void setViewIconSize(int);
     void setSliderPos(int size);
     void tabChanged(int currentIndex);
@@ -148,6 +150,7 @@ private:
     QMenu *m_fileMenu, *m_editMenu, *m_goMenu, *m_viewMenu, *m_helpMenu;
     QToolBar *m_navToolBar, *m_viewToolBar;
 
+    /* needs to get converted to enum / array */
     QAction *m_goBackAct, *m_goUpAct, *m_goForwardAct, *m_homeAct, *m_exitAct, *m_aboutAct, *m_aboutQtAct
     , *m_placeAct, *m_renPlaceAct, *m_rmPlaceAct, *m_iconViewAct, *m_listViewAct, *m_colViewAct, *m_delCurrentSelectionAct
     , *m_showHiddenAct, *m_mkDirAct, *m_copyAct, *m_cutAct, *m_pasteAct, *m_renameAct, *m_placeContAct, *m_flowAct, *m_refreshAct

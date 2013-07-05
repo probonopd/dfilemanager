@@ -46,7 +46,7 @@ public:
 class Operations
 {
 public:
-    explicit Operations(){}
+    Operations(){}
     static QString getMimeType(const QString &file);
     static QString getFileType(const QString &file);
     enum Usage{Free = 0, Used, Total, Id};

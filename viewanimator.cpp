@@ -23,7 +23,11 @@
 #include "filesystemmodel.h"
 #include <QTreeView>
 
-ViewAnimator::ViewAnimator(QObject *parent) : QObject(parent), m_totalIndex(0), m_animTimer(new QTimer(this)), m_view(static_cast<QAbstractItemView *>(parent))
+ViewAnimator::ViewAnimator(QObject *parent) : QObject(parent),
+    m_totalIndex(0),
+    m_animTimer(new QTimer(this)),
+    m_view(static_cast<QAbstractItemView *>(parent)),
+    m_model(0)
 {
     connect(m_animTimer, SIGNAL(timeout()), this, SLOT(animEvent()));
     connect(m_view, SIGNAL(entered(QModelIndex)), this, SLOT(indexHovered(QModelIndex)));
@@ -35,9 +39,24 @@ ViewAnimator::ViewAnimator(QObject *parent) : QObject(parent), m_totalIndex(0), 
 void
 ViewAnimator::indexHovered(const QModelIndex &index)
 {
+    if ( !m_model && index.isValid() )
+    {
+        m_model = index.model();
+        connect(m_model, SIGNAL(rowsRemoved(QModelIndex &,int,int)), this, SLOT(rowsRemoved(QModelIndex,int,int)));
+    }
     m_hoveredIndex = index;
     if (!m_animTimer->isActive())
         m_animTimer->start(50);
+}
+
+void
+ViewAnimator::rowsRemoved(const QModelIndex &parent, int start, int end)
+{
+    for ( int i = start; i<=end; ++i )
+    {
+        const QModelIndex &index = m_model->index(i, 0, parent);
+        m_hoverLevel.remove(index);
+    }
 }
 
 void
@@ -64,7 +83,7 @@ ViewAnimator::animEvent()
     if ( m_hoveredIndex != QModelIndex() )
         m_totalIndex = m_hoverLevel[m_hoveredIndex];
 
-    foreach ( QModelIndex index, m_hoverLevel.keys() )
+    foreach ( const QModelIndex &index, m_hoverLevel.keys() )
     {
         bool exists = false;
         if ( const DFM::FileSystemModel *fsModel = qobject_cast<const DFM::FileSystemModel *>(m_view->model()) )
@@ -82,7 +101,7 @@ ViewAnimator::animEvent()
                 m_hoverLevel[index]--;
                 m_totalIndex += m_hoverLevel[index];
             }
-                m_view->update( index );
+            m_view->update( index );
 //            if ( QTreeView *tv = qobject_cast<QTreeView *>(m_view) )
 //                if ( DFM::FileSystemModel *fsm = qobject_cast<DFM::FileSystemModel *>(tv->model()) )
 //                    for ( int i = 0; i < tv->model()->columnCount(index.parent()); ++i )

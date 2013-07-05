@@ -156,10 +156,12 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
         QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, painter, placesView);
         painter->setOpacity(1);
     }
-    if ( MainWindow::config.behaviour.devUsage )
-        if ( DeviceItem *d = dynamic_cast<DeviceItem*>(placesView->itemFromIndex(index)) )
-            if ( d->isMounted() )
-                drawDeviceUsage(d->used(), painter, option);
+    if ( index.parent().isValid() && MainWindow::config.behaviour.devUsage )
+        if ( placesView->itemFromIndex(index.parent())->text(3) == "Devices" )
+            if ( DeviceItem *d = static_cast<DeviceItem*>(placesView->itemFromIndex(index)) )
+                if ( d->isMounted() )
+                    drawDeviceUsage(d->used(), painter, option);
+
     QApplication::style()->drawItemText(painter, textRect, textFlags, pal, true, TEXT, selected ? QPalette::HighlightedText : QPalette::Text);
     if( isHeader( index ) )
     {
@@ -427,7 +429,7 @@ PlacesView::contextMenuEvent( QContextMenuEvent *event )
 void
 PlacesView::usageChangedForItem(QTreeWidgetItem *item)
 {
-    update(indexFromItem(item));
+//    update(indexFromItem(item));
 }
 
 void

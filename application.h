@@ -51,19 +51,24 @@ public:
         m_netWmDesktop = XInternAtom(DPY, "_NET_WM_DESKTOP", False);
         m_netClientListStacking = XInternAtom(DPY, "_NET_CLIENT_LIST_STACKING", False);
 #endif
+        QTimer *t = new QTimer(this);
+        connect ( t, SIGNAL(timeout()), this, SLOT(timeout()) );
+        t->start(50);
 //        glutInit(&argc, argv);
     }
 #ifdef Q_WS_X11
     inline void manageDock( DFM::Docks::DockWidget *dock ) { m_docks << dock; }
-    inline void setMainWindow( QMainWindow *mainWin) { m_mainWindow = mainWin; }
+    inline void setMainWindow( QMainWindow *mainWin ) { m_mainWindow = mainWin; }
     inline QMainWindow *mainWindow() { return m_mainWindow; }
     inline void setPlacesView( DFM::PlacesView *places ) { m_places = places; }
     inline DFM::PlacesView *placesView() { return m_places; }
+public slots:
+    void timeout();
 signals:
     void paletteChanged( QPalette newPal );
 protected:
     bool x11EventFilter(XEvent *xe);
-//    inline bool event(QEvent *e) { if ( e->type() == QEvent::ApplicationPaletteChange ) { emit paletteChanged( palette() ); setPalette(palette()); } return QApplication::event(e); }
+//    inline bool event(QEvent *e) { qDebug() << e; return QApplication::event(e); }
 private:
     QList<DFM::Docks::DockWidget *> m_docks;
     QMainWindow *m_mainWindow;

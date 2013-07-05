@@ -96,10 +96,13 @@ bool
 Application::x11EventFilter(XEvent *xe)
 {
     if (!m_mainWindow)
-        return false;
+        return QApplication::x11EventFilter(xe);
 
-//    qDebug() << widgetAt(QCursor::pos());
-
+//    qDebug() << m_mainWindow->pos();
+//    qDebug() << QCursor::pos();
+//    qDebug() << xe->type;
+//    static int inT = 0;
+//    qDebug() << m_mainWindow->winId() << ++inT;
     switch (xe->type)
     {
     case MapNotify: //needed for unminimize
@@ -146,8 +149,7 @@ Application::x11EventFilter(XEvent *xe)
 
                     if (floatCount > 1)
                     {
-                        int lowestDock = (int)nitems+1; //just a really high number....
-                        int highestdock = 0;
+                        int lowestDock = (int)nitems+1, highestdock = 0;
                         for (int i = 0; i < floatCount; ++i)
                         {
                             lowestDock = qMin(lowestDock, wMap[fd[i]->winId()]);
@@ -202,6 +204,25 @@ Application::x11EventFilter(XEvent *xe)
     }
     default: break;
     }
-    return false;
+    return QApplication::x11EventFilter(xe);
 }
 #endif
+
+void
+Application::timeout()
+{
+    if ( !m_mainWindow )
+        return;
+//    qDebug() << QCursor::pos() << m_mainWindow->pos();
+
+//    XWindowAttributes xwa;
+//    XGetWindowAttributes(DPY, m_mainWindow->winId() , &xwa);
+//    qDebug() << xwa.x << xwa.y;
+
+//    int x, y;
+//    Window child_return;
+//    XTranslateCoordinates (DPY, m_mainWindow->winId(), QX11Info::appRootWindow(), 0, 0, &x, &y, &child_return);
+//    qDebug() << x << y;
+
+//    qDebug() << m_mainWindow->geometry();
+}

@@ -23,6 +23,7 @@
 #define VIEWANIMATOR_H
 
 #include <QAbstractItemView>
+#include <QAbstractItemModel>
 #include <QTimer>
 #include <QEvent>
 
@@ -42,10 +43,12 @@ public slots:
     void indexHovered(const QModelIndex &index);
     void removeHoveredIndex();
     void animEvent();
+    void rowsRemoved( const QModelIndex & parent, int start, int end );
     inline void clear() { m_hoverLevel.clear(); }
 
 private:
     QMap<QModelIndex, int> m_hoverLevel;
+    const QAbstractItemModel *m_model;
     QModelIndex m_hoveredIndex;
     QTimer *m_animTimer;
     QAbstractItemView *m_view;

@@ -130,8 +130,9 @@ MainWindow::writeSettings()
     while (*it)
     {
         const QTreeWidgetItem *item = *it;
-        if (item->text(2) != "Devices") //we dont save devices... we populate those everytime
-            m_settings->setValue(QString(placeNr), QStringList() << item->text(0) << item->text(1) << (item->parent() ? item->parent()->text(0) : "") << (item->text(3).isEmpty() ? "folder" : item->text(3)) );
+        if ( !item->parent() && item->text(0) == "Devices" ) //we dont save devices... we populate those everytime
+            break;
+        m_settings->setValue(QString(placeNr), QStringList() << item->text(0) << item->text(1) << (item->parent() ? item->parent()->text(0) : "") << (item->text(3).isEmpty() ? "folder" : item->text(3)) );
         ++placeNr;
         ++it;
     }

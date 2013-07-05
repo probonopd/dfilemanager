@@ -67,6 +67,11 @@ sources.files = $$SOURCES $$HEADERS $$RESOURCES $$FORMS application.pro images
 sources.path = $$[QT_INSTALL_EXAMPLES]/mainwindows/application
 INSTALLS += target sources
 
-QT += gui dbus xml opengl
+QT += gui xml opengl
 CONFIG += qt thread debug staticlib
-LIBS += -lmagic -lglut -lGLU
+LIBS += -lglut -lGLU
+
+unix {
+    QT += dbus
+    LIBS += -lmagic -lsolid
+}
