@@ -25,6 +25,7 @@
 #include <QFileSystemModel>
 #include <QPainter>
 
+#include <QDir>
 #include <QFileIconProvider>
 #include <QTimer>
 #include <QMimeData>

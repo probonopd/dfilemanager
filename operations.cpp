@@ -24,12 +24,14 @@
 #include <QVector>
 #include <QDebug>
 #include <QProcess>
-#include <magic.h>
 
+#ifdef Q_WS_X11
+#include <magic.h>
 #include <sys/statfs.h>
 #include <sys/types.h>
 #include <sys/vfs.h>
 #include <sys/statvfs.h>
+#endif
 //#include <blkid/blkid.h> //dev block id info... maybe need later
 
 using namespace DFM;
@@ -37,22 +39,31 @@ using namespace DFM;
 QString
 Operations::getMimeType(const QString &file)
 {
+#ifdef Q_WS_X11
     const magic_t &mgcMime = magic_open( MAGIC_MIME_TYPE );
     magic_load( mgcMime, NULL );
     return QString( magic_file( mgcMime, file.toStdString().c_str() ) );
+#else
+    return QString();
+#endif
 }
 
 QString
 Operations::getFileType(const QString &file)
 {
+#ifdef Q_WS_X11
     magic_t mgcMime = magic_open( MAGIC_CONTINUE ); //print anything we can get
     magic_load( mgcMime, NULL );
     return QString( magic_file( mgcMime, file.toStdString().c_str() ) );
+#else
+    return QString();
+#endif
 }
 
 quint64
 Operations::getDriveInfo(const QString &file, const Usage &t)
 {
+#ifdef Q_WS_X11
     if(!QFileInfo(file).exists())
         return 0;
     struct statfs sfs;
@@ -72,6 +83,9 @@ Operations::getDriveInfo(const QString &file, const Usage &t)
     case Id: return *id;
     }
     return 0;
+#else
+    return 0;
+#endif
 }
 
 QColor
@@ -97,11 +111,6 @@ Operations::openFile(const QString &file)
                                                          QFileInfo(file).suffix() == "sh" ||
                                                          QFileInfo(file).suffix() == "exe")) // windows executable
     {
-//#ifdef Q_WS_X11 //linux
-//        file = m_fsModel->filePath(index);
-//#else
-//        file = fsModel->fileName(index);
-//#endif
         process.startDetached(file);
     }
     else

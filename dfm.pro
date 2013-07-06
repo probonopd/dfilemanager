@@ -16,7 +16,6 @@ HEADERS       = mainwindow.h \
     propertiesdialog.h \
     config.h \
     viewanimator.h \
-    dbuscalls.h \
     iconprovider.h \
     dockwidget.h \
     titlewidget.h \
@@ -72,6 +71,5 @@ CONFIG += qt thread debug staticlib
 LIBS += -lglut -lGLU
 
 unix {
-    QT += dbus
     LIBS += -lmagic -lsolid
 }

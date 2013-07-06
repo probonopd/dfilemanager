@@ -28,14 +28,7 @@
 #include <QMouseEvent>
 
 #include <QMainWindow>
-#include <sys/vfs.h>
-#include <sys/statvfs.h>
-
-
-#ifdef Q_WS_X11
-#include "dbuscalls.h" //some calls about devices
 #include "operations.h"
-#endif
 
 namespace DFM
 {

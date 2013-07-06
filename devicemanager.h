@@ -80,7 +80,7 @@ class DeviceItem : public QObject, public QTreeWidgetItem //have to inherit QObj
 public:
     DeviceItem( QTreeWidgetItem *parentItem = 0, QTreeWidget *view = 0, Solid::Device solid = Solid::Device() );
     ~DeviceItem() { m_tb->deleteLater(); }
-    void setMounted(bool mount);
+    void setMounted( const bool &mount );
     inline bool isMounted() const { return m_solid.isValid() && m_solid.as<Solid::StorageAccess>()->isAccessible(); }
     inline QString mountPath() const { return m_solid.isValid() ? m_solid.as<Solid::StorageAccess>()->filePath() : QString(); }
     inline QString devPath() const { return m_solid.isValid() ? m_solid.as<Solid::Block>()->device() : QString(); }

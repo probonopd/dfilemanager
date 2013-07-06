@@ -22,11 +22,8 @@
 #include <QDirIterator>
 
 #include "iojob.h"
-
-#ifdef Q_WS_X11
 #include "operations.h"
 #include "devicemanager.h"
-#endif
 
 #include "application.h"
 
@@ -354,7 +351,7 @@ IOThread::run()
             foreach (QString inFile, m_inFiles)
             {
                 m_inFile = inFile;
-                const bool &sameDisk = ( (quint64)Operations::getDriveInfo(inFile, Operations::Id) ==  destId );
+                const bool &sameDisk = destId != 0 && ( (quint64)Operations::getDriveInfo(inFile, Operations::Id) ==  destId );
                 copyRecursive( inFile, m_destDir+QDir::separator()+QFileInfo(inFile).fileName(), m_cut, sameDisk );
             }
             done = true;
@@ -400,17 +397,15 @@ IOThread::copyRecursive(const QString &inFile, const QString &outFile, bool cut,
         m_pauseCond.wait(&m_mutex);
     m_mutex.unlock();
 
-#ifdef Q_WS_X11
     if (cut && sameDisk && !m_canceled)
         if (QFile::rename(inFile, outFile)) //if we move inside the same disk we just rename, very fast
         {
             qDebug() << "renamed with QFile::rename()";
             return true;
         }
-#endif
 
     QString of = outFile;
-    bool isDir = QFileInfo(of).isDir();
+    const bool &isDir = QFileInfo(of).isDir();
 
     if ((m_mode == Overwrite || m_overWriteAll) && !isDir)  //just remove the file and continue
         remove(of);

@@ -71,7 +71,7 @@ DeviceItem::DeviceItem(QTreeWidgetItem *parentItem, QTreeWidget *view, Solid::De
 }
 
 void
-DeviceItem::setMounted(bool mount)
+DeviceItem::setMounted( const bool &mount )
 {
     if ( !m_solid.isValid() )
         return;
