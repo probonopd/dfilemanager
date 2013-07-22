@@ -35,8 +35,8 @@ class DockWidget : public QDockWidget
 {
     Q_OBJECT
 public:
-    explicit DockWidget(QWidget *parent = 0, const QString &title = QString(), const Qt::WindowFlags &flags = 0, const Pos &pos = Left);
-    
+    DockWidget(QWidget *parent = 0, const QString &title = QString(), const Qt::WindowFlags &flags = 0, const Pos &pos = Left);
+
 protected:
     virtual bool eventFilter(QObject *, QEvent *);
     inline virtual void showEvent(QShowEvent *event) { QDockWidget::showEvent(event); if(isFloating()) { m_mainWindow->setFocus(); setMask(shape()); } }

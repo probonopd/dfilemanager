@@ -30,9 +30,6 @@
 
 #ifdef Q_WS_X11
 #include <QX11Info>
-#include <X11/X.h>
-#include <X11/Xlib.h>
-#include <X11/Xatom.h>
 #endif
 
 //#include <GL/glut.h>
@@ -45,25 +42,13 @@ class Application : public QApplication
 {
     Q_OBJECT
 public:
-    inline Application(int &argc, char **argv, int = ApplicationFlags) : QApplication(argc, argv), m_places(0), m_mainWindow(0)
-    {
-#ifdef Q_WS_X11
-        m_netWmDesktop = XInternAtom(DPY, "_NET_WM_DESKTOP", False);
-        m_netClientListStacking = XInternAtom(DPY, "_NET_CLIENT_LIST_STACKING", False);
-#endif
-        QTimer *t = new QTimer(this);
-        connect ( t, SIGNAL(timeout()), this, SLOT(timeout()) );
-        t->start(50);
-//        glutInit(&argc, argv);
-    }
+    Application(int &argc, char **argv, int = ApplicationFlags);
 #ifdef Q_WS_X11
     inline void manageDock( DFM::Docks::DockWidget *dock ) { m_docks << dock; }
     inline void setMainWindow( QMainWindow *mainWin ) { m_mainWindow = mainWin; }
     inline QMainWindow *mainWindow() { return m_mainWindow; }
     inline void setPlacesView( DFM::PlacesView *places ) { m_places = places; }
     inline DFM::PlacesView *placesView() { return m_places; }
-public slots:
-    void timeout();
 signals:
     void paletteChanged( QPalette newPal );
 protected:
@@ -73,7 +58,7 @@ private:
     QList<DFM::Docks::DockWidget *> m_docks;
     QMainWindow *m_mainWindow;
     DFM::PlacesView *m_places;
-    static Atom m_netWmDesktop, m_netClientListStacking;
+//    static Atom m_netWmDesktop, m_netClientListStacking;
 #endif
 };
 

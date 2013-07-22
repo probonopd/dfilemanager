@@ -26,13 +26,20 @@
 using namespace DFM;
 using namespace Docks;
 
-DockWidget::DockWidget(QWidget *parent, const QString &title, const Qt::WindowFlags &flags, const Pos &pos) : QDockWidget(title, parent, flags)
-  , m_mainWindow(APP->mainWindow()), m_margin(0), m_titleWidget(new TitleWidget(this, title, pos)), m_position(pos), m_timer(0), m_animStep(0), m_dirIn(false), m_isLocked(false)
+DockWidget::DockWidget(QWidget *parent, const QString &title, const Qt::WindowFlags &flags, const Pos &pos)
+    : QDockWidget(title, parent, flags)
+    , m_mainWindow(APP->mainWindow())
+    , m_margin(0)
+    , m_titleWidget(new TitleWidget(this, title, pos))
+    , m_position(pos)
+    , m_timer(new QTimer(this))
+    , m_animStep(0)
+    , m_dirIn(false)
+    , m_isLocked(false)
 {
     setStyle(new MyStyle(style()->objectName()));
     m_margin = style()->pixelMetric(QStyle::PM_DockWidgetFrameWidth);
     setAllowedAreas(m_position == Left ? Qt::LeftDockWidgetArea : m_position == Right ? Qt::RightDockWidgetArea : Qt::BottomDockWidgetArea);
-    m_timer = new QTimer(this);
     setTitleBarWidget(m_titleWidget);
     setFocusPolicy(Qt::NoFocus);
     APP->manageDock( this );

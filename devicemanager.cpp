@@ -21,6 +21,7 @@
 
 #include "devicemanager.h"
 #include "viewanimator.h"
+#include "mainwindow.h"
 
 
 using namespace DFM;
@@ -31,9 +32,6 @@ DeviceItem::DeviceItem(QTreeWidgetItem *parentItem, QTreeWidget *view, Solid::De
     , m_mainWin(APP->mainWindow())
     , m_parentItem(parentItem)
     , m_tb(new QToolButton(m_view))
-    , m_usedBytes(0)
-    , m_freeBytes(0)
-    , m_totalBytes(0)
     , m_timer(new QTimer(this))
     , m_solid(solid)
 {
@@ -44,9 +42,10 @@ DeviceItem::DeviceItem(QTreeWidgetItem *parentItem, QTreeWidget *view, Solid::De
     connect (m_tb, SIGNAL(clicked()), this, SLOT(toggleMount()));
     connect (m_timer, SIGNAL(timeout()), this, SLOT(updateSpace()));
     m_timer->start(1000);
+    for ( int i = 2; i<4; ++i )
+        setText( i, "Devices" );
     if ( isMounted() )
     {
-//        mountPath() = DbusCalls::deviceInfo( m_devPath, "DeviceMountPaths" ).toString();
         setText(PlacesView::Path, mountPath());
         setText(PlacesView::Name, mountPath());
     }
@@ -54,9 +53,9 @@ DeviceItem::DeviceItem(QTreeWidgetItem *parentItem, QTreeWidget *view, Solid::De
     {
         setText(PlacesView::Name, m_solid.description());
     }
-    connect (m_solid.as<Solid::StorageAccess>(), SIGNAL(accessibilityChanged(bool, const QString &)),
-             this, SLOT(changeState()));
+    connect (m_solid.as<Solid::StorageAccess>(), SIGNAL(accessibilityChanged(bool, const QString &)), this, SLOT(changeState()));
     updateSpace();
+    viewEvent();
 
     //try and catch everything so the mount button is always on the right place...
     connect (m_view, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(viewEvent()));
@@ -67,7 +66,6 @@ DeviceItem::DeviceItem(QTreeWidgetItem *parentItem, QTreeWidget *view, Solid::De
     connect (m_view, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), this, SLOT(viewEvent()));
     connect (m_view, SIGNAL(itemExpanded(QTreeWidgetItem*)), this, SLOT(viewEvent()));
     connect (m_view, SIGNAL(viewportEntered()), this, SLOT(viewEvent()));
-//    m_view->update(m_view->indexAt(m_view->visualItemRect(this).center()));
 }
 
 void
@@ -87,20 +85,11 @@ DeviceItem::updateSpace()
 {
     if ( isMounted() )
     {
-        if ( m_usedBytes != Operations::getDriveInfo(mountPath(), Operations::Used) )
-        {
-            m_usedBytes = Operations::getDriveInfo(mountPath(), Operations::Used);
-            emit usageChanged( this );
-        }
-        if ( m_freeBytes != Operations::getDriveInfo(mountPath(), Operations::Free) )
-        {
-            m_freeBytes = Operations::getDriveInfo(mountPath(), Operations::Free);
-            int t = 0;
-            QString free(QString::number(realSize((float)m_freeBytes, &t)));
-            setToolTip(0, free + spaceType[t] + " Free");
-        }
-        if ( m_totalBytes != Operations::getDriveInfo(mountPath(), Operations::Total) )
-            m_totalBytes = Operations::getDriveInfo(mountPath(), Operations::Total);
+        if ( MainWindow::config.behaviour.devUsage )
+            m_view->update( m_view->indexAt(m_view->visualItemRect(this).center()) );
+        int t = 0;
+        QString free(QString::number(realSize((float)freeBytes(), &t)));
+        setToolTip(0, free + spaceType[t] + " Free");
     }
 }
 
@@ -112,11 +101,10 @@ DeviceItem::changeState()
         for (int i = 0; i < 2; ++i)
             setText(i, mountPath());
         int t = 0;
-        setToolTip(0, QString::number(realSize((float)m_freeBytes, &t)) + spaceType[t] + " Free");
+        setToolTip(0, QString::number(realSize((float)freeBytes(), &t)) + spaceType[t] + " Free");
     }
     else
     {
-//        ViewAnimator::animator(m_view)->clear();
         setText(PlacesView::Name, m_solid.description());
     }
     m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole())));
@@ -132,7 +120,8 @@ DeviceItem::viewEvent()
     m_tb->move(x, y);
 }
 
-DeviceManager *instance = 0;
+DeviceManager *DeviceManager::m_instance = 0;
+QTreeWidgetItem *DeviceManager::m_devicesParent = 0;
 
 DeviceManager::DeviceManager(QObject *parent) : QObject(parent),
     m_tree(static_cast<QTreeWidget*>(parent))
@@ -161,8 +150,9 @@ DeviceManager::deviceRemoved(const QString &dev)
 DeviceManager
 *DeviceManager::manage(QTreeWidget *tw)
 {
-    if (!instance) instance = new DeviceManager(tw);
-    return instance;
+    if (!m_instance)
+        m_instance = new DeviceManager(tw);
+    return m_instance;
 }
 
 void
@@ -175,20 +165,14 @@ DeviceManager::populateLater()
     m_devicesParent->setExpanded(true);
 
     foreach ( Solid::Device dev, Solid::Device::listFromType(Solid::DeviceInterface::StorageAccess) )
-    {
-        DeviceItem *d = new DeviceItem(m_devicesParent, m_tree, dev );
-        for ( int i = 2; i<4; ++i )
-            d->setText( i, "Devices" );
-        connect (d, SIGNAL(usageChanged(QTreeWidgetItem*)), this, SIGNAL(usageChanged(QTreeWidgetItem*)));
-        m_items.insert(dev.udi(), d);
-    }
+        m_items.insert(dev.udi(), new DeviceItem(m_devicesParent, m_tree, dev ));
 }
 
 DeviceItem
 *DeviceManager::deviceItemForFile(const QString &file)
 {
     QString s(file.isEmpty() ? "/" : file);
-    foreach ( DeviceItem *item, instance->m_items.values() )
+    foreach ( DeviceItem *item, DeviceManager::devices().values() )
         if ( s == item->mountPath() )
             return item;
     return deviceItemForFile(s.mid(0, s.lastIndexOf("/")));

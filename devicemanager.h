@@ -22,7 +22,6 @@
 #ifndef DEVICEMANAGER_H
 #define DEVICEMANAGER_H
 
-#include <QObject>
 #include <QMainWindow>
 #include <QToolButton>
 #include <QMessageBox>
@@ -30,14 +29,12 @@
 #include "operations.h"
 #include "iconprovider.h"
 
-#include "solid/storagedrive.h"
+#include "solid/device.h"
 #include "solid/block.h"
+#include "solid/storagedrive.h"
 #include "solid/storagevolume.h"
 #include "solid/storageaccess.h"
-#include "solid/device.h"
 #include "solid/devicenotifier.h"
-
-#include <QSocketNotifier>
 
 namespace DFM
 {
@@ -84,28 +81,24 @@ public:
     inline bool isMounted() const { return m_solid.isValid() && m_solid.as<Solid::StorageAccess>()->isAccessible(); }
     inline QString mountPath() const { return m_solid.isValid() ? m_solid.as<Solid::StorageAccess>()->filePath() : QString(); }
     inline QString devPath() const { return m_solid.isValid() ? m_solid.as<Solid::Block>()->device() : QString(); }
-    inline quint64 usedBytes() const { return m_usedBytes; }
-    inline quint64 freeBytes() const { return m_freeBytes; }
-    inline quint64 totalBytes() const { return m_totalBytes; }
-    inline int used() { return m_usedBytes ? (int)(((float)m_usedBytes/(float)m_totalBytes)*100) : 0; }
-public slots:
-    inline void mount() { setMounted(true); }
-    inline void unMount() { setMounted(false); }
-    inline void toggleMount() { setMounted(!isMounted()); }
-    void changeState();
-signals:
-    void usageChanged( QTreeWidgetItem *item );
+    inline quint64 usedBytes() const { return Operations::getDriveInfo(mountPath(), Operations::Used); }
+    inline quint64 freeBytes() const { return Operations::getDriveInfo(mountPath(), Operations::Free); }
+    inline quint64 totalBytes() const { return m_solid.isValid() ? m_solid.as<Solid::StorageVolume>()->size() : 0L; }
+    inline int used() { return usedBytes() ? (int)(((float)usedBytes()/(float)totalBytes())*100) : 0; }
+//    inline void mount() { setMounted(true); }
+//    inline void unMount() { setMounted(false); }
+
 private slots:
+    inline void toggleMount() { setMounted(!isMounted()); }
     void updateSpace();
     void viewEvent();
-
+    void changeState();
 
 private:
     QTreeWidget *m_view;
     QMainWindow *m_mainWin;
     QToolButton *m_tb;
     QTreeWidgetItem *m_parentItem;
-    quint64 m_usedBytes, m_freeBytes, m_totalBytes;
     QTimer *m_timer;
     Solid::Device m_solid;
     friend class DeviceManager;
@@ -118,18 +111,20 @@ public:
     typedef QMap<QString, DeviceItem*> DeviceItems;
     explicit DeviceManager( QObject *parent = 0 );
     static DeviceManager *manage(QTreeWidget *tw);
-    DeviceItems devices() { return m_items; }
+    inline DeviceItems deviceItems() { return m_items; }
+    static inline DeviceItems devices() { return m_instance->deviceItems(); }
     static DeviceItem *deviceItemForFile( const QString &file );
-signals:
-    void usageChanged(QTreeWidgetItem *item);
+    static inline QTreeWidgetItem *devicesParent() { return m_devicesParent; }
+    static inline bool itemIsDevice( const QTreeWidgetItem *item ) { return item == m_devicesParent || ( item->parent() && item->parent() == m_devicesParent ); }
 private slots:
     void populateLater();
     void deviceAdded( const QString &dev );
     void deviceRemoved( const QString &dev );
 private:
+    static DeviceManager *m_instance;
     DeviceItems m_items;
     QTreeWidget *m_tree;
-    QTreeWidgetItem *m_devicesParent;
+    static QTreeWidgetItem *m_devicesParent;
     friend class DeviceItem;
 };
 

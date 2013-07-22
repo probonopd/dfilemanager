@@ -73,7 +73,6 @@ public slots:
     void setPlaceIcon();
     void removePlace() { if(currentItem()->text(Container) != "Devices") delete currentItem(); }
     void activateAppropriatePlace(const QString &index);
-    void usageChangedForItem(QTreeWidgetItem *item);
 
 protected:
     virtual void dropEvent(QDropEvent *event);
@@ -94,10 +93,6 @@ private:
 };
 
 }
-
-
-
-
 
 #if 0
         system("df -kTh > /tmp/dfm_devices");

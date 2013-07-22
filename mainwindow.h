@@ -39,6 +39,7 @@
 
 #include <QMainWindow>
 #include <QFileSystemWatcher>
+#include <QProcess>
 
 namespace DFM
 {

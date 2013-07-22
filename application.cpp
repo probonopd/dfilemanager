@@ -22,8 +22,25 @@
 #include "application.h"
 
 #ifdef Q_WS_X11
-Atom Application::m_netWmDesktop = 0;
-Atom Application::m_netClientListStacking = 0;
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+#include <X11/X.h>
+static Atom netWmDesktop = 0;
+static Atom netClientListStacking = 0;
+#endif
+
+Application::Application(int &argc, char **argv, int)
+    : QApplication(argc, argv)
+    , m_places(0)
+    , m_mainWindow(0)
+{
+#ifdef Q_WS_X11
+    netWmDesktop = XInternAtom(DPY, "_NET_WM_DESKTOP", False);
+    netClientListStacking = XInternAtom(DPY, "_NET_CLIENT_LIST_STACKING", False);
+#endif
+}
+
+#ifdef Q_WS_X11
 
 inline static void addState(Window win, Atom state)
 {
@@ -123,13 +140,13 @@ Application::x11EventFilter(XEvent *xe)
         break;
     case PropertyNotify:
     {
-        if (xe->xproperty.atom == m_netClientListStacking)
+        if (xe->xproperty.atom == netClientListStacking)
         {
             Atom type;
             int format;
             unsigned long nitems, after;
             unsigned char *data = 0;
-            if (Success == XGetWindowProperty(DPY, QX11Info::appRootWindow(), m_netClientListStacking, 0, (~0L), False, XA_WINDOW, &type, &format, &nitems, &after, &data))
+            if (Success == XGetWindowProperty(DPY, QX11Info::appRootWindow(), netClientListStacking, 0, (~0L), False, XA_WINDOW, &type, &format, &nitems, &after, &data))
                 if (data && (int)nitems > 1)
                 {
                     QMap<Window, int> wMap;
@@ -183,19 +200,19 @@ Application::x11EventFilter(XEvent *xe)
                     return false;
                 }
         }
-        if (xe->xproperty.atom == m_netWmDesktop && xe->xproperty.window == m_mainWindow->winId())
+        if (xe->xproperty.atom == netWmDesktop && xe->xproperty.window == m_mainWindow->winId())
         {
             Atom type;
             int format;
             unsigned long nitems, after;
             unsigned char *data = 0;
 
-            if (Success == XGetWindowProperty(DPY, m_mainWindow->winId(), m_netWmDesktop, 0, (~0L), False, XA_CARDINAL, &type, &format, &nitems, &after, &data))
+            if (Success == XGetWindowProperty(DPY, m_mainWindow->winId(), netWmDesktop, 0, (~0L), False, XA_CARDINAL, &type, &format, &nitems, &after, &data))
                 if (data && (int)nitems == 1)
                 {
                     foreach(DFM::Docks::DockWidget *dock, m_docks)
                         if(ISDRAWER(dock))
-                            moveDockToDesktop(dock->winId(), m_netWmDesktop, ((int *)data)[0]);
+                            moveDockToDesktop(dock->winId(), netWmDesktop, ((int *)data)[0]);
                     XFree(data);
                     return false;
                 }
@@ -207,22 +224,3 @@ Application::x11EventFilter(XEvent *xe)
     return QApplication::x11EventFilter(xe);
 }
 #endif
-
-void
-Application::timeout()
-{
-    if ( !m_mainWindow )
-        return;
-//    qDebug() << QCursor::pos() << m_mainWindow->pos();
-
-//    XWindowAttributes xwa;
-//    XGetWindowAttributes(DPY, m_mainWindow->winId() , &xwa);
-//    qDebug() << xwa.x << xwa.y;
-
-//    int x, y;
-//    Window child_return;
-//    XTranslateCoordinates (DPY, m_mainWindow->winId(), QX11Info::appRootWindow(), 0, 0, &x, &y, &child_return);
-//    qDebug() << x << y;
-
-//    qDebug() << m_mainWindow->geometry();
-}

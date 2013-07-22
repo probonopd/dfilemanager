@@ -68,8 +68,10 @@ INSTALLS += target sources
 
 QT += gui xml opengl
 CONFIG += qt thread debug staticlib
-LIBS += -lglut -lGLU
+#LIBS += -lglut -lGLU
 
+#libmagic needed for mimetypes and fileinfo
+#libsolid needed for devicehandling
 unix {
     LIBS += -lmagic -lsolid
 }

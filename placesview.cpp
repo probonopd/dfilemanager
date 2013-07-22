@@ -210,7 +210,7 @@ PlacesView::PlacesView( QWidget *parent ) : QTreeWidget( parent )
     APP->setPlacesView( this );
     m_mainWindow = APP->mainWindow();
     ViewAnimator::manage(this);
-    connect (DeviceManager::manage(this), SIGNAL(usageChanged(QTreeWidgetItem*)), this, SLOT(usageChangedForItem(QTreeWidgetItem*)));
+    DeviceManager::manage(this);
 
     setUniformRowHeights( false );
     setAllColumnsShowFocus( true );
@@ -284,7 +284,7 @@ PlacesView::dropEvent( QDropEvent *event )
                 }
                 else if ( dropIndicatorPosition() != QAbstractItemView::OnViewport )
                 {
-                    if ( itemAt( event->pos() )->text( Container ) != "Devices" )
+                    if ( !DeviceManager::itemIsDevice(itemAt( event->pos() )) )
                     {
                         QFileInfo file( event->mimeData()->urls().first().toLocalFile() );
                         if ( file.isDir() )
@@ -424,12 +424,6 @@ PlacesView::contextMenuEvent( QContextMenuEvent *event )
     QMenu popupMenu;
     popupMenu.addActions( actions() );
     popupMenu.exec( event->globalPos() );
-}
-
-void
-PlacesView::usageChangedForItem(QTreeWidgetItem *item)
-{
-//    update(indexFromItem(item));
 }
 
 void
