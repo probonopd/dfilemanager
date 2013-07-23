@@ -90,7 +90,7 @@ QString IconDialog::getIcon()
         it.next();
     }
     exec();
-    if(result() == 1)
+    if ( result() == 1 )
         icn = m_listView->currentIndex().data().toString();
-    return icn;
+    return QString();
 }

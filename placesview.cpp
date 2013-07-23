@@ -396,9 +396,11 @@ PlacesView::addPlaceCont()
 void
 PlacesView::setPlaceIcon()
 {
-    const QString &icon = IconDialog::icon();
-    m_lastClicked->setText( 3, icon );
-    m_lastClicked->setIcon( 0, QIcon::fromTheme( icon ) );
+    const QString &i = IconDialog::icon();
+    if ( i.isEmpty() )
+        return;
+    m_lastClicked->setText( 3, i );
+    m_lastClicked->setIcon( 0, QIcon::fromTheme( i ) );
 }
 
 void
