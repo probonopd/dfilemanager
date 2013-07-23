@@ -311,8 +311,11 @@ PlacesView::dropEvent( QDropEvent *event )
 
     if ( dropIndicatorPosition() == QAbstractItemView::OnItem ||
             dropIndicatorPosition() == QAbstractItemView::OnViewport ||
-            !indexAt( event->pos() ).parent().isValid() )
+            !indexAt( event->pos() ).parent().isValid() ||
+         (itemAt(event->pos()) && itemAt(event->pos())->parent()&& itemAt(event->pos())->parent() == DeviceManager::devicesParent()) ||
+         (itemAt(event->pos()) && itemAt(event->pos()) == DeviceManager::devicesParent()))
         event->setDropAction(Qt::IgnoreAction);
+
 
     QTreeWidget::dropEvent( event );
 }

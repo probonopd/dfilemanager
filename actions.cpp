@@ -25,8 +25,6 @@
 
 using namespace DFM;
 
-extern struct Config config;
-
 void
 MainWindow::createActions()
 {
