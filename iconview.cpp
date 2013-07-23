@@ -126,7 +126,14 @@ public:
         QApplication::style()->drawItemText(painter, tr, textFlags(), PAL, option.state & QStyle::State_Enabled, et, selected ? QPalette::HighlightedText : QPalette::Text);
 
         const QImage &thumb( qvariant_cast<QImage>( index.data( FileSystemModel::Thumbnail ) ) );
-        QIcon icon( m_fsm->iconPix( m_fsm->fileInfo( index ), DECOSIZE.width() ) );
+        QIcon icon = qvariant_cast<QIcon>( index.data( Qt::DecorationRole ) );
+        int realSize = DECOSIZE.width();
+        if ( !icon.availableSizes().contains(DECOSIZE) )
+            foreach ( const QSize &sz, icon.availableSizes() )
+                if ( realSize < sz.width() && realSize < m_iv->iconSize().width() )
+                    realSize = sz.width();
+        icon = m_fsm->iconPix( m_fsm->fileInfo( index ), realSize );
+
         if ( icon.isNull() )
             icon = qvariant_cast<QIcon>( index.data( Qt::DecorationRole ) );
 

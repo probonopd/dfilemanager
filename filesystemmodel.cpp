@@ -73,11 +73,12 @@ FileSystemModel::iconPix(const QFileInfo &info, const int &extent) const
     const QSettings settings(info.filePath() + QDir::separator() + ".directory",QSettings::IniFormat);
     QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString());
     int actSize = icon.actualSize(QSize(extent,extent)).width();
+//    qDebug() << actSize << icon.name() << icon.availableSizes() << icon.availableSizes();
     QPixmap iconPix;
-    if(icon.isNull())
+    if (icon.isNull())
         return QPixmap();
     iconPix = icon.pixmap(actSize < extent ? actSize+extent : extent);
-    if(iconPix.size().width() != extent)
+    if (iconPix.size().width() != extent)
         iconPix = iconPix.scaledToHeight(extent,Qt::SmoothTransformation);
     return iconPix;
 }
@@ -153,6 +154,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     {
         const QSettings settings(filePath(index) + QDir::separator() + ".directory",QSettings::IniFormat);
         QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString());
+
         if (!icon.isNull())
         {
             if ( role == FlowPic )
