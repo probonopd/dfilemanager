@@ -44,6 +44,9 @@
 namespace DFM
 {
 
+namespace IO
+{
+
 enum Mode{ Cancel, Overwrite, OverwriteAll, NewName, Skip, SkipAll };
 
 class FileExistsDialog : public QDialog
@@ -146,16 +149,17 @@ private:
 
 //-----------------------------------------------------------------------------------------------
 
-class IOJob : public QObject
+class Job : public QObject
 {
     Q_OBJECT
 public:
-    explicit IOJob(QObject *parent = 0);
-    static void copy(const QStringList &sourceFiles, const QString &destination, const bool &cut = false);
-    static void remove(const QString &path);
+    explicit Job(QObject *parent = 0);
+    static inline void copy(const QStringList &sourceFiles, const QString &destination, const bool &cut = false) { instance()->cp(sourceFiles, destination, cut); }
+    static inline void remove(const QString &path) { instance()->rm(path); }
     void getDirs(const QString &dir, quint64 *fileSize);
 public slots:
 protected:
+    static Job *instance();
     void cp(const QStringList &copyFiles, const QString &destination, const bool &cut = false);
     void rm(const QString &path) { (new IOThread(path, this))->start(); }
 private:
@@ -164,8 +168,9 @@ private:
     FileExistsDialog *m_fileExistsDialog;
     bool m_canceled, m_cut;
     IOThread *m_thread;
-    static IOJob *m_instance;
 };
+
+}
 
 }
 

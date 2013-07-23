@@ -84,7 +84,7 @@ public:
     inline quint64 usedBytes() const { return Operations::getDriveInfo(mountPath(), Operations::Used); }
     inline quint64 freeBytes() const { return Operations::getDriveInfo(mountPath(), Operations::Free); }
     inline quint64 totalBytes() const { return m_solid.isValid() ? m_solid.as<Solid::StorageVolume>()->size() : 0L; }
-    inline int used() { return usedBytes() ? (int)(((float)usedBytes()/(float)totalBytes())*100) : 0; }
+    inline int used() const { return usedBytes() ? (int)(((float)usedBytes()/(float)totalBytes())*100) : 0; }
 //    inline void mount() { setMounted(true); }
 //    inline void unMount() { setMounted(false); }
 

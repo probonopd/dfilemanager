@@ -323,7 +323,7 @@ ViewContainer::deleteCurrentSelection()
     {
         QFileInfo file(m_fsModel->filePath(delUs.at(i)));
         if(file.isWritable())
-            IOJob::remove(file.filePath());
+            IO::Job::remove(file.filePath());
 //            fsModel->remove(delUs.at(i));
     }
 }

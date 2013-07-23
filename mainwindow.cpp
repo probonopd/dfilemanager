@@ -287,7 +287,7 @@ MainWindow::pasteSelection()
     foreach(QUrl url,QList<QUrl>(mimeData->urls()))
         copyFiles << url.toLocalFile();
 
-    IOJob::copy(copyFiles, m_fsModel->rootPath(), m_cut);
+    IO::Job::copy(copyFiles, m_fsModel->rootPath(), m_cut);
 
     QApplication::clipboard()->clear();
 

@@ -28,6 +28,7 @@
 #include "application.h"
 
 using namespace DFM;
+using namespace IO;
 
 FileExistsDialog::FileExistsDialog(QWidget *parent) : QDialog(parent), m_overWrite(new QPushButton(this)), m_overWriteAll(new QPushButton(this)), m_skip(new QPushButton(this))
   , m_skipAll(new QPushButton(this)), m_newName(new QPushButton(this)), m_edit(new QLineEdit(this)), m_name(new QLabel(this))
@@ -260,30 +261,22 @@ CopyDialog::pauseCLicked()
 
 //--------------------------------------------------------------------------------------------------------------
 
-IOJob *IOJob::m_instance = 0;
+Job *jobInstance = 0;
 
-IOJob::IOJob(QObject *parent) : QObject(parent)
+Job::Job(QObject *parent) : QObject(parent)
   , m_fileExistsDialog(new FileExistsDialog(APP->mainWindow()))
   , m_copyDialog(new CopyDialog(APP->mainWindow())) { }
 
-#define ASSURE_INSTANCE if (!m_instance) { qDebug() << "creating new instance of IOJob"; m_instance = new IOJob(APP->mainWindow()); }
-
-void
-IOJob::copy(const QStringList &sourceFiles, const QString &destination, const bool &cut)
+Job
+*Job::instance()
 {
-    ASSURE_INSTANCE
-    m_instance->cp(sourceFiles, destination, cut);
+    if ( !jobInstance )
+        jobInstance = new Job( APP->mainWindow() );
+    return jobInstance;
 }
 
 void
-IOJob::remove(const QString &path)
-{
-    ASSURE_INSTANCE
-    m_instance->rm(path);
-}
-
-void
-IOJob::getDirs(const QString &dir, quint64 *fileSize)
+Job::getDirs(const QString &dir, quint64 *fileSize)
 {
     const QFileInfoList &entries = QDir(dir).entryInfoList(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden);
     foreach(const QFileInfo &entry, entries)
@@ -297,7 +290,7 @@ IOJob::getDirs(const QString &dir, quint64 *fileSize)
 }
 
 void
-IOJob::cp(const QStringList &copyFiles, const QString &destination, const bool &cut)
+Job::cp(const QStringList &copyFiles, const QString &destination, const bool &cut)
 {
     m_canceled = false;
     m_cut = cut;
@@ -317,6 +310,15 @@ IOJob::cp(const QStringList &copyFiles, const QString &destination, const bool &
         else
             m_fileSize += fileInfo.size();
     }
+
+#ifdef Q_WS_X11
+    if ( m_fileSize > Operations::getDriveInfo( destination, Operations::Free ) )
+    {
+        QMessageBox::critical(APP->mainWindow(), tr("not enough room on destination"), QString("%1 has not enough space").arg(destination));
+        m_copyDialog->hide();
+        return;
+    }
+#endif
 
     IOThread *iot = new IOThread(copyFiles, destination, cut, m_fileSize, this);
     connect(m_copyDialog, SIGNAL(pauseRequest(bool)), iot, SLOT(setPaused(bool)));

@@ -247,7 +247,7 @@ FileSystemModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int 
         QStringList cp;
         foreach(QUrl url, data->urls())
             cp << url.toLocalFile();
-        IOJob::copy(cp, filePath(parent));
+        IO::Job::copy(cp, filePath(parent));
     }
 
     return error;

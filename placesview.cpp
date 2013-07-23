@@ -277,7 +277,7 @@ PlacesView::dropEvent( QDropEvent *event )
                             QStringList cp;
                             foreach( QUrl url, event->mimeData()->urls() )
                                 cp << url.toLocalFile();
-                            IOJob::copy( cp, itemAt( event->pos() )->text( 1 ), true );
+                            IO::Job::copy( cp, itemAt( event->pos() )->text( 1 ), true );
                         }
                         event->setDropAction(Qt::IgnoreAction);
                     }
