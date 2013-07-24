@@ -70,16 +70,19 @@ FileSystemModel::remove(const QModelIndex &myIndex) const
 QPixmap
 FileSystemModel::iconPix(const QFileInfo &info, const int &extent) const
 {
-    const QSettings settings(info.filePath() + QDir::separator() + ".directory",QSettings::IniFormat);
+    const QSettings settings(info.filePath() + QDir::separator() + ".directory", QSettings::IniFormat);
     QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString());
-    int actSize = icon.actualSize(QSize(extent,extent)).width();
-//    qDebug() << actSize << icon.name() << icon.availableSizes() << icon.availableSizes();
+    int actSize = extent;
+
     QPixmap iconPix;
     if (icon.isNull())
         return QPixmap();
-    iconPix = icon.pixmap(actSize < extent ? actSize+extent : extent);
+    while ( !icon.availableSizes().contains(QSize(actSize, actSize)) )
+        ++actSize;
+
+    iconPix = icon.pixmap(actSize);
     if (iconPix.size().width() != extent)
-        iconPix = iconPix.scaledToHeight(extent,Qt::SmoothTransformation);
+        iconPix = iconPix.scaledToHeight(extent, Qt::SmoothTransformation);
     return iconPix;
 }
 
@@ -101,7 +104,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     }
 
     if (index.column() == 1 && role == Qt::DisplayRole)
-        if(fileInfo(index).isDir())
+        if (fileInfo(index).isDir())
             return QString::number(QDir(filePath(index)).entryList(QDir::NoDotAndDotDot | QDir::AllEntries).count()) + " Entrie(s)";
 
     if (index.column() == 0 && role == Qt::ForegroundRole)
