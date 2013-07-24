@@ -126,12 +126,14 @@ public:
         QApplication::style()->drawItemText(painter, tr, textFlags(), PAL, option.state & QStyle::State_Enabled, et, selected ? QPalette::HighlightedText : QPalette::Text);
 
         const QImage &thumb( qvariant_cast<QImage>( index.data( FileSystemModel::Thumbnail ) ) );
-        QIcon icon = m_fsm->iconPix( m_fsm->fileInfo( index ), DECOSIZE.width() );
-
+        QIcon icon;
+        if ( m_fsm->fileInfo(index).isDir() )
+            icon = m_fsm->iconPix( m_fsm->fileInfo( index ), DECOSIZE.width() );
         if ( icon.isNull() )
             icon = qvariant_cast<QIcon>( index.data( Qt::DecorationRole ) );
 
-        const bool isThumb = !thumb.isNull();
+
+        const bool &isThumb = !thumb.isNull();
         QPixmap pixmap = icon.pixmap( isThumb && thumb.width() > thumb.height()+14 ? DECOSIZE.height()+14 : DECOSIZE.height() );
         QRect theRect = pixmap.rect();
         theRect.moveCenter( QPoint( RECT.center().rx(), RECT.y()+( DECOSIZE.height()/2 ) ) );

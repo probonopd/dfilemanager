@@ -59,7 +59,7 @@ public:
     static QString fullPath(const QModelIndex &index);
     static QIcon fullIcon(const QModelIndex &index);
     bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
-    QPixmap iconPix(const QFileInfo &info,const int &extent) const;
+    static QPixmap iconPix(const QFileInfo &info,const int &extent);
     static QStringList supportedThumbs( const bool &filter = false );
     inline void refresh() { const QString &path = rootPath(); setRootPath(""); setRootPath(path); }
 

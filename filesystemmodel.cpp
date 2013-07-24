@@ -68,22 +68,20 @@ FileSystemModel::remove(const QModelIndex &myIndex) const
 }
 
 QPixmap
-FileSystemModel::iconPix(const QFileInfo &info, const int &extent) const
+FileSystemModel::iconPix(const QFileInfo &info, const int &extent)
 {
     const QSettings settings(info.filePath() + QDir::separator() + ".directory", QSettings::IniFormat);
     QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString());
-    int actSize = extent;
-
-    QPixmap iconPix;
-    if (icon.isNull())
+    if ( icon.isNull() )
+        icon = QIcon::fromTheme("inode-directory");
+    if ( icon.isNull() )
         return QPixmap();
+
+    int actSize = extent;
     while ( !icon.availableSizes().contains(QSize(actSize, actSize)) )
         ++actSize;
 
-    iconPix = icon.pixmap(actSize);
-    if (iconPix.size().width() != extent)
-        iconPix = iconPix.scaledToHeight(extent, Qt::SmoothTransformation);
-    return iconPix;
+    return icon.pixmap(actSize);
 }
 
 QVariant
@@ -155,7 +153,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
     if (index.column() == 0 && ( role == Qt::DecorationRole || role == FlowPic || role == DecoImage ) && fileInfo(index).isDir())
     {
-        const QSettings settings(filePath(index) + QDir::separator() + ".directory",QSettings::IniFormat);
+        const QSettings settings(filePath(index) + QDir::separator() + ".directory", QSettings::IniFormat);
         QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString());
 
         if (!icon.isNull())

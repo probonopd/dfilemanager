@@ -397,7 +397,7 @@ void
 PlacesView::setPlaceIcon()
 {
     const QString &i = IconDialog::icon();
-    if ( i.isEmpty() )
+    if ( i.isEmpty() || !m_lastClicked->parent() )
         return;
     m_lastClicked->setText( 3, i );
     m_lastClicked->setIcon( 0, QIcon::fromTheme( i ) );
