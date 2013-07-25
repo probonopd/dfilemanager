@@ -396,6 +396,8 @@ PlacesView::addPlaceCont()
 void
 PlacesView::setPlaceIcon()
 {
+    if ( !m_lastClicked )
+        return;
     const QString &i = IconDialog::icon();
     if ( i.isEmpty() || !m_lastClicked->parent() )
         return;

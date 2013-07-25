@@ -36,6 +36,7 @@ MainWindow::readConfig()
     config.views.showThumbs = m_settings->value("showThumbs", false).toBool();
     config.behaviour.devUsage = m_settings->value("drawDevUsage", false).toBool();
     config.views.iconView.textWidth = m_settings->value("textWidth", 16).toInt();
+    config.views.detailsView.rowPadding = m_settings->value("detailsView.rowPadding", 0).toInt();
 }
 
 void
@@ -104,6 +105,8 @@ MainWindow::updateConfig()
 {
     readConfig();
     m_tabBar->setVisible(m_tabBar->count() > 1 ? true : !config.behaviour.hideTabBarWhenOnlyOneTab);
+    if ( m_activeContainer )
+        m_activeContainer->refresh();
     updateIcons();
 }
 
@@ -123,6 +126,7 @@ MainWindow::writeSettings()
     m_settings->setValue("showThumbs", config.views.showThumbs);
     m_settings->setValue("drawDevUsage", config.behaviour.devUsage);
     m_settings->setValue("textWidth", config.views.iconView.textWidth);
+    m_settings->setValue("detailsView.rowPadding", config.views.detailsView.rowPadding);
 
     m_settings->remove("Places");
     m_settings->beginGroup("Places");

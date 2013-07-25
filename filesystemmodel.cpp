@@ -153,7 +153,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
     if (index.column() == 0 && ( role == Qt::DecorationRole || role == FlowPic || role == DecoImage ) && fileInfo(index).isDir())
     {
-        const QSettings settings(filePath(index) + QDir::separator() + ".directory", QSettings::IniFormat);
+        const QSettings settings(QString("%1%2.directory").arg(filePath(index)).arg(QDir::separator()), QSettings::IniFormat);
         QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString());
 
         if (!icon.isNull())

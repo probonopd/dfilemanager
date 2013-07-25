@@ -42,6 +42,10 @@ typedef struct Config
             bool smoothScroll;
             int textWidth;
         } iconView;
+        struct detailsView
+        {
+            int rowPadding;
+        } detailsView;
     } views;
 
     struct docks

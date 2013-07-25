@@ -89,6 +89,7 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
   , m_iconWidth( new QSlider( Qt::Horizontal, this ) ), m_width( new QLabel(this) )
   , m_showThumbs( new QCheckBox(tr("Show thumbnails of supported pictures (requires restart)"), this) )
   , m_smoothScroll( new QCheckBox(tr("Smooth scrolling"), this) )
+  , m_rowPadding( new QSpinBox(this) )
 {
     m_smoothScroll->setChecked(MainWindow::config.views.iconView.smoothScroll);
     m_showThumbs->setChecked(MainWindow::config.views.showThumbs);
@@ -109,9 +110,19 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     gvLayout->addLayout(ghLayout);
     gBox->setLayout(gvLayout);
 
+    QGroupBox *detailsBox = new QGroupBox(tr("detailsView"), this);
+    QHBoxLayout *detailsLayout = new QHBoxLayout(detailsBox);
+    detailsLayout->addWidget(new QLabel(tr("Padding added to rowheight")));
+    detailsLayout->addWidget(m_rowPadding);
+    detailsBox->setLayout(detailsLayout);
+    m_rowPadding->setMinimum(0);
+    m_rowPadding->setMaximum(5);
+    m_rowPadding->setValue(MainWindow::config.views.detailsView.rowPadding);
+
     QVBoxLayout *vLayout = new QVBoxLayout();
     vLayout->addWidget(m_showThumbs);
     vLayout->addWidget(gBox);
+    vLayout->addWidget(detailsBox);
     vLayout->addStretch();
     setLayout(vLayout);
 }
@@ -166,6 +177,7 @@ SettingsDialog::accept()
     m_settings->setValue("showThumbs", m_viewWidget->m_showThumbs->isChecked());
     m_settings->setValue("drawDevUsage", m_behWidget->m_drawDevUsage->isChecked());
     m_settings->setValue("textWidth", m_viewWidget->m_iconWidth->value());
+    m_settings->setValue("detailsView.rowPadding", m_viewWidget->m_rowPadding->value());
     emit settingsChanged();
     QDialog::accept();
 }

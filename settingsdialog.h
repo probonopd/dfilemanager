@@ -33,6 +33,7 @@
 #include <QCheckBox>
 #include <QDebug>
 #include <QSlider>
+#include <QSpinBox>
 
 namespace DFM
 {
@@ -83,6 +84,7 @@ public:
     QSlider *m_iconWidth;
     QString m_iconWidthStr;
     QLabel *m_width;
+    QSpinBox *m_rowPadding;
 private slots:
     inline void sliderChanged(const int &value) { m_width->setText( QString::number(value*2) + " px"); }
 };

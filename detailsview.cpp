@@ -27,9 +27,19 @@
 
 using namespace DFM;
 
+class DetailsDelegate : public QStyledItemDelegate
+{
+protected:
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+    {
+        return QStyledItemDelegate::sizeHint(option, index) + QSize(0, MainWindow::config.views.detailsView.rowPadding*2);
+    }
+};
+
 DetailsView::DetailsView(QWidget *parent) :
     QTreeView(parent)
 {
+    setItemDelegate(new DetailsDelegate());
     setUniformRowHeights(true);
     setSelectionMode(QAbstractItemView::ExtendedSelection);
     setSortingEnabled(true);
