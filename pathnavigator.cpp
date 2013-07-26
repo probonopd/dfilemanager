@@ -49,7 +49,10 @@ NavButton::paintEvent(QPaintEvent *event)
     p.setPen(palette().color(QPalette::Text));
     QRect r(rect());
     r.setLeft(r.left() + 5);
-    style()->drawItemPixmap(&p, r, Qt::AlignLeft | Qt::AlignVCenter, icon().pixmap(iconSize().height()));
+    QPixmap pix(icon().pixmap(iconSize().height()));
+    if ( pix.size() != iconSize() )
+        pix = pix.scaled(iconSize());
+    style()->drawItemPixmap(&p, r, Qt::AlignLeft | Qt::AlignVCenter, pix);
     style()->drawItemText(&p, r.adjusted(icon().isNull() ? 0 : 20,0,0,0), Qt::AlignLeft | Qt::AlignVCenter, palette(), true, text(), QPalette::Text);
     p.end();
 //    QToolButton::paintEvent(event);
