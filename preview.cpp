@@ -176,6 +176,7 @@ PreView::PreView(QWidget *parent) : QGraphicsView(parent)
     sse->setColor(Qt::white);
     m_gfxProxy->setGraphicsEffect(sse);
     setFocusPolicy(Qt::NoFocus);
+    setFrameStyle(QFrame::NoFrame);
     for ( int i = 0; i < 2; ++i )
     {
         m_anim[i] = new QGraphicsItemAnimation(this);
