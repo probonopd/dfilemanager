@@ -100,6 +100,8 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
   , m_showThumbs( new QCheckBox(tr("Show thumbnails of supported pictures (requires restart)"), this) )
   , m_smoothScroll( new QCheckBox(tr("Smooth scrolling"), this) )
   , m_rowPadding( new QSpinBox(this) )
+  , m_iconSlider( new QSlider( Qt::Horizontal, this ) )
+  , m_size( new QLabel(QString::number(MainWindow::config.views.iconView.iconSize*16) + " px", this) )
 {
     m_smoothScroll->setChecked(MainWindow::config.views.iconView.smoothScroll);
     m_showThumbs->setChecked(MainWindow::config.views.showThumbs);
@@ -108,6 +110,7 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     gvLayout->addWidget(m_smoothScroll);
     QHBoxLayout *ghLayout = new QHBoxLayout();
     ghLayout->addWidget( new QLabel(tr("Extra width added to text:"), this) );
+    ghLayout->addStretch();
     ghLayout->addWidget( m_iconWidth );
     m_iconWidth->setRange(1, 32);
     m_iconWidth->setSingleStep(1);
@@ -118,6 +121,20 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     connect ( m_iconWidth, SIGNAL(valueChanged(int)), this, SLOT(sliderChanged(int)) );
 
     gvLayout->addLayout(ghLayout);
+
+    QHBoxLayout *hIconSize = new QHBoxLayout();
+    hIconSize->addWidget(new QLabel(tr("Default size for icons:"), this));
+    m_iconSlider->setRange(1, 16);
+    m_iconSlider->setSingleStep(1);
+    m_iconSlider->setPageStep(1);
+    m_iconSlider->setValue(MainWindow::config.views.iconView.iconSize);
+    hIconSize->addStretch();
+    hIconSize->addWidget(m_iconSlider);
+    hIconSize->addWidget(m_size);
+    connect( m_iconSlider, SIGNAL(valueChanged(int)), this, SLOT(sizeChanged(int)) );
+
+    gvLayout->addLayout(hIconSize);
+
     gBox->setLayout(gvLayout);
 
     QGroupBox *detailsBox = new QGroupBox(tr("DetailsView"), this);
@@ -190,6 +207,7 @@ SettingsDialog::accept()
     m_settings->setValue("textWidth", m_viewWidget->m_iconWidth->value());
     m_settings->setValue("detailsView.rowPadding", m_viewWidget->m_rowPadding->value());
     m_settings->setValue("start.view", m_startupWidget->m_viewBox->currentIndex());
+    m_settings->setValue("iconView.iconSize", m_viewWidget->m_iconSlider->value());
     emit settingsChanged();
     QDialog::accept();
 }

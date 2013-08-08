@@ -79,12 +79,13 @@ class ViewsWidget : public QWidget
 public:
     explicit ViewsWidget(QWidget *parent = 0);
     QCheckBox *m_smoothScroll, *m_showThumbs;
-    QSlider *m_iconWidth;
+    QSlider *m_iconWidth, *m_iconSlider;
     QString m_iconWidthStr;
-    QLabel *m_width;
+    QLabel *m_width, *m_size;
     QSpinBox *m_rowPadding;
 private slots:
     inline void sliderChanged(const int &value) { m_width->setText( QString::number(value*2) + " px"); }
+    inline void sizeChanged(const int &value) { m_size->setText( QString::number(value*16) + " px"); }
 };
 
 class SettingsDialog : public QDialog

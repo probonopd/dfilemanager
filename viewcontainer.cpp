@@ -97,6 +97,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
 
     m_fsModel->setRootPath(rootPath);
     setView((View)MainWindow::config.behaviour.view);
+    emit iconSizeChanged(MainWindow::config.views.iconView.iconSize*16);
 }
 
 void

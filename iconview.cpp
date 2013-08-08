@@ -203,7 +203,7 @@ IconView::IconView( QWidget *parent ) : QListView( parent ), m_scrollTimer( new 
     setItemDelegate( new IconDelegate( this ) );
     ViewAnimator::manage(this);
     setMovement( QListView::Snap );
-    int iSize = 48; //todo connect to slider
+    int iSize = MainWindow::config.views.iconView.iconSize*16; //todo connect to slider
     setSelectionMode( QAbstractItemView::ExtendedSelection );
     setResizeMode( QListView::Adjust );
     setIconSize( QSize( iSize, iSize ) );

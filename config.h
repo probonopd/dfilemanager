@@ -41,7 +41,7 @@ typedef struct Config
         struct iconView
         {
             bool smoothScroll;
-            int textWidth;
+            int textWidth, iconSize;
         } iconView;
         struct detailsView
         {

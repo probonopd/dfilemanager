@@ -38,6 +38,7 @@ MainWindow::readConfig()
     config.views.iconView.textWidth = m_settings->value("textWidth", 16).toInt();
     config.views.detailsView.rowPadding = m_settings->value("detailsView.rowPadding", 0).toInt();
     config.behaviour.view = m_settings->value("start.view", 0).toInt();
+    config.views.iconView.iconSize = m_settings->value("iconView.iconSize", 3).toInt();
 }
 
 void
@@ -129,6 +130,7 @@ MainWindow::writeSettings()
     m_settings->setValue("textWidth", config.views.iconView.textWidth);
     m_settings->setValue("detailsView.rowPadding", config.views.detailsView.rowPadding);
     m_settings->setValue("start.view", config.behaviour.view);
+    m_settings->setValue("iconView.iconSize", config.views.iconView.iconSize);
 
     m_settings->remove("Places");
     m_settings->beginGroup("Places");
