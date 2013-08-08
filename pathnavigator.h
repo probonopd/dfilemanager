@@ -48,6 +48,7 @@ public:
     {
         setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         connect(this, SIGNAL(released()), this, SLOT(emitPath()));
+        setMinimumHeight(16);
     }
 
 signals:

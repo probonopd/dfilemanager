@@ -24,7 +24,6 @@
 #include "settingsdialog.h"
 #include "propertiesdialog.h"
 #include "application.h"
-#include "thumbsloader.h"
 #include <QToolTip>
 #include <QClipboard>
 #include <QMenuBar>
@@ -42,9 +41,6 @@ MainWindow::MainWindow(QStringList arguments)
     settings = new QSettings(QDir::homePath() + QDir::separator() + "Documents/dfm.ini",QSettings::IniFormat);
 #endif
     readConfig();
-//    qDebug() << ThumbsLoader::instance();
-//    if ( config.views.showThumbs )
-//        connect ( this, SIGNAL(viewChanged(QAbstractItemView*)), ThumbsLoader::instance(), SLOT(setCurrentView(QAbstractItemView*)) );
     QWidget *center = new QWidget(this);
     m_tabWin = new QMainWindow(this);
     m_navToolBar = new QToolBar(tr("Show NavBar"), this);
