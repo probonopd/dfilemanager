@@ -34,6 +34,7 @@
 #include <QDebug>
 #include <QSlider>
 #include <QSpinBox>
+#include <QComboBox>
 
 namespace DFM
 {
@@ -46,10 +47,7 @@ public:
     inline QString startupPath() { return m_startPath->text(); }
     inline void setStartupPath(QString path) { m_startPath->setText(path); }
     inline int locked() { return m_lock; }
-signals:
-
-public slots:
-
+    QComboBox *m_viewBox;
 private slots:
     inline void lockChanged()
     {

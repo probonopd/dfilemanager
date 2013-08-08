@@ -48,7 +48,9 @@ BehaviourWidget::BehaviourWidget(QWidget *parent) : QWidget(parent)
 /////////////////////////////////////////////////////////////////
 
 
-StartupWidget::StartupWidget(QWidget *parent) : QWidget(parent), m_lock(MainWindow::config.docks.lock)
+StartupWidget::StartupWidget(QWidget *parent) : QWidget(parent),
+    m_lock(MainWindow::config.docks.lock),
+    m_viewBox(new QComboBox(this))
 {
     QGroupBox *gb = new QGroupBox("Lock Docks", this);
     QVBoxLayout *docks = new QVBoxLayout(gb);
@@ -69,14 +71,22 @@ StartupWidget::StartupWidget(QWidget *parent) : QWidget(parent), m_lock(MainWind
     docks->addWidget(m_bottom);
     gb->setLayout(docks);
 
+
+    m_viewBox->insertItems(0, QStringList() << "Icons" << "Details" << "Columns" << "Flow");
+    m_viewBox->setCurrentIndex(MainWindow::config.behaviour.view);
+    QHBoxLayout *defView = new QHBoxLayout();
+    defView->addWidget(new QLabel(tr("View to load at startup:"), this));
+    defView->addStretch();
+    defView->addWidget(m_viewBox);
+
     m_startPath = new QLineEdit(this);
-    QLabel *startup = new QLabel(this);
     QHBoxLayout *hLayout = new QHBoxLayout();
-    startup->setText("Path to load at startup:");
-    hLayout->addWidget(startup);
+    hLayout->addWidget(new QLabel(tr("Path to load at startup:"), this));
+    hLayout->addStretch();
     hLayout->addWidget(m_startPath);
-    QVBoxLayout *vl = new QVBoxLayout;
+    QVBoxLayout *vl = new QVBoxLayout();
     vl->addLayout(hLayout);
+    vl->addLayout(defView);
     vl->addWidget(gb);
     vl->addStretch();
     setLayout(vl);
@@ -110,9 +120,10 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     gvLayout->addLayout(ghLayout);
     gBox->setLayout(gvLayout);
 
-    QGroupBox *detailsBox = new QGroupBox(tr("detailsView"), this);
+    QGroupBox *detailsBox = new QGroupBox(tr("DetailsView"), this);
     QHBoxLayout *detailsLayout = new QHBoxLayout(detailsBox);
-    detailsLayout->addWidget(new QLabel(tr("Padding added to rowheight")));
+    detailsLayout->addWidget(new QLabel(tr("Padding added to rowheight:")));
+    detailsLayout->addStretch();
     detailsLayout->addWidget(m_rowPadding);
     detailsBox->setLayout(detailsLayout);
     m_rowPadding->setMinimum(0);
@@ -178,6 +189,7 @@ SettingsDialog::accept()
     m_settings->setValue("drawDevUsage", m_behWidget->m_drawDevUsage->isChecked());
     m_settings->setValue("textWidth", m_viewWidget->m_iconWidth->value());
     m_settings->setValue("detailsView.rowPadding", m_viewWidget->m_rowPadding->value());
+    m_settings->setValue("start.view", m_startupWidget->m_viewBox->currentIndex());
     emit settingsChanged();
     QDialog::accept();
 }

@@ -45,7 +45,7 @@ class ViewContainer : public QFrame
 {
     Q_OBJECT
 public:
-    enum View{ Icon = 0, Details = 1, Columns = 2, Flow = 3 };
+    enum View { Icon = 0, Details = 1, Columns = 2, Flow = 3 };
     explicit ViewContainer(QWidget *parent = 0, QString rootPath = QDir::homePath());
     FileSystemModel *model() const;
     void setView(View view);

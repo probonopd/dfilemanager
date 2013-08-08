@@ -37,6 +37,7 @@ MainWindow::readConfig()
     config.behaviour.devUsage = m_settings->value("drawDevUsage", false).toBool();
     config.views.iconView.textWidth = m_settings->value("textWidth", 16).toInt();
     config.views.detailsView.rowPadding = m_settings->value("detailsView.rowPadding", 0).toInt();
+    config.behaviour.view = m_settings->value("start.view", 0).toInt();
 }
 
 void
@@ -127,6 +128,7 @@ MainWindow::writeSettings()
     m_settings->setValue("drawDevUsage", config.behaviour.devUsage);
     m_settings->setValue("textWidth", config.views.iconView.textWidth);
     m_settings->setValue("detailsView.rowPadding", config.views.detailsView.rowPadding);
+    m_settings->setValue("start.view", config.behaviour.view);
 
     m_settings->remove("Places");
     m_settings->beginGroup("Places");

@@ -33,6 +33,7 @@ typedef struct Config
     struct behaviour
     {
         bool hideTabBarWhenOnlyOneTab, systemIcons, devUsage;
+        int view;
     } behaviour;
     struct views
     {

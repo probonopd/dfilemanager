@@ -24,6 +24,7 @@
 #include "iojob.h"
 #include "deletedialog.h"
 #include "application.h"
+#include "mainwindow.h"
 #include <QProcess>
 #include <QMap>
 #include <QInputDialog>
@@ -95,6 +96,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
     setLayout(layout);
 
     m_fsModel->setRootPath(rootPath);
+    setView((View)MainWindow::config.behaviour.view);
 }
 
 void
@@ -125,13 +127,13 @@ void
 ViewContainer::setView(View view)
 {
     m_myView = view;
-    if(view == Icon)
+    if (view == Icon)
         m_viewStack->setCurrentWidget(m_iconView);
-    else if(view == Details)
+    else if (view == Details)
         m_viewStack->setCurrentWidget(m_detailsView);
-    else if(view == Columns)
+    else if (view == Columns)
         m_viewStack->setCurrentWidget(m_columnsView);
-    else if(view == Flow)
+    else if (view == Flow)
         m_viewStack->setCurrentWidget(m_flowView);
     emit viewChanged();
 }

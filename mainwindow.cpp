@@ -577,7 +577,7 @@ MainWindow::addTab(const QString &path)
     QString newPath = path;
     if (!QFileInfo(path).isDir())
         newPath = QDir::homePath();
-    ViewContainer *container = new ViewContainer(this,newPath);
+    ViewContainer *container = new ViewContainer(this, newPath);
     container->installEventFilter(this);
     connect( container, SIGNAL(currentPathChanged(QString)), this, SLOT(rootPathChanged(QString)));
     connect( container, SIGNAL(currentPathChanged(QString)), m_recentFoldersView, SLOT(folderEntered(QString)));
