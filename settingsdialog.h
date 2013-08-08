@@ -47,7 +47,6 @@ public:
     inline QString startupPath() { return m_startPath->text(); }
     inline void setStartupPath(QString path) { m_startPath->setText(path); }
     inline int locked() { return m_lock; }
-    QComboBox *m_viewBox;
 private slots:
     inline void lockChanged()
     {
@@ -83,6 +82,7 @@ public:
     QString m_iconWidthStr;
     QLabel *m_width, *m_size;
     QSpinBox *m_rowPadding;
+    QComboBox *m_viewBox;
 private slots:
     inline void sliderChanged(const int &value) { m_width->setText( QString::number(value*2) + " px"); }
     inline void sizeChanged(const int &value) { m_size->setText( QString::number(value*16) + " px"); }

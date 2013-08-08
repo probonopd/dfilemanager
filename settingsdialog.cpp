@@ -49,8 +49,7 @@ BehaviourWidget::BehaviourWidget(QWidget *parent) : QWidget(parent)
 
 
 StartupWidget::StartupWidget(QWidget *parent) : QWidget(parent),
-    m_lock(MainWindow::config.docks.lock),
-    m_viewBox(new QComboBox(this))
+    m_lock(MainWindow::config.docks.lock)
 {
     QGroupBox *gb = new QGroupBox("Lock Docks", this);
     QVBoxLayout *docks = new QVBoxLayout(gb);
@@ -72,13 +71,6 @@ StartupWidget::StartupWidget(QWidget *parent) : QWidget(parent),
     gb->setLayout(docks);
 
 
-    m_viewBox->insertItems(0, QStringList() << "Icons" << "Details" << "Columns" << "Flow");
-    m_viewBox->setCurrentIndex(MainWindow::config.behaviour.view);
-    QHBoxLayout *defView = new QHBoxLayout();
-    defView->addWidget(new QLabel(tr("View to load at startup:"), this));
-    defView->addStretch();
-    defView->addWidget(m_viewBox);
-
     m_startPath = new QLineEdit(this);
     QHBoxLayout *hLayout = new QHBoxLayout();
     hLayout->addWidget(new QLabel(tr("Path to load at startup:"), this));
@@ -86,7 +78,7 @@ StartupWidget::StartupWidget(QWidget *parent) : QWidget(parent),
     hLayout->addWidget(m_startPath);
     QVBoxLayout *vl = new QVBoxLayout();
     vl->addLayout(hLayout);
-    vl->addLayout(defView);
+//    vl->addLayout(defView);
     vl->addWidget(gb);
     vl->addStretch();
     setLayout(vl);
@@ -102,6 +94,7 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
   , m_rowPadding( new QSpinBox(this) )
   , m_iconSlider( new QSlider( Qt::Horizontal, this ) )
   , m_size( new QLabel(QString::number(MainWindow::config.views.iconView.iconSize*16) + " px", this) )
+  , m_viewBox(new QComboBox(this))
 {
     m_smoothScroll->setChecked(MainWindow::config.views.iconView.smoothScroll);
     m_showThumbs->setChecked(MainWindow::config.views.showThumbs);
@@ -147,8 +140,16 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     m_rowPadding->setMaximum(5);
     m_rowPadding->setValue(MainWindow::config.views.detailsView.rowPadding);
 
+    m_viewBox->insertItems(0, QStringList() << "Icons" << "Details" << "Columns" << "Flow");
+    m_viewBox->setCurrentIndex(MainWindow::config.behaviour.view);
+    QHBoxLayout *defView = new QHBoxLayout();
+    defView->addWidget(new QLabel(tr("Default view:"), this));
+    defView->addStretch();
+    defView->addWidget(m_viewBox);
+
     QVBoxLayout *vLayout = new QVBoxLayout();
     vLayout->addWidget(m_showThumbs);
+    vLayout->addLayout(defView);
     vLayout->addWidget(gBox);
     vLayout->addWidget(detailsBox);
     vLayout->addStretch();
@@ -206,7 +207,7 @@ SettingsDialog::accept()
     m_settings->setValue("drawDevUsage", m_behWidget->m_drawDevUsage->isChecked());
     m_settings->setValue("textWidth", m_viewWidget->m_iconWidth->value());
     m_settings->setValue("detailsView.rowPadding", m_viewWidget->m_rowPadding->value());
-    m_settings->setValue("start.view", m_startupWidget->m_viewBox->currentIndex());
+    m_settings->setValue("start.view", m_viewWidget->m_viewBox->currentIndex());
     m_settings->setValue("iconView.iconSize", m_viewWidget->m_iconSlider->value());
     emit settingsChanged();
     QDialog::accept();
