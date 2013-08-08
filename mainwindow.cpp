@@ -42,11 +42,9 @@ MainWindow::MainWindow(QStringList arguments)
     settings = new QSettings(QDir::homePath() + QDir::separator() + "Documents/dfm.ini",QSettings::IniFormat);
 #endif
     readConfig();
-    if ( config.views.showThumbs )
-    {
-        ThumbsLoader::loadCache();
-        connect ( this, SIGNAL(viewChanged(QAbstractItemView*)), ThumbsLoader::instance(), SLOT(setCurrentView(QAbstractItemView*)) );
-    }
+//    qDebug() << ThumbsLoader::instance();
+//    if ( config.views.showThumbs )
+//        connect ( this, SIGNAL(viewChanged(QAbstractItemView*)), ThumbsLoader::instance(), SLOT(setCurrentView(QAbstractItemView*)) );
     QWidget *center = new QWidget(this);
     m_tabWin = new QMainWindow(this);
     m_navToolBar = new QToolBar(tr("Show NavBar"), this);

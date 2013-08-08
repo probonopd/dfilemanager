@@ -26,7 +26,6 @@
 #include "mainwindow.h"
 #include "operations.h"
 
-ThumbsLoader *ThumbsLoader::m_instance = 0;
 QHash<QString, QImage> ThumbsLoader::m_loadedThumbs[4];
 QStringList ThumbsLoader::m_queue;
 QList<QPair<QImage, QModelIndex> > ThumbsLoader::m_imgQueue;
@@ -148,10 +147,26 @@ static QImage reflection( const QImage &img = QImage() )
     return blurred( refl, refl.rect(), 5 );
 }
 
+ThumbsLoader *inst = 0;
+
 ThumbsLoader::ThumbsLoader(QObject *parent) :
     QThread(parent),
     m_extent(256),
     m_currentView(0){}
+
+
+ThumbsLoader
+*ThumbsLoader::instance()
+{
+    if ( !inst )
+    {
+        inst = new ThumbsLoader(APP);
+        m_fsWatcher = new QFileSystemWatcher(inst);
+        connect ( m_fsWatcher, SIGNAL(fileChanged(QString)), inst, SLOT(fileChanged(QString)) );
+        connect ( MAINWINDOW, SIGNAL(viewChanged(QAbstractItemView*)), inst, SLOT(setCurrentView(QAbstractItemView*)) );
+    }
+    return inst;
+}
 
 void
 ThumbsLoader::loadThumb( const QString &path )
@@ -208,7 +223,7 @@ ThumbsLoader::genReflection(const QPair<QImage, QModelIndex> &imgStr)
 }
 
 QImage
-ThumbsLoader::thumb(const QString &filePath, const Type &t)
+ThumbsLoader::pic(const QString &filePath, const Type &t)
 {
     if ( m_loadedThumbs[t].contains(filePath) )
         return m_loadedThumbs[t][filePath];
@@ -222,26 +237,15 @@ ThumbsLoader::thumb(const QString &filePath, const Type &t)
 }
 
 void
-ThumbsLoader::loadCache()
-{
-    if ( DFM::MainWindow::config.views.showThumbs )
-    {
-        m_instance = new ThumbsLoader(APP);
-        m_fsWatcher = new QFileSystemWatcher(m_instance);
-        connect ( m_fsWatcher, SIGNAL(fileChanged(QString)), m_instance, SLOT(fileChanged(QString)) );
-    }
-}
-
-void
 ThumbsLoader::disconnectView()
 {
     if ( !m_currentView )
         return;
-    disconnect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), m_instance, SLOT(loadThumbs()) );
-    disconnect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), m_instance, SLOT(loadThumbs()) );
-    disconnect( m_fsModel, SIGNAL(layoutChanged()),m_instance, SLOT(loadLater()));
-    disconnect( m_instance, SIGNAL(dataChanged(QModelIndex,QModelIndex)), m_fsModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
-    m_currentView->removeEventFilter( m_instance );
+    disconnect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), instance(), SLOT(loadThumbs()) );
+    disconnect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), instance(), SLOT(loadThumbs()) );
+    disconnect( m_fsModel, SIGNAL(layoutChanged()),instance(), SLOT(loadLater()));
+    disconnect( instance(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), m_fsModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
+    m_currentView->removeEventFilter( instance() );
     m_fsModel = 0;
 }
 
@@ -249,11 +253,11 @@ void
 ThumbsLoader::connectView()
 {
     m_fsModel = static_cast<DFM::FileSystemModel *>(m_currentView->model());
-    connect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), m_instance, SLOT(loadThumbs()) );
-    connect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), m_instance, SLOT(loadThumbs()) );
-    connect( m_fsModel, SIGNAL(layoutChanged()), m_instance, SLOT(loadLater()));
-    connect( m_instance, SIGNAL(dataChanged(QModelIndex,QModelIndex)), m_fsModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
-    m_currentView->installEventFilter( m_instance );
+    connect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), instance(), SLOT(loadThumbs()) );
+    connect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), instance(), SLOT(loadThumbs()) );
+    connect( m_fsModel, SIGNAL(layoutChanged()), instance(), SLOT(loadLater()));
+    connect( instance(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), m_fsModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
+    m_currentView->installEventFilter( instance() );
 }
 
 
@@ -290,7 +294,7 @@ ThumbsLoader::loadReflections()
         m_imgQueue << QPair<QImage, QModelIndex>(img, index);
     }
     start();
-    QTimer::singleShot(500, m_instance, SLOT(loadThumbs()));
+    QTimer::singleShot(500, instance(), SLOT(loadThumbs()));
 }
 
 void
@@ -325,7 +329,7 @@ ThumbsLoader::eventFilter(QObject *o, QEvent *e)
     if ( o == m_currentView && e->type() == QEvent::Resize )
     {
         vr = m_currentView->viewport()->rect();
-        QTimer::singleShot( 500, m_instance, SLOT(loadThumbs()) );
+        QTimer::singleShot( 500, instance(), SLOT(loadThumbs()) );
     }
     return false;
 }

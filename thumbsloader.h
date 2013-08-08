@@ -40,9 +40,8 @@ class ThumbsLoader : public QThread
     Q_OBJECT
 public:
     enum Type { Thumb = 0, Reflection = 1, FlowPic = 2, FallBackRefl = 3 };
-    static void loadCache();
-    static inline ThumbsLoader *instance() { return m_instance; }
-    static QImage thumb( const QString &filePath, const Type &t = Thumb );
+    static inline ThumbsLoader *instance();
+    static QImage thumb( const QString &filePath, const Type &t = Thumb ) { return instance()->pic(filePath, t); }
     
 signals:
     void dataChanged( const QModelIndex &topLeft, const QModelIndex &bottomRight );
@@ -62,9 +61,9 @@ protected:
     void genReflection( const QPair<QImage, QModelIndex> &imgStr );
     void connectView();
     void disconnectView();
+    QImage pic( const QString &filePath, const Type &t = Thumb );
 
 private:
-    static ThumbsLoader *m_instance;
     static QStringList m_queue;
     static QList<QPair<QImage, QModelIndex> > m_imgQueue;
     static QHash<QString, QImage> m_loadedThumbs[4];

@@ -26,6 +26,7 @@
 #include <QMessageBox>
 #include "thumbsloader.h"
 #include "viewcontainer.h"
+#include "mainwindow.h"
 
 
 using namespace DFM;
@@ -166,18 +167,19 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         }
     }
 
-    if ( ( role == Qt::DecorationRole || role == Thumbnail ) && index.column() == 0 )
-    {
-        const QImage &img = ThumbsLoader::thumb(filePath(index));
-        if ( !img.isNull() )
+    if ( MainWindow::config.views.showThumbs )
+        if ( ( role == Qt::DecorationRole || role == Thumbnail ) && index.column() == 0 )
         {
-            if (role == Qt::DecorationRole)
-                return QIcon(QPixmap::fromImage(img));
+            const QImage &img = ThumbsLoader::thumb(filePath(index));
+            if ( !img.isNull() )
+            {
+                if (role == Qt::DecorationRole)
+                    return QIcon(QPixmap::fromImage(img));
 
-            if (role == Thumbnail)
-                return img;
+                if (role == Thumbnail)
+                    return img;
+            }
         }
-    }
     if ( role == Reflection )
         return QPixmap::fromImage(ThumbsLoader::thumb(filePath(index), ThumbsLoader::Reflection));
     if ( role == FlowPic )

@@ -89,7 +89,7 @@ StartupWidget::StartupWidget(QWidget *parent) : QWidget(parent),
 
 ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
   , m_iconWidth( new QSlider( Qt::Horizontal, this ) ), m_width( new QLabel(this) )
-  , m_showThumbs( new QCheckBox(tr("Show thumbnails of supported pictures (requires restart)"), this) )
+  , m_showThumbs( new QCheckBox(tr("Show thumbnails of supported pictures"), this) )
   , m_smoothScroll( new QCheckBox(tr("Smooth scrolling"), this) )
   , m_rowPadding( new QSpinBox(this) )
   , m_iconSlider( new QSlider( Qt::Horizontal, this ) )
