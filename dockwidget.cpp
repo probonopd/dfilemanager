@@ -37,7 +37,8 @@ DockWidget::DockWidget(QWidget *parent, const QString &title, const Qt::WindowFl
     , m_dirIn(false)
     , m_isLocked(false)
 {
-    setStyle(new MyStyle(style()->objectName()));
+    if ( qApp->styleSheet().isEmpty() )
+        setStyle(new MyStyle(style()->objectName()));
     m_margin = style()->pixelMetric(QStyle::PM_DockWidgetFrameWidth);
     setAllowedAreas(m_position == Left ? Qt::LeftDockWidgetArea : m_position == Right ? Qt::RightDockWidgetArea : Qt::BottomDockWidgetArea);
     setTitleBarWidget(m_titleWidget);

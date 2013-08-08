@@ -195,8 +195,8 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) { event->accept(); }
     void paintEvent(QPaintEvent *)
     {
-//        if (!floating)
-//            return;
+        if (!floating)
+            return;
         QPainter p(this);
         QRect r(rect());
         QLinearGradient lg(r.topLeft(), r.bottomLeft());
