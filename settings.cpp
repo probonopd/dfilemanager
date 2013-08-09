@@ -65,12 +65,14 @@ MainWindow::readSettings()
     m_placesView->clear(); //should be superfluous but still need to make sure
     for ( int i = 0; i<m_settings->childKeys().count(); ++i )
     {
-        const QStringList &values(m_settings->value(QString::number(i)).toStringList());
+        QStringList values(m_settings->value(QString::number(i)).toStringList());
+        if ( values.isEmpty() )
+            values = m_settings->value(QString(i)).toStringList();
         if (QString(values.at(2)).isEmpty())
             new QTreeWidgetItem(m_placesView, values);
         else
         {
-            QTreeWidgetItem *item = new QTreeWidgetItem(m_placesView->findItems(values[2], Qt::MatchExactly).first(), values);
+            QTreeWidgetItem *item = new QTreeWidgetItem(m_placesView->findItems(values.at(2), Qt::MatchExactly).first(), values);
             item->setIcon(0, QIcon::fromTheme(values[PlacesView::DevPath]));
         }
     }
