@@ -66,7 +66,6 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event);
     void keyPressEvent(QKeyEvent *ke);
     void moveEvent(QMoveEvent *);
-    bool x11Event(XEvent *);
     void updateIcons();
     void createActions();
     void createMenus();

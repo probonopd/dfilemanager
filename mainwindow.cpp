@@ -712,10 +712,3 @@ MainWindow::moveEvent(QMoveEvent *)
 {
 //    qDebug() << "moveevent" << pos();
 }
-
-bool
-MainWindow::x11Event(XEvent *xe)
-{
-//    qDebug() << xe->type;
-    return QMainWindow::x11Event(xe);
-}
