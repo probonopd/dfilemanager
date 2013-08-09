@@ -32,7 +32,7 @@ class DetailsDelegate : public QStyledItemDelegate
 protected:
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        return QStyledItemDelegate::sizeHint(option, index) + QSize(0, MainWindow::config.views.detailsView.rowPadding*2);
+        return QStyledItemDelegate::sizeHint(option, index) + QSize(0, Configuration::config.views.detailsView.rowPadding*2);
     }
 };
 

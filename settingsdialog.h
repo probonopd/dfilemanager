@@ -93,7 +93,6 @@ class SettingsDialog : public QDialog
     Q_OBJECT
 public:
     explicit SettingsDialog(QWidget *parent = 0);
-    static inline QSettings *settings() { return instance()->stngs(); }
     static SettingsDialog *instance();
     
 signals:
@@ -102,11 +101,7 @@ signals:
 public slots:
     void accept();
 
-protected:
-    inline QSettings *stngs() { return m_settings; }
-
 private:
-    QSettings *m_settings;
     QPushButton *m_ok,*m_cancel;
     StartupWidget *m_startupWidget;
     BehaviourWidget *m_behWidget;

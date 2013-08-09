@@ -26,29 +26,13 @@
 using namespace DFM;
 
 void
-MainWindow::readConfig()
-{
-    config.docks.lock = m_settings->value( "docks.lock", 0 ).toInt();
-    config.startPath = m_settings->value("startPath", QDir::homePath()).toString();
-    config.behaviour.hideTabBarWhenOnlyOneTab = m_settings->value("hideTabBarWhenOnlyOne", false).toBool();
-    config.behaviour.systemIcons = m_settings->value("useSystemIcons", false).toBool();
-    config.views.iconView.smoothScroll = m_settings->value("smoothScroll", false).toBool();
-    config.views.showThumbs = m_settings->value("showThumbs", false).toBool();
-    config.behaviour.devUsage = m_settings->value("drawDevUsage", false).toBool();
-    config.views.iconView.textWidth = m_settings->value("textWidth", 16).toInt();
-    config.views.detailsView.rowPadding = m_settings->value("detailsView.rowPadding", 0).toInt();
-    config.behaviour.view = m_settings->value("start.view", 0).toInt();
-    config.views.iconView.iconSize = m_settings->value("iconView.iconSize", 3).toInt();
-}
-
-void
 MainWindow::readSettings()
 {
-    restoreState(m_settings->value("windowState").toByteArray(), 1);
-    m_tabWin->restoreState(m_settings->value("tabWindowState").toByteArray(), 1);
+    restoreState(Configuration::settings()->value("windowState").toByteArray(), 1);
+    m_tabWin->restoreState(Configuration::settings()->value("tabWindowState").toByteArray(), 1);
     //  splitter->restoreState(settings->value("mainSplitter").toByteArray());
-    QPoint pos = m_settings->value("pos", QPoint(200, 200)).toPoint();
-    QSize size = m_settings->value("size", QSize(800, 300)).toSize();
+    QPoint pos = Configuration::settings()->value("pos", QPoint(200, 200)).toPoint();
+    QSize size = Configuration::settings()->value("size", QSize(800, 300)).toSize();
     resize(size);
     move(pos);
 
@@ -56,18 +40,18 @@ MainWindow::readSettings()
     m_tabWin->addDockWidget(Qt::RightDockWidgetArea, m_dockRight);
     m_tabWin->addDockWidget(Qt::BottomDockWidgetArea, m_dockBottom);
 
-    m_statAct->setChecked(m_settings->value("statusVisible", true).toBool());
-    m_pathVisibleAct->setChecked(m_settings->value("pathVisible", true).toBool());
-    m_pathEditAct->setChecked(m_settings->value("pathEditable", false).toBool());
-    m_menuAct->setChecked(m_settings->value("menuVisible", true).toBool());
+    m_statAct->setChecked(Configuration::settings()->value("statusVisible", true).toBool());
+    m_pathVisibleAct->setChecked(Configuration::settings()->value("pathVisible", true).toBool());
+    m_pathEditAct->setChecked(Configuration::settings()->value("pathEditable", false).toBool());
+    m_menuAct->setChecked(Configuration::settings()->value("menuVisible", true).toBool());
 
-    m_settings->beginGroup("Places");
+    Configuration::settings()->beginGroup("Places");
     m_placesView->clear(); //should be superfluous but still need to make sure
-    for ( int i = 0; i<m_settings->childKeys().count(); ++i )
+    for ( int i = 0; i<Configuration::settings()->childKeys().count(); ++i )
     {
-        QStringList values(m_settings->value(QString::number(i)).toStringList());
+        QStringList values(Configuration::settings()->value(QString::number(i)).toStringList());
         if ( values.isEmpty() )
-            values = m_settings->value(QString(i)).toStringList();
+            values = Configuration::settings()->value(QString(i)).toStringList();
         if (QString(values.at(2)).isEmpty())
             new QTreeWidgetItem(m_placesView, values);
         else
@@ -76,11 +60,11 @@ MainWindow::readSettings()
             item->setIcon(0, QIcon::fromTheme(values[PlacesView::DevPath]));
         }
     }
-    m_settings->endGroup();
-    m_settings->beginGroup("Expandplaces");
+    Configuration::settings()->endGroup();
+    Configuration::settings()->beginGroup("Expandplaces");
     for (int i = 0; i < m_placesView->topLevelItemCount(); i++)
-        m_placesView->topLevelItem(i)->setExpanded(m_settings->value(m_placesView->topLevelItem(i)->text(0)).toBool());
-    m_settings->endGroup();
+        m_placesView->topLevelItem(i)->setExpanded(Configuration::settings()->value(m_placesView->topLevelItem(i)->text(0)).toBool());
+    Configuration::settings()->endGroup();
 
     updateConfig();
 }
@@ -90,22 +74,21 @@ MainWindow::updateIcons()
 {
     const QColor &tbfgc(m_navToolBar->palette().color(m_navToolBar->foregroundRole()));
     const int &tbis = m_navToolBar->iconSize().height();
-    m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, config.behaviour.systemIcons));
-    m_goBackAct->setIcon(IconProvider::icon(IconProvider::GoBack, tbis, tbfgc, config.behaviour.systemIcons));
-    m_goForwardAct->setIcon(IconProvider::icon(IconProvider::GoForward, tbis, tbfgc, config.behaviour.systemIcons));
-    m_iconViewAct->setIcon(IconProvider::icon(IconProvider::IconView, tbis, tbfgc, config.behaviour.systemIcons));
-    m_listViewAct->setIcon(IconProvider::icon(IconProvider::DetailsView, tbis, tbfgc, config.behaviour.systemIcons));
-    m_colViewAct->setIcon(IconProvider::icon(IconProvider::ColumnsView, tbis, tbfgc, config.behaviour.systemIcons));
-    m_flowAct->setIcon(IconProvider::icon(IconProvider::FlowView, tbis, tbfgc, config.behaviour.systemIcons));
-    m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, config.behaviour.systemIcons));
-    m_configureAct->setIcon(IconProvider::icon(IconProvider::Configure, tbis, tbfgc, config.behaviour.systemIcons));
+    m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
+    m_goBackAct->setIcon(IconProvider::icon(IconProvider::GoBack, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
+    m_goForwardAct->setIcon(IconProvider::icon(IconProvider::GoForward, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
+    m_iconViewAct->setIcon(IconProvider::icon(IconProvider::IconView, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
+    m_listViewAct->setIcon(IconProvider::icon(IconProvider::DetailsView, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
+    m_colViewAct->setIcon(IconProvider::icon(IconProvider::ColumnsView, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
+    m_flowAct->setIcon(IconProvider::icon(IconProvider::FlowView, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
+    m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
+    m_configureAct->setIcon(IconProvider::icon(IconProvider::Configure, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
 }
 
 void
 MainWindow::updateConfig()
 {
-    readConfig();
-    m_tabBar->setVisible(m_tabBar->count() > 1 ? true : !config.behaviour.hideTabBarWhenOnlyOneTab);
+    m_tabBar->setVisible(m_tabBar->count() > 1 ? true : !Configuration::config.behaviour.hideTabBarWhenOnlyOneTab);
     if ( m_activeContainer )
         m_activeContainer->refresh();
     updateIcons();
@@ -114,32 +97,24 @@ MainWindow::updateConfig()
 void
 MainWindow::writeSettings()
 {
-    m_settings->setValue("pos", pos());
-    m_settings->setValue("size", size());
-    m_settings->setValue("windowState", saveState(1));
-    m_settings->setValue("tabWindowState", m_tabWin->saveState(1));
-    m_settings->setValue("statusVisible", m_statAct->isChecked());
-    m_settings->setValue("pathVisible", m_pathVisibleAct->isChecked());
-    m_settings->setValue("pathEditable", m_pathEditAct->isChecked());
-    m_settings->setValue("menuVisible", m_menuAct->isChecked());
-    m_settings->setValue("docks.lock", config.docks.lock);
-    m_settings->setValue("smoothScroll", config.views.iconView.smoothScroll);
-    m_settings->setValue("showThumbs", config.views.showThumbs);
-    m_settings->setValue("drawDevUsage", config.behaviour.devUsage);
-    m_settings->setValue("textWidth", config.views.iconView.textWidth);
-    m_settings->setValue("detailsView.rowPadding", config.views.detailsView.rowPadding);
-    m_settings->setValue("start.view", config.behaviour.view);
-    m_settings->setValue("iconView.iconSize", config.views.iconView.iconSize);
-
-    m_settings->remove("Places");
-    m_settings->beginGroup("Places");
+    Configuration::settings()->setValue("pos", pos());
+    Configuration::settings()->setValue("size", size());
+    Configuration::settings()->setValue("windowState", saveState(1));
+    Configuration::settings()->setValue("tabWindowState", m_tabWin->saveState(1));
+    Configuration::settings()->setValue("statusVisible", m_statAct->isChecked());
+    Configuration::settings()->setValue("pathVisible", m_pathVisibleAct->isChecked());
+    Configuration::settings()->setValue("pathEditable", m_pathEditAct->isChecked());
+    Configuration::settings()->setValue("menuVisible", m_menuAct->isChecked());
+    Configuration::writeConfig();
+    Configuration::settings()->remove("Places");
+    Configuration::settings()->beginGroup("Places");
     int placeNr = 0;
     QTreeWidgetItemIterator it(m_placesView);
     while (*it)
     {
         const QTreeWidgetItem *item = *it;
         if ( !DeviceManager::itemIsDevice(item) )
-            m_settings->setValue(QString::number(placeNr), QStringList()
+            Configuration::settings()->setValue(QString::number(placeNr), QStringList()
                                  << item->text(0)
                                  << item->text(1)
                                  << (item->parent() ? item->parent()->text(0) : "")
@@ -147,10 +122,10 @@ MainWindow::writeSettings()
         ++placeNr;
         ++it;
     }
-    m_settings->endGroup();
-    m_settings->remove("ExpandPlaces");
-    m_settings->beginGroup("Expandplaces");
+    Configuration::settings()->endGroup();
+    Configuration::settings()->remove("ExpandPlaces");
+    Configuration::settings()->beginGroup("Expandplaces");
     for (int i = 0; i < m_placesView->topLevelItemCount(); i++)
-        m_settings->setValue(m_placesView->topLevelItem(i)->text(0), m_placesView->topLevelItem(i)->isExpanded());
-    m_settings->endGroup();
+        Configuration::settings()->setValue(m_placesView->topLevelItem(i)->text(0), m_placesView->topLevelItem(i)->isExpanded());
+    Configuration::settings()->endGroup();
 }

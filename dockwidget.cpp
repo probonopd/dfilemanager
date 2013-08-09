@@ -49,7 +49,7 @@ DockWidget::DockWidget(QWidget *parent, const QString &title, const Qt::WindowFl
     connect (this, SIGNAL(topLevelChanged(bool)), this, SLOT(floatationChanged(bool)));
     connect (this, SIGNAL(topLevelChanged(bool)), m_titleWidget,   SLOT(setIsFloating(bool)));
     m_mainWindow->installEventFilter(this);
-    setLocked( bool( MainWindow::config.docks.lock & pos ) );
+    setLocked( bool( Configuration::config.docks.lock & pos ) );
 }
 
 void

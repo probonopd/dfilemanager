@@ -167,7 +167,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         }
     }
 
-    if ( MainWindow::config.views.showThumbs )
+    if ( Configuration::config.views.showThumbs )
         if ( ( role == Qt::DecorationRole || role == Thumbnail ) && index.column() == 0 )
         {
             const QImage &img = ThumbsLoader::thumb(filePath(index));

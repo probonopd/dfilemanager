@@ -30,17 +30,15 @@
 #include <QMessageBox>
 
 using namespace DFM;
-Config MainWindow::config;
 
 MainWindow::MainWindow(QStringList arguments)
 { 
 #ifdef Q_WS_X11
-    m_settings = new QSettings("dfm", "dfm"); //folder and conf file name in .config
     APP->setMainWindow(this);
 #else
     settings = new QSettings(QDir::homePath() + QDir::separator() + "Documents/dfm.ini",QSettings::IniFormat);
 #endif
-    readConfig();
+    Configuration::readConfig();
     QWidget *center = new QWidget(this);
     m_tabWin = new QMainWindow(this);
     m_navToolBar = new QToolBar(tr("Show NavBar"), this);
@@ -102,7 +100,7 @@ MainWindow::MainWindow(QStringList arguments)
     m_tabBar->setDocumentMode(true);
     m_tabWin->setCentralWidget(m_stackedWidget);
 
-    QString startPath = config.startPath;
+    QString startPath = Configuration::config.startPath;
     m_appPath = arguments[0];
     if(arguments.count() > 1 && QFileInfo(arguments.at(1)).isDir())
         startPath = arguments.at(1);
@@ -125,7 +123,7 @@ MainWindow::MainWindow(QStringList arguments)
     m_statusBar->installEventFilter(this);
     toggleMenuVisible();
 
-    m_pathVisibleAct->setChecked(m_settings->value("pathVisible", true).toBool());
+    m_pathVisibleAct->setChecked(Configuration::settings()->value("pathVisible", true).toBool());
     hidePath();
 
     m_placesView->installEventFilter(this);
@@ -594,7 +592,7 @@ MainWindow::addTab(const QString &path)
     m_stackedWidget->addWidget(container);
     m_tabBar->addTab(QFileInfo(newPath).fileName());
 
-    if (config.behaviour.hideTabBarWhenOnlyOneTab)
+    if (Configuration::config.behaviour.hideTabBarWhenOnlyOneTab)
         m_tabBar->setVisible(m_tabBar->count() > 1);
 }
 
@@ -634,7 +632,7 @@ MainWindow::tabClosed(int tab)
     m_tabBar->removeTab(tab);
     removedWidget->deleteLater();
     m_activeContainer->setFocus();
-    if (config.behaviour.hideTabBarWhenOnlyOneTab)
+    if (Configuration::config.behaviour.hideTabBarWhenOnlyOneTab)
         m_tabBar->setVisible(m_tabBar->count() > 1);
 }
 
@@ -699,7 +697,7 @@ MainWindow::hidePath()
 {
     foreach ( BreadCrumbs *bc, findChildren<BreadCrumbs *>() )
         bc->setVisible(m_pathVisibleAct->isChecked());
-    m_settings->setValue("pathVisible", m_pathVisibleAct->isChecked());
+    Configuration::settings()->setValue("pathVisible", m_pathVisibleAct->isChecked());
 }
 
 void

@@ -42,7 +42,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
     m_columnsView = new ColumnsView();
     m_flowView = new FlowView();
     m_breadCrumbs = new BreadCrumbs( this, m_fsModel );
-    m_breadCrumbs->setVisible(QSettings("dfm", "dfm").value("pathVisible", true).toBool());
+    m_breadCrumbs->setVisible(Configuration::settings()->value("pathVisible", true).toBool());
 
     m_myView = Icon;
 
@@ -96,8 +96,8 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
     setLayout(layout);
 
     m_fsModel->setRootPath(rootPath);
-    setView((View)MainWindow::config.behaviour.view);
-    emit iconSizeChanged(MainWindow::config.views.iconView.iconSize*16);
+    setView((View)Configuration::config.behaviour.view);
+    emit iconSizeChanged(Configuration::config.views.iconView.iconSize*16);
 }
 
 void
@@ -143,18 +143,17 @@ void
 ViewContainer::addActions(QList<QAction *> actions)
 {
     VIEWS(addActions(actions));
-    QSettings settings("dfm", "dfm");
-    settings.beginGroup("CustomActions");
-
-    foreach (QString string, settings.childKeys())
+    Configuration::settings()->beginGroup("CustomActions");
+    foreach (QString string, Configuration::settings()->childKeys())
     {
-        QStringList actions = settings.value(string).toStringList(); //0 == name, 1 == cmd, 2 == keysequence
+        QStringList actions = Configuration::settings()->value(string).toStringList(); //0 == name, 1 == cmd, 2 == keysequence
         QAction *action = new QAction(actions[0], this);
         action->setData(actions[1]);
         action->setShortcut(QKeySequence(actions[2]));
         connect (action, SIGNAL(triggered()), this, SLOT(customActionTriggered()));
         VIEWS(addAction(action));
     }
+    Configuration::settings()->endGroup();
 }
 
 void

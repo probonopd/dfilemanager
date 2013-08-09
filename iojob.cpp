@@ -134,8 +134,7 @@ CopyDialog::CopyDialog(QWidget *parent) : QDialog(parent), m_ok(new QPushButton(
   , m_fileProgress(new QProgressBar(this)), m_progress(new QProgressBar(this)), m_from(new QLabel(this)), m_inFile(new QLabel(this)), m_to(new QLabel(this))
   , m_cbHideFinished(new QCheckBox(this))
 {
-    QSettings settings("dfm", "dfm"); //folder and conf file name in .config
-    m_hideFinished = settings.value("hideCPDWhenFinished", 0).toBool();
+    m_hideFinished = Configuration::settings()->value("hideCPDWhenFinished", 0).toBool();
     m_cbHideFinished->setChecked(m_hideFinished);
 
     setWindowModality(Qt::ApplicationModal);
@@ -202,16 +201,14 @@ CopyDialog::CopyDialog(QWidget *parent) : QDialog(parent), m_ok(new QPushButton(
 void
 CopyDialog::hideEvent(QHideEvent *event)
 {
-    QSettings settings("dfm", "dfm"); //folder and conf file name in .config
-    settings.setValue("hideCPDWhenFinished", m_hideFinished);
+    Configuration::settings()->setValue("hideCPDWhenFinished", m_hideFinished);
     QDialog::hideEvent(event);
 }
 
 void
 CopyDialog::showEvent(QShowEvent *event)
 {
-    QSettings settings("dfm", "dfm"); //folder and conf file name in .config
-    m_hideFinished = settings.value("hideCPDWhenFinished", 0).toBool();
+    m_hideFinished = Configuration::settings()->value("hideCPDWhenFinished", 0).toBool();
     m_cbHideFinished->setChecked(m_hideFinished);
     m_ok->setEnabled(m_progress->value() == 100);
     m_cancel->setEnabled(m_progress->value() < 100);

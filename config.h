@@ -23,6 +23,7 @@
 #define CONFIG_H
 
 #include <QString>
+#include <QSettings>
 
 namespace DFM
 {
@@ -54,6 +55,25 @@ typedef struct Config
         int lock;
     } docks;
 } Config;
+
+
+class Configuration
+{
+public:
+    static Configuration *instance();
+    static inline void readConfig() { instance()->readConfiguration(); }
+    static inline void writeConfig() { instance()->writeConfiguration(); }
+    static QSettings *settings() { return instance()->stngs(); }
+    static Config config;
+
+protected:
+    Configuration();
+    void readConfiguration();
+    void writeConfiguration();
+    inline QSettings *stngs() { return m_settings; }
+private:
+    QSettings *m_settings;
+};
 
 }
 

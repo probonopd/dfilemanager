@@ -57,7 +57,8 @@ SOURCES       = main.cpp \
     devicemanager.cpp \
     iojob.cpp \
     thumbsloader.cpp \
-    preview.cpp
+    preview.cpp \
+    config.cpp
 RESOURCES     = resources.qrc
 DESTDIR= $$PWD
 

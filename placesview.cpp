@@ -156,7 +156,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
         QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, painter, placesView);
         painter->setOpacity(1);
     }
-    if ( index.parent().isValid() && MainWindow::config.behaviour.devUsage )
+    if ( index.parent().isValid() && Configuration::config.behaviour.devUsage )
         if ( placesView->itemFromIndex(index.parent())->text(3) == "Devices" )
             if ( DeviceItem *d = static_cast<DeviceItem*>(placesView->itemFromIndex(index)) )
                 if ( d->isMounted() )

@@ -20,6 +20,7 @@
 
 
 #include "settingsdialog.h"
+#include "config.h"
 #include "mainwindow.h"
 #include "application.h"
 #include <QGroupBox>
@@ -29,13 +30,13 @@ using namespace DFM;
 BehaviourWidget::BehaviourWidget(QWidget *parent) : QWidget(parent)
 {
     m_hideTabBar = new QCheckBox(tr("Hide tab bar when only one tab"), this);
-    m_hideTabBar->setChecked(MainWindow::config.behaviour.hideTabBarWhenOnlyOneTab);
+    m_hideTabBar->setChecked(Configuration::config.behaviour.hideTabBarWhenOnlyOneTab);
 
     m_useCustomIcons = new QCheckBox(tr("Use system icons for actions (Unix only)"),this);
-    m_useCustomIcons->setChecked(MainWindow::config.behaviour.systemIcons);   
+    m_useCustomIcons->setChecked(Configuration::config.behaviour.systemIcons);
 
     m_drawDevUsage = new QCheckBox(tr("Draw usage info on mounted devices"), this);
-    m_drawDevUsage->setChecked(MainWindow::config.behaviour.devUsage);
+    m_drawDevUsage->setChecked(Configuration::config.behaviour.devUsage);
 
     QVBoxLayout *vl = new QVBoxLayout(this);
     vl->addWidget(m_hideTabBar);
@@ -50,7 +51,7 @@ BehaviourWidget::BehaviourWidget(QWidget *parent) : QWidget(parent)
 
 
 StartupWidget::StartupWidget(QWidget *parent) : QWidget(parent),
-    m_lock(MainWindow::config.docks.lock)
+    m_lock(Configuration::config.docks.lock)
 {
     QGroupBox *gb = new QGroupBox("Lock Docks", this);
     QVBoxLayout *docks = new QVBoxLayout(gb);
@@ -94,11 +95,11 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
   , m_smoothScroll( new QCheckBox(tr("Smooth scrolling"), this) )
   , m_rowPadding( new QSpinBox(this) )
   , m_iconSlider( new QSlider( Qt::Horizontal, this ) )
-  , m_size( new QLabel(QString::number(MainWindow::config.views.iconView.iconSize*16) + " px", this) )
+  , m_size( new QLabel(QString::number(Configuration::config.views.iconView.iconSize*16) + " px", this) )
   , m_viewBox(new QComboBox(this))
 {
-    m_smoothScroll->setChecked(MainWindow::config.views.iconView.smoothScroll);
-    m_showThumbs->setChecked(MainWindow::config.views.showThumbs);
+    m_smoothScroll->setChecked(Configuration::config.views.iconView.smoothScroll);
+    m_showThumbs->setChecked(Configuration::config.views.showThumbs);
     QGroupBox *gBox = new QGroupBox(tr("IconView"), this);
     QVBoxLayout *gvLayout = new QVBoxLayout();
     gvLayout->addWidget(m_smoothScroll);
@@ -109,8 +110,8 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     m_iconWidth->setRange(1, 32);
     m_iconWidth->setSingleStep(1);
     m_iconWidth->setPageStep(1);
-    m_iconWidth->setValue(MainWindow::config.views.iconView.textWidth);
-    m_width->setText(QString::number(MainWindow::config.views.iconView.textWidth*2) + " px");
+    m_iconWidth->setValue(Configuration::config.views.iconView.textWidth);
+    m_width->setText(QString::number(Configuration::config.views.iconView.textWidth*2) + " px");
     ghLayout->addWidget(m_width);
     connect ( m_iconWidth, SIGNAL(valueChanged(int)), this, SLOT(sliderChanged(int)) );
 
@@ -121,7 +122,7 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     m_iconSlider->setRange(1, 16);
     m_iconSlider->setSingleStep(1);
     m_iconSlider->setPageStep(1);
-    m_iconSlider->setValue(MainWindow::config.views.iconView.iconSize);
+    m_iconSlider->setValue(Configuration::config.views.iconView.iconSize);
     hIconSize->addStretch();
     hIconSize->addWidget(m_iconSlider);
     hIconSize->addWidget(m_size);
@@ -139,10 +140,10 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     detailsBox->setLayout(detailsLayout);
     m_rowPadding->setMinimum(0);
     m_rowPadding->setMaximum(5);
-    m_rowPadding->setValue(MainWindow::config.views.detailsView.rowPadding);
+    m_rowPadding->setValue(Configuration::config.views.detailsView.rowPadding);
 
     m_viewBox->insertItems(0, QStringList() << "Icons" << "Details" << "Columns" << "Flow");
-    m_viewBox->setCurrentIndex(MainWindow::config.behaviour.view);
+    m_viewBox->setCurrentIndex(Configuration::config.behaviour.view);
     QHBoxLayout *defView = new QHBoxLayout();
     defView->addWidget(new QLabel(tr("Default view:"), this));
     defView->addStretch();
@@ -163,7 +164,6 @@ static SettingsDialog *inst = 0;
 
 SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
 {
-    m_settings = new QSettings("dfm","dfm");
     QTabWidget *tabWidget = new QTabWidget(this);
     m_startupWidget = new StartupWidget(tabWidget);
     m_behWidget = new BehaviourWidget(tabWidget);
@@ -173,7 +173,7 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
 
     setWindowTitle(tr("Configure"));
 
-    m_startupWidget->setStartupPath(m_settings->value("startPath").toString());
+    m_startupWidget->setStartupPath(Configuration::settings()->value("startPath").toString());
 
     tabWidget->addTab(m_startupWidget, "Startup");
     tabWidget->addTab(m_behWidget, "Behaviour");
@@ -212,17 +212,18 @@ void
 SettingsDialog::accept()
 {
     if(QFileInfo(m_startupWidget->startupPath()).isDir())
-        m_settings->setValue("startPath",m_startupWidget->startupPath());
-    m_settings->setValue("hideTabBarWhenOnlyOne",m_behWidget->m_hideTabBar->isChecked());
-    m_settings->setValue("useSystemIcons", m_behWidget->m_useCustomIcons->isChecked());
-    m_settings->setValue("docks.lock", m_startupWidget->locked() );
-    m_settings->setValue("smoothScroll", m_viewWidget->m_smoothScroll->isChecked());
-    m_settings->setValue("showThumbs", m_viewWidget->m_showThumbs->isChecked());
-    m_settings->setValue("drawDevUsage", m_behWidget->m_drawDevUsage->isChecked());
-    m_settings->setValue("textWidth", m_viewWidget->m_iconWidth->value());
-    m_settings->setValue("detailsView.rowPadding", m_viewWidget->m_rowPadding->value());
-    m_settings->setValue("start.view", m_viewWidget->m_viewBox->currentIndex());
-    m_settings->setValue("iconView.iconSize", m_viewWidget->m_iconSlider->value());
+        Configuration::settings()->setValue("startPath",m_startupWidget->startupPath());
+    Configuration::settings()->setValue("hideTabBarWhenOnlyOne",m_behWidget->m_hideTabBar->isChecked());
+    Configuration::settings()->setValue("useSystemIcons", m_behWidget->m_useCustomIcons->isChecked());
+    Configuration::settings()->setValue("docks.lock", m_startupWidget->locked() );
+    Configuration::settings()->setValue("smoothScroll", m_viewWidget->m_smoothScroll->isChecked());
+    Configuration::settings()->setValue("showThumbs", m_viewWidget->m_showThumbs->isChecked());
+    Configuration::settings()->setValue("drawDevUsage", m_behWidget->m_drawDevUsage->isChecked());
+    Configuration::settings()->setValue("textWidth", m_viewWidget->m_iconWidth->value());
+    Configuration::settings()->setValue("detailsView.rowPadding", m_viewWidget->m_rowPadding->value());
+    Configuration::settings()->setValue("start.view", m_viewWidget->m_viewBox->currentIndex());
+    Configuration::settings()->setValue("iconView.iconSize", m_viewWidget->m_iconSlider->value());
+    Configuration::readConfig();
     emit settingsChanged();
     QDialog::accept();
 }

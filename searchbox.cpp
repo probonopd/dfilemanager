@@ -31,8 +31,8 @@ IconWidget::IconWidget(QWidget *parent) : QWidget(parent), m_opacity(0.5), m_typ
 {
     setFixedSize(16, 16);
     setCursor(Qt::PointingHandCursor);
-    m_pix[0] = IconProvider::icon(IconProvider::Search, 16, palette().color(foregroundRole()), MainWindow::config.behaviour.systemIcons).pixmap(16);
-    m_pix[1] = IconProvider::icon(IconProvider::Clear, 16, palette().color(foregroundRole()), MainWindow::config.behaviour.systemIcons).pixmap(16);
+    m_pix[0] = IconProvider::icon(IconProvider::Search, 16, palette().color(foregroundRole()), Configuration::config.behaviour.systemIcons).pixmap(16);
+    m_pix[1] = IconProvider::icon(IconProvider::Clear, 16, palette().color(foregroundRole()), Configuration::config.behaviour.systemIcons).pixmap(16);
 }
 
 void

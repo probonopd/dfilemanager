@@ -50,7 +50,6 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow( QStringList arguments = QStringList() );
     ViewContainer *activeContainer() { return m_activeContainer; }
-    static DFM::Config config;
 
 public slots:
     void addTab(const QString &path = QDir::homePath());
@@ -74,7 +73,6 @@ protected:
     void createToolBars();
     void writeSettings();
     void createSlider();
-    void readConfig();
 
 private slots:
     void goHome();
@@ -138,7 +136,6 @@ private:
     QItemSelection *currentSelection;
     QSlider *m_iconSizeSlider;
     QLayout *m_statusLayout;
-    QSettings *m_settings;
     InfoWidget *m_infoWidget;
     RecentFoldersView *m_recentFoldersView;
     FileSystemModel *m_fsModel;

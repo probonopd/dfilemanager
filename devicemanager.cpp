@@ -85,7 +85,7 @@ DeviceItem::updateSpace()
 {
     if ( isMounted() )
     {
-        if ( MainWindow::config.behaviour.devUsage )
+        if ( Configuration::config.behaviour.devUsage )
             m_view->update( m_view->indexAt(m_view->visualItemRect(this).center()) );
         int t = 0;
         QString free(QString::number(realSize((float)freeBytes(), &t)));
