@@ -85,6 +85,8 @@ PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model ) : QToolB
     setBackgroundRole( QPalette::Base );
     setMaximumHeight( iconSize().height() + 5 );
     setContentsMargins( 5, 0, 0, 0 );
+    if ( layout() )
+        layout()->setContentsMargins(0, 0, 0, 0);
 }
 
 void

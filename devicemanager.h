@@ -29,6 +29,8 @@
 #include "operations.h"
 #include "iconprovider.h"
 
+#ifdef Q_WS_X11
+
 #include "solid/device.h"
 #include "solid/block.h"
 #include "solid/storagedrive.h"
@@ -129,5 +131,7 @@ private:
 };
 
 }
+
+#endif // Q_WS_X11
 
 #endif // DEVICEMANAGER_H

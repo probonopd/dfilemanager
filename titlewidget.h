@@ -193,6 +193,7 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent *event) { event->accept(); }
     void mousePressEvent(QMouseEvent *event) { event->accept(); }
     void mouseReleaseEvent(QMouseEvent *event) { event->accept(); }
+#if 0
     void paintEvent(QPaintEvent *)
     {
         if (!floating)
@@ -205,6 +206,7 @@ protected:
         p.fillRect(r, lg);
         p.end();
     }
+#endif
 
 private:
     QString titleText;

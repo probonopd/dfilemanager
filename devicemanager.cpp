@@ -22,7 +22,7 @@
 #include "devicemanager.h"
 #include "viewanimator.h"
 #include "mainwindow.h"
-
+#ifdef Q_WS_X11
 
 using namespace DFM;
 
@@ -177,3 +177,5 @@ DeviceItem
             return item;
     return deviceItemForFile(s.mid(0, s.lastIndexOf("/")));
 }
+
+#endif

@@ -210,7 +210,9 @@ PlacesView::PlacesView( QWidget *parent ) : QTreeWidget( parent )
     APP->setPlacesView( this );
     m_mainWindow = APP->mainWindow();
     ViewAnimator::manage(this);
+#ifdef Q_WS_X11
     DeviceManager::manage(this);
+#endif
 
     setUniformRowHeights( false );
     setAllColumnsShowFocus( true );

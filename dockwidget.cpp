@@ -148,9 +148,9 @@ DockWidget::paintEvent(QPaintEvent *event)
     if (!isFloating())
         return;
     QPainter p(this);
-    p.fillRect(rect(), palette().color(QPalette::Button));
+    p.fillRect(rect(), Operations::colorMid(palette().color(QPalette::Window), palette().color(QPalette::WindowText), 10, 1));
     p.translate(0.5, 0.5);
-    QColor pc(palette().color(QPalette::ButtonText));
+    QColor pc(palette().color(QPalette::WindowText));
     pc.setAlpha(192);
     p.setPen(pc);
     p.setRenderHint(QPainter::Antialiasing);
