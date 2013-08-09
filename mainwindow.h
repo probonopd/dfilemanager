@@ -65,7 +65,6 @@ protected:
     bool eventFilter(QObject *obj, QEvent *ev);
     void contextMenuEvent(QContextMenuEvent *event);
     void keyPressEvent(QKeyEvent *ke);
-    void moveEvent(QMoveEvent *);
     void updateIcons();
     void createActions();
     void createMenus();

@@ -706,9 +706,3 @@ MainWindow::stackChanged(int)
     if (m_activeContainer)
         m_filterBox->setText(m_activeContainer->currentFilter());
 }
-
-void
-MainWindow::moveEvent(QMoveEvent *)
-{
-//    qDebug() << "moveevent" << pos();
-}
