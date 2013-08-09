@@ -145,6 +145,7 @@ ViewContainer::addActions(QList<QAction *> actions)
     VIEWS(addActions(actions));
     QSettings settings("dfm", "dfm");
     settings.beginGroup("CustomActions");
+
     foreach (QString string, settings.childKeys())
     {
         QStringList actions = settings.value(string).toStringList(); //0 == name, 1 == cmd, 2 == keysequence

@@ -60,7 +60,6 @@ IconDialog::IconDialog(QWidget *parent) : QDialog(parent)
 QString IconDialog::getIcon()
 {
     QFileInfo file;
-    QString icn("folder");
     for (int i = 0; i < QIcon::themeSearchPaths().count(); i++)
     {
         file = QIcon::themeSearchPaths().at(i) + QIcon::themeName();
@@ -71,7 +70,7 @@ QString IconDialog::getIcon()
     if (!file.exists())
     {
         QMessageBox::information(this,"Could not find any valid icontheme path!", "Cannot continue, exiting");
-        return icn;
+        return QString();
     }
 
     QDirIterator it(file.filePath(), QDirIterator::Subdirectories);
@@ -91,6 +90,6 @@ QString IconDialog::getIcon()
     }
     exec();
     if ( result() == 1 )
-        icn = m_listView->currentIndex().data().toString();
+        return m_listView->currentIndex().data().toString();
     return QString();
 }
