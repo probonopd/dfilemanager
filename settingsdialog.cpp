@@ -21,6 +21,7 @@
 
 #include "settingsdialog.h"
 #include "mainwindow.h"
+#include "application.h"
 #include <QGroupBox>
 
 using namespace DFM;
@@ -158,6 +159,8 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
 
 /////////////////////////////////////////////////////////////////
 
+static SettingsDialog *inst = 0;
+
 SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
 {
     m_settings = new QSettings("dfm","dfm");
@@ -192,6 +195,14 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
 
     connect( m_ok, SIGNAL(clicked()),this,SLOT(accept()));
     connect( m_cancel, SIGNAL(clicked()),this,SLOT(reject()));
+}
+
+SettingsDialog
+*SettingsDialog::instance()
+{
+    if ( !inst )
+        inst = new SettingsDialog(MAINWINDOW);
+    return inst;
 }
 
 void
