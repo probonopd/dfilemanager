@@ -201,7 +201,10 @@ SettingsDialog
 *SettingsDialog::instance()
 {
     if ( !inst )
+    {
         inst = new SettingsDialog(MAINWINDOW);
+        connect( inst, SIGNAL(settingsChanged()), MAINWINDOW, SLOT(updateConfig()) );
+    }
     return inst;
 }
 

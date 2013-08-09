@@ -73,5 +73,5 @@ CONFIG += qt thread debug staticlib
 #libmagic needed for mimetypes and fileinfo
 #libsolid needed for devicehandling
 unix {
-    LIBS += -lmagic -lsolid -lx11
+    LIBS += -lmagic -lsolid -lX11
 }

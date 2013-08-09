@@ -679,13 +679,7 @@ MainWindow::viewClearHover()
 void
 MainWindow::showSettings()
 {
-    static SettingsDialog *settingsDialog = 0;
-    if ( !settingsDialog )
-    {
-        settingsDialog = new SettingsDialog(this);
-        connect( settingsDialog, SIGNAL(settingsChanged()), this, SLOT(updateConfig()) );
-    }
-    settingsDialog->exec();
+    SettingsDialog::instance()->exec();
 }
 
 void
