@@ -395,7 +395,9 @@ void
 MainWindow::closeEvent(QCloseEvent *event)
 {
     writeSettings();
+#ifdef Q_WS_X11
     APP->setMainWindow(0);
+#endif
     event->accept();
 }
 
