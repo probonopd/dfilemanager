@@ -63,13 +63,10 @@ MainWindow::readSettings()
 
     m_settings->beginGroup("Places");
     m_placesView->clear(); //should be superfluous but still need to make sure
-    foreach ( const QString &key, m_settings->childKeys() )
+    for ( int i = 0; i<m_settings->childKeys().count(); ++i )
     {
-        const QStringList &values(m_settings->value(key).toStringList());
-        //      if (values.count() != 4)
-        //          break;
-
-        if (QString(values[2]).isEmpty())
+        const QStringList &values(m_settings->value(QString::number(i)).toStringList());
+        if (QString(values.at(2)).isEmpty())
             new QTreeWidgetItem(m_placesView, values);
         else
         {
@@ -140,7 +137,7 @@ MainWindow::writeSettings()
     {
         const QTreeWidgetItem *item = *it;
         if ( !DeviceManager::itemIsDevice(item) )
-            m_settings->setValue(QString(placeNr), QStringList()
+            m_settings->setValue(QString::number(placeNr), QStringList()
                                  << item->text(0)
                                  << item->text(1)
                                  << (item->parent() ? item->parent()->text(0) : "")
