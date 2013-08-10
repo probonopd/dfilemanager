@@ -45,10 +45,12 @@ public:
     Application(int &argc, char **argv, int = ApplicationFlags);
 #ifdef Q_WS_X11
     inline void manageDock( DFM::Docks::DockWidget *dock ) { m_docks << dock; }
+#endif
     inline void setMainWindow( QMainWindow *mainWin ) { m_mainWindow = mainWin; }
     inline QMainWindow *mainWindow() { return m_mainWindow; }
     inline void setPlacesView( DFM::PlacesView *places ) { m_places = places; }
     inline DFM::PlacesView *placesView() { return m_places; }
+#ifdef Q_WS_X11
 signals:
     void paletteChanged( QPalette newPal );
 protected:
@@ -56,10 +58,10 @@ protected:
 //    inline bool event(QEvent *e) { qDebug() << e; return QApplication::event(e); }
 private:
     QList<DFM::Docks::DockWidget *> m_docks;
+#endif
     QMainWindow *m_mainWindow;
     DFM::PlacesView *m_places;
 //    static Atom m_netWmDesktop, m_netClientListStacking;
-#endif
 };
 
 #endif // APPLICATION_H
