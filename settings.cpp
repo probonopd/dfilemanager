@@ -113,12 +113,14 @@ MainWindow::writeSettings()
     while (*it)
     {
         const QTreeWidgetItem *item = *it;
+#ifdef Q_WS_X11
         if ( !DeviceManager::itemIsDevice(item) )
+#endif
             Configuration::settings()->setValue(QString::number(placeNr), QStringList()
-                                 << item->text(0)
-                                 << item->text(1)
-                                 << (item->parent() ? item->parent()->text(0) : "")
-                                 << (item->text(3).isEmpty() ? "folder" : item->text(3)) );
+                                                << item->text(0)
+                                                << item->text(1)
+                                                << (item->parent() ? item->parent()->text(0) : "")
+                                                << (item->text(3).isEmpty() ? "folder" : item->text(3)) );
         ++placeNr;
         ++it;
     }
