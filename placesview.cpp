@@ -319,8 +319,9 @@ PlacesView::dropEvent( QDropEvent *event )
 
     if ( dropIndicatorPosition() == QAbstractItemView::OnItem ||
             dropIndicatorPosition() == QAbstractItemView::OnViewport ||
-            !indexAt( event->pos() ).parent().isValid() ||
+            !indexAt( event->pos() ).parent().isValid()
 #ifdef Q_WS_X11
+         ||
          (itemAt(event->pos()) && itemAt(event->pos())->parent()&& itemAt(event->pos())->parent() == DeviceManager::devicesParent()) ||
          (itemAt(event->pos()) && itemAt(event->pos()) == DeviceManager::devicesParent())
 #endif
