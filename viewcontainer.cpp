@@ -187,7 +187,7 @@ ViewContainer::doubleClick(const QModelIndex &index)
 #ifdef Q_WS_X11 //linux
         file = m_fsModel->filePath(index);
 #else
-        file = fsModel->fileName(index);
+        file = m_fsModel->fileName(index);
 #endif
         process.startDetached(file);
     }
