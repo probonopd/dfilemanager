@@ -23,6 +23,7 @@
 #include <QLayout>
 #include "operations.h"
 #include "filesystemmodel.h"
+#include "thumbsloader.h"
 
 using namespace DFM;
 
@@ -107,8 +108,10 @@ InfoWidget::hovered(const QModelIndex &index)
         m_size->setText(tr("Size:"));
     }
     const FileSystemModel *fsModel = static_cast<const FileSystemModel*>(index.model());
-    QIcon icon(fsModel->iconPix(fsModel->fileInfo(fsModel->index(fsModel->filePath(index), 0)), 64));
-    if(icon.isNull())
+    QIcon icon = QPixmap::fromImage(ThumbsLoader::thumb(fsModel->filePath(index)));
+    if ( icon.isNull() )
+        icon = fsModel->iconPix(fsModel->fileInfo(fsModel->index(fsModel->filePath(index), 0)), 64);
+    if (icon.isNull())
         icon = qvariant_cast<QIcon>(fsModel->data(fsModel->index(fsModel->filePath(index), 0), Qt::DecorationRole));
     QPixmap pix = icon.pixmap(64);
     const bool dir = fsModel->fileInfo(index).isDir();

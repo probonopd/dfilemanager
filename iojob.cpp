@@ -330,9 +330,20 @@ Job::cp(const QStringList &copyFiles, const QString &destination, const bool &cu
 
 //---------------------------------------------------------------------------------------------------------
 
-IOThread::IOThread(const QStringList &inf, const QString &dest, const bool &cut, const qint64 &totalSize, QObject *parent) : QThread(parent)
-  , m_canceled(false), m_overWriteAll(false), m_skipAll(false), m_inFiles(inf), m_destDir(dest), m_cut(cut)
-  , m_total(totalSize), m_allProgress(0), m_fileProgress(0), m_pause(false), m_newFile(QString()), m_type(Copy)
+IOThread::IOThread(const QStringList &inf, const QString &dest, const bool &cut, const qint64 &totalSize, QObject *parent)
+    : QThread(parent)
+    , m_canceled(false)
+    , m_overWriteAll(false)
+    , m_skipAll(false)
+    , m_inFiles(inf)
+    , m_destDir(dest)
+    , m_cut(cut)
+    , m_total(totalSize)
+    , m_allProgress(0)
+    , m_fileProgress(0)
+    , m_pause(false)
+    , m_newFile(QString())
+    , m_type(Copy)
 { connect(this, SIGNAL(finished()), this, SLOT(deleteLater())); }
 
 void
