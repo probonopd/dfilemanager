@@ -43,9 +43,7 @@ class Application : public QApplication
     Q_OBJECT
 public:
     Application(int &argc, char **argv, int = ApplicationFlags);
-#ifdef Q_WS_X11
     inline void manageDock( DFM::Docks::DockWidget *dock ) { m_docks << dock; }
-#endif
     inline void setMainWindow( QMainWindow *mainWin ) { m_mainWindow = mainWin; }
     inline QMainWindow *mainWindow() { return m_mainWindow; }
     inline void setPlacesView( DFM::PlacesView *places ) { m_places = places; }
@@ -55,13 +53,11 @@ signals:
     void paletteChanged( QPalette newPal );
 protected:
     bool x11EventFilter(XEvent *xe);
-//    inline bool event(QEvent *e) { qDebug() << e; return QApplication::event(e); }
+#endif
 private:
     QList<DFM::Docks::DockWidget *> m_docks;
-#endif
     QMainWindow *m_mainWindow;
     DFM::PlacesView *m_places;
-//    static Atom m_netWmDesktop, m_netClientListStacking;
 };
 
 #endif // APPLICATION_H
