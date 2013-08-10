@@ -156,11 +156,13 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
         QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, painter, placesView);
         painter->setOpacity(1);
     }
+#ifdef Q_WS_X11
     if ( index.parent().isValid() && Configuration::config.behaviour.devUsage )
         if ( placesView->itemFromIndex(index.parent())->text(3) == "Devices" )
             if ( DeviceItem *d = static_cast<DeviceItem*>(placesView->itemFromIndex(index)) )
                 if ( d->isMounted() )
                     drawDeviceUsage(d->used(), painter, option);
+#endif
 
     QApplication::style()->drawItemText(painter, textRect, textFlags, pal, true, TEXT, selected ? QPalette::HighlightedText : QPalette::Text);
     if( isHeader( index ) )
@@ -286,8 +288,10 @@ PlacesView::dropEvent( QDropEvent *event )
                 }
                 else if ( dropIndicatorPosition() != QAbstractItemView::OnViewport )
                 {
+#ifdef Q_WS_X11
                     if ( !DeviceManager::itemIsDevice(itemAt( event->pos() )) )
                     {
+#endif
                         QFileInfo file( event->mimeData()->urls().first().toLocalFile() );
                         if ( file.isDir() )
                         {
@@ -307,15 +311,20 @@ PlacesView::dropEvent( QDropEvent *event )
                             else
                                 topLevelItem( indexAt( event->pos() ).row() )->insertChild( 0, item );
                         }
+#ifdef Q_WS_X11
                     }
+#endif
                     event->setDropAction(Qt::IgnoreAction);
                 }
 
     if ( dropIndicatorPosition() == QAbstractItemView::OnItem ||
             dropIndicatorPosition() == QAbstractItemView::OnViewport ||
             !indexAt( event->pos() ).parent().isValid() ||
+#ifdef Q_WS_X11
          (itemAt(event->pos()) && itemAt(event->pos())->parent()&& itemAt(event->pos())->parent() == DeviceManager::devicesParent()) ||
-         (itemAt(event->pos()) && itemAt(event->pos()) == DeviceManager::devicesParent()))
+         (itemAt(event->pos()) && itemAt(event->pos()) == DeviceManager::devicesParent())
+#endif
+         )
         event->setDropAction(Qt::IgnoreAction);
 
 
