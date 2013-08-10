@@ -427,7 +427,7 @@ IconView::contextMenuEvent( QContextMenuEvent *event )
 {
     QMenu popupMenu;
     popupMenu.addActions( actions() );
-    QList<QAction *> actionList( ViewContainer::openWithActions( FileSystemModel::fullPath( indexAt( event->pos() ) ) ) );
+    QList<QAction *> actionList( ViewContainer::openWithActions( m_fsModel->filePath( indexAt( event->pos() ) ) ) );
     foreach( QAction *action, actionList )
         connect( action, SIGNAL( triggered() ), MAINWINDOW, SLOT( openWithApp() ) );
     QMenu openWith( tr( "Open With" ), this );

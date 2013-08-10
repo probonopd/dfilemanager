@@ -132,12 +132,14 @@ MainWindow::MainWindow(QStringList arguments)
 }
 
 void
-MainWindow::filterCurrentDir(QString filter)
+MainWindow::filterCurrentDir(const QString &filter)
 {
-#if 0
+#if 0 //for some reason this is 'glitchy'... some folders are not hidden when should
     QString f = filter;
-    f.replace(" ","*");
-    viewContainer->model()->setNameFilters(viewContainer->model()->rootDirectory().nameFiltersFromString("*" + f + "*"));
+    f.replace(" ", "*");
+    f.prepend("*");
+    f.append("*");
+    m_activeContainer->model()->setNameFilters(QStringList() << f);
 #endif
     m_activeContainer->setFilter(filter);  //temporary solution
 }
@@ -186,7 +188,6 @@ MainWindow::setSliderPos(int size)
 void
 MainWindow::setViewIconSize(int size)
 {
-//    activeCont->setIconSize(size);
     m_activeContainer->animateIconSize(m_activeContainer->iconSize().width(),size*16);
     m_iconSizeSlider->setToolTip("Size: " + QString::number(size*16) + " px" );
     QToolTip *tip;
@@ -196,7 +197,6 @@ MainWindow::setViewIconSize(int size)
     if(m_statusBar->isVisible())
         tip->showText(pt,m_iconSizeSlider->toolTip());
 }
-
 
 void
 MainWindow::mainSelectionChanged(QItemSelection selected,QItemSelection notselected)

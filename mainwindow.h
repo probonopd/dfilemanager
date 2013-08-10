@@ -57,7 +57,7 @@ public slots:
     {
         QAction *action = static_cast<QAction *>( sender() );
         QString program( action->data().toString().split( " " ).at( 0 ) );
-        QProcess().startDetached( program, QStringList() << DFM::FileSystemModel::fullPath( m_activeContainer->selectionModel()->selectedIndexes().first() ) );
+        QProcess().startDetached( program, QStringList() << m_activeContainer->model()->filePath( m_activeContainer->selectionModel()->selectedIndexes().first() ) );
     }
 
 protected:
@@ -80,7 +80,7 @@ private slots:
     void setViewIcons();
     void setViewDetails();
     void setViewCols();
-    void filterCurrentDir(QString filter);
+    void filterCurrentDir(const QString &filter);
     void checkViewAct();
     void customCommand();
     void toggleMenuVisible();

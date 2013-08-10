@@ -54,10 +54,7 @@ public:
         DecoImage = Qt::UserRole + 7
     };
     explicit FileSystemModel(QObject *parent = 0);
-    bool remove(const QModelIndex &myIndex) const;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
-    static QString fullPath(const QModelIndex &index);
-    static QIcon fullIcon(const QModelIndex &index);
     bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
     static QPixmap iconPix(const QFileInfo &info,const int &extent);
     static QStringList supportedThumbs( const bool &filter = false );

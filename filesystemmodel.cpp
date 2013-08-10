@@ -43,35 +43,10 @@ FileSystemModel::FileSystemModel(QObject *parent) :
     connect ( this, SIGNAL(rootPathChanged(QString)), this, SLOT(emitRootIndex(QString)) );
 }
 
-bool
-FileSystemModel::remove(const QModelIndex &myIndex) const
-{
-    QString path = filePath(myIndex);
-
-    QDirIterator it(path,QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden ,QDirIterator::Subdirectories);
-    QStringList children;
-    while (it.hasNext())
-        children.prepend(it.next());
-    children.append(path);
-
-    bool error = false;
-
-    for (int i = 0; i < children.count(); ++i)
-    {
-        QFileInfo info(children.at(i));
-
-        if (info.isDir())
-            error |= QDir().rmdir(info.filePath());
-        else
-            error |= QFile::remove(info.filePath());
-    }
-    return error;
-}
-
 QPixmap
 FileSystemModel::iconPix(const QFileInfo &info, const int &extent)
 {
-    const QSettings settings(info.filePath() + QDir::separator() + ".directory", QSettings::IniFormat);
+    const QSettings settings(QString("%1%2.directory").arg(info.filePath()).arg(QDir::separator()), QSettings::IniFormat);
     QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString());
     if ( icon.isNull() )
         icon = QIcon::fromTheme("inode-directory");
@@ -79,7 +54,7 @@ FileSystemModel::iconPix(const QFileInfo &info, const int &extent)
         return QPixmap();
 
     int actSize = extent;
-    while ( !icon.availableSizes().contains(QSize(actSize, actSize)) )
+    while ( !icon.availableSizes().contains(QSize(actSize, actSize)) && actSize != 256 )
         ++actSize;
 
     return icon.pixmap(actSize);
@@ -207,36 +182,6 @@ FileSystemModel::headerData(int section, Qt::Orientation orientation, int role) 
         return QVariant();
 
     return QFileSystemModel::headerData(section, orientation, role);
-}
-
-QString
-FileSystemModel::fullPath(const QModelIndex &index)
-{
-    if (!index.isValid())
-        return QString();
-
-    QStringList path;
-    QModelIndex idx = index;
-
-    while (idx.isValid())
-    {
-        path.prepend(idx.data().toString());
-        idx = idx.parent();
-    }
-
-    QString fullPath = QDir::fromNativeSeparators(path.join(QDir::separator()));
-#if !defined(Q_OS_WIN) || defined(Q_OS_WINCE)
-    if ((fullPath.length() > 2) && fullPath[0] == QLatin1Char('/') && fullPath[1] == QLatin1Char('/'))
-        fullPath = fullPath.mid(1);
-#endif
-    return fullPath;
-}
-
-QIcon
-FileSystemModel::fullIcon(const QModelIndex &index)
-{
-    QFileIconProvider ip;
-    return ip.icon(QFileInfo(fullPath(index)));
 }
 
 bool

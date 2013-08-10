@@ -212,18 +212,18 @@ void
 SettingsDialog::accept()
 {
     if(QFileInfo(m_startupWidget->startupPath()).isDir())
-        Configuration::settings()->setValue("startPath",m_startupWidget->startupPath());
-    Configuration::settings()->setValue("hideTabBarWhenOnlyOne",m_behWidget->m_hideTabBar->isChecked());
-    Configuration::settings()->setValue("useSystemIcons", m_behWidget->m_useCustomIcons->isChecked());
-    Configuration::settings()->setValue("docks.lock", m_startupWidget->locked() );
-    Configuration::settings()->setValue("smoothScroll", m_viewWidget->m_smoothScroll->isChecked());
-    Configuration::settings()->setValue("showThumbs", m_viewWidget->m_showThumbs->isChecked());
-    Configuration::settings()->setValue("drawDevUsage", m_behWidget->m_drawDevUsage->isChecked());
-    Configuration::settings()->setValue("textWidth", m_viewWidget->m_iconWidth->value());
-    Configuration::settings()->setValue("detailsView.rowPadding", m_viewWidget->m_rowPadding->value());
-    Configuration::settings()->setValue("start.view", m_viewWidget->m_viewBox->currentIndex());
-    Configuration::settings()->setValue("iconView.iconSize", m_viewWidget->m_iconSlider->value());
-    Configuration::readConfig();
+        Configuration::config.startPath = m_startupWidget->startupPath();
+
+    Configuration::config.behaviour.hideTabBarWhenOnlyOneTab = m_behWidget->m_hideTabBar->isChecked();
+    Configuration::config.behaviour.systemIcons = m_behWidget->m_useCustomIcons->isChecked();
+    Configuration::config.docks.lock = m_startupWidget->locked();
+    Configuration::config.views.iconView.smoothScroll = m_viewWidget->m_smoothScroll->isChecked();
+    Configuration::config.views.showThumbs = m_viewWidget->m_showThumbs->isChecked();
+    Configuration::config.behaviour.devUsage = m_behWidget->m_drawDevUsage->isChecked();
+    Configuration::config.views.iconView.textWidth = m_viewWidget->m_iconWidth->value();
+    Configuration::config.views.detailsView.rowPadding = m_viewWidget->m_rowPadding->value();
+    Configuration::config.behaviour.view = m_viewWidget->m_viewBox->currentIndex();
+    Configuration::config.views.iconView.iconSize = m_viewWidget->m_iconSlider->value();
     emit settingsChanged();
     QDialog::accept();
 }
