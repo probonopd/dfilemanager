@@ -159,15 +159,19 @@ ViewContainer::addActions(QList<QAction *> actions)
 void
 ViewContainer::customActionTriggered()
 {
-    QStringList list(static_cast<QAction *>(sender())->data().toString().split(" "));
-    list << ( selectionModel()->selectedIndexes().isEmpty() ? m_fsModel->rootPath() : m_fsModel->filePath( selectionModel()->selectedIndexes().first() ));
-    QProcess().startDetached(list.takeFirst(), list);
+    QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
+    const QString &app = action.takeFirst();
+    if ( selectionModel()->hasSelection() )
+        foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
+            QProcess().startDetached(app, QStringList() << action << m_fsModel->filePath( index ));
+    else
+        QProcess().startDetached(app, QStringList() << action << m_fsModel->rootPath());
 }
 
 void
 ViewContainer::doubleClick(const QModelIndex &index)
 {
-    if(!index.isValid())
+    if (!index.isValid())
         return;
 
     if ( !m_fsModel->fileInfo(index).exists() )
