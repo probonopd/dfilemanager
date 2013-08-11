@@ -44,7 +44,7 @@ class FlowView : public QWidget
     Q_OBJECT
 public:
     explicit FlowView(QWidget *parent = 0);
-    ~FlowView(){}
+    ~FlowView();
     void setModel(FileSystemModel *model);
     inline QModelIndex rootIndex() { return m_dView->rootIndex(); }
     inline QModelIndex currentIndex() { return m_dView->currentIndex(); }

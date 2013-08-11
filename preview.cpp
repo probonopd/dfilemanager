@@ -159,7 +159,9 @@ PreView::PreView(QWidget *parent) : QGraphicsView(parent)
     glf.setDoubleBuffer(true);
     QGLFormat::setDefaultFormat(glf);
     setMaximumHeight(SIZE*2.0f);
-    setViewport(new QGLWidget(glf, this));
+    QGLWidget *glWidget = new QGLWidget(glf, this);
+    connect( qApp, SIGNAL(aboutToQuit()), glWidget, SLOT(deleteLater()) );
+    setViewport(glWidget);
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     m_scene->setItemIndexMethod(QGraphicsScene::NoIndex);
     setScene(m_scene);

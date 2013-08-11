@@ -34,7 +34,6 @@ using namespace DFM;
 MainWindow::MainWindow(QStringList arguments)
 { 
     APP->setMainWindow(this);
-    Configuration::readConfig();
     QWidget *center = new QWidget(this);
     m_tabWin = new QMainWindow(this);
     m_navToolBar = new QToolBar(tr("Show NavBar"), this);

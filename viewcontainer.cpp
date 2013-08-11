@@ -37,10 +37,10 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
 {
     m_viewStack = new QStackedWidget(this);
     m_fsModel = new FileSystemModel(this);
-    m_iconView = new IconView();
-    m_detailsView = new DetailsView();
-    m_columnsView = new ColumnsView();
-    m_flowView = new FlowView();
+    m_iconView = new IconView(this);
+    m_detailsView = new DetailsView(this);
+    m_columnsView = new ColumnsView(this);
+    m_flowView = new FlowView(this);
     m_breadCrumbs = new BreadCrumbs( this, m_fsModel );
     m_breadCrumbs->setVisible(Configuration::settings()->value("pathVisible", true).toBool());
 

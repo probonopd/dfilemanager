@@ -21,6 +21,7 @@
 
 #include "application.h"
 #include "mainwindow.h"
+#include "config.h"
 
 int main(int argc, char *argv[])
 {
@@ -28,6 +29,8 @@ int main(int argc, char *argv[])
 
     Application::setGraphicsSystem("raster");
     Application app(argc, argv);
+
+    DFM::Configuration::readConfig();
 
     DFM::MainWindow *mainWin = new DFM::MainWindow(app.arguments());
     mainWin->show();

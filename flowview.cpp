@@ -20,6 +20,8 @@
 
 
 #include "flowview.h"
+#include "config.h"
+#include "application.h"
 #include <QImageReader>
 //#include "glwidget.h"
 
@@ -39,12 +41,20 @@ FlowView::FlowView(QWidget *parent) : QWidget(parent)
     layout->addWidget(m_splitter);
     setLayout(layout);
 
+    m_splitter->restoreState( Configuration::settings()->value("flowSize", QByteArray()).toByteArray() );
+
 //    fView->setPictureColumn(0);
 //    fView->setPictureRole(FileSystemModel::FileImage);
 
     connect( m_preView, SIGNAL(centerIndexChanged(QModelIndex)), this, SLOT(flowCurrentIndexChanged(QModelIndex)));
+    connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(deleteLater()) );
 
     m_splitter->setHandleWidth(style()->pixelMetric(QStyle::PM_SplitterWidth));
+}
+
+FlowView::~FlowView()
+{
+    Configuration::settings()->setValue("flowSize", m_splitter->saveState());
 }
 
 void

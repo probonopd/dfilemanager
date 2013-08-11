@@ -46,7 +46,7 @@ class ViewContainer : public QFrame
     Q_OBJECT
 public:
     enum View { Icon = 0, Details = 1, Columns = 2, Flow = 3 };
-    explicit ViewContainer(QWidget *parent = 0, QString rootPath = QDir::homePath());
+    ViewContainer(QWidget *parent = 0, QString rootPath = QDir::homePath());
     FileSystemModel *model() const;
     void setView(View view);
     inline QAbstractItemView *currentView() const { if ( m_myView != Flow ) return static_cast<QAbstractItemView*>(m_viewStack->currentWidget()); return static_cast<QAbstractItemView*>(m_flowView->detailsView()); }
