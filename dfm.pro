@@ -62,7 +62,7 @@ SOURCES = main.cpp \
 RESOURCES = resources.qrc
 TARGET = dfm
 
-target.path = $$[QT_INSTALL_BINS]
+target.path += $$[QT_INSTALL_BINS]
 sources.files = $$SOURCES $$HEADERS $$RESOURCES #$$FORMS
 INSTALLS += target
 
@@ -73,7 +73,7 @@ CONFIG += qt thread debug staticlib
 #libsolid needed for devicehandling
 unix {
     LIBS += -lmagic -lsolid -lX11
-    INSTALLS += desktop icon postinstall
+    INSTALLS += desktop postinstall
 
     desktop.path = $$[QT_INSTALL_PREFIX]/share/applications
     desktop.files += dfm.desktop
