@@ -71,12 +71,13 @@ void
 ColumnsView::keyPressEvent(QKeyEvent *event)
 {
     if ( event->key() == Qt::Key_Return && event->modifiers() == Qt::NoModifier && state() != QAbstractItemView::EditingState )
-        if ( selectionModel()->currentIndex().isValid() )
-        {
-            emit activated( selectionModel()->currentIndex() );
-            event->accept();
-            return;
-        }
+    {
+        if ( selectionModel()->hasSelection() )
+            foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
+                emit activated(index);
+        event->accept();
+        return;
+    }
     QListView::keyPressEvent(event);
 }
 
