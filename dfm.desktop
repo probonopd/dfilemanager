@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=DFM
+Comment=browse files
+GenericName=file browser
+Exec=dfm
+Terminal=false
+Type=Application
+Icon=folder
+Categories=Application;Qt;
+StartupNotify=false
