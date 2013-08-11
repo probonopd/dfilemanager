@@ -44,7 +44,6 @@ class FlowView : public QWidget
     Q_OBJECT
 public:
     explicit FlowView(QWidget *parent = 0);
-    ~FlowView();
     void setModel(FileSystemModel *model);
     inline QModelIndex rootIndex() { return m_dView->rootIndex(); }
     inline QModelIndex currentIndex() { return m_dView->currentIndex(); }
@@ -54,12 +53,14 @@ public:
     inline DetailsView *detailsView() { return m_dView; }
     inline FileSystemModel *model() { return static_cast<FileSystemModel*>(m_dView->model()); }
     inline void setFilter(QString filter) { m_dView->setFilter(filter); }
+    inline QSplitter *splitter() { return m_splitter; }
     void setSelectionModel(QItemSelectionModel *selectionModel);
 public slots:
     void setRootIndex(const QModelIndex &rootIndex);
 private slots:
     inline void flowCurrentIndexChanged(const QModelIndex &index) { m_dView->setCurrentIndex(index); }
     void treeCurrentIndexChanged(QItemSelection, QItemSelection);
+    void saveSplitter();
 
 private:
     DetailsView *m_dView;

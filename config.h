@@ -24,6 +24,7 @@
 
 #include <QString>
 #include <QSettings>
+#include <QByteArray>
 
 namespace DFM
 {
@@ -38,6 +39,7 @@ typedef struct Config
     } behaviour;
     struct views
     {
+        QByteArray flowSize;
         bool showThumbs;
         struct iconView
         {

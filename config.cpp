@@ -54,6 +54,7 @@ Configuration::readConfiguration()
     config.views.detailsView.rowPadding = settings()->value("detailsView.rowPadding", 0).toInt();
     config.behaviour.view = settings()->value("start.view", 0).toInt();
     config.views.iconView.iconSize = settings()->value("iconView.iconSize", 3).toInt();
+    config.views.flowSize = settings()->value("flowSize", QByteArray()).toByteArray();
 }
 
 void
@@ -67,4 +68,5 @@ Configuration::writeConfiguration()
     settings()->setValue("detailsView.rowPadding", config.views.detailsView.rowPadding);
     settings()->setValue("start.view", config.behaviour.view);
     settings()->setValue("iconView.iconSize", config.views.iconView.iconSize);
+    settings()->setValue("flowSize", config.views.flowSize);
 }

@@ -23,7 +23,6 @@
 #include "config.h"
 #include "application.h"
 #include <QImageReader>
-//#include "glwidget.h"
 
 using namespace DFM;
 
@@ -41,20 +40,19 @@ FlowView::FlowView(QWidget *parent) : QWidget(parent)
     layout->addWidget(m_splitter);
     setLayout(layout);
 
-    m_splitter->restoreState( Configuration::settings()->value("flowSize", QByteArray()).toByteArray() );
+    m_splitter->restoreState( Configuration::config.views.flowSize );
 
-//    fView->setPictureColumn(0);
-//    fView->setPictureRole(FileSystemModel::FileImage);
+    connect( m_preView, SIGNAL(centerIndexChanged(QModelIndex)), this, SLOT(flowCurrentIndexChanged(QModelIndex)) );
+    connect( m_splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(saveSplitter()) );
 
-    connect( m_preView, SIGNAL(centerIndexChanged(QModelIndex)), this, SLOT(flowCurrentIndexChanged(QModelIndex)));
-    connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(deleteLater()) );
 
     m_splitter->setHandleWidth(style()->pixelMetric(QStyle::PM_SplitterWidth));
 }
 
-FlowView::~FlowView()
+void
+FlowView::saveSplitter()
 {
-    Configuration::settings()->setValue("flowSize", m_splitter->saveState());
+    Configuration::config.views.flowSize = m_splitter->saveState();
 }
 
 void
@@ -62,8 +60,6 @@ FlowView::setModel(FileSystemModel *model)
 {
     m_dView->setModel(model);
     m_preView->setModel(model);
-//    fView->setModel(model);
-//    connect( model, SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged()) );
 }
 
 void
@@ -73,7 +69,6 @@ FlowView::setRootIndex(const QModelIndex &rootIndex)
     {
         m_dView->setRootIndex(rootIndex);
         m_preView->setRootIndex(rootIndex);
-//        fView->setRootIndex(rootIndex);
     }
 }
 
