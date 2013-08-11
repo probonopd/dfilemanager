@@ -60,19 +60,19 @@ SOURCES       = main.cpp \
     preview.cpp \
     config.cpp
 RESOURCES     = resources.qrc
-DESTDIR= $$PWD
+TARGET = dfm
 
-target.path = $$[QT_INSTALL_EXAMPLES]/mainwindows/application
-sources.files = $$SOURCES $$HEADERS $$RESOURCES $$FORMS application.pro images
-sources.path = $$[QT_INSTALL_EXAMPLES]/mainwindows/application
-INSTALLS += target sources
+target.path = $$[QT_INSTALL_BINS]
+sources.files = $$SOURCES $$HEADERS $$RESOURCES #$$FORMS
+INSTALLS += target
 
 QT += gui xml opengl
 CONFIG += qt thread debug staticlib
-#LIBS += -lglut -lGLU
 
 #libmagic needed for mimetypes and fileinfo
 #libsolid needed for devicehandling
 unix {
     LIBS += -lmagic -lsolid -lX11
+    INSTALLS += postinstall
+    postinstall.path =  $$[QT_INSTALL_BINS]
 }
