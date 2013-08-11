@@ -24,7 +24,7 @@
 
 int main(int argc, char *argv[])
 {
-    Q_INIT_RESOURCE(resources);
+//    Q_INIT_RESOURCE(resources);
 
     Application::setGraphicsSystem("raster");
     Application app(argc, argv);
