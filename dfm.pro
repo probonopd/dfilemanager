@@ -59,11 +59,11 @@ SOURCES = main.cpp \
     thumbsloader.cpp \
     preview.cpp \
     config.cpp
-RESOURCES = resources.qrc
+#RESOURCES = resources.qrc
 TARGET = dfm
 
 target.path += $$[QT_INSTALL_BINS]
-sources.files = $$SOURCES $$HEADERS $$RESOURCES #$$FORMS
+sources.files = $$SOURCES $$HEADERS #$$RESOURCES #$$FORMS
 INSTALLS += target
 
 QT += gui xml opengl
