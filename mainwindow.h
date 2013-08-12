@@ -50,6 +50,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow( QStringList arguments = QStringList() );
     ViewContainer *activeContainer() { return m_activeContainer; }
+    void updateConfig();
 
 public slots:
     void addTab(const QString &path = QDir::homePath());
@@ -119,7 +120,6 @@ private slots:
     void stackChanged(int);
     void newWindow() { QProcess().startDetached(m_appPath); }
     void readSettings();
-    void updateConfig();
     void activateRecentFolder(const QString &folder) { m_activeContainer->setRootPath(folder); }
 
 signals:

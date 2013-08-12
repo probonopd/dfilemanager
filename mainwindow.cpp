@@ -672,7 +672,7 @@ MainWindow::viewClearHover()
 void
 MainWindow::showSettings()
 {
-    SettingsDialog::instance()->exec();
+    SettingsDialog().exec();
 }
 
 void

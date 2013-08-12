@@ -110,7 +110,7 @@ StartupWidget::StartupWidget(QWidget *parent)
 void
 StartupWidget::getShitPath()
 {
-    QString styleSheet = QFileDialog::getOpenFileName(window(), tr("select stylesheet"), QDir::homePath(), "*.css");
+    QString styleSheet = QFileDialog::getOpenFileName(window(), tr("select stylesheet"), QDir::homePath(), tr("stylesheets (*.css *.qss);"));
     if ( !styleSheet.isEmpty() )
         m_sheetEdit->setText(styleSheet);
 }
@@ -200,8 +200,6 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
 
 /////////////////////////////////////////////////////////////////
 
-static SettingsDialog *inst = 0;
-
 SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
 {
     QTabWidget *tabWidget = new QTabWidget(this);
@@ -233,19 +231,8 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
     m_ok->setText("OK");
     m_cancel->setText("Cancel");
 
-    connect( m_ok, SIGNAL(clicked()),this,SLOT(accept()));
-    connect( m_cancel, SIGNAL(clicked()),this,SLOT(reject()));
-}
-
-SettingsDialog
-*SettingsDialog::instance()
-{
-    if ( !inst )
-    {
-        inst = new SettingsDialog(MAINWINDOW);
-        connect( inst, SIGNAL(settingsChanged()), MAINWINDOW, SLOT(updateConfig()) );
-    }
-    return inst;
+    connect( m_ok, SIGNAL(clicked()), this, SLOT(accept()) );
+    connect( m_cancel, SIGNAL(clicked()), this, SLOT(reject()) );
 }
 
 void
@@ -279,6 +266,8 @@ SettingsDialog::accept()
     Configuration::config.views.detailsView.rowPadding = m_viewWidget->m_rowPadding->value();
     Configuration::config.behaviour.view = m_viewWidget->m_viewBox->currentIndex();
     Configuration::config.views.iconView.iconSize = m_viewWidget->m_iconSlider->value();
-    emit settingsChanged();
+
+    MAINWINDOW->updateConfig();
+
     QDialog::accept();
 }

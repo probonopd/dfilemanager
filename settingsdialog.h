@@ -96,10 +96,6 @@ class SettingsDialog : public QDialog
     Q_OBJECT
 public:
     explicit SettingsDialog(QWidget *parent = 0);
-    static SettingsDialog *instance();
-    
-signals:
-    void settingsChanged();
     
 public slots:
     void accept();
