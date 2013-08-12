@@ -55,11 +55,13 @@ Configuration::readConfiguration()
     config.behaviour.view = settings()->value("start.view", 0).toInt();
     config.views.iconView.iconSize = settings()->value("iconView.iconSize", 3).toInt();
     config.views.flowSize = settings()->value("flowSize", QByteArray()).toByteArray();
+    config.styleSheet = settings()->value("styleSheet", QString()).toString();
 }
 
 void
 Configuration::writeConfiguration()
 {
+    settings()->setValue("startPath", config.startPath);
     settings()->setValue("docks.lock", config.docks.lock);
     settings()->setValue("smoothScroll", config.views.iconView.smoothScroll);
     settings()->setValue("showThumbs", config.views.showThumbs);
@@ -70,4 +72,5 @@ Configuration::writeConfiguration()
     settings()->setValue("iconView.iconSize", config.views.iconView.iconSize);
     settings()->setValue("flowSize", config.views.flowSize);
     settings()->setValue("hideTabBarWhenOnlyOne", config.behaviour.hideTabBarWhenOnlyOneTab);
+    settings()->setValue("styleSheet", config.styleSheet);
 }

@@ -47,6 +47,7 @@ public:
     inline QString startupPath() { return m_startPath->text(); }
     inline void setStartupPath(QString path) { m_startPath->setText(path); }
     inline int locked() { return m_lock; }
+    QLineEdit *m_sheetEdit;
 private slots:
     inline void lockChanged()
     {
@@ -57,6 +58,7 @@ private slots:
         else
             m_lock -= i;
     }
+    void getShitPath();
 
 private:
     int m_lock;

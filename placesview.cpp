@@ -339,7 +339,6 @@ PlacesView::dropEvent( QDropEvent *event )
             event->setDropAction(Qt::IgnoreAction);
     }
 
-
     QTreeWidget::dropEvent( event );
 }
 

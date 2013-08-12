@@ -32,6 +32,13 @@ int main(int argc, char *argv[])
 
     DFM::Configuration::readConfig();
 
+    if ( !DFM::Configuration::config.styleSheet.isEmpty() )
+    {
+        QFile file(DFM::Configuration::config.styleSheet);
+        file.open(QFile::ReadOnly);
+        app.setStyleSheet(file.readAll());
+    }
+
     DFM::MainWindow *mainWin = new DFM::MainWindow(app.arguments());
     mainWin->show();
     return app.exec();

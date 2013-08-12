@@ -24,6 +24,7 @@
 #include "mainwindow.h"
 #include "application.h"
 #include <QGroupBox>
+#include <QFileDialog>
 
 using namespace DFM;
 
@@ -50,8 +51,11 @@ BehaviourWidget::BehaviourWidget(QWidget *parent) : QWidget(parent)
 /////////////////////////////////////////////////////////////////
 
 
-StartupWidget::StartupWidget(QWidget *parent) : QWidget(parent),
-    m_lock(Configuration::config.docks.lock)
+StartupWidget::StartupWidget(QWidget *parent)
+    : QWidget(parent)
+    , m_lock(Configuration::config.docks.lock)
+    , m_sheetEdit(new QLineEdit(Configuration::config.styleSheet, this))
+    , m_startPath(new QLineEdit(this))
 {
     QGroupBox *gb = new QGroupBox("Lock Docks", this);
     QVBoxLayout *docks = new QVBoxLayout(gb);
@@ -72,18 +76,37 @@ StartupWidget::StartupWidget(QWidget *parent) : QWidget(parent),
     docks->addWidget(m_bottom);
     gb->setLayout(docks);
 
-
-    m_startPath = new QLineEdit(this);
     QHBoxLayout *hLayout = new QHBoxLayout();
     hLayout->addWidget(new QLabel(tr("Path to load at startup:"), this));
     hLayout->addStretch();
     hLayout->addWidget(m_startPath);
+
+    QHBoxLayout *sheetLo = new QHBoxLayout();
+    sheetLo->addWidget(new QLabel(tr("Path to stylesheet to apply:")));
+    sheetLo->addStretch();
+    sheetLo->addWidget(m_sheetEdit);
+
+    QToolButton *sheetBtn = new QToolButton(this);
+    sheetBtn->setText("<-");
+    connect ( sheetBtn, SIGNAL(clicked()), this, SLOT(getShitPath()) );
+
+    sheetLo->addWidget(sheetBtn);
+
     QVBoxLayout *vl = new QVBoxLayout();
     vl->addLayout(hLayout);
+    vl->addLayout(sheetLo);
 //    vl->addLayout(defView);
     vl->addWidget(gb);
     vl->addStretch();
     setLayout(vl);
+}
+
+void
+StartupWidget::getShitPath()
+{
+    QString styleSheet = QFileDialog::getOpenFileName(window(), tr("select stylesheet"), QDir::homePath(), "*.css");
+    if ( !styleSheet.isEmpty() )
+        m_sheetEdit->setText(styleSheet);
 }
 
 
@@ -211,8 +234,22 @@ SettingsDialog
 void
 SettingsDialog::accept()
 {
-    if(QFileInfo(m_startupWidget->startupPath()).isDir())
+    if (QFileInfo(m_startupWidget->startupPath()).isDir())
         Configuration::config.startPath = m_startupWidget->startupPath();
+    if (QFileInfo(m_startupWidget->m_sheetEdit->text()).isReadable()
+            &&  ( QFileInfo(m_startupWidget->m_sheetEdit->text()).suffix() == "css"
+                  || QFileInfo(m_startupWidget->m_sheetEdit->text()).suffix() == "qss" ) )
+    {
+        Configuration::config.styleSheet = m_startupWidget->m_sheetEdit->text();
+        QFile file(DFM::Configuration::config.styleSheet);
+        file.open(QFile::ReadOnly);
+        qApp->setStyleSheet(file.readAll());
+    }
+    else
+    {
+        Configuration::config.styleSheet = QString();
+        qApp->setStyleSheet(QString());
+    }
 
     Configuration::config.behaviour.hideTabBarWhenOnlyOneTab = m_behWidget->m_hideTabBar->isChecked();
     Configuration::config.behaviour.systemIcons = m_behWidget->m_useCustomIcons->isChecked();
