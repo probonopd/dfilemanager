@@ -194,7 +194,7 @@ ViewContainer::scriptTriggered()
 {
     QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
     const QString &app = action.takeFirst();
-    QProcess::startDetached(app, action);
+    QProcess::startDetached(app, QStringList() << m_fsModel->rootPath());
 }
 
 void
