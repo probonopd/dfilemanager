@@ -68,11 +68,12 @@ DetailsView::keyPressEvent(QKeyEvent *event)
 {
     if ( event->key() == Qt::Key_Return && event->modifiers() == Qt::NoModifier && state() != QAbstractItemView::EditingState )
     {
-        if ( selectionModel()->hasSelection() )
+        if ( selectionModel()->selectedRows().count() )
+            foreach ( const QModelIndex &index, selectionModel()->selectedRows() )
+                emit activated(index);
+        else if ( selectionModel()->selectedIndexes().count() )
             foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
                 emit activated(index);
-        event->accept();
-        return;
     }
     QTreeView::keyPressEvent(event);
 }

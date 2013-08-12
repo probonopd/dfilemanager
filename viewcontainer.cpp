@@ -144,7 +144,7 @@ ViewContainer::addActions(QList<QAction *> actions)
 {
     VIEWS(addActions(actions));
     Configuration::settings()->beginGroup("CustomActions");
-    foreach (QString string, Configuration::settings()->childKeys())
+    foreach ( const QString &string, Configuration::settings()->childKeys())
     {
         QStringList actions = Configuration::settings()->value(string).toStringList(); //0 == name, 1 == cmd, 2 == keysequence
         QAction *action = new QAction(actions[0], this);
@@ -161,24 +161,33 @@ ViewContainer::customActionTriggered()
 {
     QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
     const QString &app = action.takeFirst();
+
     if ( selectionModel()->hasSelection() )
-        foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
-            QProcess().startDetached(app, QStringList() << action << m_fsModel->filePath( index ));
+    {
+        if ( selectionModel()->selectedRows().count() )
+            foreach ( const QModelIndex &index, selectionModel()->selectedRows() )
+                QProcess().startDetached(app, QStringList() << action << m_fsModel->filePath( index ));
+        else if ( selectionModel()->selectedIndexes().count() )
+            foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
+                QProcess().startDetached(app, QStringList() << action << m_fsModel->filePath( index ));
+    }
     else
+    {
         QProcess().startDetached(app, QStringList() << action << m_fsModel->rootPath());
+    }
 }
 
 void
 ViewContainer::doubleClick(const QModelIndex &index)
 {
-    if (!index.isValid())
+    if ( !index.isValid() )
         return;
 
     if ( !m_fsModel->fileInfo(index).exists() )
         return;
 
     QProcess process;
-    if(m_fsModel->isDir(index))
+    if (m_fsModel->isDir(index))
     {
         m_fsModel->setRootPath(m_fsModel->filePath(index));
         m_forwardList.clear();
@@ -201,7 +210,7 @@ ViewContainer::doubleClick(const QModelIndex &index)
         list << m_fsModel->filePath(index);
 
 #ifdef Q_WS_X11 //linux
-        process.startDetached("xdg-open",list);
+        process.startDetached("xdg-open", list);
 #else //windows
         process.startDetached("cmd /c start " + list.at(0)); //todo: fix, this works but shows a cmd window real quick
 #endif
