@@ -248,6 +248,7 @@ void
 PlacesView::dropEvent( QDropEvent *event )
 {
     if ( event->source() != this )
+    {
         if ( event->mimeData()->hasUrls() )
             if ( itemAt( event->pos() ) )
                 if (dropIndicatorPosition() == QAbstractItemView::OnItem)
@@ -317,16 +318,26 @@ PlacesView::dropEvent( QDropEvent *event )
                     event->setDropAction(Qt::IgnoreAction);
                 }
 
-    if ( dropIndicatorPosition() == QAbstractItemView::OnItem
-            || dropIndicatorPosition() == QAbstractItemView::OnViewport
-            || !indexAt( event->pos() ).parent().isValid()
-         || !m_lastClicked->parent()
+    }
+    else
+    {
+
+        if ( !itemAt(event->pos())->parent() && !m_lastClicked->parent() ) //moving container
+        {
+            QTreeWidget::dropEvent(event);
+            return;
+        }
+        if ( dropIndicatorPosition() == QAbstractItemView::OnItem
+             || dropIndicatorPosition() == QAbstractItemView::OnViewport
+             || !indexAt( event->pos() ).parent().isValid()
+             || !m_lastClicked->parent()
 #ifdef Q_WS_X11
-         || (itemAt(event->pos()) && itemAt(event->pos())->parent()&& itemAt(event->pos())->parent() == DeviceManager::devicesParent())
-         || (itemAt(event->pos()) && itemAt(event->pos()) == DeviceManager::devicesParent())
+             || (itemAt(event->pos()) && itemAt(event->pos())->parent()&& itemAt(event->pos())->parent() == DeviceManager::devicesParent())
+             || (itemAt(event->pos()) && itemAt(event->pos()) == DeviceManager::devicesParent())
 #endif
-         )
-        event->setDropAction(Qt::IgnoreAction);
+             )
+            event->setDropAction(Qt::IgnoreAction);
+    }
 
 
     QTreeWidget::dropEvent( event );
