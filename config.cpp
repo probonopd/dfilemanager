@@ -69,4 +69,5 @@ Configuration::writeConfiguration()
     settings()->setValue("start.view", config.behaviour.view);
     settings()->setValue("iconView.iconSize", config.views.iconView.iconSize);
     settings()->setValue("flowSize", config.views.flowSize);
+    settings()->setValue("hideTabBarWhenOnlyOne", config.behaviour.hideTabBarWhenOnlyOneTab);
 }

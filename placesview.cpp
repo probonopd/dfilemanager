@@ -317,13 +317,13 @@ PlacesView::dropEvent( QDropEvent *event )
                     event->setDropAction(Qt::IgnoreAction);
                 }
 
-    if ( dropIndicatorPosition() == QAbstractItemView::OnItem ||
-            dropIndicatorPosition() == QAbstractItemView::OnViewport ||
-            !indexAt( event->pos() ).parent().isValid()
+    if ( dropIndicatorPosition() == QAbstractItemView::OnItem
+            || dropIndicatorPosition() == QAbstractItemView::OnViewport
+            || !indexAt( event->pos() ).parent().isValid()
+         || !m_lastClicked->parent()
 #ifdef Q_WS_X11
-         ||
-         (itemAt(event->pos()) && itemAt(event->pos())->parent()&& itemAt(event->pos())->parent() == DeviceManager::devicesParent()) ||
-         (itemAt(event->pos()) && itemAt(event->pos()) == DeviceManager::devicesParent())
+         || (itemAt(event->pos()) && itemAt(event->pos())->parent()&& itemAt(event->pos())->parent() == DeviceManager::devicesParent())
+         || (itemAt(event->pos()) && itemAt(event->pos()) == DeviceManager::devicesParent())
 #endif
          )
         event->setDropAction(Qt::IgnoreAction);
@@ -335,7 +335,7 @@ PlacesView::dropEvent( QDropEvent *event )
 void
 PlacesView::mouseReleaseEvent( QMouseEvent *event )
 {
-    m_lastClicked = itemAt( event->pos() );
+//    m_lastClicked = itemAt( event->pos() );
     if ( event->button() == Qt::MiddleButton )
     {
         event->ignore();
@@ -352,6 +352,7 @@ PlacesView::mouseReleaseEvent( QMouseEvent *event )
 void
 PlacesView::mousePressEvent( QMouseEvent *event )
 {
+    m_lastClicked = itemAt( event->pos() );
     if ( event->button() == Qt::MiddleButton )
     {
         event->ignore();
