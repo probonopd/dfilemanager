@@ -99,6 +99,7 @@ private slots:
     void rootPathChanged(QString index);
     void genNewTabRequest(QModelIndex index);
     void customActionTriggered();
+    void scriptTriggered();
 
 private:
     void setModel(FileSystemModel *model);

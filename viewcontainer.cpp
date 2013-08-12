@@ -154,6 +154,18 @@ ViewContainer::addActions(QList<QAction *> actions)
         VIEWS(addAction(action));
     }
     Configuration::settings()->endGroup();
+
+    Configuration::settings()->beginGroup("Scripts");
+    foreach ( const QString &string, Configuration::settings()->childKeys())
+    {
+        QStringList actions = Configuration::settings()->value(string).toStringList(); //0 == name, 1 == script, 2 == keysequence
+        QAction *action = new QAction(actions[0], this);
+        action->setData(actions[1]);
+        action->setShortcut(QKeySequence(actions[2]));
+        connect (action, SIGNAL(triggered()), this, SLOT(scriptTriggered()));
+        VIEWS(addAction(action));
+    }
+    Configuration::settings()->endGroup();
 }
 
 void
@@ -175,6 +187,14 @@ ViewContainer::customActionTriggered()
     {
         QProcess().startDetached(app, QStringList() << action << m_fsModel->rootPath());
     }
+}
+
+void
+ViewContainer::scriptTriggered()
+{
+    QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
+    const QString &app = action.takeFirst();
+    QProcess::startDetached(app, action);
 }
 
 void
