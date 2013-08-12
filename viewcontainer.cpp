@@ -180,14 +180,14 @@ ViewContainer::customActionTriggered()
     {
         if ( selectionModel()->selectedRows().count() )
             foreach ( const QModelIndex &index, selectionModel()->selectedRows() )
-                QProcess().startDetached(app, QStringList() << action << m_fsModel->filePath( index ));
+                QProcess::startDetached(app, QStringList() << action << m_fsModel->filePath( index ));
         else if ( selectionModel()->selectedIndexes().count() )
             foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
-                QProcess().startDetached(app, QStringList() << action << m_fsModel->filePath( index ));
+                QProcess::startDetached(app, QStringList() << action << m_fsModel->filePath( index ));
     }
     else
     {
-        QProcess().startDetached(app, QStringList() << action << m_fsModel->rootPath());
+        QProcess::startDetached(app, QStringList() << action << m_fsModel->rootPath());
     }
 }
 
@@ -196,6 +196,7 @@ ViewContainer::scriptTriggered()
 {
     QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
     const QString &app = action.takeFirst();
+    qDebug() << "trying to launch" << app << "in" << m_fsModel->rootPath();
     QProcess::startDetached(app, QStringList() << m_fsModel->rootPath());
 }
 
