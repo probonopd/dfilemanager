@@ -81,6 +81,12 @@ StartupWidget::StartupWidget(QWidget *parent)
     hLayout->addStretch();
     hLayout->addWidget(m_startPath);
 
+    QToolButton *startBtn = new QToolButton(this);
+    startBtn->setText("<-");
+    connect ( startBtn, SIGNAL(clicked()), this, SLOT(getStartPath()) );
+
+    hLayout->addWidget(startBtn);
+
     QHBoxLayout *sheetLo = new QHBoxLayout();
     sheetLo->addWidget(new QLabel(tr("Path to stylesheet to apply:")));
     sheetLo->addStretch();
@@ -107,6 +113,17 @@ StartupWidget::getShitPath()
     QString styleSheet = QFileDialog::getOpenFileName(window(), tr("select stylesheet"), QDir::homePath(), "*.css");
     if ( !styleSheet.isEmpty() )
         m_sheetEdit->setText(styleSheet);
+}
+
+void
+StartupWidget::getStartPath()
+{
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
+                                                    QDir::homePath(),
+                                                    QFileDialog::ShowDirsOnly
+                                                    | QFileDialog::DontResolveSymlinks);
+    if ( !dir.isEmpty() )
+        m_startPath->setText(dir);
 }
 
 
@@ -244,6 +261,7 @@ SettingsDialog::accept()
         QFile file(DFM::Configuration::config.styleSheet);
         file.open(QFile::ReadOnly);
         qApp->setStyleSheet(file.readAll());
+        file.close();
     }
     else
     {

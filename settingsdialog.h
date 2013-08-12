@@ -59,6 +59,7 @@ private slots:
             m_lock -= i;
     }
     void getShitPath();
+    void getStartPath();
 
 private:
     int m_lock;
