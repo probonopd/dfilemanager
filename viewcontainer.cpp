@@ -149,7 +149,8 @@ ViewContainer::addActions(QList<QAction *> actions)
         QStringList actions = Configuration::settings()->value(string).toStringList(); //0 == name, 1 == cmd, 2 == keysequence
         QAction *action = new QAction(actions[0], this);
         action->setData(actions[1]);
-        action->setShortcut(QKeySequence(actions[2]));
+        if ( actions.count() > 2 )
+            action->setShortcut(QKeySequence(actions[2]));
         connect (action, SIGNAL(triggered()), this, SLOT(customActionTriggered()));
         VIEWS(addAction(action));
     }
@@ -161,7 +162,8 @@ ViewContainer::addActions(QList<QAction *> actions)
         QStringList actions = Configuration::settings()->value(string).toStringList(); //0 == name, 1 == script, 2 == keysequence
         QAction *action = new QAction(actions[0], this);
         action->setData(actions[1]);
-        action->setShortcut(QKeySequence(actions[2]));
+        if ( actions.count() > 2 )
+            action->setShortcut(QKeySequence(actions[2]));
         connect (action, SIGNAL(triggered()), this, SLOT(scriptTriggered()));
         VIEWS(addAction(action));
     }
