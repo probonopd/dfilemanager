@@ -203,7 +203,7 @@ IconView::IconView( QWidget *parent ) : QListView( parent ), m_scrollTimer( new 
     setItemDelegate( new IconDelegate( this ) );
     ViewAnimator::manage(this);
     setMovement( QListView::Snap );
-    int iSize = Configuration::config.views.iconView.iconSize*16; //todo connect to slider
+    const int &iSize = Configuration::config.views.iconView.iconSize*16;
     setSelectionMode( QAbstractItemView::ExtendedSelection );
     setResizeMode( QListView::Adjust );
     setIconSize( QSize( iSize, iSize ) );
@@ -428,12 +428,12 @@ void
 IconView::contextMenuEvent( QContextMenuEvent *event )
 {
     QMenu popupMenu;
+    if ( Configuration::customActions().count() )
+        popupMenu.addMenu(Configuration::customActionsMenu());
     popupMenu.addActions( actions() );
-    QList<QAction *> actionList( ViewContainer::openWithActions( m_fsModel->filePath( indexAt( event->pos() ) ) ) );
-    foreach( QAction *action, actionList )
-        connect( action, SIGNAL( triggered() ), MAINWINDOW, SLOT( openWithApp() ) );
+    const QString &file = static_cast<FileSystemModel *>( model() )->filePath( indexAt( event->pos() ) );
     QMenu openWith( tr( "Open With" ), this );
-    openWith.addActions( actionList );
+    openWith.addActions( Configuration::openWithActions( file ) );
     foreach( QAction *action, actions() )
     {
         popupMenu.addAction( action );

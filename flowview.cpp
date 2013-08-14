@@ -20,8 +20,11 @@
 
 
 #include "flowview.h"
+#include "mainwindow.h"
 #include "config.h"
 #include "application.h"
+#include "infowidget.h"
+#include "operations.h"
 #include <QImageReader>
 
 using namespace DFM;
@@ -43,6 +46,7 @@ FlowView::FlowView(QWidget *parent) : QWidget(parent)
     m_splitter->restoreState( Configuration::config.views.flowSize );
 
     connect( m_preView, SIGNAL(centerIndexChanged(QModelIndex)), this, SLOT(flowCurrentIndexChanged(QModelIndex)) );
+    connect( m_preView, SIGNAL(centerIndexChanged(QModelIndex)), Operations::absWinFor<MainWindow *>(this)->infoWidget(), SLOT(hovered(QModelIndex)) );
     connect( m_splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(saveSplitter()) );
 
 

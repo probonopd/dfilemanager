@@ -50,16 +50,12 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow( QStringList arguments = QStringList() );
     ViewContainer *activeContainer() { return m_activeContainer; }
+    static ViewContainer *currentContainer();
+    InfoWidget *infoWidget() { return m_infoWidget; }
     void updateConfig();
 
 public slots:
     void addTab(const QString &path = QDir::homePath());
-    inline void openWithApp()
-    {
-        QAction *action = static_cast<QAction *>( sender() );
-        QString program( action->data().toString().split( " " ).at( 0 ) );
-        QProcess().startDetached( program, QStringList() << m_activeContainer->model()->filePath( m_activeContainer->selectionModel()->selectedIndexes().first() ) );
-    }
 
 protected:
     void closeEvent(QCloseEvent *event);

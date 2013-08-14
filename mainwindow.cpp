@@ -31,8 +31,11 @@
 
 using namespace DFM;
 
+static ViewContainer *currentCont = 0;
+
 MainWindow::MainWindow(QStringList arguments)
 { 
+    addActions(Configuration::customActions());
     APP->setMainWindow(this);
     QWidget *center = new QWidget(this);
     m_tabWin = new QMainWindow(this);
@@ -577,6 +580,8 @@ MainWindow::addTab(const QString &path)
     connect( container, SIGNAL(newTabRequest(QString)), this, SLOT(addTab(QString)));
     connect( container, SIGNAL(entered(QModelIndex)), m_infoWidget, SLOT(hovered(QModelIndex)));
     connect( container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
+    if ( !currentCont )
+        currentCont = container;
 
     QList<QAction *> actList;
     actList << m_openInTabAct << m_mkDirAct << m_pasteAct << m_copyAct << m_cutAct
@@ -699,5 +704,11 @@ void
 MainWindow::stackChanged(int)
 {
     if (m_activeContainer)
+    {
         m_filterBox->setText(m_activeContainer->currentFilter());
+        currentCont = m_activeContainer;
+    }
 }
+
+ViewContainer *MainWindow::currentContainer() { return currentCont; }
+

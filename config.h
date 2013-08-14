@@ -23,8 +23,10 @@
 #define CONFIG_H
 
 #include <QString>
+#include <QAction>
 #include <QSettings>
 #include <QByteArray>
+#include <QMenu>
 
 namespace DFM
 {
@@ -59,22 +61,30 @@ typedef struct Config
 } Config;
 
 
-class Configuration
+class Configuration : public QObject
 {
 public:
     static Configuration *instance();
     static inline void readConfig() { instance()->readConfiguration(); }
     static inline void writeConfig() { instance()->writeConfiguration(); }
+    static QList<QAction *> customActions() { return instance()->ca(); }
+    static QMenu *customActionsMenu() { return instance()->cam(); }
+    static QList<QAction *> openWithActions(const QString &file);
     static QSettings *settings() { return instance()->stngs(); }
     static Config config;
 
 protected:
-    Configuration();
+    Configuration( QObject *parent = 0 );
     void readConfiguration();
     void writeConfiguration();
+    inline QList<QAction *> ca() const { return m_customActions; }
     inline QSettings *stngs() { return m_settings; }
+    inline QMenu *cam() { return &m_customActionsMenu; }
+
 private:
     QSettings *m_settings;
+    QList<QAction *> m_customActions;
+    QMenu m_customActionsMenu;
 };
 
 }

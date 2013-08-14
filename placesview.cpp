@@ -321,7 +321,6 @@ PlacesView::dropEvent( QDropEvent *event )
     }
     else
     {
-
         if ( !itemAt(event->pos())->parent() && !m_lastClicked->parent() ) //moving container
         {
             QTreeWidget::dropEvent(event);
@@ -334,6 +333,7 @@ PlacesView::dropEvent( QDropEvent *event )
 #ifdef Q_WS_X11
              || (itemAt(event->pos()) && itemAt(event->pos())->parent()&& itemAt(event->pos())->parent() == DeviceManager::devicesParent())
              || (itemAt(event->pos()) && itemAt(event->pos()) == DeviceManager::devicesParent())
+             || DeviceManager::itemIsDevice(m_lastClicked)
 #endif
              )
             event->setDropAction(Qt::IgnoreAction);

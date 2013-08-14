@@ -53,6 +53,7 @@ DetailsView::DetailsView(QWidget *parent) :
     setDefaultDropAction(Qt::MoveAction);
     setAcceptDrops(true);
     setDragEnabled(true);
+    setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 }
 
 void
@@ -94,12 +95,12 @@ void
 DetailsView::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu popupMenu;
+    if ( Configuration::customActions().count() )
+        popupMenu.addMenu(Configuration::customActionsMenu());
     popupMenu.addActions( actions() );
-    QList<QAction *> actionList( ViewContainer::openWithActions( MAINWINDOW->activeContainer()->model()->filePath( indexAt( event->pos() ) ) ) );
-    foreach( QAction *action, actionList )
-        connect( action, SIGNAL( triggered() ), MAINWINDOW, SLOT( openWithApp() ) );
+    const QString &file = static_cast<FileSystemModel *>( model() )->filePath( indexAt( event->pos() ) );
     QMenu openWith( tr( "Open With" ), this );
-    openWith.addActions( actionList );
+    openWith.addActions( Configuration::openWithActions( file ) );
     foreach( QAction *action, actions() )
     {
         popupMenu.addAction( action );
@@ -114,8 +115,8 @@ DetailsView::contextMenuEvent(QContextMenuEvent *event)
 void
 DetailsView::mouseReleaseEvent(QMouseEvent *e)
 {
-    if(e->button() == Qt::MiddleButton)
-        if(indexAt(e->pos()).isValid())
+    if (e->button() == Qt::MiddleButton)
+        if (indexAt(e->pos()).isValid())
             emit newTabRequest(indexAt(e->pos()));
     setDragEnabled(true);
     QTreeView::mouseReleaseEvent(e);

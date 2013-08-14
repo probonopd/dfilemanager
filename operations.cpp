@@ -20,21 +20,28 @@
 
 
 #include "operations.h"
+#include "mainwindow.h"
 #include <QFileInfo>
 #include <QVector>
 #include <QDebug>
 #include <QProcess>
+#include <QApplication>
+#include <QAction>
+#include <QItemSelectionModel>
 
-#ifdef Q_WS_X11
-#include <magic.h>
-#include <sys/statfs.h>
-#include <sys/types.h>
-#include <sys/vfs.h>
-#include <sys/statvfs.h>
-#endif
 //#include <blkid/blkid.h> //dev block id info... maybe need later
 
 using namespace DFM;
+
+static Operations *s_instance = 0;
+
+Operations
+*Operations::instance()
+{
+    if ( !s_instance )
+        s_instance = new Operations(qApp);
+    return s_instance;
+}
 
 QString
 Operations::getMimeType(const QString &file)
@@ -57,34 +64,6 @@ Operations::getFileType(const QString &file)
     return QString( magic_file( mgcMime, file.toStdString().c_str() ) );
 #else
     return QString();
-#endif
-}
-
-quint64
-Operations::getDriveInfo(const QString &file, const Usage &t)
-{
-#ifdef Q_WS_X11
-    if(!QFileInfo(file).exists())
-        return 0;
-    struct statfs sfs;
-    statfs(file.toLatin1(),&sfs);
-    const quint64 &fragsize = sfs.f_frsize,
-            &blocks = sfs.f_blocks,
-            &available = sfs.f_bavail;
-    const quint64 *id = (quint64 *)&sfs.f_fsid;
-    const quint64 &total = blocks*fragsize,
-            &free = available*fragsize,
-            &used = (blocks-available)*fragsize;
-    switch (t)
-    {
-    case Free: return free;
-    case Used: return used;
-    case Total: return total;
-    case Id: return *id;
-    }
-    return 0;
-#else
-    return 0;
 #endif
 }
 
@@ -125,3 +104,36 @@ Operations::openFile(const QString &file)
 #endif
     }
 }
+
+void
+Operations::openWith()
+{
+    QAction *action = static_cast<QAction *>( sender() );
+    QString program( action->data().toString().split( " " ).at( 0 ) );
+    QProcess::startDetached( program, QStringList() << action->property("file").toString() );
+}
+
+void
+Operations::customActionTriggered()
+{
+    QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
+    const QString &app = action.takeFirst();
+
+    FileSystemModel *fsModel = MainWindow::currentContainer()->model();
+    QItemSelectionModel *isModel = MainWindow::currentContainer()->selectionModel();
+
+    if ( isModel->hasSelection() )
+    {
+        if ( isModel->selectedRows().count() )
+            foreach ( const QModelIndex &index, isModel->selectedRows() )
+                QProcess::startDetached(app, QStringList() << action << fsModel->filePath( index ));
+        else if ( isModel->selectedIndexes().count() )
+            foreach ( const QModelIndex &index, isModel->selectedIndexes() )
+                QProcess::startDetached(app, QStringList() << action << fsModel->filePath( index ));
+    }
+    else
+    {
+        QProcess::startDetached(app, QStringList() << action << fsModel->rootPath());
+    }
+}
+

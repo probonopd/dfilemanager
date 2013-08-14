@@ -71,7 +71,6 @@ public:
     void rename();
     void goHome();
     void animateIconSize(int start, int stop);
-    static QList<QAction *> openWithActions(const QString &file);
     BreadCrumbs *breadCrumbs();
     QString currentFilter();
 

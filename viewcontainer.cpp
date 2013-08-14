@@ -52,8 +52,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
 //    setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
 
     setModel(m_fsModel);
-    m_selectModel = m_iconView->selectionModel();
-    setSelectionModel(m_selectModel);
+    setSelectionModel(new QItemSelectionModel(m_fsModel));
 
     connect( m_iconView, SIGNAL(activated(const QModelIndex &)), this, SLOT(doubleClick(const QModelIndex &)));
     connect( m_detailsView, SIGNAL(activated(const QModelIndex &)), this, SLOT(doubleClick(const QModelIndex &)));
@@ -109,6 +108,7 @@ ViewContainer::setModel(FileSystemModel *model)
 void
 ViewContainer::setSelectionModel(QItemSelectionModel *selectionModel)
 {
+    m_selectModel = selectionModel;
     VIEWS(setSelectionModel(selectionModel));
 }
 
@@ -143,19 +143,6 @@ void
 ViewContainer::addActions(QList<QAction *> actions)
 {
     VIEWS(addActions(actions));
-    Configuration::settings()->beginGroup("CustomActions");
-    foreach ( const QString &string, Configuration::settings()->childKeys())
-    {
-        QStringList actions = Configuration::settings()->value(string).toStringList(); //0 == name, 1 == cmd, 2 == keysequence
-        QAction *action = new QAction(actions[0], this);
-        action->setData(actions[1]);
-        if ( actions.count() > 2 )
-            action->setShortcut(QKeySequence(actions[2]));
-        connect (action, SIGNAL(triggered()), this, SLOT(customActionTriggered()));
-        VIEWS(addAction(action));
-    }
-    Configuration::settings()->endGroup();
-
     Configuration::settings()->beginGroup("Scripts");
     foreach ( const QString &string, Configuration::settings()->childKeys())
     {
@@ -408,99 +395,6 @@ ViewContainer::customCommand()
     QString program = args.takeFirst();
     QProcess process;
     process.startDetached(program,args);
-}
-
-static inline QString desktopInfo(const QString &desktop, bool name)
-{
-    QString appsPath("/usr/share/applications/");
-    QFileInfo desktopFileInfo(appsPath + desktop);
-    if(!desktopFileInfo.exists())
-    {
-        QString addToPath = desktop.split("-").at(0);
-        QString newDesktop = desktop.split("-").at(1);
-        QStringList tmp = QDir(appsPath).entryList(QStringList() << addToPath, QDir::Dirs);
-        if(tmp.count())
-            desktopFileInfo = QFileInfo(appsPath + tmp[0] + "/" + newDesktop);
-        if(!desktopFileInfo.exists())
-            return QString();
-    }
-    QFile desktopFile(desktopFileInfo.filePath());
-    desktopFile.open(QFile::ReadOnly); //we should only get here if file exists...
-    QTextStream stream(&desktopFile);
-    QString n, e;
-    while (!stream.atEnd())
-    {
-        QString line = stream.readLine();
-        if(line.startsWith("name=", Qt::CaseInsensitive))
-        {
-            if(line.split("=").count() >= 2)
-                n = line.split("=").at(1);
-        }
-        else if(line.startsWith("exec=", Qt::CaseInsensitive))
-        {
-            if(line.split("=").count() >= 2)
-                e = line.split("=").at(1);
-        }
-        else continue;
-    }
-    desktopFile.close();
-    return name ? n : e;
-}
-
-QList<QAction *>
-ViewContainer::openWithActions(const QString &file)
-{
-    QFile mimeTypes("/usr/share/mime/globs");
-    mimeTypes.open(QFile::ReadOnly);
-    QStringList mimeTypesList = QString(mimeTypes.read(QFileInfo(mimeTypes).size())).split("\n", QString::SkipEmptyParts);
-    mimeTypes.close();
-
-    QMap<QString, QString> mimeMap;
-    foreach(QString mimeType, mimeTypesList)
-    {
-        QStringList tmp = mimeType.split(":");
-        if(tmp.count() >= 2)
-        {
-            const QString &mt = tmp.at(0);
-            QString fn = tmp.at(1);
-            fn.remove("*"); fn.remove(".");
-            mimeMap[fn] = mt;
-        }
-    }
-
-    QFile mimeInfo("/usr/share/applications/mimeinfo.cache");
-    mimeInfo.open(QFile::ReadOnly);
-    QStringList mimeList = QString( mimeInfo.read( QFileInfo( mimeInfo ).size() ) ).split( "\n", QString::SkipEmptyParts );
-    mimeInfo.close();
-
-    QMap<QString, QStringList> appsMap;
-
-    foreach(QString mimeString, mimeList)
-    {
-        QStringList tmp = mimeString.split("=");
-        if(tmp.count() >= 2)
-        {
-            QString mt = tmp[0]; QString apps = tmp[1];
-            QStringList appsList = apps.split(";");
-            appsList.removeOne("");
-            appsMap[mt] = appsList;
-        }
-    }
-
-    QStringList apps = QStringList() << appsMap[Operations::getMimeType(file)] << appsMap[mimeMap[QFileInfo(file).suffix()]];
-    apps.removeDuplicates();
-
-    QList<QAction *> actionList;
-    foreach(QString app, apps)
-    {
-
-        QAction *action = new QAction(desktopInfo(app, true), APP->mainWindow() );
-        QVariant var;
-        var.setValue(desktopInfo(app, false));
-        action->setData(var);
-        actionList << action;
-    }
-    return actionList;
 }
 
 QSize

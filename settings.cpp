@@ -61,6 +61,20 @@ MainWindow::readSettings()
         }
     }
     Configuration::settings()->endGroup();
+
+    Configuration::settings()->beginGroup("Test");
+    foreach ( const QString &cg, Configuration::settings()->childGroups() )
+    {
+        qDebug() << cg;
+        Configuration::settings()->beginGroup(cg);
+        for ( int c = 0; c < Configuration::settings()->childKeys().count(); ++c )
+        {
+            qDebug() << Configuration::settings()->childKeys().at(c);
+        }
+        Configuration::settings()->endGroup();
+    }
+    Configuration::settings()->endGroup();
+
     Configuration::settings()->beginGroup("Expandplaces");
     for (int i = 0; i < m_placesView->topLevelItemCount(); i++)
         m_placesView->topLevelItem(i)->setExpanded(Configuration::settings()->value(m_placesView->topLevelItem(i)->text(0)).toBool());
@@ -125,6 +139,43 @@ MainWindow::writeSettings()
         ++it;
     }
     Configuration::settings()->endGroup();
+
+/*
+ *
+ *
+ *test
+ *
+ *
+ *
+ */
+
+    Configuration::settings()->remove("Test");
+    Configuration::settings()->beginGroup("Test");
+
+    for ( int i = 0; i < m_placesView->topLevelItemCount(); ++i )
+    {
+        QTreeWidgetItem *top = m_placesView->topLevelItem(i);
+        Configuration::settings()->beginGroup(QString("%1.%2").arg(QString::number(i)).arg(top->text(0)));
+        for ( int a = 0; a < top->childCount(); ++a )
+        {
+            QTreeWidgetItem *c = top->child(a);
+            Configuration::settings()->setValue(QString("%1.%2").arg(QString::number(a)).arg(c->text(0)), QStringList() << c->text(1) << c->text(3));
+        }
+        Configuration::settings()->endGroup();
+    }
+
+    Configuration::settings()->endGroup();
+
+
+    /*
+     *
+     *
+     *test
+     *
+     *
+     *
+     */
+
     Configuration::settings()->remove("ExpandPlaces");
     Configuration::settings()->beginGroup("Expandplaces");
     for (int i = 0; i < m_placesView->topLevelItemCount(); i++)

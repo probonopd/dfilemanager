@@ -24,7 +24,17 @@
 
 #include <QString>
 #include <QColor>
+#include <QFileInfo>
+#include <QWidget>
 #include "Proxystyle/proxystyle.h"
+
+#ifdef Q_WS_X11
+#include <magic.h>
+#include <sys/statfs.h>
+#include <sys/types.h>
+#include <sys/vfs.h>
+#include <sys/statvfs.h>
+#endif
 
 namespace DFM
 {
@@ -43,16 +53,56 @@ public:
    }
 };
 
-class Operations
+class Operations : public QObject
 {
+    Q_OBJECT
 public:
-    Operations(){}
     static QString getMimeType(const QString &file);
     static QString getFileType(const QString &file);
-    enum Usage{Free = 0, Used, Total, Id};
-    static quint64 getDriveInfo(const QString &file, const Usage &t);
     static QColor colorMid(const QColor c1, const QColor c2, int i1 = 1, int i2 = 1);
     static void openFile( const QString &file );
+    static Operations *instance();
+
+    template<typename T> static inline T absWinFor( QWidget *w )
+    {
+        QWidget *widget = w;
+        while ( widget->parentWidget() )
+            widget = widget->parentWidget();
+        return qobject_cast<T>(widget);
+    }
+
+    enum Usage {Free = 0, Used, Total, Id};
+    template<Usage type> static inline quint64 getDriveInfo( const QString &file = QString() )
+    {
+#ifdef Q_WS_X11
+        if (!QFileInfo(file).exists())
+            return 0;
+        struct statfs sfs;
+        statfs(file.toLatin1(),&sfs);
+        const quint64 &fragsize = sfs.f_frsize,
+                &blocks = sfs.f_blocks,
+                &available = sfs.f_bavail;
+        const quint64 *id = (quint64 *)&sfs.f_fsid;
+        const quint64 &total = blocks*fragsize,
+                &free = available*fragsize,
+                &used = (blocks-available)*fragsize;
+        switch (type)
+        {
+        case Free: return free;
+        case Used: return used;
+        case Total: return total;
+        case Id: return *id;
+        }
+        return 0;
+#else
+        return 0;
+#endif
+    }
+public slots:
+    void openWith();
+    void customActionTriggered();
+protected:
+    Operations(QObject *parent = 0) : QObject(parent) {}
 };
 
 }

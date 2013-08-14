@@ -21,9 +21,9 @@
 
 #include "columnsview.h"
 #include "viewcontainer.h"
-#include "application.h"
 #include "mainwindow.h"
 #include "filesystemmodel.h"
+#include "operations.h"
 
 using namespace DFM;
 
@@ -88,12 +88,12 @@ void
 ColumnsView::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu popupMenu;
+    if ( Configuration::customActions().count() )
+        popupMenu.addMenu(Configuration::customActionsMenu());
     popupMenu.addActions( actions() );
-    QList<QAction *> actionList( ViewContainer::openWithActions( MAINWINDOW->activeContainer()->model()->filePath( indexAt( event->pos() ) ) ) );
-    foreach( QAction *action, actionList )
-        connect( action, SIGNAL( triggered() ), MAINWINDOW, SLOT( openWithApp() ) );
+    const QString &file = static_cast<FileSystemModel *>( model() )->filePath( indexAt( event->pos() ) );
     QMenu openWith( tr( "Open With" ), this );
-    openWith.addActions( actionList );
+    openWith.addActions( Configuration::openWithActions( file ) );
     foreach( QAction *action, actions() )
     {
         popupMenu.addAction( action );

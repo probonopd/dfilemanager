@@ -83,9 +83,9 @@ public:
     inline bool isMounted() const { return m_solid.isValid() && m_solid.as<Solid::StorageAccess>()->isAccessible(); }
     inline QString mountPath() const { return m_solid.isValid() ? m_solid.as<Solid::StorageAccess>()->filePath() : QString(); }
     inline QString devPath() const { return m_solid.isValid() ? m_solid.as<Solid::Block>()->device() : QString(); }
-    inline quint64 usedBytes() const { return Operations::getDriveInfo(mountPath(), Operations::Used); }
-    inline quint64 freeBytes() const { return Operations::getDriveInfo(mountPath(), Operations::Free); }
-    inline quint64 totalBytes() const { return Operations::getDriveInfo(mountPath(), Operations::Total); }
+    inline quint64 usedBytes() const { return Operations::getDriveInfo<Operations::Used>(mountPath()); }
+    inline quint64 freeBytes() const { return Operations::getDriveInfo<Operations::Free>(mountPath()); }
+    inline quint64 totalBytes() const { return Operations::getDriveInfo<Operations::Total>(mountPath()); }
     inline int used() const { return usedBytes() ? (int)(((float)usedBytes()/(float)totalBytes())*100) : 0; }
 //    inline void mount() { setMounted(true); }
 //    inline void unMount() { setMounted(false); }
