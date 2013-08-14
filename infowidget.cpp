@@ -109,10 +109,10 @@ InfoWidget::hovered(const QModelIndex &index)
     }
     const FileSystemModel *fsModel = static_cast<const FileSystemModel*>(index.model());
     QIcon icon = QPixmap::fromImage(ThumbsLoader::thumb(fsModel->filePath(index)));
+    if ( icon.isNull() && fsModel->fileInfo(index).isDir() )
+        icon = fsModel->iconPix(fsModel->fileInfo(fsModel->index(index.row(), 0, index.parent())), 64);
     if ( icon.isNull() )
-        icon = fsModel->iconPix(fsModel->fileInfo(fsModel->index(fsModel->filePath(index), 0)), 64);
-    if (icon.isNull())
-        icon = qvariant_cast<QIcon>(fsModel->data(fsModel->index(fsModel->filePath(index), 0), Qt::DecorationRole));
+        icon = qvariant_cast<QIcon>(fsModel->data(fsModel->index(index.row(), 0, index.parent()), Qt::DecorationRole));
     QPixmap pix = icon.pixmap(64);
     const bool dir = fsModel->fileInfo(index).isDir();
     tw->setPixmap(pix);
