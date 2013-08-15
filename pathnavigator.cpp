@@ -20,7 +20,6 @@
 
 
 #include "pathnavigator.h"
-#include "application.h"
 #include "mainwindow.h"
 #include <QDebug>
 #include <QCompleter>
@@ -36,7 +35,7 @@ Menu::mousePressEvent(QMouseEvent *e)
     else if ( e->button() == Qt::MidButton )
     {
         e->accept();
-        MAINWINDOW->addTab( qobject_cast<PathSubDir *>(actionAt(e->pos()))->path() );
+        MainWindow::currentWindow()->addTab( qobject_cast<PathSubDir *>(actionAt(e->pos()))->path() );
     }
     else
         e->accept();
@@ -70,7 +69,7 @@ NavButton::mouseReleaseEvent(QMouseEvent *e)
     else if ( e->button() == Qt::MidButton )
     {
         e->accept();
-        MAINWINDOW->addTab( m_path );
+        MainWindow::currentWindow()->addTab( m_path );
     }
     else
         e->accept();

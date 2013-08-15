@@ -119,7 +119,10 @@ inline static void drawDeviceUsage( const int &usage, QPainter *painter, const Q
 void
 PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-    static PlacesView *placesView = APP->placesView();
+    static PlacesView *placesView = 0;
+    placesView = MainWindow::places();
+    if ( !placesView )
+        return;
 
     painter->save(); //must save... have to restore at end
     painter->setRenderHint( QPainter::Antialiasing );
@@ -209,9 +212,8 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 
 PlacesView::PlacesView( QWidget *parent ) : QTreeWidget( parent )
 {
+    m_mainWindow = MainWindow::currentWindow();
 #ifdef Q_WS_X11
-    APP->setPlacesView( this );
-    m_mainWindow = APP->mainWindow();
     DeviceManager::manage(this);
 #endif
     ViewAnimator::manage(this);

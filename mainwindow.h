@@ -50,7 +50,10 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow( QStringList arguments = QStringList() );
     ViewContainer *activeContainer() { return m_activeContainer; }
+    PlacesView *placesView() { return m_placesView; }
     static ViewContainer *currentContainer();
+    static MainWindow *currentWindow();
+    static PlacesView *places();
     InfoWidget *infoWidget() { return m_infoWidget; }
     void updateConfig();
 
@@ -62,6 +65,7 @@ protected:
     bool eventFilter(QObject *obj, QEvent *ev);
     void contextMenuEvent(QContextMenuEvent *event);
     void keyPressEvent(QKeyEvent *ke);
+    void windowActivationChange(bool wasActive);
     void updateIcons();
     void createActions();
     void createMenus();
@@ -114,7 +118,7 @@ private slots:
     void tabClosed(int);
     void tabMoved(int,int);
     void stackChanged(int);
-    void newWindow() { QProcess().startDetached(m_appPath); }
+    void newWindow() { (new MainWindow(QStringList() << m_activeContainer->model()->rootPath()))->show(); }
     void readSettings();
     void activateRecentFolder(const QString &folder) { m_activeContainer->setRootPath(folder); }
 

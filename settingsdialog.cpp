@@ -22,7 +22,6 @@
 #include "settingsdialog.h"
 #include "config.h"
 #include "mainwindow.h"
-#include "application.h"
 #include <QGroupBox>
 #include <QFileDialog>
 
@@ -267,7 +266,7 @@ SettingsDialog::accept()
     Configuration::config.behaviour.view = m_viewWidget->m_viewBox->currentIndex();
     Configuration::config.views.iconView.iconSize = m_viewWidget->m_iconSlider->value();
 
-    MAINWINDOW->updateConfig();
+    MainWindow::currentWindow()->updateConfig();
 
     QDialog::accept();
 }

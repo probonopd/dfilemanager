@@ -23,7 +23,6 @@
 #include "viewcontainer.h"
 #include "mainwindow.h"
 #include "operations.h"
-#include "application.h"
 #include "viewanimator.h"
 #include <QAction>
 #include <QMenu>

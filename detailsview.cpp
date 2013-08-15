@@ -22,7 +22,6 @@
 #include "detailsview.h"
 #include "viewcontainer.h"
 #include "filesystemmodel.h"
-#include "application.h"
 #include "mainwindow.h"
 
 using namespace DFM;

@@ -21,7 +21,6 @@
 
 #include "thumbsloader.h"
 #include <QImage>
-#include "application.h"
 #include "columnsview.h"
 #include "mainwindow.h"
 #include "operations.h"
@@ -160,10 +159,9 @@ ThumbsLoader
 {
     if ( !inst )
     {
-        inst = new ThumbsLoader(APP);
+        inst = new ThumbsLoader(qApp);
         m_fsWatcher = new QFileSystemWatcher(inst);
         connect ( m_fsWatcher, SIGNAL(fileChanged(QString)), inst, SLOT(fileChanged(QString)) );
-        connect ( MAINWINDOW, SIGNAL(viewChanged(QAbstractItemView*)), inst, SLOT(setCurrentView(QAbstractItemView*)) );
     }
     return inst;
 }

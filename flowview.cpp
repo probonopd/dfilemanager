@@ -22,7 +22,6 @@
 #include "flowview.h"
 #include "mainwindow.h"
 #include "config.h"
-#include "application.h"
 #include "infowidget.h"
 #include "operations.h"
 #include <QImageReader>

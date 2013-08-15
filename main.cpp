@@ -18,8 +18,6 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-
-#include "application.h"
 #include "mainwindow.h"
 #include "config.h"
 
@@ -27,8 +25,8 @@ int main(int argc, char *argv[])
 {
 //    Q_INIT_RESOURCE(resources);
 
-    Application::setGraphicsSystem("raster");
-    Application app(argc, argv);
+    QApplication::setGraphicsSystem("raster");
+    QApplication app(argc, argv);
 
     DFM::Configuration::readConfig();
 

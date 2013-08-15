@@ -23,7 +23,6 @@
 #include "operations.h"
 #include "iojob.h"
 #include "deletedialog.h"
-#include "application.h"
 #include "mainwindow.h"
 #include <QProcess>
 #include <QMap>
@@ -336,9 +335,9 @@ ViewContainer::deleteCurrentSelection()
     else
         delUs = m_selectModel->selectedIndexes();
 
-    static DeleteDialog *delDialog = 0;
+    DeleteDialog *delDialog = 0;
     if ( !delDialog )
-        delDialog = new DeleteDialog(static_cast<Application*>(QApplication::instance())->mainWindow());
+        delDialog = new DeleteDialog(MainWindow::currentWindow());
 
     delDialog->filesToDelete(delUs);
 

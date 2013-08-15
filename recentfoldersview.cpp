@@ -22,7 +22,6 @@
 #include "recentfoldersview.h"
 #include "filesystemmodel.h"
 #include "viewcontainer.h"
-#include "application.h"
 #include "mainwindow.h"
 #include <QFileInfo>
 
@@ -56,7 +55,7 @@ RecentFoldersView::folderEntered(const QString &folder)
                 return;
             }
 
-    const ViewContainer *vc = MAINWINDOW->activeContainer();
+    const ViewContainer *vc = MainWindow::currentContainer();
     const FileSystemModel *fsModel = static_cast<const FileSystemModel*>(vc->model());
     if (!fsModel)
         return;

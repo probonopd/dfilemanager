@@ -29,7 +29,7 @@ using namespace DFM;
 DeviceItem::DeviceItem(QTreeWidgetItem *parentItem, QTreeWidget *view, Solid::Device solid )
     : QTreeWidgetItem( parentItem )
     , m_view(view)
-    , m_mainWin(APP->mainWindow())
+    , m_mainWin(MainWindow::currentWindow())
     , m_parentItem(parentItem)
     , m_tb(new QToolButton(m_view))
     , m_timer(new QTimer(this))

@@ -20,7 +20,6 @@
 
 
 #include "dockwidget.h"
-#include "application.h"
 #include "mainwindow.h"
 
 using namespace DFM;
@@ -28,33 +27,35 @@ using namespace Docks;
 
 DockWidget::DockWidget(QWidget *parent, const QString &title, const Qt::WindowFlags &flags, const Pos &pos)
     : QDockWidget(title, parent, flags)
-    , m_mainWindow(APP->mainWindow())
-    , m_margin(0)
-    , m_titleWidget(new TitleWidget(this, title, pos))
+    , m_mainWindow(MainWindow::currentWindow())
+//    , m_margin(0)
+//    , m_titleWidget(new TitleWidget(this, title, pos))
     , m_position(pos)
     , m_timer(new QTimer(this))
     , m_animStep(0)
     , m_dirIn(false)
     , m_isLocked(false)
 {
-    if ( qApp->styleSheet().isEmpty() )
-        setStyle(new MyStyle(style()->objectName()));
-    m_margin = style()->pixelMetric(QStyle::PM_DockWidgetFrameWidth);
+//    if ( qApp->styleSheet().isEmpty() )
+//        setStyle(new MyStyle(style()->objectName()));
+//    m_margin = style()->pixelMetric(QStyle::PM_DockWidgetFrameWidth);
     setAllowedAreas(m_position == Left ? Qt::LeftDockWidgetArea : m_position == Right ? Qt::RightDockWidgetArea : Qt::BottomDockWidgetArea);
-    setTitleBarWidget(m_titleWidget);
-    setFocusPolicy(Qt::NoFocus);
-    APP->manageDock( this );
-    connect (m_timer, SIGNAL(timeout()), this, SLOT(animate()));
-    connect (m_titleWidget->floatButton(), SIGNAL(clicked()), this, SLOT(setFloat()));
-    connect (this, SIGNAL(topLevelChanged(bool)), this, SLOT(floatationChanged(bool)));
-    connect (this, SIGNAL(topLevelChanged(bool)), m_titleWidget,   SLOT(setIsFloating(bool)));
-    m_mainWindow->installEventFilter(this);
+    setFeatures(QDockWidget::DockWidgetClosable);
+//    setTitleBarWidget(m_titleWidget);
+//    setFocusPolicy(Qt::NoFocus);
+//    APP->manageDock( this );
+//    connect (m_timer, SIGNAL(timeout()), this, SLOT(animate()));
+//    connect (m_titleWidget->floatButton(), SIGNAL(clicked()), this, SLOT(setFloat()));
+//    connect (this, SIGNAL(topLevelChanged(bool)), this, SLOT(floatationChanged(bool)));
+//    connect (this, SIGNAL(topLevelChanged(bool)), m_titleWidget,   SLOT(setIsFloating(bool)));
+//    m_mainWindow->installEventFilter(this);
     setLocked( bool( Configuration::config.docks.lock & pos ) );
 }
 
 void
 DockWidget::floatationChanged(const bool &floating)
 {
+#if 0
     m_timer->stop();
     m_animStep = 1;
     if (floating)
@@ -71,6 +72,7 @@ DockWidget::floatationChanged(const bool &floating)
     else
         if (!mask().isEmpty())
             clearMask();
+#endif
 }
 
 #if 0 //6px roundness
@@ -125,6 +127,7 @@ DockWidget::shape() const
 bool
 DockWidget::eventFilter(QObject *object, QEvent *event)
 {
+#if 0
     if (m_mainWindow && isFloating() && object == m_mainWindow)
         if (event->type() == QEvent::Resize)
         {
@@ -139,12 +142,15 @@ DockWidget::eventFilter(QObject *object, QEvent *event)
             if ( event->spontaneous() )
                 adjustPosition();
     return false;
+#endif
+    return QDockWidget::eventFilter(object, event);
 }
 
 void
 DockWidget::paintEvent(QPaintEvent *event)
 {
     QDockWidget::paintEvent(event);
+#if 0
     if (!isFloating())
         return;
     QPainter p(this);
@@ -164,6 +170,7 @@ DockWidget::paintEvent(QPaintEvent *event)
     r.setTop(r.top()+m_titleWidget->height());
     p.drawLine(r.topLeft(), r.topRight());
     p.end();
+#endif
 }
 
 void
@@ -183,16 +190,20 @@ DockWidget::moveEvent(QMoveEvent *event)
 //        }
 //    event->accept();
 //    }
+#if 0
     if (isFloating())
     {
         event->accept();
         adjustPosition();
     }
+#endif
 }
 
 void
 DockWidget::resizeEvent(QResizeEvent *event)
 {
+    QDockWidget::resizeEvent(event);
+#if 0
     if (!isFloating())
         return;
     if (m_position < Bottom)
@@ -202,11 +213,13 @@ DockWidget::resizeEvent(QResizeEvent *event)
 
     setMask(shape());
     adjustPosition();
+#endif
 }
 
 void
 DockWidget::animate()
 {
+#if 0
     if (m_position < Bottom && m_animStep <= (width()-m_margin) || m_position == Bottom && m_animStep <= (height()-m_margin))
         m_animStep += 2;
     else
@@ -215,11 +228,13 @@ DockWidget::animate()
         m_animStep = 0;
     }
     adjustPosition();
+#endif
 }
 
 void
 DockWidget::adjustPosition()
 {
+#if 0
     QPoint p;
     switch (m_position)
     {
@@ -267,4 +282,5 @@ DockWidget::adjustPosition()
         setFloating(false);
         m_dirIn = false;
     }
+#endif
 }

@@ -25,7 +25,7 @@
 #include "operations.h"
 #include "devicemanager.h"
 
-#include "application.h"
+#include "mainwindow.h"
 
 using namespace DFM;
 using namespace IO;
@@ -67,7 +67,7 @@ FileExistsDialog::FileExistsDialog(QWidget *parent) : QDialog(parent), m_overWri
 void
 FileExistsDialog::getNewInfo(Mode *m, QString *file)
 {
-    FileExistsDialog d(APP->mainWindow());
+    FileExistsDialog d(MainWindow::currentWindow());
     *m = d.getMode(*file);
     if ( *m == NewName )
         *file = d.newName();
@@ -261,14 +261,14 @@ CopyDialog::pauseCLicked()
 Job *jobInstance = 0;
 
 Job::Job(QObject *parent) : QObject(parent)
-  , m_fileExistsDialog(new FileExistsDialog(APP->mainWindow()))
-  , m_copyDialog(new CopyDialog(APP->mainWindow())) { }
+  , m_fileExistsDialog(new FileExistsDialog(MainWindow::currentWindow()))
+  , m_copyDialog(new CopyDialog(MainWindow::currentWindow())) { }
 
 Job
 *Job::instance()
 {
     if ( !jobInstance )
-        jobInstance = new Job( APP->mainWindow() );
+        jobInstance = new Job( qApp );
     return jobInstance;
 }
 
@@ -311,7 +311,7 @@ Job::cp(const QStringList &copyFiles, const QString &destination, const bool &cu
 #ifdef Q_WS_X11
     if ( m_fileSize > Operations::getDriveInfo<Operations::Free>( destination ) )
     {
-        QMessageBox::critical(APP->mainWindow(), tr("not enough room on destination"), QString("%1 has not enough space").arg(destination));
+        QMessageBox::critical(MainWindow::currentWindow(), tr("not enough room on destination"), QString("%1 has not enough space").arg(destination));
         m_copyDialog->hide();
         return;
     }

@@ -23,7 +23,6 @@
 #include "iojob.h"
 #include "settingsdialog.h"
 #include "propertiesdialog.h"
-#include "application.h"
 #include <QToolTip>
 #include <QClipboard>
 #include <QMenuBar>
@@ -31,12 +30,14 @@
 
 using namespace DFM;
 
-static ViewContainer *currentCont = 0;
+static MainWindow *s_currentWindow = 0;
 
 MainWindow::MainWindow(QStringList arguments)
 { 
     addActions(Configuration::customActions());
-    APP->setMainWindow(this);
+//    APP->setMainWindow(this);
+    connect ( this, SIGNAL(viewChanged(QAbstractItemView*)), ThumbsLoader::instance(), SLOT(setCurrentView(QAbstractItemView*)) );
+    s_currentWindow = this;
     QWidget *center = new QWidget(this);
     m_tabWin = new QMainWindow(this);
     m_navToolBar = new QToolBar(tr("Show NavBar"), this);
@@ -100,8 +101,10 @@ MainWindow::MainWindow(QStringList arguments)
 
     QString startPath = Configuration::config.startPath;
     m_appPath = arguments[0];
-    if(arguments.count() > 1 && QFileInfo(arguments.at(1)).isDir())
+    if (arguments.count() > 1 && QFileInfo(arguments.at(1)).isDir())
         startPath = arguments.at(1);
+    if ( QDir(arguments.at(0)).isReadable() )
+        startPath = arguments.at(0);
     addTab(startPath);
 
     QVBoxLayout *vBox = new QVBoxLayout();
@@ -393,7 +396,6 @@ void
 MainWindow::closeEvent(QCloseEvent *event)
 {
     writeSettings();
-    APP->setMainWindow(0);
     event->accept();
 }
 
@@ -580,8 +582,6 @@ MainWindow::addTab(const QString &path)
     connect( container, SIGNAL(newTabRequest(QString)), this, SLOT(addTab(QString)));
     connect( container, SIGNAL(entered(QModelIndex)), m_infoWidget, SLOT(hovered(QModelIndex)));
     connect( container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
-    if ( !currentCont )
-        currentCont = container;
 
     QList<QAction *> actList;
     actList << m_openInTabAct << m_mkDirAct << m_pasteAct << m_copyAct << m_cutAct
@@ -703,12 +703,21 @@ MainWindow::hidePath()
 void
 MainWindow::stackChanged(int)
 {
-    if (m_activeContainer)
-    {
+    if ( m_activeContainer )
         m_filterBox->setText(m_activeContainer->currentFilter());
-        currentCont = m_activeContainer;
+}
+
+void
+MainWindow::windowActivationChange(bool wasActive)
+{
+    if ( !wasActive )
+    {
+        s_currentWindow = this;
+        emit viewChanged(m_activeContainer->currentView());
     }
 }
 
-ViewContainer *MainWindow::currentContainer() { return currentCont; }
+MainWindow *MainWindow::currentWindow() { return s_currentWindow; }
+ViewContainer *MainWindow::currentContainer() { return s_currentWindow->activeContainer(); }
+PlacesView *MainWindow::places() { return s_currentWindow->placesView(); }
 

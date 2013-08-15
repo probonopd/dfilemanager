@@ -21,7 +21,6 @@
 
 #include "filesystemmodel.h"
 #include "iojob.h"
-#include "application.h"
 #include <QImageReader>
 #include <QMessageBox>
 #include "thumbsloader.h"
@@ -191,7 +190,7 @@ FileSystemModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int 
         return false;
 
     bool error = false;
-    int ret = QMessageBox::question(APP->mainWindow(), tr("Are you sure?"), tr("you are about to move some stuff..."), QMessageBox::Yes, QMessageBox::No);
+    int ret = QMessageBox::question(MainWindow::currentWindow(), tr("Are you sure?"), tr("you are about to move some stuff..."), QMessageBox::Yes, QMessageBox::No);
     if (ret == QMessageBox::Yes)
     {
         QStringList cp;

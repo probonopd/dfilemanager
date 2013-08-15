@@ -25,7 +25,7 @@
 #include <QMainWindow>
 #include <QToolButton>
 #include <QMessageBox>
-#include "application.h"
+#include <QTreeWidgetItem>
 #include "operations.h"
 #include "iconprovider.h"
 

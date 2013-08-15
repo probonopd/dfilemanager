@@ -39,7 +39,7 @@ public:
 
 protected:
     virtual bool eventFilter(QObject *, QEvent *);
-    inline virtual void showEvent(QShowEvent *event) { QDockWidget::showEvent(event); if(isFloating()) { m_mainWindow->setFocus(); setMask(shape()); } }
+//    inline virtual void showEvent(QShowEvent *event) { QDockWidget::showEvent(event); if(isFloating()) { m_mainWindow->setFocus(); setMask(shape()); } }
     virtual void resizeEvent(QResizeEvent *event);
     virtual void moveEvent(QMoveEvent *event);
     virtual void paintEvent(QPaintEvent *event);
@@ -48,7 +48,7 @@ protected:
 
 public slots:
     void floatationChanged(const bool &floating);
-    inline void setFloat() { m_mainWindow->raise(); m_timer->start(10); if (isFloating()) m_dirIn = true; else setFloating(true); }
+    inline void setFloat() { /*m_mainWindow->raise(); m_timer->start(10);*/ if (isFloating()) m_dirIn = true; else setFloating(true); }
     inline void toggleVisibility() { setVisible(!isVisible()); }
     inline void toggleLock() { if ( m_isLocked ) setLocked(false); else setLocked(true); }
     inline void setLocked( const bool &locked = false )
@@ -64,7 +64,7 @@ public slots:
         }
         else
         {
-            setTitleBarWidget( m_titleWidget );
+            setTitleBarWidget( 0 );
             m_isLocked = false;
         }
     }
@@ -74,8 +74,8 @@ private slots:
 
 private:
     QWidget *m_mainWindow;
-    int m_margin;
-    TitleWidget *m_titleWidget;
+//    int m_margin;
+//    TitleWidget *m_titleWidget;
     Pos m_position;
     QTimer *m_timer;
     int m_animStep;

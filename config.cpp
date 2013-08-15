@@ -21,7 +21,6 @@
 
 #include "config.h"
 #include "mainwindow.h"
-#include "application.h"
 #include <QDir>
 #include <QProcess>
 
