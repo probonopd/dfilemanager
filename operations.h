@@ -101,6 +101,7 @@ public:
 public slots:
     void openWith();
     void customActionTriggered();
+    void setRootPath();
 protected:
     Operations(QObject *parent = 0) : QObject(parent) {}
 };

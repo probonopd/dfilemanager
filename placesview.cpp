@@ -458,6 +458,20 @@ PlacesView::contextMenuEvent( QContextMenuEvent *event )
     popupMenu.exec( event->globalPos() );
 }
 
+QMenu
+*PlacesView::containerAsMenu(const int &cont)
+{
+    QMenu *menu = new QMenu(topLevelItem(cont)->text(0));
+    for ( int i = 0; i < topLevelItem(cont)->childCount(); ++i )
+    {
+        QAction *action = new QAction(topLevelItem(cont)->child(i)->text(PlacesView::Name), qApp);
+        action->setData(topLevelItem(cont)->child(i)->text(PlacesView::Path));
+        connect (action, SIGNAL(triggered()), Operations::instance(), SLOT(setRootPath()));
+        menu->addAction(action);
+    }
+    return menu;
+}
+
 void
 PlacesView::drawBranches( QPainter *painter,
                               const QRect &rect,

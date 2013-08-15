@@ -65,6 +65,7 @@ class PlacesView : public QTreeWidget
 public:
     enum Role{ Name = 0, Path = 1, Container = 2, DevPath = 3};
     PlacesView( QWidget *parent );
+    QMenu *containerAsMenu( const int &cont );
 
 public slots:
     void renPlace();

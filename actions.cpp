@@ -273,6 +273,9 @@ MainWindow::createMenus()
     m_goMenu->addAction(m_goForwardAct);
     m_goMenu->addSeparator();
     m_goMenu->addAction(m_homeAct);
+    m_goMenu->addSeparator();
+    for ( int i = 0; i < m_placesView->topLevelItemCount(); ++i )
+        m_goMenu->addMenu(m_placesView->containerAsMenu(i));
 
     menuBar()->addSeparator();
 

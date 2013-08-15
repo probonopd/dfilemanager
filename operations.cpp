@@ -137,3 +137,10 @@ Operations::customActionTriggered()
     }
 }
 
+void
+Operations::setRootPath()
+{
+    QAction *action = static_cast<QAction *>(sender());
+    MainWindow::currentContainer()->model()->setRootPath(action->data().toString());
+}
+
