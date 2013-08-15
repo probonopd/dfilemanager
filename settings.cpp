@@ -30,11 +30,8 @@ MainWindow::readSettings()
 {
     restoreState(Configuration::settings()->value("windowState").toByteArray(), 1);
     m_tabWin->restoreState(Configuration::settings()->value("tabWindowState").toByteArray(), 1);
-    //  splitter->restoreState(settings->value("mainSplitter").toByteArray());
-    QPoint pos = Configuration::settings()->value("pos", QPoint(200, 200)).toPoint();
-    QSize size = Configuration::settings()->value("size", QSize(800, 300)).toSize();
-    resize(size);
-    move(pos);
+    resize(Configuration::settings()->value("size", QSize(800, 300)).toSize());
+    move(Configuration::settings()->value("pos", QPoint(200, 200)).toPoint());
 
     m_tabWin->addDockWidget(Qt::LeftDockWidgetArea, m_dockLeft);
     m_tabWin->addDockWidget(Qt::RightDockWidgetArea, m_dockRight);
@@ -44,42 +41,7 @@ MainWindow::readSettings()
     m_pathVisibleAct->setChecked(Configuration::settings()->value("pathVisible", true).toBool());
     m_pathEditAct->setChecked(Configuration::settings()->value("pathEditable", false).toBool());
     m_menuAct->setChecked(Configuration::settings()->value("menuVisible", true).toBool());
-
-    Configuration::settings()->beginGroup("Places");
-    m_placesView->clear(); //should be superfluous but still need to make sure
-    for ( int i = 0; i<Configuration::settings()->childKeys().count(); ++i )
-    {
-        QStringList values(Configuration::settings()->value(QString::number(i)).toStringList());
-        if ( values.isEmpty() )
-            values = Configuration::settings()->value(QString(i)).toStringList();
-        if (QString(values.at(2)).isEmpty())
-            new QTreeWidgetItem(m_placesView, values);
-        else
-        {
-            QTreeWidgetItem *item = new QTreeWidgetItem(m_placesView->findItems(values.at(2), Qt::MatchExactly).first(), values);
-            item->setIcon(0, QIcon::fromTheme(values[PlacesView::DevPath]));
-        }
-    }
-    Configuration::settings()->endGroup();
-
-    Configuration::settings()->beginGroup("Test");
-    foreach ( const QString &cg, Configuration::settings()->childGroups() )
-    {
-        qDebug() << cg;
-        Configuration::settings()->beginGroup(cg);
-        for ( int c = 0; c < Configuration::settings()->childKeys().count(); ++c )
-        {
-            qDebug() << Configuration::settings()->childKeys().at(c);
-        }
-        Configuration::settings()->endGroup();
-    }
-    Configuration::settings()->endGroup();
-
-    Configuration::settings()->beginGroup("Expandplaces");
-    for (int i = 0; i < m_placesView->topLevelItemCount(); i++)
-        m_placesView->topLevelItem(i)->setExpanded(Configuration::settings()->value(m_placesView->topLevelItem(i)->text(0)).toBool());
-    Configuration::settings()->endGroup();
-
+    m_placesView->populate();
     updateConfig();
 }
 
@@ -120,65 +82,5 @@ MainWindow::writeSettings()
     Configuration::settings()->setValue("pathEditable", m_pathEditAct->isChecked());
     Configuration::settings()->setValue("menuVisible", m_menuAct->isChecked());
     Configuration::writeConfig();
-    Configuration::settings()->remove("Places");
-    Configuration::settings()->beginGroup("Places");
-    int placeNr = 0;
-    QTreeWidgetItemIterator it(m_placesView);
-    while (*it)
-    {
-        const QTreeWidgetItem *item = *it;
-#ifdef Q_WS_X11
-        if ( !DeviceManager::itemIsDevice(item) )
-#endif
-            Configuration::settings()->setValue(QString::number(placeNr), QStringList()
-                                                << item->text(0)
-                                                << item->text(1)
-                                                << (item->parent() ? item->parent()->text(0) : "")
-                                                << (item->text(3).isEmpty() ? "folder" : item->text(3)) );
-        ++placeNr;
-        ++it;
-    }
-    Configuration::settings()->endGroup();
-
-/*
- *
- *
- *test
- *
- *
- *
- */
-
-    Configuration::settings()->remove("Test");
-    Configuration::settings()->beginGroup("Test");
-
-    for ( int i = 0; i < m_placesView->topLevelItemCount(); ++i )
-    {
-        QTreeWidgetItem *top = m_placesView->topLevelItem(i);
-        Configuration::settings()->beginGroup(QString("%1.%2").arg(QString::number(i)).arg(top->text(0)));
-        for ( int a = 0; a < top->childCount(); ++a )
-        {
-            QTreeWidgetItem *c = top->child(a);
-            Configuration::settings()->setValue(QString("%1.%2").arg(QString::number(a)).arg(c->text(0)), QStringList() << c->text(1) << c->text(3));
-        }
-        Configuration::settings()->endGroup();
-    }
-
-    Configuration::settings()->endGroup();
-
-
-    /*
-     *
-     *
-     *test
-     *
-     *
-     *
-     */
-
-    Configuration::settings()->remove("ExpandPlaces");
-    Configuration::settings()->beginGroup("Expandplaces");
-    for (int i = 0; i < m_placesView->topLevelItemCount(); i++)
-        Configuration::settings()->setValue(m_placesView->topLevelItem(i)->text(0), m_placesView->topLevelItem(i)->isExpanded());
-    Configuration::settings()->endGroup();
+    m_placesView->store();
 }

@@ -56,6 +56,7 @@ public:
     static PlacesView *places();
     InfoWidget *infoWidget() { return m_infoWidget; }
     void updateConfig();
+    void createMenus();
 
 public slots:
     void addTab(const QString &path = QDir::homePath());
@@ -68,7 +69,6 @@ protected:
     void windowActivationChange(bool wasActive);
     void updateIcons();
     void createActions();
-    void createMenus();
     void createToolBars();
     void writeSettings();
     void createSlider();

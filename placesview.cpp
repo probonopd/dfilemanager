@@ -263,15 +263,9 @@ PlacesView::dropEvent( QDropEvent *event )
                             {
                                 QSettings settings( file.filePath() + QDir::separator() + ".directory", QSettings::IniFormat );
                                 QString icon("inode-directory");
-                                const QString &containerName(parent->text( Name ));
                                 if ( !settings.value( "Desktop Entry/Icon" ).toString().isNull() )
                                     icon = settings.value( "Desktop Entry/Icon" ).toString();
-                                QTreeWidgetItem *item = new QTreeWidgetItem(parent);
-                                item->setIcon( Name, QIcon::fromTheme( icon ) );
-                                item->setText( Name, file.fileName() );
-                                item->setText( Path, file.filePath() );
-                                item->setText( Container, containerName );
-                                item->setText( DevPath, icon );
+                                addPlace( file.fileName(), file.filePath(), QIcon::fromTheme( icon ), parent );
                                 event->setDropAction(Qt::IgnoreAction);
                             }
                         }
@@ -307,8 +301,7 @@ PlacesView::dropEvent( QDropEvent *event )
                             item->setIcon( Name, QIcon::fromTheme( icon ) );
                             item->setText( Name, file.fileName() );
                             item->setText( Path, file.filePath() );
-                            item->setText( Container, containerName );
-                            item->setText( DevPath, icon );
+                            item->setText( Icon, icon );
                             if ( indexAt( event->pos() ).parent().isValid() )
                                 topLevelItem( indexAt( event->pos() ).parent().row() )->insertChild( indexAt( event->pos() ).row()+bool( dropIndicatorPosition() == QAbstractItemView::BelowItem ), item );
                             else
@@ -387,25 +380,41 @@ PlacesView::keyPressEvent( QKeyEvent *event )
 }
 
 void
+PlacesView::removePlace()
+{
+    if (currentItem() )
+#ifdef Q_WS_X11
+        if ( currentItem() != DeviceManager::devicesParent()
+             && !DeviceManager::itemIsDevice(currentItem()))
+#endif
+    {
+        delete currentItem();
+        MainWindow::currentWindow()->createMenus();
+    }
+}
+
+void
 PlacesView::renPlace()
 {
     QTreeWidgetItem *item = currentItem();
     item->setFlags(item->flags() | Qt::ItemIsEditable);
     editItem(item);
+    MainWindow::currentWindow()->createMenus();
 }
 
 void
-PlacesView::addPlace( QString name, QString path, QIcon icon )
+PlacesView::addPlace( QString name, QString path, QIcon icon, QTreeWidgetItem *parent )
 {
     QTreeWidgetItem *current = currentItem();
-    if ( current->parent() )
+    if ( !parent && current && current->parent() )
         return;
 
-    QTreeWidgetItem *item = new QTreeWidgetItem( current );
-    item->setIcon( 0, icon );
-    item->setText( 0, name );
-    item->setText( 1, path );
-    item->setText( 2, item->parent()->text( 0 ) );
+    QTreeWidgetItem *item = new QTreeWidgetItem( parent ? parent : current );
+    item->setIcon( Name, icon );
+    item->setText( Name, name );
+    item->setText( Path, path );
+    item->setText( Icon, icon.name() );
+    MainWindow::currentWindow()->createMenus();
 }
 
 void
@@ -416,6 +425,7 @@ PlacesView::addPlaceCont()
     item->setText(0, "New_Container");
     item->setFlags(item->flags() | Qt::ItemIsEditable);
     editItem(item, 0);
+    MainWindow::currentWindow()->createMenus();
 }
 
 void
@@ -426,8 +436,8 @@ PlacesView::setPlaceIcon()
     const QString &i = IconDialog::icon();
     if ( i.isEmpty() || !m_lastClicked->parent() )
         return;
-    m_lastClicked->setText( 3, i );
-    m_lastClicked->setIcon( 0, QIcon::fromTheme( i ) );
+    m_lastClicked->setText( Icon, i );
+    m_lastClicked->setIcon( Name, QIcon::fromTheme( i ) );
 }
 
 void
@@ -470,6 +480,54 @@ QMenu
         menu->addAction(action);
     }
     return menu;
+}
+
+void
+PlacesView::populate()
+{
+    clear();
+    QSettings s("dfm", "bookmarks");
+    foreach ( const QString &container, s.value("Containers").toStringList() )
+    {
+        QTreeWidgetItem *cont = new QTreeWidgetItem(this, QStringList() << container);
+        addTopLevelItem(cont);
+        s.beginGroup(container);
+        foreach ( const QString &itemString, s.childKeys() )
+        {
+            const QStringList &item = s.value(itemString).toStringList();
+            addPlace(item[Name], item[Path], QIcon::fromTheme(item[Icon]), cont);
+        }
+        s.beginGroup("Options");
+        cont->setExpanded(s.value("Expanded", false).toBool());
+        s.endGroup();
+        s.endGroup();
+    }
+}
+
+void
+PlacesView::store()
+{
+    QSettings s("dfm", "bookmarks");
+    s.clear();
+
+    QStringList containers;
+    for ( int i = 0; i < topLevelItemCount()-1; ++i )
+        containers << topLevelItem(i)->text(0);
+    s.setValue("Containers", containers);
+
+    for ( int c = 0; c < topLevelItemCount()-1; ++c )
+    {
+        s.beginGroup(topLevelItem(c)->text(0));
+        for ( int i = 0; i < topLevelItem(c)->childCount(); ++i )
+        {
+            QTreeWidgetItem *twi = topLevelItem(c)->child(i);
+            s.setValue(QString::number(i), QStringList() << twi->text(Name) << twi->text(Path) << twi->text(Icon));
+        }
+        s.beginGroup("Options");
+        s.setValue("Expanded", topLevelItem(c)->isExpanded());
+        s.endGroup();
+        s.endGroup();
+    }
 }
 
 void

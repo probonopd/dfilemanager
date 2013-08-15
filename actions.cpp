@@ -240,6 +240,7 @@ MainWindow::createActions()
 void
 MainWindow::createMenus()
 {
+    menuBar()->clear();
     m_fileMenu = menuBar()->addMenu(tr("&File"));
     m_fileMenu->addAction(m_propertiesAct);
     m_fileMenu->addAction(m_exitAct);
@@ -274,6 +275,10 @@ MainWindow::createMenus()
     m_goMenu->addSeparator();
     m_goMenu->addAction(m_homeAct);
     m_goMenu->addSeparator();
+    if ( m_goMenu )
+        foreach ( QAction *action, m_goMenu->actions() )
+            if ( action->objectName().isEmpty() )
+                delete action;
     for ( int i = 0; i < m_placesView->topLevelItemCount(); ++i )
         m_goMenu->addMenu(m_placesView->containerAsMenu(i));
 

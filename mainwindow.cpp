@@ -101,10 +101,10 @@ MainWindow::MainWindow(QStringList arguments)
 
     QString startPath = Configuration::config.startPath;
     m_appPath = arguments[0];
-    if (arguments.count() > 1 && QFileInfo(arguments.at(1)).isDir())
-        startPath = arguments.at(1);
-    if ( QDir(arguments.at(0)).isReadable() )
+    if ( QFileInfo(arguments.at(0)).isDir() )
         startPath = arguments.at(0);
+    else if (arguments.count() > 1 && QFileInfo(arguments.at(1)).isDir())
+        startPath = arguments.at(1);
     addTab(startPath);
 
     QVBoxLayout *vBox = new QVBoxLayout();
@@ -714,6 +714,7 @@ MainWindow::windowActivationChange(bool wasActive)
     {
         s_currentWindow = this;
         emit viewChanged(m_activeContainer->currentView());
+        createMenus();
     }
 }
 

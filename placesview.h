@@ -26,6 +26,7 @@
 #include <QtXml/QDomDocument>
 #include <QStyledItemDelegate>
 #include <QMouseEvent>
+#include <QSettings>
 
 #include <QMainWindow>
 #include "operations.h"
@@ -63,16 +64,18 @@ class PlacesView : public QTreeWidget
 {
     Q_OBJECT
 public:
-    enum Role{ Name = 0, Path = 1, Container = 2, DevPath = 3};
+    enum Role{ Name = 0, Path = 1, Icon = 2};
     PlacesView( QWidget *parent );
     QMenu *containerAsMenu( const int &cont );
+    void store();
+    void populate();
 
 public slots:
     void renPlace();
-    void addPlace(QString name, QString path, QIcon icon);
+    void addPlace(QString name, QString path, QIcon icon, QTreeWidgetItem *parent = 0);
     void addPlaceCont();
     void setPlaceIcon();
-    void removePlace() { if(currentItem()->text(Container) != "Devices") delete currentItem(); }
+    void removePlace();
     void activateAppropriatePlace(const QString &index);
 
 protected:
