@@ -120,16 +120,14 @@ DeviceItem::viewEvent()
     m_tb->move(x, y);
 }
 
-DeviceManager *DeviceManager::m_instance = 0;
-QTreeWidgetItem *DeviceManager::m_devicesParent = 0;
-
-DeviceManager::DeviceManager(QObject *parent) : QObject(parent),
-    m_tree(static_cast<QTreeWidget*>(parent))
+DeviceManager::DeviceManager(const QStringList &texts, QObject *parent)
+    : QTreeWidgetItem(texts)
+    , QObject(parent)
+    , m_view(static_cast<QTreeWidget *>(parent))
 {
-    QTimer::singleShot(200, this, SLOT(populateLater()));
-
     connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceAdded(QString)), this, SLOT(deviceAdded(QString)));
     connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceRemoved(QString)), this, SLOT(deviceRemoved(QString)));
+    populateLater();
 }
 
 void
@@ -137,7 +135,7 @@ DeviceManager::deviceAdded(const QString &dev)
 {
     Solid::Device device = Solid::Device(dev);
     if ( device.is<Solid::StorageAccess>() )
-        m_items.insert(dev, new DeviceItem(m_devicesParent, m_tree, device));
+        m_items.insert(dev, new DeviceItem(this, m_view, device));
 }
 
 void
@@ -147,32 +145,18 @@ DeviceManager::deviceRemoved(const QString &dev)
         delete m_items.take(dev);
 }
 
-DeviceManager
-*DeviceManager::manage(QTreeWidget *tw)
-{
-    if (!m_instance)
-        m_instance = new DeviceManager(tw);
-    return m_instance;
-}
-
 void
 DeviceManager::populateLater()
 {
-    m_devicesParent = new QTreeWidgetItem(m_tree);
-    for (int i = 0; i<4; ++i)
-        m_devicesParent->setText( i, "Devices" );
-
-    m_devicesParent->setExpanded(true);
-
     foreach ( Solid::Device dev, Solid::Device::listFromType(Solid::DeviceInterface::StorageAccess) )
-        m_items.insert(dev.udi(), new DeviceItem(m_devicesParent, m_tree, dev ));
+        m_items.insert(dev.udi(), new DeviceItem( this, MainWindow::places(), dev ));
 }
 
 DeviceItem
 *DeviceManager::deviceItemForFile(const QString &file)
 {
     QString s(file.isEmpty() ? "/" : file);
-    foreach ( DeviceItem *item, DeviceManager::devices().values() )
+    foreach ( DeviceItem *item, m_items.values() )
         if ( s == item->mountPath() )
             return item;
     return deviceItemForFile(s.mid(0, s.lastIndexOf("/")));

@@ -31,7 +31,11 @@ Config Configuration::config;
 
 Configuration::Configuration(QObject *parent) : QObject(parent)
 {
+#ifdef Q_WS_X11
     m_settings = new QSettings("dfm", "dfm");
+#else
+    m_settings = new QSettings(QSettings::IniFormat, QSettings::UserScope, "dfm", "dfm");
+#endif
     m_customActionsMenu.setTitle(tr("Custom Actions"));
 }
 

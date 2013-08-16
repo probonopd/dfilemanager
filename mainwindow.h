@@ -54,6 +54,7 @@ public:
     static ViewContainer *currentContainer();
     static MainWindow *currentWindow();
     static PlacesView *places();
+    static QList<MainWindow *> openWindows();
     InfoWidget *infoWidget() { return m_infoWidget; }
     void updateConfig();
     void createMenus();

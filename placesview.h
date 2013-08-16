@@ -30,14 +30,15 @@
 
 #include <QMainWindow>
 #include "operations.h"
+#include "devicemanager.h"
 
 namespace DFM
 {
-
+class PlacesView;
 class PlacesViewDelegate : public QStyledItemDelegate
 {
 public:
-    inline explicit PlacesViewDelegate(QWidget *parent = 0) : QStyledItemDelegate(parent) {}
+    inline explicit PlacesViewDelegate(QWidget *parent = 0) : QStyledItemDelegate(parent), m_placesView(qobject_cast<PlacesView *>(parent)) {}
 protected:
     virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
     QSize sizeHint( const QStyleOptionViewItem & option, const QModelIndex & index ) const
@@ -49,14 +50,9 @@ protected:
          else
              return  QSize(-1, QFontMetrics(option.font).height()*3/2);
     }
-    bool isHeader( const QModelIndex &index ) const
-    {
-        if ( index.parent().isValid() )
-            return false;
-        else
-            return true;
-    }
+    inline bool isHeader( const QModelIndex &index ) const { return !index.parent().isValid(); }
 private:
+    PlacesView *m_placesView;
     friend class PlacesView;
 };
 
@@ -67,20 +63,21 @@ public:
     enum Role{ Name = 0, Path = 1, Icon = 2};
     PlacesView( QWidget *parent );
     QMenu *containerAsMenu( const int &cont );
-    void store();
+    DeviceManager *deviceManager() { return m_devManager; }
     void populate();
 
 public slots:
     void renPlace();
-    void addPlace(QString name, QString path, QIcon icon, QTreeWidgetItem *parent = 0);
+    void addPlace(QString name, QString path, QIcon icon, QTreeWidgetItem *parent = 0, const bool &storeSettings = true);
     void addPlaceCont();
     void setPlaceIcon();
     void removePlace();
     void activateAppropriatePlace(const QString &index);
+    void store();
 
 protected:
     virtual void dropEvent(QDropEvent *event);
-    QStringList mimeTypes() const { return QStringList() << "text/uri-list"; }
+    inline QStringList mimeTypes() const { return QStringList() << "text/uri-list"; }
     virtual void drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const;
     void contextMenuEvent(QContextMenuEvent *);
     void keyPressEvent(QKeyEvent *event);
@@ -93,6 +90,7 @@ signals:
 private:
     QTreeWidgetItem *m_lastClicked;
     QMainWindow *m_mainWindow;
+    DeviceManager *m_devManager;
     friend class PlacesViewDelegate;
 };
 

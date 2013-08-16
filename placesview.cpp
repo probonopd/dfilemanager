@@ -20,7 +20,6 @@
 
 
 #include "placesview.h"
-#include "devicemanager.h"
 #include "iojob.h"
 #include "icondialog.h"
 #include "viewanimator.h"
@@ -119,11 +118,6 @@ inline static void drawDeviceUsage( const int &usage, QPainter *painter, const Q
 void
 PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-    static PlacesView *placesView = 0;
-    placesView = MainWindow::places();
-    if ( !placesView )
-        return;
-
     painter->save(); //must save... have to restore at end
     painter->setRenderHint( QPainter::Antialiasing );
 
@@ -131,11 +125,11 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
             &selected = option.state & QStyle::State_Selected,
             &hasFocus = option.state & QStyle::State_HasFocus;
 
-    QColor baseColor = placesView->palette().color( QPalette::Base );
+    QColor baseColor = m_placesView->palette().color( QPalette::Base );
     if ( underMouse )
         painter->fillRect( RECT, baseColor );
 
-    int step = selected ? 8 : ViewAnimator::hoverLevel(placesView, index);
+    int step = selected ? 8 : ViewAnimator::hoverLevel(m_placesView, index);
 
     int textFlags = Qt::AlignVCenter | Qt::AlignLeft | Qt::TextSingleLine;
     int indent = DECOSIZE.height(), textMargin = indent + ( isHeader( index ) ? 0 : DECOSIZE.width() );
@@ -156,13 +150,14 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     {
         const_cast<QStyleOptionViewItem *>(&copy)->state |= QStyle::State_MouseOver; //grrrrr, must trick styles....
         painter->setOpacity((1.0f/8.0f)*step);
-        QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, painter, placesView);
+        QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, painter, m_placesView);
         painter->setOpacity(1);
     }
+
 #ifdef Q_WS_X11
     if ( index.parent().isValid() && Configuration::config.behaviour.devUsage )
-        if ( placesView->itemFromIndex(index.parent())->text(3) == "Devices" )
-            if ( DeviceItem *d = static_cast<DeviceItem*>(placesView->itemFromIndex(index)) )
+        if ( m_placesView->deviceManager()->isDevice(m_placesView->itemFromIndex(index)) )
+            if ( DeviceItem *d = static_cast<DeviceItem*>(m_placesView->itemFromIndex(index)) )
                 if ( d->isMounted() )
                     drawDeviceUsage(d->used(), painter, option);
 #endif
@@ -213,9 +208,6 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 PlacesView::PlacesView( QWidget *parent ) : QTreeWidget( parent )
 {
     m_mainWindow = MainWindow::currentWindow();
-#ifdef Q_WS_X11
-    DeviceManager::manage(this);
-#endif
     ViewAnimator::manage(this);
 
     setUniformRowHeights( false );
@@ -286,7 +278,7 @@ PlacesView::dropEvent( QDropEvent *event )
                 else if ( dropIndicatorPosition() != QAbstractItemView::OnViewport )
                 {
 #ifdef Q_WS_X11
-                    if ( !DeviceManager::itemIsDevice(itemAt( event->pos() )) )
+                    if ( !m_devManager->isDevice(itemAt( event->pos() )) )
                     {
 #endif
                         QFileInfo file( event->mimeData()->urls().first().toLocalFile() );
@@ -294,10 +286,9 @@ PlacesView::dropEvent( QDropEvent *event )
                         {
                             QSettings settings( file.filePath() + QDir::separator() + ".directory", QSettings::IniFormat );
                             QString icon("inode-directory");
-                            const QString &containerName(itemAt( event->pos() )->parent() ? itemAt( event->pos() )->parent()->text( Name ) : itemAt( event->pos() )->text( Name ));
                             if ( !settings.value( "Desktop Entry/Icon" ).toString().isNull() )
                                 icon = settings.value( "Desktop Entry/Icon" ).toString();
-                            QTreeWidgetItem *item = new QTreeWidgetItem;
+                            QTreeWidgetItem *item = new QTreeWidgetItem();
                             item->setIcon( Name, QIcon::fromTheme( icon ) );
                             item->setText( Name, file.fileName() );
                             item->setText( Path, file.filePath() );
@@ -326,9 +317,9 @@ PlacesView::dropEvent( QDropEvent *event )
              || !indexAt( event->pos() ).parent().isValid()
              || !m_lastClicked->parent()
 #ifdef Q_WS_X11
-             || (itemAt(event->pos()) && itemAt(event->pos())->parent()&& itemAt(event->pos())->parent() == DeviceManager::devicesParent())
-             || (itemAt(event->pos()) && itemAt(event->pos()) == DeviceManager::devicesParent())
-             || DeviceManager::itemIsDevice(m_lastClicked)
+             || (itemAt(event->pos()) && itemAt(event->pos())->parent()&& itemAt(event->pos())->parent() == m_devManager)
+             || (itemAt(event->pos()) && itemAt(event->pos()) == m_devManager)
+             || m_devManager->isDevice(m_lastClicked)
 #endif
              )
             event->setDropAction(Qt::IgnoreAction);
@@ -384,11 +375,12 @@ PlacesView::removePlace()
 {
     if (currentItem() )
 #ifdef Q_WS_X11
-        if ( currentItem() != DeviceManager::devicesParent()
-             && !DeviceManager::itemIsDevice(currentItem()))
+        if ( currentItem() != m_devManager
+             && !m_devManager->isDevice(currentItem()))
 #endif
     {
         delete currentItem();
+            store();
         MainWindow::currentWindow()->createMenus();
     }
 }
@@ -399,11 +391,12 @@ PlacesView::renPlace()
     QTreeWidgetItem *item = currentItem();
     item->setFlags(item->flags() | Qt::ItemIsEditable);
     editItem(item);
+    store();
     MainWindow::currentWindow()->createMenus();
 }
 
 void
-PlacesView::addPlace( QString name, QString path, QIcon icon, QTreeWidgetItem *parent )
+PlacesView::addPlace(QString name, QString path, QIcon icon, QTreeWidgetItem *parent , const bool &storeSettings)
 {
     QTreeWidgetItem *current = currentItem();
     if ( !parent && current && current->parent() )
@@ -414,6 +407,9 @@ PlacesView::addPlace( QString name, QString path, QIcon icon, QTreeWidgetItem *p
     item->setText( Name, name );
     item->setText( Path, path );
     item->setText( Icon, icon.name() );
+    if ( storeSettings )
+        store();
+
     MainWindow::currentWindow()->createMenus();
 }
 
@@ -425,6 +421,7 @@ PlacesView::addPlaceCont()
     item->setText(0, "New_Container");
     item->setFlags(item->flags() | Qt::ItemIsEditable);
     editItem(item, 0);
+    store();
     MainWindow::currentWindow()->createMenus();
 }
 
@@ -438,6 +435,7 @@ PlacesView::setPlaceIcon()
         return;
     m_lastClicked->setText( Icon, i );
     m_lastClicked->setIcon( Name, QIcon::fromTheme( i ) );
+    store();
 }
 
 void
@@ -474,8 +472,8 @@ QMenu
     QMenu *menu = new QMenu(topLevelItem(cont)->text(0));
     for ( int i = 0; i < topLevelItem(cont)->childCount(); ++i )
     {
-        QAction *action = new QAction(topLevelItem(cont)->child(i)->text(PlacesView::Name), qApp);
-        action->setData(topLevelItem(cont)->child(i)->text(PlacesView::Path));
+        QAction *action = new QAction(topLevelItem(cont)->child(i)->text(Name), qApp);
+        action->setData(topLevelItem(cont)->child(i)->text(Path));
         connect (action, SIGNAL(triggered()), Operations::instance(), SLOT(setRootPath()));
         menu->addAction(action);
     }
@@ -486,7 +484,11 @@ void
 PlacesView::populate()
 {
     clear();
+#ifdef Q_WS_X11
     QSettings s("dfm", "bookmarks");
+#else
+    QSettings s(QSettings::IniFormat, QSettings::UserScope, "dfm", "bookmarks");
+#endif
     foreach ( const QString &container, s.value("Containers").toStringList() )
     {
         QTreeWidgetItem *cont = new QTreeWidgetItem(this, QStringList() << container);
@@ -494,34 +496,46 @@ PlacesView::populate()
         s.beginGroup(container);
         foreach ( const QString &itemString, s.childKeys() )
         {
-            const QStringList &item = s.value(itemString).toStringList();
-            addPlace(item[Name], item[Path], QIcon::fromTheme(item[Icon]), cont);
+                const QStringList &item = s.value(itemString).toStringList();
+                addPlace(item[Name], item[Path], QIcon::fromTheme(item[Icon]), cont, false);
         }
         s.beginGroup("Options");
         cont->setExpanded(s.value("Expanded", false).toBool());
         s.endGroup();
         s.endGroup();
     }
+#ifdef Q_WS_X11
+    addTopLevelItem(m_devManager = new DeviceManager(QStringList() << tr("Devices"), this));
+    m_devManager->setExpanded(true);
+#endif
 }
 
 void
 PlacesView::store()
 {
+#ifdef Q_WS_X11
     QSettings s("dfm", "bookmarks");
+#else
+    QSettings s(QSettings::IniFormat, QSettings::UserScope, "dfm", "bookmarks");
+#endif
     s.clear();
 
     QStringList containers;
-    for ( int i = 0; i < topLevelItemCount()-1; ++i )
-        containers << topLevelItem(i)->text(0);
+    for ( int i = 0; i < topLevelItemCount(); ++i )
+        if ( topLevelItem(i) != m_devManager )
+            containers << topLevelItem(i)->text(0);
     s.setValue("Containers", containers);
 
-    for ( int c = 0; c < topLevelItemCount()-1; ++c )
+    for ( int c = 0; c < topLevelItemCount(); ++c )
     {
+        if ( topLevelItem(c) == m_devManager )
+            continue;
         s.beginGroup(topLevelItem(c)->text(0));
         for ( int i = 0; i < topLevelItem(c)->childCount(); ++i )
         {
             QTreeWidgetItem *twi = topLevelItem(c)->child(i);
-            s.setValue(QString::number(i), QStringList() << twi->text(Name) << twi->text(Path) << twi->text(Icon));
+            if ( twi->parent() != m_devManager )
+                s.setValue(QString::number(i), QStringList() << twi->text(Name) << twi->text(Path) << twi->text(Icon));
         }
         s.beginGroup("Options");
         s.setValue("Expanded", topLevelItem(c)->isExpanded());

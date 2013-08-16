@@ -26,6 +26,7 @@
 #include <QToolButton>
 #include <QMessageBox>
 #include <QTreeWidgetItem>
+#include <QDebug>
 #include "operations.h"
 #include "iconprovider.h"
 
@@ -106,27 +107,24 @@ private:
     friend class DeviceManager;
 };
 
-class DeviceManager : public QObject
+class DeviceManager : public QObject, public QTreeWidgetItem
 {
     Q_OBJECT
 public:
+    DeviceManager( const QStringList &texts, QObject *parent = 0 );
     typedef QMap<QString, DeviceItem*> DeviceItems;
-    explicit DeviceManager( QObject *parent = 0 );
-    static DeviceManager *manage(QTreeWidget *tw);
     inline DeviceItems deviceItems() { return m_items; }
-    static inline DeviceItems devices() { return m_instance->deviceItems(); }
-    static DeviceItem *deviceItemForFile( const QString &file );
-    static inline QTreeWidgetItem *devicesParent() { return m_devicesParent; }
-    static inline bool itemIsDevice( const QTreeWidgetItem *item ) { return item == m_devicesParent || ( item->parent() && item->parent() == m_devicesParent ); }
+    DeviceItem *deviceItemForFile( const QString &file );
+    inline bool isDevice( const QTreeWidgetItem *item ) { return (bool)(item->parent() == this); }
+
 private slots:
     void populateLater();
     void deviceAdded( const QString &dev );
     void deviceRemoved( const QString &dev );
+
 private:
-    static DeviceManager *m_instance;
+    QTreeWidget *m_view;
     DeviceItems m_items;
-    QTreeWidget *m_tree;
-    static QTreeWidgetItem *m_devicesParent;
     friend class DeviceItem;
 };
 

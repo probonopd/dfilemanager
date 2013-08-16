@@ -23,14 +23,17 @@
 #include "iojob.h"
 #include "settingsdialog.h"
 #include "propertiesdialog.h"
+#include "devicemanager.h"
 #include <QToolTip>
 #include <QClipboard>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QList>
 
 using namespace DFM;
 
 static MainWindow *s_currentWindow = 0;
+static QList<MainWindow *> s_openWindows;
 
 MainWindow::MainWindow(QStringList arguments)
 { 
@@ -38,6 +41,7 @@ MainWindow::MainWindow(QStringList arguments)
 //    APP->setMainWindow(this);
     connect ( this, SIGNAL(viewChanged(QAbstractItemView*)), ThumbsLoader::instance(), SLOT(setCurrentView(QAbstractItemView*)) );
     s_currentWindow = this;
+    s_openWindows << this;
     QWidget *center = new QWidget(this);
     m_tabWin = new QMainWindow(this);
     m_navToolBar = new QToolBar(tr("Show NavBar"), this);
@@ -396,6 +400,7 @@ void
 MainWindow::closeEvent(QCloseEvent *event)
 {
     writeSettings();
+    s_openWindows.removeOne(this);
     event->accept();
 }
 
@@ -719,6 +724,7 @@ MainWindow::windowActivationChange(bool wasActive)
 }
 
 MainWindow *MainWindow::currentWindow() { return s_currentWindow; }
+QList<MainWindow *> MainWindow::openWindows() { return s_openWindows; }
 ViewContainer *MainWindow::currentContainer() { return s_currentWindow->activeContainer(); }
 PlacesView *MainWindow::places() { return s_currentWindow->placesView(); }
 
