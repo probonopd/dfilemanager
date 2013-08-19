@@ -72,7 +72,7 @@ protected:
 class RootItem : public QGraphicsPixmapItem
 {
 public:
-    inline explicit RootItem(QGraphicsScene *scene = 0) : QGraphicsPixmapItem(0, scene) {}
+    inline explicit RootItem(QGraphicsScene *scene = 0) : QGraphicsPixmapItem() { scene->addItem(this); }
     inline QRectF boundingRect() { return scene()->sceneRect(); }
 };
 
@@ -84,9 +84,9 @@ class PixmapItem : public QGraphicsPixmapItem
 {
 public:
     inline explicit PixmapItem( const QPixmap &pix = QPixmap(), GraphicsScene *scene = 0, QGraphicsItem *parent = 0 ) :
-        QGraphicsPixmapItem(pix, parent, scene),
+        QGraphicsPixmapItem(parent, scene),
         m_reflection(QPixmap()),
-        m_scene(scene){}
+        m_scene(scene){ setPixmap(pix); }
     void rotate( const float &angle, const Qt::Axis &axis );
     inline void setReflection( const QPixmap &reflection ) { m_reflection = reflection; }
     inline QRectF boundingRect() { return RECT; }

@@ -18,7 +18,8 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-#include <QApplication>
+#include <QSharedMemory>
+#include "application.h"
 #include "mainwindow.h"
 #include "config.h"
 
@@ -26,7 +27,26 @@ int main(int argc, char *argv[])
 {
 //    Q_INIT_RESOURCE(resources);
 
+    QSharedMemory mem("dfmkeys");
+    bool isRunning;
+    if ( mem.attach() )
+        isRunning = true;
+    else
+    {
+        isRunning = false;
+        if ( !mem.create(1) )
+            qDebug() << "mem creation failed";
+    }
+
+    if ( isRunning )
+    {
+        qDebug() << "dfm is already running... exiting";
+        return 0;
+    }
+
+#if QT_VERSION < 0x050000
     QApplication::setGraphicsSystem("raster");
+#endif
     QApplication app(argc, argv);
 
     DFM::Configuration::readConfig();

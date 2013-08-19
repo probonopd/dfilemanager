@@ -40,7 +40,7 @@ class ThumbsLoader : public QThread
     Q_OBJECT
 public:
     enum Type { Thumb = 0, Reflection = 1, FlowPic = 2, FallBackRefl = 3 };
-    static inline ThumbsLoader *instance();
+    static ThumbsLoader *instance();
     static QImage thumb( const QString &filePath, const Type &t = Thumb ) { return instance()->pic(filePath, t); }
     
 signals:

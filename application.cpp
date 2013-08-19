@@ -20,27 +20,44 @@
 
 
 #include "application.h"
+#include "mainwindow.h"
+#include <QSharedMemory>
+#include <QDebug>
 
 #ifdef Q_WS_X11
+#if 0
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/X.h>
 static Atom netWmDesktop = 0;
 static Atom netClientListStacking = 0;
 #endif
+#endif
 
-Application::Application(int &argc, char **argv, int)
+Application::Application(int &argc, char *argv[], const QString &key)
     : QApplication(argc, argv)
-    , m_places(0)
-    , m_mainWindow(0)
 {
+    QSharedMemory mem(key);
+    if ( mem.attach() )
+    {
+        m_isRunning = true;
+    }
+    else
+    {
+        m_isRunning = false;
+        if ( !mem.create(1) )
+            qDebug() << "failed to create shared memory";
+    }
 #ifdef Q_WS_X11
+#if 0
     netWmDesktop = XInternAtom(DPY, "_NET_WM_DESKTOP", False);
     netClientListStacking = XInternAtom(DPY, "_NET_CLIENT_LIST_STACKING", False);
+#endif
 #endif
 }
 
 #ifdef Q_WS_X11
+#if 0
 
 inline static void addState(Window win, Atom state)
 {
@@ -223,4 +240,5 @@ Application::x11EventFilter(XEvent *xe)
     }
     return QApplication::x11EventFilter(xe);
 }
+#endif
 #endif

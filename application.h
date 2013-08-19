@@ -23,10 +23,12 @@
 #define APPLICATION_H
 
 #include <QApplication>
+#if 0
 #include <QMainWindow>
 #include "dockwidget.h"
 #include "placesview.h"
 #include "config.h"
+#endif
 
 #ifdef Q_WS_X11
 #include <QX11Info>
@@ -42,22 +44,31 @@ class Application : public QApplication
 {
     Q_OBJECT
 public:
-    Application(int &argc, char **argv, int = ApplicationFlags);
+    explicit Application(int &argc, char *argv[], const QString &key = "dfm"); /*: QApplication(argc, argv) {}*/
+    inline bool isRunning() { return m_isRunning; }
+signals:
+    void message( const QStringList &msg );
+
+#if 0
     inline void manageDock( DFM::Docks::DockWidget *dock ) { m_docks << dock; }
     inline void setMainWindow( QMainWindow *mainWin ) { m_mainWindow = mainWin; }
     inline QMainWindow *mainWindow() { return m_mainWindow; }
     inline void setPlacesView( DFM::PlacesView *places ) { m_places = places; }
     inline DFM::PlacesView *placesView() { return m_places; }
+#endif
 #ifdef Q_WS_X11
-signals:
-    void paletteChanged( QPalette newPal );
+#if 0
 protected:
     bool x11EventFilter(XEvent *xe);
 #endif
+#endif
 private:
+    bool m_isRunning;
+#if 0
     QList<DFM::Docks::DockWidget *> m_docks;
     QMainWindow *m_mainWindow;
     DFM::PlacesView *m_places;
+#endif
 };
 
 #endif // APPLICATION_H
