@@ -320,7 +320,6 @@ MainWindow::createToolBars()
 void
 MainWindow::contextMenuEvent(QContextMenuEvent *event)
 {
-    QMenu popupMenu;
     QWidget *w = childAt(event->pos());
 
     QMenu *popup = createPopupMenu();
@@ -329,19 +328,19 @@ MainWindow::contextMenuEvent(QContextMenuEvent *event)
     popup->addAction(m_statAct);
     popup->addAction(m_pathVisibleAct);
 
-    if(QToolButton *tbn = qobject_cast<QToolButton*>(w))
+    if (qobject_cast<QToolButton*>(w))
     {
         popup->exec(mapToGlobal(event->pos()));
         return;
     }
 
-    if(w->parentWidget())
-        if(qobject_cast<QToolBar *>(w) || qobject_cast<QToolBar *>(w->parentWidget()))
+    if (w->parentWidget())
+        if (qobject_cast<QToolBar *>(w) || qobject_cast<QToolBar *>(w->parentWidget()))
         {
             popup->exec(mapToGlobal(event->pos()));
             return;
         }
-    if(qobject_cast<QStatusBar*>(w))
+    if (qobject_cast<QStatusBar*>(w))
     {
         popup->exec(mapToGlobal(event->pos()));
         return;

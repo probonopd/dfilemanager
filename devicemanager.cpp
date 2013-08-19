@@ -42,8 +42,6 @@ DeviceItem::DeviceItem(QTreeWidgetItem *parentItem, QTreeWidget *view, Solid::De
     connect (m_tb, SIGNAL(clicked()), this, SLOT(toggleMount()));
     connect (m_timer, SIGNAL(timeout()), this, SLOT(updateSpace()));
     m_timer->start(1000);
-    for ( int i = 2; i<4; ++i )
-        setText( i, "Devices" );
     if ( isMounted() )
     {
         setText(PlacesView::Path, mountPath());
@@ -127,7 +125,7 @@ DeviceManager::DeviceManager(const QStringList &texts, QObject *parent)
 {
     connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceAdded(QString)), this, SLOT(deviceAdded(QString)));
     connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceRemoved(QString)), this, SLOT(deviceRemoved(QString)));
-    populateLater();
+    populate();
 }
 
 void
@@ -146,10 +144,10 @@ DeviceManager::deviceRemoved(const QString &dev)
 }
 
 void
-DeviceManager::populateLater()
+DeviceManager::populate()
 {
     foreach ( Solid::Device dev, Solid::Device::listFromType(Solid::DeviceInterface::StorageAccess) )
-        m_items.insert(dev.udi(), new DeviceItem( this, MainWindow::places(), dev ));
+        m_items.insert(dev.udi(), new DeviceItem( this, m_view, dev ));
 }
 
 DeviceItem

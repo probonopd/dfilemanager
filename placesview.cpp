@@ -235,6 +235,8 @@ PlacesView::PlacesView( QWidget *parent ) : QTreeWidget( parent )
     QColor midC = Operations::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
     pal.setColor( QPalette::Base, Operations::colorMid( Qt::black, midC, 1, 10 ) );
     setPalette( pal );
+
+    connect ( this, SIGNAL(changed()), this, SLOT(updateAllWindows()) );
 }
 
 
@@ -380,8 +382,7 @@ PlacesView::removePlace()
 #endif
     {
         delete currentItem();
-            store();
-        MainWindow::currentWindow()->createMenus();
+            emit changed();
     }
 }
 
@@ -391,8 +392,7 @@ PlacesView::renPlace()
     QTreeWidgetItem *item = currentItem();
     item->setFlags(item->flags() | Qt::ItemIsEditable);
     editItem(item);
-    store();
-    MainWindow::currentWindow()->createMenus();
+    emit changed();
 }
 
 void
@@ -408,9 +408,10 @@ PlacesView::addPlace(QString name, QString path, QIcon icon, QTreeWidgetItem *pa
     item->setText( Path, path );
     item->setText( Icon, icon.name() );
     if ( storeSettings )
+    {
         store();
-
-    MainWindow::currentWindow()->createMenus();
+        emit changed();
+    }
 }
 
 void
@@ -421,8 +422,7 @@ PlacesView::addPlaceCont()
     item->setText(0, "New_Container");
     item->setFlags(item->flags() | Qt::ItemIsEditable);
     editItem(item, 0);
-    store();
-    MainWindow::currentWindow()->createMenus();
+    emit changed();
 }
 
 void
@@ -435,7 +435,7 @@ PlacesView::setPlaceIcon()
         return;
     m_lastClicked->setText( Icon, i );
     m_lastClicked->setIcon( Name, QIcon::fromTheme( i ) );
-    store();
+    emit changed();
 }
 
 void
@@ -478,6 +478,21 @@ QMenu
         menu->addAction(action);
     }
     return menu;
+}
+
+void
+PlacesView::updateAllWindows()
+{
+    if ( MainWindow::openWindows().count() > 1 )
+    {
+        store();
+        foreach ( MainWindow *mw, MainWindow::openWindows() )
+        {
+            if ( mw != MainWindow::currentWindow() )
+                mw->placesView()->populate();
+            mw->createMenus();
+        }
+    }
 }
 
 void

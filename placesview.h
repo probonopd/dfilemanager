@@ -64,7 +64,6 @@ public:
     PlacesView( QWidget *parent );
     QMenu *containerAsMenu( const int &cont );
     DeviceManager *deviceManager() { return m_devManager; }
-    void populate();
 
 public slots:
     void renPlace();
@@ -73,7 +72,9 @@ public slots:
     void setPlaceIcon();
     void removePlace();
     void activateAppropriatePlace(const QString &index);
+    void populate();
     void store();
+    void updateAllWindows();
 
 protected:
     virtual void dropEvent(QDropEvent *event);
@@ -86,6 +87,7 @@ protected:
 
 signals:
     void newTabRequest(QString path);
+    void changed();
 
 private:
     QTreeWidgetItem *m_lastClicked;

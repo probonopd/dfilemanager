@@ -118,7 +118,7 @@ public:
     inline bool isDevice( const QTreeWidgetItem *item ) { return (bool)(item->parent() == this); }
 
 private slots:
-    void populateLater();
+    void populate();
     void deviceAdded( const QString &dev );
     void deviceRemoved( const QString &dev );
 
