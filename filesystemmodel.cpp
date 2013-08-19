@@ -83,7 +83,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     if (index.column() == 0 && role == Qt::ForegroundRole)
     {
         if(fileInfo(index).isSymLink())
-            return Qt::darkGray;
+            return QColor(127, 127, 127, 255);
 //        if(filePath(index.parent()) == QDir::homePath())
 //            return Qt::white;
     }
