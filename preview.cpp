@@ -517,7 +517,7 @@ PreView::mousePressEvent(QMouseEvent *event)
     {
         m_pressed = 0;
         m_wantsDrag = true;
-        m_pressPos = event->posF();
+        m_pressPos = event->pos();
     }
 }
 
@@ -551,13 +551,13 @@ PreView::mouseMoveEvent(QMouseEvent *event)
     QGraphicsView::mouseMoveEvent(event);
     if ( !m_wantsDrag )
         return;
-    if ( event->posF().y() < m_pressPos.y() )
-        m_perception -= qAbs(event->posF().y() - m_pressPos.y())*0.1;
+    if ( event->pos().y() < m_pressPos.y() )
+        m_perception -= qAbs(event->pos().y() - m_pressPos.y())*0.1;
     else
-        m_perception += qAbs(event->posF().y() - m_pressPos.y())*0.1;
+        m_perception += qAbs(event->pos().y() - m_pressPos.y())*0.1;
     float y = m_y+SIZE;
     m_rootItem->setTransform(QTransform().translate(rect().width()/2.0f, y).rotate(m_perception, Qt::XAxis).translate(-rect().width()/2.0f, -y));
-    m_pressPos = event->posF();
+    m_pressPos = event->pos();
 }
 
 void
