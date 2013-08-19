@@ -534,7 +534,7 @@ PlacesView::store()
 
     QStringList containers;
     for ( int i = 0; i < topLevelItemCount(); ++i )
-        if ( topLevelItem(i) != m_devManager )
+        if ( topLevelItem(i) != (QTreeWidgetItem*)m_devManager )
             containers << topLevelItem(i)->text(0);
     s.setValue("Containers", containers);
 
@@ -546,7 +546,7 @@ PlacesView::store()
         for ( int i = 0; i < topLevelItem(c)->childCount(); ++i )
         {
             QTreeWidgetItem *twi = topLevelItem(c)->child(i);
-            if ( twi->parent() != m_devManager )
+            if ( twi->parent() != (QTreeWidgetItem*)m_devManager )
                 s.setValue(QString::number(i), QStringList() << twi->text(Name) << twi->text(Path) << twi->text(Icon));
         }
         s.beginGroup("Options");
