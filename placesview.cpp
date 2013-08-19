@@ -487,11 +487,8 @@ PlacesView::updateAllWindows()
     {
         store();
         foreach ( MainWindow *mw, MainWindow::openWindows() )
-        {
             if ( mw != MainWindow::currentWindow() )
                 mw->placesView()->populate();
-            mw->createMenus();
-        }
     }
 }
 

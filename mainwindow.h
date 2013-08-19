@@ -122,6 +122,7 @@ private slots:
     void newWindow() { (new MainWindow(QStringList() << m_activeContainer->model()->rootPath()))->show(); }
     void readSettings();
     void activateRecentFolder(const QString &folder) { m_activeContainer->setRootPath(folder); }
+    void addBookmarks();
 
 signals:
     void viewChanged( QAbstractItemView *view );

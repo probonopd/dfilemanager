@@ -35,7 +35,9 @@ Menu::mousePressEvent(QMouseEvent *e)
     else if ( e->button() == Qt::MidButton )
     {
         e->accept();
-        MainWindow::currentWindow()->addTab( qobject_cast<PathSubDir *>(actionAt(e->pos()))->path() );
+        QAction *action = qobject_cast<QAction *>(actionAt(e->pos()));
+        const QString &path = action->data().toString();
+        MainWindow::currentWindow()->addTab(path);
     }
     else
         e->accept();

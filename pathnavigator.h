@@ -68,25 +68,6 @@ private:
 
 };
 
-class PathSubDir : public QAction
-{
-    Q_OBJECT
-public:
-    inline explicit PathSubDir(QObject *parent, QString path = QDir::homePath()) : QAction(parent), subPath(path)
-    {
-        connect(this, SIGNAL(triggered()), this, SLOT(emitPath()));
-    }
-    inline QString path() { return subPath; }
-signals:
-    void path(QString path);
-
-public slots:
-    inline void emitPath() { emit path(subPath); }
-
-private:
-    QString subPath;
-};
-
 class Menu : public QMenu
 {
     Q_OBJECT
@@ -103,8 +84,12 @@ class PathSeparator : public QWidget
     Q_OBJECT
     Q_PROPERTY(int animLevel READ animLevel WRITE setAnimLevel)
 public:
-    inline explicit PathSeparator(QWidget *parent, const QString &path = QString(), FileSystemModel *fsModel = 0) : QWidget(parent),
-        m_animLevel(0), m_animation(new QPropertyAnimation(this, "animLevel")), m_path(path), m_fsModel(fsModel)
+    inline explicit PathSeparator(QWidget *parent, const QString &path = QString(), FileSystemModel *fsModel = 0)
+        : QWidget(parent)
+        , m_animLevel(0)
+        , m_animation(new QPropertyAnimation(this, "animLevel"))
+        , m_path(path)
+        , m_fsModel(fsModel)
     {
         setAttribute(Qt::WA_Hover);
         m_animation->setDuration(300);
@@ -128,10 +113,11 @@ protected:
         Menu menu;
         foreach( QFileInfo info, QDir( m_path ).entryInfoList( QDir::AllDirs | QDir::NoDotAndDotDot ) )
         {
-            PathSubDir *psd = new PathSubDir( this, info.filePath() );
-            psd->setText( info.fileName() );
-            menu.addAction( psd );
-            connect( psd, SIGNAL( path( QString ) ), m_fsModel, SLOT( setPath( QString ) ) );
+            QAction *action = new QAction( info.fileName(), this );
+            action->setText( info.fileName() );
+            action->setData( info.filePath() );
+            menu.addAction( action );
+            connect( action, SIGNAL( triggered() ), this, SLOT( setPath() ) );
         }
         menu.exec(event->globalPos());
     }
@@ -190,6 +176,14 @@ protected:
         m_animation->setStartValue(m_animLevel);
         m_animation->setEndValue(0);
         m_animation->start();
+    }
+
+private slots:
+    inline void setPath()
+    {
+        QAction *action = static_cast<QAction *>(sender());
+        const QString &path = action->data().toString();
+        m_fsModel->setRootPath(path);
     }
 
 private:

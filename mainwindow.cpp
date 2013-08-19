@@ -719,7 +719,6 @@ MainWindow::windowActivationChange(bool wasActive)
     {
         s_currentWindow = this;
         emit viewChanged(m_activeContainer->currentView());
-        createMenus();
     }
 }
 
