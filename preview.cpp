@@ -189,7 +189,8 @@ PreView::PreView(QWidget *parent) : QGraphicsView(parent)
     connect(m_timeLine, SIGNAL(valueChanged(qreal)), this, SLOT(animStep(qreal)));
     connect(m_timeLine, SIGNAL(finished()), this, SLOT(continueIf()));
 
-    m_textItem = new QGraphicsSimpleTextItem(0, m_scene);
+    m_textItem = new QGraphicsSimpleTextItem();
+    m_scene->addItem(m_textItem);
     QFont f = font();
     f.setPointSize(16);
     f.setBold(true);
