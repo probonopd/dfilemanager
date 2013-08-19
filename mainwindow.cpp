@@ -218,7 +218,7 @@ MainWindow::mainSelectionChanged(QItemSelection selected,QItemSelection notselec
 
     if(selectedItems.count() == 1)
     {
-        slctnMessage = " ::  " + QString::fromAscii("\'") + selectedItem + QString::fromAscii("\'") + " Selected";
+        slctnMessage = " ::  " + QString::fromLatin1("\'") + selectedItem + QString::fromLatin1("\'") + " Selected";
 
     }
     else if(selectedItems.count() > 1)
