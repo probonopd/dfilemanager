@@ -375,7 +375,7 @@ PlacesView::keyPressEvent( QKeyEvent *event )
 void
 PlacesView::removePlace()
 {
-    if (currentItem() )
+    if ( currentItem() )
 #ifdef Q_WS_X11
         if ( currentItem() != m_devManager
              && !m_devManager->isDevice(currentItem()))

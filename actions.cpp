@@ -267,7 +267,10 @@ MainWindow::createMenus()
     m_viewMenu->addAction(m_pathEditAct);
     m_viewMenu->addAction(m_pathVisibleAct);
 
-    m_goMenu = menuBar()->addMenu(tr("&Go"));
+//    m_goMenu = menuBar()->addMenu(tr("&Go"));
+    m_goMenu = new Menu(this);
+    m_goMenu->setTitle(tr("&Go"));
+    menuBar()->addMenu(m_goMenu);
     m_goMenu->addAction(m_goUpAct);
     m_goMenu->addAction(m_goBackAct);
     m_goMenu->addAction(m_goForwardAct);

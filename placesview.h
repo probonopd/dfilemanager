@@ -35,6 +35,7 @@
 namespace DFM
 {
 class PlacesView;
+class DeviceManager;
 class PlacesViewDelegate : public QStyledItemDelegate
 {
 public:
@@ -63,7 +64,7 @@ public:
     enum Role{ Name = 0, Path = 1, Icon = 2};
     PlacesView( QWidget *parent );
     QMenu *containerAsMenu( const int &cont );
-    DeviceManager *deviceManager() { return m_devManager; }
+    inline DeviceManager *deviceManager() { return m_devManager; }
 
 public slots:
     void renPlace();

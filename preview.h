@@ -72,7 +72,7 @@ protected:
 class RootItem : public QGraphicsPixmapItem
 {
 public:
-    inline explicit RootItem(QGraphicsScene *scene = 0) : QGraphicsPixmapItem(QPixmap(), 0, scene) {}
+    inline explicit RootItem(QGraphicsScene *scene = 0) : QGraphicsPixmapItem(0, scene) {}
     inline QRectF boundingRect() { return scene()->sceneRect(); }
 };
 
