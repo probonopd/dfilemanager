@@ -540,7 +540,7 @@ PlacesView::store()
 
     for ( int c = 0; c < topLevelItemCount(); ++c )
     {
-        if ( topLevelItem(c) == m_devManager )
+        if ( topLevelItem(c) == (QTreeWidgetItem*)m_devManager )
             continue;
         s.beginGroup(topLevelItem(c)->text(0));
         for ( int i = 0; i < topLevelItem(c)->childCount(); ++i )
