@@ -79,8 +79,10 @@ NavButton::mouseReleaseEvent(QMouseEvent *e)
 
 PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model ) : QToolBar( parent ), m_fsModel(model), m_hasPress(false)
 {
+#if QT_VERSION < 0x050000
     if ( qApp->styleSheet().isEmpty() )
         setStyle( new MyStyle( style()->objectName() ) );
+#endif
     connect( this, SIGNAL( pathChanged( QString ) ), this, SLOT( genNavFromPath( QString ) ) );
     setForegroundRole( QPalette::Text );
     setBackgroundRole( QPalette::Base );
