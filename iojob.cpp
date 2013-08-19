@@ -30,8 +30,15 @@
 using namespace DFM;
 using namespace IO;
 
-FileExistsDialog::FileExistsDialog(QWidget *parent) : QDialog(parent), m_overWrite(new QPushButton(this)), m_overWriteAll(new QPushButton(this)), m_skip(new QPushButton(this))
-  , m_skipAll(new QPushButton(this)), m_newName(new QPushButton(this)), m_edit(new QLineEdit(this)), m_name(new QLabel(this))
+FileExistsDialog::FileExistsDialog(QWidget *parent)
+    : QDialog(parent)
+    , m_overWrite(new QPushButton(this))
+    , m_overWriteAll(new QPushButton(this))
+    , m_skip(new QPushButton(this))
+    , m_skipAll(new QPushButton(this))
+    , m_newName(new QPushButton(this))
+    , m_edit(new QLineEdit(this))
+    , m_name(new QLabel(this))
 {
     m_overWrite->setText(tr("Overwrite"));
     m_overWriteAll->setText(tr("Overwrite All"));
@@ -130,9 +137,17 @@ FileExistsDialog::event(QEvent *event)
 
 //--------------------------------------------------------------------------------------------------------------
 
-CopyDialog::CopyDialog(QWidget *parent) : QDialog(parent), m_ok(new QPushButton(this)), m_cancel(new QPushButton(this)), m_pause(new QPushButton(this))
-  , m_fileProgress(new QProgressBar(this)), m_progress(new QProgressBar(this)), m_from(new QLabel(this)), m_inFile(new QLabel(this)), m_to(new QLabel(this))
-  , m_cbHideFinished(new QCheckBox(this))
+CopyDialog::CopyDialog(QWidget *parent)
+    : QDialog(parent)
+    , m_ok(new QPushButton(this))
+    , m_cancel(new QPushButton(this))
+    , m_pause(new QPushButton(this))
+    , m_fileProgress(new QProgressBar(this))
+    , m_progress(new QProgressBar(this))
+    , m_from(new QLabel(this))
+    , m_inFile(new QLabel(this))
+    , m_to(new QLabel(this))
+    , m_cbHideFinished(new QCheckBox(this))
 {
     m_hideFinished = Configuration::settings()->value("hideCPDWhenFinished", 0).toBool();
     m_cbHideFinished->setChecked(m_hideFinished);

@@ -84,7 +84,7 @@ class PixmapItem : public QGraphicsPixmapItem
 {
 public:
     inline explicit PixmapItem( const QPixmap &pix = QPixmap(), GraphicsScene *scene = 0, QGraphicsItem *parent = 0 ) :
-        QGraphicsPixmapItem(parent, scene),
+        QGraphicsPixmapItem(parent),
         m_reflection(QPixmap()),
         m_scene(scene){ setPixmap(pix); }
     void rotate( const float &angle, const Qt::Axis &axis );
