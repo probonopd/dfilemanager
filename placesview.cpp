@@ -700,19 +700,17 @@ QMenu
 void
 PlacesView::updateAllWindows()
 {
-    qDebug() << "updating all open windows...";
+    if ( MainWindow::openWindows().count() == 1 )
+        return;
     if ( sender() == this )
     {
+        store();
         QTimer::singleShot(500, this, SLOT(updateAllWindows()));
         return;
     }
-    if ( MainWindow::openWindows().count() > 1 )
-    {
-        store();
-        foreach ( MainWindow *mw, MainWindow::openWindows() )
-            if ( mw != MainWindow::currentWindow() )
-                mw->placesView()->populate();
-    }
+    foreach ( MainWindow *mw, MainWindow::openWindows() )
+        if ( mw != MainWindow::currentWindow() )
+            mw->placesView()->populate();
 }
 
 void
