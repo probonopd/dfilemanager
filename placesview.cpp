@@ -207,11 +207,10 @@ PlacesViewDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, con
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef Q_WS_X11
-DeviceItem::DeviceItem(Container *parentItem, PlacesView *view, Solid::Device solid )
+DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Solid::Device solid )
     : Place(QStringList())
     , m_view(view)
-    , m_mainWin(MainWindow::currentWindow())
-    , m_container(parentItem)
+    , m_manager(parentItem)
     , m_tb(new QToolButton(m_view))
     , m_timer(new QTimer(this))
     , m_solid(solid)
@@ -236,7 +235,7 @@ void
 DeviceItem::updateTb()
 {
     QRect rect = m_view->visualRect(index());
-    m_tb->setVisible(m_view->isExpanded(m_container->index()));
+    m_tb->setVisible(m_view->isExpanded(m_manager->index()));
     const int &add = (rect.height()/2.0f)-(m_tb->height()/2.0f);
     const int &x = 8, &y = rect.y()+add;
     m_tb->move(x, y);
@@ -272,14 +271,12 @@ DeviceItem::changeState()
 {
     if (isMounted())
     {
-        setName(mountPath());
-        setPath(mountPath());
         int t = 0;
         setToolTip(QString::number(realSize((float)freeBytes(), &t)) + spaceType[t] + " Free");
     }
     else
     {
-        setName(m_solid.description());
+        setToolTip(QString());
     }
     m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole())));
     m_tb->setToolTip( isMounted() ? "Unmount" : "Mount" );
@@ -359,6 +356,7 @@ PlacesModel::data(const QModelIndex &index, int role) const
 PlacesView::PlacesView( QWidget *parent )
     : QTreeView( parent )
     , m_timer(new QTimer(this))
+    , m_devManager(0L)
 {
     ViewAnimator::manage(this);
     setModel(m_model = new PlacesModel(this));
@@ -725,6 +723,7 @@ void
 PlacesView::populate()
 {
     m_model->clear();
+    m_devManager = 0L;
 #ifdef Q_WS_X11
     QSettings s("dfm", "bookmarks");
 #else

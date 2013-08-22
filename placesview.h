@@ -151,12 +151,12 @@ static inline QPixmap mountIcon( const bool &mounted, const int &size, const QCo
 
 
 #ifdef Q_WS_X11
-
+class DeviceManager;
 class DeviceItem : public QObject, public Place //have to inherit QObject for signals/slots/eventHandling
 {
     Q_OBJECT
 public:
-    DeviceItem( Container *parentItem = 0, PlacesView *view = 0, Solid::Device solid = Solid::Device() );
+    DeviceItem( DeviceManager *parentItem = 0, PlacesView *view = 0, Solid::Device solid = Solid::Device() );
     ~DeviceItem() { m_tb->deleteLater(); }
     void setMounted( const bool &mount );
     inline bool isMounted() const { return m_solid.isValid() && m_solid.as<Solid::StorageAccess>()->isAccessible(); }
@@ -181,9 +181,8 @@ private slots:
 
 private:
     PlacesView *m_view;
-    QMainWindow *m_mainWin;
     QToolButton *m_tb;
-    Container *m_container;
+    DeviceManager *m_manager;
     QTimer *m_timer;
     Solid::Device m_solid;
     friend class DeviceManager;
