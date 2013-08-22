@@ -430,6 +430,7 @@ PlacesView::dropEvent( QDropEvent *event )
             places->appendRow(new Place(f.fileName(), f.filePath(), icon.name()));
         }
         expand(indexFromItem(places));
+        emit changed();
         RETURN;
     }
 
@@ -466,6 +467,7 @@ PlacesView::dropEvent( QDropEvent *event )
                     const QIcon &icon = QIcon::fromTheme(settings.value( "Desktop Entry/Icon" ).toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
                     addPlace( f.fileName(), f.filePath(), icon, cont );
                 }
+                emit changed();
                 RETURN;
             }
 
@@ -494,6 +496,7 @@ PlacesView::dropEvent( QDropEvent *event )
                     c->insertRow( indexAt( event->pos() ).row()+below, item );
                 else
                     cont->insertRow( 0, item );
+                emit changed();
             }
             RETURN;
         }
@@ -509,6 +512,7 @@ PlacesView::dropEvent( QDropEvent *event )
                     m_model->insertRow( cont->row(), newCont );
                     expand(indexFromItem(newCont));
                     m_model->removeRow(movedCont->row());
+                    emit changed();
                 }
                 RETURN;
             }
@@ -519,6 +523,7 @@ PlacesView::dropEvent( QDropEvent *event )
                 else if ( dropIndicatorPosition() == BelowItem )
                     cont->insertRow( 0, new Place( movedPlace ) );
                 movedPlace->parent()->removeRow(movedPlace->row());
+                emit changed();
                 RETURN;
             }
 
@@ -529,6 +534,7 @@ PlacesView::dropEvent( QDropEvent *event )
                 {
                     c->insertRow( place->row() + below, new Place( movedPlace ) );
                     movedPlace->parent()->removeRow(movedPlace->row());
+                    emit changed();
                 }
                 RETURN;
             }
