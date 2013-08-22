@@ -423,6 +423,8 @@ PlacesView::dropEvent( QDropEvent *event )
         foreach ( const QString &file, files )
         {
             const QFileInfo &f(file);
+            if ( !f.isDir() )
+                continue;
             QSettings settings( QString("%1%2.directory").arg(f.filePath()).arg(QDir::separator()), QSettings::IniFormat );
             const QIcon &icon = QIcon::fromTheme(settings.value( "Desktop Entry/Icon" ).toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
             places->appendRow(new Place(f.fileName(), f.filePath(), icon.name()));
