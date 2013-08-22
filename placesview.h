@@ -290,6 +290,7 @@ private:
     QStandardItem *m_lastClicked;
     PlacesModel *m_model;
     DeviceManager *m_devManager;
+    QTimer *m_timer;
     friend class PlacesViewDelegate;
     friend class PlacesModel;
 };

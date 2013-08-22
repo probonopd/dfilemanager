@@ -160,13 +160,13 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 #ifdef Q_WS_X11
     if ( index.parent().isValid() && Configuration::config.behaviour.devUsage )
         if ( m_placesView->deviceManager()->isDevice(m_placesView->itemFromIndex<QStandardItem *>(index)) )
-            if ( DeviceItem *d = static_cast<DeviceItem*>(m_placesView->itemFromIndex<QStandardItem *>(index)) )
+            if ( DeviceItem *d = m_placesView->itemFromIndex<DeviceItem *>(index) )
                 if ( d->isMounted() )
                     drawDeviceUsage(d->used(), painter, option);
 #endif
 
     QApplication::style()->drawItemText(painter, textRect, textFlags, pal, true, TEXT, selected ? QPalette::HighlightedText : QPalette::Text);
-    if( isHeader( index ) )
+    if ( isHeader( index ) )
     {
         QRect arrowRect( 0, 0, 8, 8 );
         arrowRect.moveCenter( QPoint( RECT.x()+4, RECT.center().y() ) );
@@ -229,13 +229,14 @@ DeviceItem::DeviceItem(Container *parentItem, PlacesView *view, Solid::Device so
     connect( m_view, SIGNAL(expanded(QModelIndex)), this, SLOT(updateTb()) );
     connect( m_view, SIGNAL(changed()), this, SLOT(updateTb()) );
     connect( m_view, SIGNAL(collapsed(QModelIndex)), this, SLOT(updateTb()) );
+    QTimer::singleShot(200, this, SLOT(updateTb()));
 }
 
 void
 DeviceItem::updateTb()
 {
-    m_tb->setVisible(m_view->isExpanded(m_container->index()));
     QRect rect = m_view->visualRect(index());
+    m_tb->setVisible(m_view->isExpanded(m_container->index()));
     const int &add = (rect.height()/2.0f)-(m_tb->height()/2.0f);
     const int &x = 8, &y = rect.y()+add;
     m_tb->move(x, y);
@@ -312,7 +313,10 @@ void
 DeviceManager::deviceRemoved(const QString &dev)
 {
     if ( m_items.contains(dev) )
-        delete m_items.take(dev);
+    {
+        QStandardItem *i = m_items.take(dev);
+        removeRow(i->row());
+    }
 }
 
 void
@@ -352,10 +356,13 @@ PlacesModel::data(const QModelIndex &index, int role) const
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PlacesView::PlacesView( QWidget *parent ) : QTreeView( parent )
+PlacesView::PlacesView( QWidget *parent )
+    : QTreeView( parent )
+    , m_timer(new QTimer(this))
 {
     ViewAnimator::manage(this);
     setModel(m_model = new PlacesModel(this));
+    m_timer->setInterval( 1000 );
 
     setUniformRowHeights( false );
     setAllColumnsShowFocus( true );
@@ -382,9 +389,10 @@ PlacesView::PlacesView( QWidget *parent ) : QTreeView( parent )
     pal.setColor( QPalette::Base, Operations::colorMid( Qt::black, midC, 1, 10 ) );
     setPalette( pal );
 
-    connect ( this, SIGNAL(changed()), this, SLOT(updateAllWindows()) );
+    connect ( this, SIGNAL(changed()), this, SLOT(store()) );
     connect ( this, SIGNAL(clicked(QModelIndex)), this, SLOT(emitPath(QModelIndex)) );
     connect ( this, SIGNAL(placeActivated(QString)), MainWindow::currentWindow(), SLOT(setRootPath(QString)) );
+    connect ( m_timer, SIGNAL(timeout()), this, SLOT(updateAllWindows()) );
 }
 
 #define RETURN \
@@ -700,14 +708,14 @@ QMenu
 void
 PlacesView::updateAllWindows()
 {
+    if ( !m_devManager )
+        return;
+
+    m_timer->stop();
+
     if ( MainWindow::openWindows().count() == 1 )
         return;
-    if ( sender() == this )
-    {
-        store();
-        QTimer::singleShot(500, this, SLOT(updateAllWindows()));
-        return;
-    }
+
     foreach ( MainWindow *mw, MainWindow::openWindows() )
         if ( mw != MainWindow::currentWindow() )
             mw->placesView()->populate();
@@ -779,22 +787,25 @@ PlacesView::store()
         }
         s.endGroup();
     }
+    m_timer->start();
 }
 
 void
 PlacesView::wheelEvent(QWheelEvent *e)
 {
     QTreeView::wheelEvent(e);
-    foreach ( DeviceItem *d, m_devManager->deviceItems() )
-        d->updateTb();
+    if ( m_devManager )
+        foreach ( DeviceItem *d, m_devManager->deviceItems() )
+            d->updateTb();
 }
 
 void
 PlacesView::resizeEvent(QResizeEvent *event)
 {
     QTreeView::resizeEvent(event);
-    foreach ( DeviceItem *d, m_devManager->deviceItems() )
-        d->updateTb();
+    if ( m_devManager )
+        foreach ( DeviceItem *d, m_devManager->deviceItems() )
+            d->updateTb();
 }
 
 void
