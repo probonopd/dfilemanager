@@ -700,6 +700,12 @@ QMenu
 void
 PlacesView::updateAllWindows()
 {
+    qDebug() << "updating all open windows...";
+    if ( sender() == this )
+    {
+        QTimer::singleShot(500, this, SLOT(updateAllWindows()));
+        return;
+    }
     if ( MainWindow::openWindows().count() > 1 )
     {
         store();
