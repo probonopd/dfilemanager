@@ -24,7 +24,6 @@ HEADERS = mainwindow.h \
     application.h \
     operations.h \
     recentfoldersview.h \
-    devicemanager.h \
     iojob.h \
     thumbsloader.h \
     preview.h
@@ -54,7 +53,6 @@ SOURCES = main.cpp \
     operations.cpp \
     infowidget.cpp \
     recentfoldersview.cpp \
-    devicemanager.cpp \
     iojob.cpp \
     thumbsloader.cpp \
     preview.cpp \

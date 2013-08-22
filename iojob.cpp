@@ -20,10 +20,10 @@
 
 
 #include <QDirIterator>
+#include <QMessageBox>
 
 #include "iojob.h"
 #include "operations.h"
-#include "devicemanager.h"
 
 #include "mainwindow.h"
 

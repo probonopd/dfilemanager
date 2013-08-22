@@ -6,5 +6,5 @@ Exec=dfm
 Terminal=false
 Type=Application
 Icon=folder
-Categories=Application;Qt;
+Categories=Application;Qt;System;FileTools;FileManager;
 StartupNotify=false

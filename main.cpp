@@ -28,39 +28,34 @@ int main(int argc, char *argv[])
 //    Q_INIT_RESOURCE(resources);
 
     QSharedMemory mem("dfmkeys");
-    bool isRunning;
     if ( mem.attach() )
-        isRunning = true;
-    else
-    {
-        isRunning = false;
-        if ( !mem.create(1) )
-            qDebug() << "mem creation failed";
-    }
-
-    if ( isRunning )
     {
         qDebug() << "dfm is already running... exiting";
         return 0;
     }
+    else
+    {
+        if ( !mem.create(1) )
+            qDebug() << "mem creation failed";
 
 #if QT_VERSION < 0x050000
-    QApplication::setGraphicsSystem("raster");
+        QApplication::setGraphicsSystem("raster");
 #endif
-    QApplication app(argc, argv);
+        QApplication app(argc, argv);
 
-    DFM::Configuration::readConfig();
+        DFM::Configuration::readConfig();
 
-    if ( !DFM::Configuration::config.styleSheet.isEmpty() )
-    {
-        QFile file(DFM::Configuration::config.styleSheet);
-        file.open(QFile::ReadOnly);
-        app.setStyleSheet(file.readAll());
-        file.close();
+        if ( !DFM::Configuration::config.styleSheet.isEmpty() )
+        {
+            QFile file(DFM::Configuration::config.styleSheet);
+            file.open(QFile::ReadOnly);
+            app.setStyleSheet(file.readAll());
+            file.close();
+        }
+
+        DFM::MainWindow *mainWin = new DFM::MainWindow(app.arguments());
+        mainWin->show();
+        return app.exec();
     }
-
-    DFM::MainWindow *mainWin = new DFM::MainWindow(app.arguments());
-    mainWin->show();
-    return app.exec();
 }
 

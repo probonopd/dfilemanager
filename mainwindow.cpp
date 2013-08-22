@@ -23,7 +23,6 @@
 #include "iojob.h"
 #include "settingsdialog.h"
 #include "propertiesdialog.h"
-#include "devicemanager.h"
 #include <QToolTip>
 #include <QClipboard>
 #include <QMenuBar>
@@ -83,8 +82,8 @@ MainWindow::MainWindow(QStringList arguments)
 
     setWindowIcon(QIcon::fromTheme("folder", QIcon(":/trolltech/styles/commonstyle/images/diropen-128.png")));
 
-    connect( m_placesView, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(rootFromPlaces(QTreeWidgetItem*,int)));
-    connect( m_placesView, SIGNAL(itemActivated(QTreeWidgetItem*,int)), this, SLOT(rootFromPlaces(QTreeWidgetItem*,int)));
+//    connect( m_placesView, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(rootFromPlaces(QTreeWidgetItem*,int)));
+//    connect( m_placesView, SIGNAL(itemActivated(QTreeWidgetItem*,int)), this, SLOT(rootFromPlaces(QTreeWidgetItem*,int)));
     connect( m_filterBox, SIGNAL(textChanged(QString)),this,SLOT(filterCurrentDir(QString)));
     connect( m_tabBar, SIGNAL(currentChanged(int)), this, SLOT(tabChanged(int)));
     connect( m_tabBar, SIGNAL(newTabRequest()), this, SLOT(newTab()));
@@ -289,13 +288,6 @@ MainWindow::pasteSelection()
     QApplication::clipboard()->clear();
 
     m_cut = false;
-}
-
-void
-MainWindow::rootFromPlaces(QTreeWidgetItem* item,int col)
-{
-    if(item->parent())
-        m_fsModel->setRootPath(item->text(1));
 }
 
 void

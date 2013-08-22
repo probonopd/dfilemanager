@@ -21,7 +21,6 @@
 
 #include "mainwindow.h"
 #include "iconprovider.h"
-#include "devicemanager.h"
 
 using namespace DFM;
 

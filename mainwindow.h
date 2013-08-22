@@ -61,6 +61,7 @@ public:
 
 public slots:
     void addTab(const QString &path = QDir::homePath());
+    inline void setRootPath( const QString &path ) { m_fsModel->setRootPath(path); }
 
 protected:
     void closeEvent(QCloseEvent *event);
@@ -103,7 +104,6 @@ private slots:
     void rootPathChanged(QString index);
     void directoryLoaded(QString);
     void updateStatusBar(QString index);
-    void rootFromPlaces(QTreeWidgetItem*,int);
     void createDirectory();
     void setViewIconSize(int);
     void setSliderPos(int size);

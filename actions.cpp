@@ -292,7 +292,7 @@ MainWindow::addBookmarks()
     foreach ( QAction *action, m_goMenu->actions() )
         if ( action->objectName().isEmpty() && !action->isSeparator() )
             delete action;
-    for ( int i = 0; i < m_placesView->topLevelItemCount(); ++i )
+    for ( int i = 0; i < m_placesView->containerCount(); ++i )
         m_goMenu->addMenu(m_placesView->containerAsMenu(i));
 }
 

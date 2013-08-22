@@ -27,6 +27,9 @@
 
 #include <QInputDialog>
 #include <QMenu>
+#include <QMessageBox>
+#include <QMetaObject>
+#include <QMetaProperty>
 
 using namespace DFM;
 
@@ -156,8 +159,8 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 
 #ifdef Q_WS_X11
     if ( index.parent().isValid() && Configuration::config.behaviour.devUsage )
-        if ( m_placesView->deviceManager()->isDevice(m_placesView->itemFromIndex(index)) )
-            if ( DeviceItem *d = static_cast<DeviceItem*>(m_placesView->itemFromIndex(index)) )
+        if ( m_placesView->deviceManager()->isDevice(m_placesView->itemFromIndex<QStandardItem *>(index)) )
+            if ( DeviceItem *d = static_cast<DeviceItem*>(m_placesView->itemFromIndex<QStandardItem *>(index)) )
                 if ( d->isMounted() )
                     drawDeviceUsage(d->used(), painter, option);
 #endif
@@ -194,41 +197,184 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     painter->restore();
 }
 
+void
+PlacesViewDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+{
+    const QString &newName = editor->metaObject()->userProperty().read(editor).toString();
+    if ( Place *p = m_placesView->itemFromIndex<Place *>(index) )
+        p->setName(newName);
+}
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef Q_WS_X11
+DeviceItem::DeviceItem(Container *parentItem, PlacesView *view, Solid::Device solid )
+    : Place(QStringList())
+    , m_view(view)
+    , m_mainWin(MainWindow::currentWindow())
+    , m_container(parentItem)
+    , m_tb(new QToolButton(m_view))
+    , m_timer(new QTimer(this))
+    , m_solid(solid)
+{
+    m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole())));
+    m_tb->setVisible(true);
+    m_tb->setFixedSize(16, 16);
+    m_tb->setToolTip( isMounted() ? "Unmount" : "Mount" );
+    connect (m_tb, SIGNAL(clicked()), this, SLOT(toggleMount()));
+    connect (m_timer, SIGNAL(timeout()), this, SLOT(updateSpace()));
+    m_timer->start(1000);
+    connect (m_solid.as<Solid::StorageAccess>(), SIGNAL(accessibilityChanged(bool, const QString &)), this, SLOT(changeState()));
+    updateSpace();
+    setDragEnabled(false);
+    connect( m_view, SIGNAL(expanded(QModelIndex)), this, SLOT(updateTb()) );
+    connect( m_view, SIGNAL(changed()), this, SLOT(updateTb()) );
+    connect( m_view, SIGNAL(collapsed(QModelIndex)), this, SLOT(updateTb()) );
+}
 
+void
+DeviceItem::updateTb()
+{
+    m_tb->setVisible(m_view->isExpanded(m_container->index()));
+    QRect rect = m_view->visualRect(index());
+    const int &add = (rect.height()/2.0f)-(m_tb->height()/2.0f);
+    const int &x = 8, &y = rect.y()+add;
+    m_tb->move(x, y);
+}
 
+void
+DeviceItem::setMounted( const bool &mount )
+{
+    if ( !m_solid.isValid() )
+        return;
+
+    if ( mount )
+        m_solid.as<Solid::StorageAccess>()->setup();
+    else
+        m_solid.as<Solid::StorageAccess>()->teardown();
+}
+
+void
+DeviceItem::updateSpace()
+{
+    if ( isMounted() )
+    {
+        if ( Configuration::config.behaviour.devUsage )
+            m_view->update( m_view->indexFromItem(this) );
+        int t = 0;
+        QString free(QString::number(realSize((float)freeBytes(), &t)));
+        setToolTip(free + spaceType[t] + " Free");
+    }
+}
+
+void
+DeviceItem::changeState()
+{
+    if (isMounted())
+    {
+        setName(mountPath());
+        setPath(mountPath());
+        int t = 0;
+        setToolTip(QString::number(realSize((float)freeBytes(), &t)) + spaceType[t] + " Free");
+    }
+    else
+    {
+        setName(m_solid.description());
+    }
+    m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole())));
+    m_tb->setToolTip( isMounted() ? "Unmount" : "Mount" );
+}
+
+DeviceManager::DeviceManager(const QStringList &texts, QObject *parent)
+    : Container(QString("Devices"))
+    , QObject(parent)
+    , m_view(static_cast<PlacesView *>(parent))
+{
+    connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceAdded(QString)), this, SLOT(deviceAdded(QString)));
+    connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceRemoved(QString)), this, SLOT(deviceRemoved(QString)));
+    populate();
+    setDragEnabled(false);
+    setDropEnabled(false);
+}
+
+void
+DeviceManager::deviceAdded(const QString &dev)
+{
+    Solid::Device device = Solid::Device(dev);
+    if ( device.is<Solid::StorageAccess>() )
+    {
+        DeviceItem *d = new DeviceItem(this, m_view, device);
+        appendRow(d);
+        m_items.insert(dev, d);
+    }
+}
+
+void
+DeviceManager::deviceRemoved(const QString &dev)
+{
+    if ( m_items.contains(dev) )
+        delete m_items.take(dev);
+}
+
+void
+DeviceManager::populate()
+{
+    foreach ( Solid::Device dev, Solid::Device::listFromType(Solid::DeviceInterface::StorageAccess) )
+    {
+        DeviceItem *d = new DeviceItem( this, m_view, dev );
+        appendRow(d);
+        m_items.insert(dev.udi(), d);
+    }
+}
+
+DeviceItem
+*DeviceManager::deviceItemForFile(const QString &file)
+{
+    QString s(file.isEmpty() ? "/" : file);
+    foreach ( DeviceItem *item, m_items.values() )
+        if ( s == item->mountPath() )
+            return item;
+    return deviceItemForFile(s.mid(0, s.lastIndexOf("/")));
+}
+#endif
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+QVariant
+PlacesModel::data(const QModelIndex &index, int role) const
+{
+    if ( role == Qt::DisplayRole || role == Qt::DecorationRole )
+        if ( Place *p = m_places->itemFromIndex<Place *>(index) )
+            if ( role == Qt::DisplayRole )
+                return p->name();
+            else if ( role == Qt::DecorationRole )
+                return QIcon::fromTheme( p->iconName() );
+    return QStandardItemModel::data(index, role);
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-
-
-
-PlacesView::PlacesView( QWidget *parent ) : QTreeWidget( parent )
+PlacesView::PlacesView( QWidget *parent ) : QTreeView( parent )
 {
-    m_mainWindow = MainWindow::currentWindow();
     ViewAnimator::manage(this);
+    setModel(m_model = new PlacesModel(this));
 
     setUniformRowHeights( false );
     setAllColumnsShowFocus( true );
     setItemDelegate( new PlacesViewDelegate( this ) );
     setHeaderHidden( true );
     setItemsExpandable( true );
-
-    setColumnHidden( 1, true );
-    setColumnHidden( 2, true );
-    setColumnHidden( 3, true );
     setIndentation( 0 );
     setIconSize( QSize( 16, 16 ) );
     setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     setDragDropMode( QAbstractItemView::DragDrop );
+    setAcceptDrops(true);
+    setDragEnabled(true);
+    viewport()->setAcceptDrops(true);
+    setDropIndicatorShown(true);
     setDefaultDropAction( Qt::MoveAction );
-    setEditTriggers( QAbstractItemView::NoEditTriggers );
+//    setEditTriggers( QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed );
     setMouseTracking( true );
     setExpandsOnDoubleClick( false );
     setAnimated( true );
-
 
     //base color... slight hihglight tint
     QPalette pal = palette();
@@ -237,97 +383,155 @@ PlacesView::PlacesView( QWidget *parent ) : QTreeWidget( parent )
     setPalette( pal );
 
     connect ( this, SIGNAL(changed()), this, SLOT(updateAllWindows()) );
+    connect ( this, SIGNAL(clicked(QModelIndex)), this, SLOT(emitPath(QModelIndex)) );
+    connect ( this, SIGNAL(placeActivated(QString)), MainWindow::currentWindow(), SLOT(setRootPath(QString)) );
 }
 
+#define RETURN \
+    event->setDropAction(Qt::IgnoreAction); \
+    event->accept(); \
+    QTreeView::dropEvent(event); \
+    return
 
 void
 PlacesView::dropEvent( QDropEvent *event )
 {
+    Container *cont = itemAt<Container *>(event->pos());
+    Place *place = itemAt<Place *>(event->pos());
+
+    QStringList files;
+    foreach ( const QUrl &url, event->mimeData()->urls() )
+    {
+        const QString &file = url.toLocalFile();
+        if ( QFileInfo(file).isReadable() )
+            files << file;
+    }
+
+    if ( dropIndicatorPosition() == OnViewport )
+    {
+        if ( event->source() == this ) { RETURN; }
+
+        Container *places = 0L;
+        foreach ( Container *c, containers() )
+            if ( c->name() == "Places" )
+                places = c;
+        if ( !places )
+        {
+            places = new Container("Places");
+            m_model->insertRow(0, places);
+        }
+        foreach ( const QString &file, files )
+        {
+            const QFileInfo &f(file);
+            QSettings settings( QString("%1%2.directory").arg(f.filePath()).arg(QDir::separator()), QSettings::IniFormat );
+            const QIcon &icon = QIcon::fromTheme(settings.value( "Desktop Entry/Icon" ).toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
+            places->appendRow(new Place(f.fileName(), f.filePath(), icon.name()));
+        }
+        expand(indexFromItem(places));
+        RETURN;
+    }
+
+#ifdef Q_WS_X11
+    if ( itemAt<DeviceItem *>(event->pos())
+         ||  ( dynamic_cast<DeviceItem *>(m_lastClicked)
+               && dropIndicatorPosition() != OnItem
+               && event->source() == this )
+         || dynamic_cast<DeviceManager *>(m_lastClicked)
+         || ( itemAt<DeviceManager *>(event->pos())
+              && dropIndicatorPosition() != AboveItem ) )
+    {
+        RETURN;
+    }
+#endif
+
+    const bool &below = bool(dropIndicatorPosition() == BelowItem);
+
     if ( event->source() != this )
     {
-        if ( event->mimeData()->hasUrls() )
-            if ( itemAt( event->pos() ) )
-                if (dropIndicatorPosition() == QAbstractItemView::OnItem)
-                {
-                    if ( !itemAt(event->pos())->parent() )
-                        if ( QTreeWidgetItem *parent = itemAt(event->pos()) )
-                        {
-                            QFileInfo file = event->mimeData()->urls().first().toLocalFile();
-                            if ( file.isDir() )
-                            {
-                                QSettings settings( file.filePath() + QDir::separator() + ".directory", QSettings::IniFormat );
-                                QString icon("inode-directory");
-                                if ( !settings.value( "Desktop Entry/Icon" ).toString().isNull() )
-                                    icon = settings.value( "Desktop Entry/Icon" ).toString();
-                                addPlace( file.fileName(), file.filePath(), QIcon::fromTheme( icon ), parent );
-                                event->setDropAction(Qt::IgnoreAction);
-                            }
-                        }
-                    if ( QFileInfo(itemAt(event->pos())->text(Path)).isDir() )
-                    {
-                        QApplication::restoreOverrideCursor();
-                        int ret = QMessageBox::question(m_mainWindow, tr("Are you sure?"), tr("you are about to move some stuff..."), QMessageBox::Yes, QMessageBox::No);
-                        if ( ret == QMessageBox::Yes )
-                        {
-                            QStringList cp;
-                            foreach( QUrl url, event->mimeData()->urls() )
-                                cp << url.toLocalFile();
-                            IO::Job::copy( cp, itemAt( event->pos() )->text( 1 ), true );
-                        }
-                        event->setDropAction(Qt::IgnoreAction);
-                    }
-                }
-                else if ( dropIndicatorPosition() != QAbstractItemView::OnViewport )
-                {
-#ifdef Q_WS_X11
-                    if ( !m_devManager->isDevice(itemAt( event->pos() )) )
-                    {
-#endif
-                        QFileInfo file( event->mimeData()->urls().first().toLocalFile() );
-                        if ( file.isDir() )
-                        {
-                            QSettings settings( file.filePath() + QDir::separator() + ".directory", QSettings::IniFormat );
-                            QString icon("inode-directory");
-                            if ( !settings.value( "Desktop Entry/Icon" ).toString().isNull() )
-                                icon = settings.value( "Desktop Entry/Icon" ).toString();
-                            QTreeWidgetItem *item = new QTreeWidgetItem();
-                            item->setIcon( Name, QIcon::fromTheme( icon ) );
-                            item->setText( Name, file.fileName() );
-                            item->setText( Path, file.filePath() );
-                            item->setText( Icon, icon );
-                            if ( indexAt( event->pos() ).parent().isValid() )
-                                topLevelItem( indexAt( event->pos() ).parent().row() )->insertChild( indexAt( event->pos() ).row()+bool( dropIndicatorPosition() == QAbstractItemView::BelowItem ), item );
-                            else
-                                topLevelItem( indexAt( event->pos() ).row() )->insertChild( 0, item );
-                        }
-#ifdef Q_WS_X11
-                    }
-#endif
-                    event->setDropAction(Qt::IgnoreAction);
-                }
+        if ( files.isEmpty() ) { RETURN; }
 
+        if ( dropIndicatorPosition() == OnItem )
+        {
+
+            if ( cont ) //dropping files on a container
+            {
+                foreach ( const QString &file, files )
+                {
+                    const QFileInfo &f(file);
+                    if ( !f.isDir() )
+                        continue;
+                    QSettings settings( QString("%1%2.directory").arg(f.filePath()).arg(QDir::separator()), QSettings::IniFormat );
+                    const QIcon &icon = QIcon::fromTheme(settings.value( "Desktop Entry/Icon" ).toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
+                    addPlace( f.fileName(), f.filePath(), icon, cont );
+                }
+                RETURN;
+            }
+
+            if ( place ) //dropping files on a place
+            {
+                QApplication::restoreOverrideCursor();
+                int ret = QMessageBox::question(MainWindow::currentWindow(), tr("Are you sure?"), tr("you are about to move some stuff..."), QMessageBox::Yes, QMessageBox::No);
+                if ( ret == QMessageBox::Yes )
+                    IO::Job::copy( files, place->path(), true );
+                RETURN;
+            }
+
+        }
+        else if ( dropIndicatorPosition() != QAbstractItemView::OnViewport )
+        {
+            foreach ( const QString &file, files )
+            {
+                const QFileInfo &f(file);
+                if ( !f.isDir() )
+                    continue;
+                QSettings settings( QString("%1%2.directory").arg(f.filePath()).arg(QDir::separator()), QSettings::IniFormat );
+                const QIcon &icon = QIcon::fromTheme(settings.value( "Desktop Entry/Icon" ).toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
+                Place *item = new Place(f.fileName(), f.filePath(), icon.name());
+                Container *c = container( indexAt( event->pos() ).parent().row() );
+                if ( c )
+                    c->insertRow( indexAt( event->pos() ).row()+below, item );
+                else
+                    cont->insertRow( 0, item );
+            }
+            RETURN;
+        }
     }
     else
     {
-        if ( !itemAt(event->pos())->parent() && !m_lastClicked->parent() ) //moving container
-        {
-            QTreeWidget::dropEvent(event);
-            return;
-        }
-        if ( dropIndicatorPosition() == QAbstractItemView::OnItem
-             || dropIndicatorPosition() == QAbstractItemView::OnViewport
-             || !indexAt( event->pos() ).parent().isValid()
-             || !m_lastClicked->parent()
-#ifdef Q_WS_X11
-             || (itemAt(event->pos()) && itemAt(event->pos())->parent()&& itemAt(event->pos())->parent() == m_devManager)
-             || (itemAt(event->pos()) && itemAt(event->pos()) == m_devManager)
-             || m_devManager->isDevice(m_lastClicked)
-#endif
-             )
-            event->setDropAction(Qt::IgnoreAction);
-    }
+        if ( cont )
+            if ( Container *movedCont = dynamic_cast<Container *>(m_lastClicked) ) //moving container
+            {
+                if ( dropIndicatorPosition() == AboveItem )
+                {
+                    Container *newCont = new Container(movedCont);
+                    m_model->insertRow( cont->row(), newCont );
+                    expand(indexFromItem(newCont));
+                    m_model->removeRow(movedCont->row());
+                }
+                RETURN;
+            }
+            else if ( Place *movedPlace = dynamic_cast<Place *>(m_lastClicked) )
+            {
+                if ( dropIndicatorPosition() == OnItem )
+                    cont->appendRow( new Place( movedPlace ) );
+                else if ( dropIndicatorPosition() == BelowItem )
+                    cont->insertRow( 0, new Place( movedPlace ) );
+                movedPlace->parent()->removeRow(movedPlace->row());
+                RETURN;
+            }
 
-    QTreeWidget::dropEvent( event );
+        if ( place )
+            if ( Place *movedPlace = dynamic_cast<Place *>(m_lastClicked) )
+            {
+                if ( Container *c = dynamic_cast<Container *>(place->parent()) )
+                {
+                    c->insertRow( place->row() + below, new Place( movedPlace ) );
+                    movedPlace->parent()->removeRow(movedPlace->row());
+                }
+                RETURN;
+            }
+    }
+    RETURN;
 }
 
 void
@@ -340,11 +544,8 @@ PlacesView::mouseReleaseEvent( QMouseEvent *event )
         return;
     }
     if ( !indexAt( event->pos() ).parent().isValid() && indexAt( event->pos() ).isValid() )
-    {
-        QTreeWidgetItem *header = itemAt( event->pos() );
-        header->setExpanded( !header->isExpanded() );
-    }
-    QTreeWidget::mouseReleaseEvent( event );
+        setExpanded(indexAt( event->pos() ), !isExpanded(indexAt( event->pos() )));
+    QTreeView::mouseReleaseEvent( event );
 }
 
 void
@@ -355,11 +556,11 @@ PlacesView::mousePressEvent( QMouseEvent *event )
     {
         event->ignore();
         if ( indexAt( event->pos() ).isValid() && indexAt( event->pos() ).parent().isValid() )
-            emit newTabRequest( itemAt( event->pos() )->text( Path ) );
+            emit newTabRequest( static_cast<Place *>(itemAt( event->pos() ))->path() );
         return;
     }
     else
-        QTreeWidget::mousePressEvent(event);
+        QTreeView::mousePressEvent(event);
 }
 
 void
@@ -369,7 +570,7 @@ PlacesView::keyPressEvent( QKeyEvent *event )
         removePlace();
     if ( event->key() == Qt::Key_F2 )
         renPlace();
-    QTreeWidget::keyPressEvent( event );
+    QTreeView::keyPressEvent( event );
 }
 
 void
@@ -381,32 +582,36 @@ PlacesView::removePlace()
              && !m_devManager->isDevice(currentItem()))
 #endif
     {
-        delete currentItem();
+            delete currentItem();
+            if ( currentItem()->parent() )
+                currentItem()->parent()->removeRow(currentIndex().row());
+            else
+                m_model->removeRow(currentIndex().row());
             emit changed();
-    }
+        }
 }
 
 void
 PlacesView::renPlace()
 {
-    QTreeWidgetItem *item = currentItem();
-    item->setFlags(item->flags() | Qt::ItemIsEditable);
-    editItem(item);
-    emit changed();
+    if ( Place *place = dynamic_cast<Place *>(currentItem()) )
+    {
+        edit(place->index());
+        emit changed();
+    }
 }
 
 void
-PlacesView::addPlace(QString name, QString path, QIcon icon, QTreeWidgetItem *parent , const bool &storeSettings)
+PlacesView::addPlace(QString name, QString path, QIcon icon, QStandardItem *parent, const bool &storeSettings)
 {
-    QTreeWidgetItem *current = currentItem();
-    if ( !parent && current && current->parent() )
+    Container *cont = dynamic_cast<Container *>(parent);
+    if ( !cont )
+        cont = dynamic_cast<Container *>(currentItem());
+    if ( !cont )
         return;
-
-    QTreeWidgetItem *item = new QTreeWidgetItem( parent ? parent : current );
-    item->setIcon( Name, icon );
-    item->setText( Name, name );
-    item->setText( Path, path );
-    item->setText( Icon, icon.name() );
+    Place *place = new Place(name, path, icon.name());
+    place->setFlags(place->flags() | Qt::ItemIsEditable);
+    cont->appendRow(place);
     if ( storeSettings )
     {
         store();
@@ -417,11 +622,11 @@ PlacesView::addPlace(QString name, QString path, QIcon icon, QTreeWidgetItem *pa
 void
 PlacesView::addPlaceCont()
 {
-    QTreeWidgetItem *item = new QTreeWidgetItem();
-    insertTopLevelItem(0, item);
-    item->setText(0, "New_Container");
+    Container *item = new Container("New_Container");
+    m_model->insertRow(0, item);
     item->setFlags(item->flags() | Qt::ItemIsEditable);
-    editItem(item, 0);
+    edit(item->index());
+    expand(indexFromItem(item));
     emit changed();
 }
 
@@ -433,25 +638,29 @@ PlacesView::setPlaceIcon()
     const QString &i = IconDialog::icon();
     if ( i.isEmpty() || !m_lastClicked->parent() )
         return;
-    m_lastClicked->setText( Icon, i );
-    m_lastClicked->setIcon( Name, QIcon::fromTheme( i ) );
-    emit changed();
+    if ( Place *place = dynamic_cast<Place *>(m_lastClicked) )
+    {
+        place->setIconName( i );
+        emit changed();
+    }
 }
 
 void
-PlacesView::activateAppropriatePlace( const QString &index )
+PlacesView::activateAppropriatePlace( const QString &path )
 {
-    for ( int i = 0; i < topLevelItemCount(); i++ )
-        for( int a = 0; a < topLevelItem( i )->childCount(); a++ )
+    for ( int i = 0; i < containerCount(); i++ )
+        for( int a = 0; a < container( i )->rowCount(); a++ )
         {
-            if ( topLevelItem( i )->child( a )->text( 1 ) == index )
+            Place *place = container(i)->place(a);
+            Place *current = static_cast<Place *>(currentItem());
+            if ( place->path() == path )
             {
-                setCurrentItem( topLevelItem( i )->child( a ) );
+                setCurrentItem( place );
                 return;
             }
-            else if ( currentItem() && index.contains( topLevelItem( i )->child( a )->text( 1 ) ) )
-                if ( currentItem()->text( 1 ).length() < topLevelItem( i )->child( a )->text( 1 ).length() )
-                    setCurrentItem( topLevelItem( i )->child( a ) );
+            else if ( current && path.contains( place->path() ) )
+                if ( current->path().length() < place->path().length() )
+                    setCurrentItem( place );
         }
 }
 
@@ -469,11 +678,11 @@ PlacesView::contextMenuEvent( QContextMenuEvent *event )
 QMenu
 *PlacesView::containerAsMenu(const int &cont)
 {
-    QMenu *menu = new QMenu(topLevelItem(cont)->text(0));
-    for ( int i = 0; i < topLevelItem(cont)->childCount(); ++i )
+    QMenu *menu = new QMenu(container(cont)->name());
+    for ( int i = 0; i < container(cont)->rowCount(); ++i )
     {
-        QAction *action = new QAction(topLevelItem(cont)->child(i)->text(Name), qApp);
-        action->setData(topLevelItem(cont)->child(i)->text(Path));
+        QAction *action = new QAction(container(cont)->place(i)->name(), qApp);
+        action->setData(container(cont)->place(i)->path());
         connect (action, SIGNAL(triggered()), Operations::instance(), SLOT(setRootPath()));
         menu->addAction(action);
     }
@@ -495,7 +704,7 @@ PlacesView::updateAllWindows()
 void
 PlacesView::populate()
 {
-    clear();
+    m_model->clear();
 #ifdef Q_WS_X11
     QSettings s("dfm", "bookmarks");
 #else
@@ -503,22 +712,23 @@ PlacesView::populate()
 #endif
     foreach ( const QString &container, s.value("Containers").toStringList() )
     {
-        QTreeWidgetItem *cont = new QTreeWidgetItem(this, QStringList() << container);
-        addTopLevelItem(cont);
+        Container *cont = new Container(container);
+        m_model->appendRow(cont);
         s.beginGroup(container);
         foreach ( const QString &itemString, s.childKeys() )
         {
-                const QStringList &item = s.value(itemString).toStringList();
-                addPlace(item[Name], item[Path], QIcon::fromTheme(item[Icon]), cont, false);
+            const QStringList &item = s.value(itemString).toStringList();
+            if ( item.count() == 3 )
+                addPlace(item[Place::Name], item[Place::Path], QIcon::fromTheme(item[Place::Icon]), cont, false);
         }
         s.beginGroup("Options");
-        cont->setExpanded(s.value("Expanded", false).toBool());
+        setExpanded(cont->index(), s.value("Expanded", false).toBool());
         s.endGroup();
         s.endGroup();
     }
 #ifdef Q_WS_X11
-    addTopLevelItem(m_devManager = new DeviceManager(QStringList() << tr("Devices"), this));
-    m_devManager->setExpanded(true);
+    m_model->appendRow(m_devManager = new DeviceManager(QStringList() << tr("Devices"), this));
+    expand(m_devManager->index());
 #endif
 }
 
@@ -533,27 +743,57 @@ PlacesView::store()
     s.clear();
 
     QStringList containers;
-    for ( int i = 0; i < topLevelItemCount(); ++i )
-        if ( topLevelItem(i) != (QTreeWidgetItem*)m_devManager )
-            containers << topLevelItem(i)->text(0);
+    for ( int i = 0; i < containerCount(); ++i )
+        if ( container(i) != (Container*)m_devManager )
+            containers << container(i)->name();
     s.setValue("Containers", containers);
 
-    for ( int c = 0; c < topLevelItemCount(); ++c )
+    for ( int c = 0; c < containerCount(); ++c )
     {
-        if ( topLevelItem(c) == (QTreeWidgetItem*)m_devManager )
+        if ( container(c) == (Container*)m_devManager )
             continue;
-        s.beginGroup(topLevelItem(c)->text(0));
-        for ( int i = 0; i < topLevelItem(c)->childCount(); ++i )
+        s.beginGroup(container(c)->name());
+        for ( int i = 0; i < container(c)->rowCount(); ++i )
         {
-            QTreeWidgetItem *twi = topLevelItem(c)->child(i);
-            if ( twi->parent() != (QTreeWidgetItem*)m_devManager )
-                s.setValue(QString::number(i), QStringList() << twi->text(Name) << twi->text(Path) << twi->text(Icon));
+            Place *p = container(c)->place(i);
+            if ( container(c) != (Container*)m_devManager )
+                s.setValue(QString::number(i), QStringList() << p->name() << p->path() << p->iconName());
         }
-        s.beginGroup("Options");
-        s.setValue("Expanded", topLevelItem(c)->isExpanded());
-        s.endGroup();
+        if ( container(c)->rowCount() )
+        {
+            s.beginGroup("Options");
+            s.setValue("Expanded", isExpanded( indexFromItem( container(c) ) ));
+            s.endGroup();
+        }
         s.endGroup();
     }
+}
+
+void
+PlacesView::wheelEvent(QWheelEvent *e)
+{
+    QTreeView::wheelEvent(e);
+    foreach ( DeviceItem *d, m_devManager->deviceItems() )
+        d->updateTb();
+}
+
+void
+PlacesView::resizeEvent(QResizeEvent *event)
+{
+    QTreeView::resizeEvent(event);
+    foreach ( DeviceItem *d, m_devManager->deviceItems() )
+        d->updateTb();
+}
+
+void
+PlacesView::emitPath(const QModelIndex &index)
+{
+    if ( Place *p = itemFromIndex<Place *>(index) )
+        if ( !dynamic_cast<Container *>(p) )
+        {
+            const QString &path = p->path();
+            emit placeActivated(path);
+        }
 }
 
 void
