@@ -740,9 +740,9 @@ PlacesView::populate()
         s.beginGroup(container);
         foreach ( const QString &itemString, s.childKeys() )
         {
-            const QStringList &item = s.value(itemString).toStringList();
-            if ( item.count() == 3 )
-                addPlace(item[Place::Name], item[Place::Path], QIcon::fromTheme(item[Place::Icon]), cont, false);
+            const QStringList &values = s.value(itemString).toStringList();
+            if ( values.count() == 3 )
+                cont->appendRow(new Place(values));
         }
         s.beginGroup("Options");
         setExpanded(cont->index(), s.value("Expanded", false).toBool());
