@@ -47,7 +47,6 @@ signals:
     void dataChanged( const QModelIndex &topLeft, const QModelIndex &bottomRight );
     
 public slots:
-    void loadLater();
     void setCurrentView( QAbstractItemView *view );
     void loadThumbs();
     void fileChanged( const QString &file );

@@ -242,10 +242,12 @@ ThumbsLoader::disconnectView()
         return;
     disconnect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
     disconnect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
-    disconnect( m_fsModel, SIGNAL(layoutChanged()),instance(), SLOT(loadLater()));
+    disconnect( m_fsModel, SIGNAL(layoutChanged()),instance(), SLOT(loadReflections()));
+    disconnect( m_fsModel, SIGNAL(directoryLoaded(QString)), m_timer, SLOT(start()) );
     disconnect( instance(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), m_fsModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
     m_currentView->removeEventFilter( instance() );
     m_fsModel = 0;
+    m_currentView = 0;
 }
 
 void
@@ -254,7 +256,8 @@ ThumbsLoader::connectView()
     m_fsModel = static_cast<DFM::FileSystemModel *>(m_currentView->model());
     connect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
     connect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
-    connect( m_fsModel, SIGNAL(layoutChanged()), instance(), SLOT(loadLater()));
+    connect( m_fsModel, SIGNAL(layoutChanged()), instance(), SLOT(loadReflections()) );
+    connect( m_fsModel, SIGNAL(directoryLoaded(QString)), m_timer, SLOT(start()) );
     connect( instance(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), m_fsModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
     m_currentView->installEventFilter( instance() );
 }
@@ -263,6 +266,7 @@ ThumbsLoader::connectView()
 void
 ThumbsLoader::loadThumbs()
 {
+    m_timer->stop();
     for ( int i = 0; i < m_fsModel->rowCount(m_currentView->rootIndex()); ++i )
     {
         const QModelIndex &index = m_fsModel->index( i, 0, m_currentView->rootIndex() );
@@ -275,12 +279,6 @@ ThumbsLoader::loadThumbs()
 }
 
 void
-ThumbsLoader::loadLater()
-{
-    loadReflections();
-}
-
-void
 ThumbsLoader::loadReflections()
 {
     for ( int i = 0; i < m_fsModel->rowCount(m_currentView->rootIndex()); ++i )
@@ -289,11 +287,14 @@ ThumbsLoader::loadReflections()
         const QIcon &icon = qvariant_cast<QIcon>(m_fsModel->data(index, Qt::DecorationRole));
         if ( m_loadedThumbs[FallBackRefl].contains(icon.name()) )
             continue;
-        const QImage &img = icon.pixmap(SIZE).toImage();
+        QImage img(SIZE, SIZE, QImage::Format_ARGB32);
+        img.fill(Qt::transparent);
+        QPainter p(&img);
+        icon.paint(&p, img.rect());
         m_imgQueue << QPair<QImage, QModelIndex>(img, index);
     }
     start();
-    QTimer::singleShot(500, instance(), SLOT(loadThumbs()));
+    m_timer->start();
 }
 
 void
@@ -304,6 +305,7 @@ ThumbsLoader::setCurrentView(QAbstractItemView *view)
     disconnectView();
     m_currentView = view;
     connectView();
+    m_timer->start();
 }
 
 void
@@ -325,6 +327,7 @@ ThumbsLoader::run()
 bool
 ThumbsLoader::eventFilter(QObject *o, QEvent *e)
 {
+    if ( m_currentView )
     if ( o == m_currentView && e->type() == QEvent::Resize )
     {
         vr = m_currentView->viewport()->rect();
