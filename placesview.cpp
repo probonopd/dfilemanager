@@ -377,7 +377,7 @@ PlacesView::PlacesView( QWidget *parent )
     viewport()->setAcceptDrops(true);
     setDropIndicatorShown(true);
     setDefaultDropAction( Qt::MoveAction );
-//    setEditTriggers( QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed );
+    setEditTriggers( NoEditTriggers );
     setMouseTracking( true );
     setExpandsOnDoubleClick( false );
     setAnimated( true );
