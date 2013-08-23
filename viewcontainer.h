@@ -89,7 +89,7 @@ signals:
     void leftView();
     
 public slots:
-    void doubleClick(const QModelIndex &index);
+    void activate(const QModelIndex &index);
     bool setPathVisible(bool visible);
     void setRootPath(QString rootPath);
 
@@ -99,6 +99,7 @@ private slots:
     void genNewTabRequest(QModelIndex index);
     void customActionTriggered();
     void scriptTriggered();
+    void settingsChanged();
 
 private:
     void setModel(FileSystemModel *model);

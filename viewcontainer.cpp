@@ -53,10 +53,20 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
     setModel(m_fsModel);
     setSelectionModel(new QItemSelectionModel(m_fsModel));
 
-    connect( m_iconView, SIGNAL(activated(const QModelIndex &)), this, SLOT(doubleClick(const QModelIndex &)));
-    connect( m_detailsView, SIGNAL(activated(const QModelIndex &)), this, SLOT(doubleClick(const QModelIndex &)));
-    connect( m_columnsView, SIGNAL(activated(const QModelIndex &)), this, SLOT(doubleClick(const QModelIndex &)));
-    connect( m_flowView->detailsView(), SIGNAL(activated(const QModelIndex &)), this, SLOT(doubleClick(const QModelIndex &)));
+    if ( Configuration::config.views.singleClick )
+    {
+        connect( m_iconView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)) );
+        connect( m_detailsView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( m_columnsView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( m_flowView->detailsView(), SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+    }
+    else
+    {
+        connect( m_iconView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( m_detailsView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( m_columnsView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( m_flowView->detailsView(), SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+    }
     connect( m_fsModel, SIGNAL(rootPathChanged(QString)),this, SLOT(rootPathChanged(QString)));
     connect( m_fsModel, SIGNAL(directoryLoaded(QString)),this, SLOT(directoryLoaded(QString)));
     connect( m_iconView, SIGNAL(iconSizeChanged(int)),this, SIGNAL(iconSizeChanged(int)));
@@ -65,6 +75,8 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
     connect( m_detailsView, SIGNAL(newTabRequest(QModelIndex)),this, SLOT(genNewTabRequest(QModelIndex)));
     connect( m_flowView->detailsView(), SIGNAL(newTabRequest(QModelIndex)),this, SLOT(genNewTabRequest(QModelIndex)));
     connect( m_columnsView, SIGNAL(newTabRequest(QModelIndex)),this, SLOT(genNewTabRequest(QModelIndex)));
+
+    connect( MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(settingsChanged()) );
 
 //    connect( m_breadCrumbs, SIGNAL(newPath(QString)), this, SLOT(rootPathChanged(QString)) );
 
@@ -187,7 +199,7 @@ ViewContainer::scriptTriggered()
 }
 
 void
-ViewContainer::doubleClick(const QModelIndex &index)
+ViewContainer::activate(const QModelIndex &index)
 {
     if ( !index.isValid() )
         return;
@@ -489,4 +501,31 @@ QString
 ViewContainer::currentFilter()
 {
     return m_dirFilter;
+}
+
+void
+ViewContainer::settingsChanged()
+{
+    if ( Configuration::config.views.singleClick )
+    {
+        disconnect( m_iconView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        disconnect( m_detailsView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        disconnect( m_columnsView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        disconnect( m_flowView->detailsView(), SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( m_iconView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)) );
+        connect( m_detailsView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( m_columnsView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( m_flowView->detailsView(), SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+    }
+    else
+    {
+        disconnect( m_iconView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)) );
+        disconnect( m_detailsView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        disconnect( m_columnsView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        disconnect( m_flowView->detailsView(), SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( m_iconView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( m_detailsView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( m_columnsView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( m_flowView->detailsView(), SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+    }
 }

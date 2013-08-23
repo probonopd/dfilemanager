@@ -52,17 +52,20 @@ Configuration::readConfiguration()
 {
     config.docks.lock = settings()->value( "docks.lock", 0 ).toInt();
     config.startPath = settings()->value("startPath", QDir::homePath()).toString();
+    config.styleSheet = settings()->value("styleSheet", QString()).toString();
+
     config.behaviour.hideTabBarWhenOnlyOneTab = settings()->value("hideTabBarWhenOnlyOne", false).toBool();
     config.behaviour.systemIcons = settings()->value("useSystemIcons", false).toBool();
-    config.views.iconView.smoothScroll = settings()->value("smoothScroll", false).toBool();
-    config.views.showThumbs = settings()->value("showThumbs", false).toBool();
     config.behaviour.devUsage = settings()->value("drawDevUsage", false).toBool();
-    config.views.iconView.textWidth = settings()->value("textWidth", 16).toInt();
-    config.views.detailsView.rowPadding = settings()->value("detailsView.rowPadding", 0).toInt();
-    config.behaviour.view = settings()->value("start.view", 0).toInt();
+    config.behaviour.view = settings()->value("start.view", 0).toInt();   
+
     config.views.iconView.iconSize = settings()->value("iconView.iconSize", 3).toInt();
     config.views.flowSize = settings()->value("flowSize", QByteArray()).toByteArray();
-    config.styleSheet = settings()->value("styleSheet", QString()).toString();
+    config.views.iconView.textWidth = settings()->value("textWidth", 16).toInt();
+    config.views.detailsView.rowPadding = settings()->value("detailsView.rowPadding", 0).toInt();
+    config.views.iconView.smoothScroll = settings()->value("smoothScroll", false).toBool();
+    config.views.showThumbs = settings()->value("showThumbs", false).toBool();
+    config.views.singleClick = settings()->value("views.singleClick", false).toBool();
 
     Configuration::settings()->beginGroup("CustomActions");
     foreach ( const QString &string, settings()->childKeys() )
@@ -107,6 +110,7 @@ Configuration::writeConfiguration()
     settings()->setValue("flowSize", config.views.flowSize);
     settings()->setValue("hideTabBarWhenOnlyOne", config.behaviour.hideTabBarWhenOnlyOneTab);
     settings()->setValue("styleSheet", config.styleSheet);
+    settings()->setValue("views.singleClick", config.views.singleClick);
 }
 
 static inline QString desktopInfo(const QString &desktop, bool name)

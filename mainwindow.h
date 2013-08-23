@@ -126,6 +126,7 @@ private slots:
 
 signals:
     void viewChanged( QAbstractItemView *view );
+    void settingsChanged();
 
 private:
     QStatusBar *m_statusBar;

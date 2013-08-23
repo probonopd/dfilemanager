@@ -136,9 +136,11 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
   , m_iconSlider( new QSlider( Qt::Horizontal, this ) )
   , m_size( new QLabel(QString::number(Configuration::config.views.iconView.iconSize*16) + " px", this) )
   , m_viewBox(new QComboBox(this))
+  , m_singleClick(new QCheckBox(tr("Open folders and files with one click"), this))
 {
     m_smoothScroll->setChecked(Configuration::config.views.iconView.smoothScroll);
     m_showThumbs->setChecked(Configuration::config.views.showThumbs);
+    m_singleClick->setChecked(Configuration::config.views.singleClick);
     QGroupBox *gBox = new QGroupBox(tr("IconView"), this);
     QVBoxLayout *gvLayout = new QVBoxLayout();
     gvLayout->addWidget(m_smoothScroll);
@@ -190,6 +192,7 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
 
     QVBoxLayout *vLayout = new QVBoxLayout();
     vLayout->addWidget(m_showThumbs);
+    vLayout->addWidget(m_singleClick);
     vLayout->addLayout(defView);
     vLayout->addWidget(gBox);
     vLayout->addWidget(detailsBox);
@@ -265,6 +268,7 @@ SettingsDialog::accept()
     Configuration::config.views.detailsView.rowPadding = m_viewWidget->m_rowPadding->value();
     Configuration::config.behaviour.view = m_viewWidget->m_viewBox->currentIndex();
     Configuration::config.views.iconView.iconSize = m_viewWidget->m_iconSlider->value();
+    Configuration::config.views.singleClick = m_viewWidget->m_singleClick->isChecked();
 
     MainWindow::currentWindow()->updateConfig();
 

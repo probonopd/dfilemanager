@@ -67,6 +67,7 @@ MainWindow::updateConfig()
     if ( m_activeContainer )
         m_activeContainer->refresh();
     updateIcons();
+    emit settingsChanged();
 }
 
 void

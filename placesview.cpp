@@ -260,7 +260,7 @@ DeviceItem::updateSpace()
     if ( isMounted() )
     {
         if ( Configuration::config.behaviour.devUsage )
-            m_view->update( m_view->indexFromItem(this) );
+            m_view->update( index() );
         int t = 0;
         QString free(QString::number(realSize((float)freeBytes(), &t)));
         setToolTip(free + spaceType[t] + " Free");

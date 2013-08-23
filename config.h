@@ -42,7 +42,7 @@ typedef struct Config
     struct views
     {
         QByteArray flowSize;
-        bool showThumbs;
+        bool showThumbs, singleClick;
         struct iconView
         {
             bool smoothScroll;

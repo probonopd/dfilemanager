@@ -80,7 +80,7 @@ class ViewsWidget : public QWidget
     Q_OBJECT
 public:
     explicit ViewsWidget(QWidget *parent = 0);
-    QCheckBox *m_smoothScroll, *m_showThumbs;
+    QCheckBox *m_smoothScroll, *m_showThumbs, *m_singleClick;
     QSlider *m_iconWidth, *m_iconSlider;
     QString m_iconWidthStr;
     QLabel *m_width, *m_size;
