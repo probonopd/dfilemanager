@@ -274,8 +274,6 @@ protected:
     void keyPressEvent(QKeyEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
-    void wheelEvent(QWheelEvent *e);
-    void resizeEvent(QResizeEvent *event);
 
 signals:
     void newTabRequest( const QString &path );

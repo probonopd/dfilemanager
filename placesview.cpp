@@ -228,6 +228,7 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Solid::Devic
     connect( m_view, SIGNAL(expanded(QModelIndex)), this, SLOT(updateTb()) );
     connect( m_view, SIGNAL(changed()), this, SLOT(updateTb()) );
     connect( m_view, SIGNAL(collapsed(QModelIndex)), this, SLOT(updateTb()) );
+    connect( m_view->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateTb()) );
     QTimer::singleShot(200, this, SLOT(updateTb()));
 }
 
@@ -790,32 +791,11 @@ PlacesView::store()
 }
 
 void
-PlacesView::wheelEvent(QWheelEvent *e)
-{
-    QTreeView::wheelEvent(e);
-    if ( m_devManager )
-        foreach ( DeviceItem *d, m_devManager->deviceItems() )
-            d->updateTb();
-}
-
-void
-PlacesView::resizeEvent(QResizeEvent *event)
-{
-    QTreeView::resizeEvent(event);
-    if ( m_devManager )
-        foreach ( DeviceItem *d, m_devManager->deviceItems() )
-            d->updateTb();
-}
-
-void
 PlacesView::emitPath(const QModelIndex &index)
 {
     if ( Place *p = itemFromIndex<Place *>(index) )
         if ( !dynamic_cast<Container *>(p) )
-        {
-            const QString &path = p->path();
-            emit placeActivated(path);
-        }
+            emit placeActivated(p->path());
 }
 
 void
