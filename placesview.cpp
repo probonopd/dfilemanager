@@ -765,27 +765,20 @@ PlacesView::store()
 #endif
     s.clear();
 
-    QStringList containers;
-    for ( int i = 0; i < containerCount(); ++i )
-        if ( container(i) != (Container*)m_devManager )
-            containers << container(i)->name();
-    s.setValue("Containers", containers);
+    QStringList conts;
+    foreach ( const Container *c, containers() )
+        conts << c->name();
+    s.setValue("Containers", conts);
 
-    for ( int c = 0; c < containerCount(); ++c )
+    foreach ( Container *c, containers() )
     {
-        if ( container(c) == (Container*)m_devManager )
-            continue;
-        s.beginGroup(container(c)->name());
-        for ( int i = 0; i < container(c)->rowCount(); ++i )
-        {
-            Place *p = container(c)->place(i);
-            if ( container(c) != (Container*)m_devManager )
-                s.setValue(QString::number(i), QStringList() << p->name() << p->path() << p->iconName());
-        }
-        if ( container(c)->rowCount() )
+        s.beginGroup(c->name());
+        foreach ( Place *p, c->places() )
+            s.setValue(QString::number(p->row()), p->values());
+        if ( c->rowCount() )
         {
             s.beginGroup("Options");
-            s.setValue("Expanded", isExpanded( indexFromItem( container(c) ) ));
+            s.setValue("Expanded", isExpanded( indexFromItem( c ) ));
             s.endGroup();
         }
         s.endGroup();
