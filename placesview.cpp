@@ -201,8 +201,9 @@ void
 PlacesViewDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
     const QString &newName = editor->metaObject()->userProperty().read(editor).toString();
-    if ( Place *p = m_placesView->itemFromIndex<Place *>(index) )
-        p->setName(newName);
+    if ( !newName.isEmpty() )
+        if ( Place *p = m_placesView->itemFromIndex<Place *>(index) )
+            p->setName(newName);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
