@@ -30,6 +30,7 @@ QStringList ThumbsLoader::m_queue;
 QList<QPair<QImage, QModelIndex> > ThumbsLoader::m_imgQueue;
 QFileSystemWatcher *ThumbsLoader::m_fsWatcher = 0;
 DFM::FileSystemModel *ThumbsLoader::m_fsModel = 0;
+QTimer *ThumbsLoader::m_timer = 0;
 
 static QImageReader ir;
 static QRect vr;
@@ -161,7 +162,10 @@ ThumbsLoader
     {
         inst = new ThumbsLoader(qApp);
         m_fsWatcher = new QFileSystemWatcher(inst);
+        m_timer = new QTimer(inst);
+        m_timer->setInterval(200);
         connect ( m_fsWatcher, SIGNAL(fileChanged(QString)), inst, SLOT(fileChanged(QString)) );
+        connect ( m_timer, SIGNAL(timeout()), inst, SLOT(loadThumbs()) );
     }
     return inst;
 }
@@ -196,9 +200,9 @@ ThumbsLoader::loadThumb( const QString &path )
         {
             if ( !m_fsWatcher->files().contains(path) )
                 m_fsWatcher->addPath(path);
-            m_loadedThumbs[Thumb][path] = image;
-            m_loadedThumbs[Reflection][path] = reflection(image);
-            m_loadedThumbs[FlowPic][path] = flowImg(image);
+            m_loadedThumbs[Thumb].insert(path, image);
+            m_loadedThumbs[Reflection].insert(path, reflection(image));
+            m_loadedThumbs[FlowPic].insert(path, flowImg(image));
             emit dataChanged(index, index);
         }
     }
@@ -213,10 +217,7 @@ ThumbsLoader::genReflection(const QPair<QImage, QModelIndex> &imgStr)
     const QModelIndex &index = imgStr.second;
     const QString &name = qvariant_cast<QIcon>(m_fsModel->data(index, Qt::DecorationRole)).name();
     if ( !m_loadedThumbs[FallBackRefl].contains(name) )
-    {
-        const QImage &ref = reflection(imgStr.first);
-        m_loadedThumbs[FallBackRefl][name] = ref;
-    }
+        m_loadedThumbs[FallBackRefl].insert(name, reflection(imgStr.first));
     emit dataChanged(index, index);
 }
 
@@ -224,12 +225,12 @@ QImage
 ThumbsLoader::pic(const QString &filePath, const Type &t)
 {
     if ( m_loadedThumbs[t].contains(filePath) )
-        return m_loadedThumbs[t][filePath];
+        return m_loadedThumbs[t].value(filePath);
     if ( t == Reflection && m_fsModel )
     {
         const QIcon &icon = qvariant_cast<QIcon>(m_fsModel->data(m_fsModel->index(filePath), Qt::DecorationRole));
         if ( m_loadedThumbs[FallBackRefl].contains(icon.name()) )
-            return m_loadedThumbs[FallBackRefl][icon.name()];
+            return m_loadedThumbs[FallBackRefl].value(icon.name());
     }
     return QImage();
 }
@@ -239,8 +240,8 @@ ThumbsLoader::disconnectView()
 {
     if ( !m_currentView )
         return;
-    disconnect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), instance(), SLOT(loadThumbs()) );
-    disconnect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), instance(), SLOT(loadThumbs()) );
+    disconnect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
+    disconnect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
     disconnect( m_fsModel, SIGNAL(layoutChanged()),instance(), SLOT(loadLater()));
     disconnect( instance(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), m_fsModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
     m_currentView->removeEventFilter( instance() );
@@ -251,8 +252,8 @@ void
 ThumbsLoader::connectView()
 {
     m_fsModel = static_cast<DFM::FileSystemModel *>(m_currentView->model());
-    connect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), instance(), SLOT(loadThumbs()) );
-    connect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), instance(), SLOT(loadThumbs()) );
+    connect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
+    connect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
     connect( m_fsModel, SIGNAL(layoutChanged()), instance(), SLOT(loadLater()));
     connect( instance(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), m_fsModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
     m_currentView->installEventFilter( instance() );
@@ -327,7 +328,7 @@ ThumbsLoader::eventFilter(QObject *o, QEvent *e)
     if ( o == m_currentView && e->type() == QEvent::Resize )
     {
         vr = m_currentView->viewport()->rect();
-        QTimer::singleShot( 500, instance(), SLOT(loadThumbs()) );
+        m_timer->start();
     }
     return false;
 }

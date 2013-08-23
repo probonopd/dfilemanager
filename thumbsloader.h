@@ -69,6 +69,7 @@ private:
     static QHash<QString, QImage> m_loadedThumbs[4];
     static QFileSystemWatcher *m_fsWatcher;
     static DFM::FileSystemModel *m_fsModel;
+    static QTimer *m_timer;
     int m_extent;
     QAbstractItemView *m_currentView;
 };

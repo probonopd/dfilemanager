@@ -27,36 +27,45 @@
 
 using namespace DFM;
 
-InfoWidget::InfoWidget(QWidget *parent) : QFrame(parent)
-  , tw(new ThumbWidget(this)), fileName(new TextLabel(this))
-  , ownerLbl(new QLabel(this)), typeLbl(new QLabel(this))
-  , mimeLbl(new QLabel(this)), sizeLbl(new QLabel(this))
-  , owner(new QLabel(this)), typ(new QLabel(this))
-  , mime(new QLabel(this)), m_size(new QLabel(this))
+InfoWidget::InfoWidget(QWidget *parent)
+    : QFrame(parent)
+    , m_tw(new ThumbWidget(this))
+    , m_fileName(new TextLabel(this))
+    , m_ownerLbl(new QLabel(this))
+    , m_typeLbl(new QLabel(this))
+    , m_mimeLbl(new QLabel(this))
+    , m_sizeLbl(new QLabel(this))
+    , m_owner(new QLabel(this))
+    , m_type(new QLabel(this))
+    , m_mime(new QLabel(this))
+    , m_size(new QLabel(this))
 {
-    QPalette pal = palette();
-    QColor midC = Operations::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
-    pal.setColor( QPalette::Base, Operations::colorMid( Qt::black, midC, 1, 10 ) );
-    setPalette( pal );
+//    QPalette pal = palette();
+//    QColor midC = Operations::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
+//    pal.setColor( QPalette::Base, Operations::colorMid( Qt::black, midC, 1, 10 ) );
+//    setPalette( pal );
     setAutoFillBackground( true );
-    setBackgroundRole( QPalette::Base );
-    setForegroundRole( QPalette::Text );
-
     setFrameStyle( QFrame::StyledPanel | QFrame::Sunken );
+
     QFont f(font());
     f.setBold(true);
     f.setPointSize(f.pointSize()+2);
-    fileName->setFont(f);
+    m_fileName->setFont(f);
 
     f.setPointSize(f.pointSize()-2);
+    for ( int i = 0; i < 2; ++i )
+    {
+        m_lastMod[i] = new QLabel(this);
+        m_perm[i] = new QLabel(this);
+    }
 
-    foreach (QLabel *l, QList<QLabel *>() << owner << typ << mime << m_size)
+    foreach (QLabel *l, QList<QLabel *>() << m_owner << m_type << m_mime << m_size << m_lastMod[0] << m_perm[0])
     {
         l->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         l->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     }
 
-    foreach(QLabel *l, QList<QLabel *>() << ownerLbl << typeLbl <<  mimeLbl << sizeLbl)
+    foreach(QLabel *l, QList<QLabel *>() << m_ownerLbl << m_typeLbl <<  m_mimeLbl << m_sizeLbl << m_lastMod[1] << m_perm[1])
     {
         l->setFont(f);
         l->setWordWrap(true);
@@ -66,18 +75,34 @@ InfoWidget::InfoWidget(QWidget *parent) : QFrame(parent)
     setMaximumHeight( 68 );
     QGridLayout *gdl = new QGridLayout();
     gdl->setMargin(1);
-    gdl->addWidget(tw, 0, 0, 2, 1);
-    gdl->addWidget(fileName, 0, 1, 2, 1);
-    gdl->addWidget(owner, 0, 2);
-    gdl->addWidget(typ, 1, 2);
-    gdl->addWidget(ownerLbl, 0, 3);
-    gdl->addWidget(typeLbl, 1, 3);
-    gdl->addWidget(mime, 0, 4);
+    gdl->addWidget(m_tw, 0, 0, 2, 1);
+    gdl->addWidget(m_fileName, 0, 1, 2, 1);
+    gdl->addWidget(m_owner, 0, 2);
+    gdl->addWidget(m_type, 1, 2);
+    gdl->addWidget(m_ownerLbl, 0, 3);
+    gdl->addWidget(m_typeLbl, 1, 3);
+    gdl->addWidget(m_mime, 0, 4);
     gdl->addWidget(m_size, 1, 4);
-    gdl->addWidget(mimeLbl, 0, 5);
-    gdl->addWidget(sizeLbl, 1, 5);
+    gdl->addWidget(m_mimeLbl, 0, 5);
+    gdl->addWidget(m_sizeLbl, 1, 5);
+    gdl->addWidget(m_lastMod[0], 0, 6);
+    gdl->addWidget(m_perm[0], 1, 6);
+    gdl->addWidget(m_lastMod[1], 0, 7);
+    gdl->addWidget(m_perm[1], 1, 7);
     gdl->setVerticalSpacing(0);
     setLayout(gdl);
+}
+
+void
+InfoWidget::paintEvent(QPaintEvent *event)
+{
+    QLinearGradient lg(rect().topLeft(), rect().bottomLeft());
+    lg.setColorAt(0.0f, Operations::colorMid(Qt::white, palette().color(QPalette::Window), 1, 2));
+    lg.setColorAt(1.0f, Operations::colorMid(Qt::black, palette().color(QPalette::Window), 1, 3));
+    QPainter p(this);
+    p.fillRect(rect(), lg);
+    p.end();
+    QFrame::paintEvent(event);
 }
 
 static inline float realSize(const float &size, int *t)
@@ -100,12 +125,14 @@ InfoWidget::hovered(const QModelIndex &index)
 {
     if (!isVisible())
         return;
-    if (owner->text().isEmpty())
+    if (m_owner->text().isEmpty())
     {
-        owner->setText(tr("Owner:"));
-        typ->setText(tr("Type:"));
-        mime->setText(tr("MimeType:"));
+        m_owner->setText(tr("Owner:"));
+        m_type->setText(tr("Type:"));
+        m_mime->setText(tr("MimeType:"));
         m_size->setText(tr("Size:"));
+        m_lastMod[0]->setText("Last Modified:");
+        m_perm[0]->setText("Permissions:");
     }
     const FileSystemModel *fsModel = static_cast<const FileSystemModel*>(index.model());
     QIcon icon = QPixmap::fromImage(ThumbsLoader::thumb(fsModel->filePath(index)));
@@ -115,12 +142,17 @@ InfoWidget::hovered(const QModelIndex &index)
         icon = qvariant_cast<QIcon>(fsModel->data(fsModel->index(index.row(), 0, index.parent()), Qt::DecorationRole));
     QPixmap pix = icon.pixmap(64);
     const bool dir = fsModel->fileInfo(index).isDir();
-    tw->setPixmap(pix);
-    fileName->setText(fsModel->data(fsModel->index(fsModel->filePath(index), 0)).toString());
-    ownerLbl->setText(fsModel->fileInfo(index).owner());
-    typeLbl->setText(Operations::getFileType(fsModel->filePath(index)));
-    mimeLbl->setText(Operations::getMimeType(fsModel->filePath(index)));
+    m_tw->setPixmap(pix);
+    m_fileName->setText(fsModel->data(fsModel->index(fsModel->filePath(index), 0)).toString());
+    m_ownerLbl->setText(fsModel->fileInfo(index).owner());
+    m_typeLbl->setText(Operations::getFileType(fsModel->filePath(index)));
+    m_mimeLbl->setText(Operations::getMimeType(fsModel->filePath(index)));
+
+    m_lastMod[1]->setText(fsModel->data(fsModel->index(index.row(), 3, index.parent())).toString());
+    const QString &s(fsModel->data(fsModel->index(index.row(), 4, index.parent())).toString());
+    m_perm[1]->setText(s.mid(0, s.lastIndexOf(",")));
+
     int t = 0;
     float size = realSize((float)(fsModel->fileInfo(index).size()), &t);
-    sizeLbl->setText(dir ? qvariant_cast<QString>(fsModel->data(fsModel->index(fsModel->filePath(index), 1))) : QString::number(size) + type[t]);
+    m_sizeLbl->setText(dir ? qvariant_cast<QString>(fsModel->data(fsModel->index(fsModel->filePath(index), 1))) : QString::number(size) + type[t]);
 }

@@ -60,6 +60,7 @@ MainWindow::MainWindow(QStringList arguments)
     m_stackedWidget = new QStackedWidget(this);
     m_activeContainer = 0;
     m_fsModel = 0;
+
     int is = 16;
     QSize tbs(QSize(is, is));
     m_navToolBar->setIconSize(tbs);

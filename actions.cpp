@@ -193,6 +193,7 @@ MainWindow::createActions()
     m_statAct = new QAction(tr("Show StatusBar"),this);
     m_statAct->setObjectName("actionStatus");
     m_statAct->setCheckable(true);
+    m_statAct->setShortcut( QKeySequence("Ctrl+S") );
     connect(m_statAct,SIGNAL(triggered()),this, SLOT(toggleStatusVisible()));
 
     m_pathVisibleAct = new QAction(tr("Show Path"),this);

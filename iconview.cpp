@@ -249,7 +249,7 @@ IconView::wheelEvent( QWheelEvent * event )
             {
                 m_delta += numDegrees;
                 if ( !m_scrollTimer->isActive() )
-                    m_scrollTimer->start( 50 );
+                    m_scrollTimer->start( 25 );
             }
             else
                 verticalScrollBar()->setValue( verticalScrollBar()->value()-( numDegrees ) );

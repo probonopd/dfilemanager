@@ -65,19 +65,19 @@ protected:
     void paintEvent(QPaintEvent *)
     {
         QPainter p(this);
-        QRect pixRect(pix.rect()), r(rect());
+        QRect pixRect(m_pix.rect()), r(rect());
         QSize picSize(pixRect.size());
         if (qMin(picSize.width(), picSize.height()) > 64)
             picSize.scale(r.size(), Qt::KeepAspectRatio);
         QRect newRect(QPoint(), picSize);
         newRect.moveCenter(r.center());
-        p.drawTiledPixmap(newRect, pix);
+        p.drawTiledPixmap(newRect, m_pix);
         p.end();
     }
 public slots:
-    void setPixmap(QPixmap pixmap) { pix = pixmap; update(); }
+    void setPixmap(QPixmap pixmap) { m_pix = pixmap; update(); }
 private:
-    QPixmap pix;
+    QPixmap m_pix;
 };
 
 
@@ -87,16 +87,16 @@ class InfoWidget : public QFrame
 public:
     explicit InfoWidget(QWidget *parent = 0);
     
-signals:
 protected:
+    void paintEvent(QPaintEvent *event);
     
 public slots:
     void hovered(const QModelIndex &index);
 
 private:
-    ThumbWidget *tw;
-    QLabel *ownerLbl, *owner, *typeLbl, *typ, *mimeLbl, *mime, *sizeLbl, *m_size;
-    TextLabel *fileName;
+    ThumbWidget *m_tw;
+    QLabel *m_ownerLbl, *m_owner, *m_typeLbl, *m_type, *m_mimeLbl, *m_mime, *m_sizeLbl, *m_size, *m_lastMod[2], *m_perm[2];
+    TextLabel *m_fileName;
 };
 
 }
