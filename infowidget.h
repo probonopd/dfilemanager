@@ -36,7 +36,6 @@ class TextLabel : public QWidget
 public:
     explicit TextLabel(QWidget *parent = 0) : QWidget(parent)
     {
-        m_fg = palette().color(foregroundRole());
         setMinimumSize(64, 64);
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     }
@@ -44,7 +43,7 @@ protected:
     virtual void paintEvent(QPaintEvent *)
     {
         QPainter p(this);
-        p.setPen(m_fg);
+        p.setPen(palette().color(foregroundRole()));
         p.drawText(rect(), Qt::AlignLeft | Qt::AlignVCenter | Qt::TextWrapAnywhere, m_text );
         p.end();
     }
@@ -52,7 +51,6 @@ public slots:
     void setText( const QString &text ) { m_text = text; update(); }
 private:
     QString m_text;
-    QColor m_fg;
 };
 
 

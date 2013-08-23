@@ -51,6 +51,7 @@ void
 Configuration::readConfiguration()
 {
     config.docks.lock = settings()->value( "docks.lock", 0 ).toInt();
+    config.docks.infoArea = settings()->value("docks.infoArea", 8).toInt();
     config.startPath = settings()->value("startPath", QDir::homePath()).toString();
     config.styleSheet = settings()->value("styleSheet", QString()).toString();
 
@@ -100,6 +101,7 @@ Configuration::writeConfiguration()
 {
     settings()->setValue("startPath", config.startPath);
     settings()->setValue("docks.lock", config.docks.lock);
+    settings()->setValue("docks.infoArea", config.docks.infoArea);
     settings()->setValue("smoothScroll", config.views.iconView.smoothScroll);
     settings()->setValue("showThumbs", config.views.showThumbs);
     settings()->setValue("drawDevUsage", config.behaviour.devUsage);

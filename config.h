@@ -56,7 +56,7 @@ typedef struct Config
 
     struct docks
     {
-        int lock;
+        int lock, infoArea;
     } docks;
 } Config;
 

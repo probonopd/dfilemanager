@@ -40,7 +40,9 @@ DockWidget::DockWidget(QWidget *parent, const QString &title, const Qt::WindowFl
 //        setStyle(new MyStyle(style()->objectName()));
 //    m_margin = style()->pixelMetric(QStyle::PM_DockWidgetFrameWidth);
     setAllowedAreas(m_position == Left ? Qt::LeftDockWidgetArea : m_position == Right ? Qt::RightDockWidgetArea : Qt::BottomDockWidgetArea);
-    setFeatures(QDockWidget::DockWidgetClosable);
+    if ( m_position == Bottom )
+        setAllowedAreas(allowedAreas() | Qt::TopDockWidgetArea);
+    setFeatures(DockWidgetClosable | DockWidgetFloatable);
 //    setTitleBarWidget(m_titleWidget);
 //    setFocusPolicy(Qt::NoFocus);
 //    APP->manageDock( this );
@@ -49,7 +51,15 @@ DockWidget::DockWidget(QWidget *parent, const QString &title, const Qt::WindowFl
 //    connect (this, SIGNAL(topLevelChanged(bool)), this, SLOT(floatationChanged(bool)));
 //    connect (this, SIGNAL(topLevelChanged(bool)), m_titleWidget,   SLOT(setIsFloating(bool)));
 //    m_mainWindow->installEventFilter(this);
+    if ( m_position == Bottom )
+        connect ( this, SIGNAL(dockLocationChanged(Qt::DockWidgetArea)), this, SLOT(locationChanged(Qt::DockWidgetArea)) );
     setLocked( bool( Configuration::config.docks.lock & pos ) );
+}
+
+void
+DockWidget::locationChanged(const Qt::DockWidgetArea &area)
+{
+    Configuration::config.docks.infoArea = (int)area;
 }
 
 void

@@ -45,12 +45,16 @@ InfoWidget::InfoWidget(QWidget *parent)
 //    pal.setColor( QPalette::Base, Operations::colorMid( Qt::black, midC, 1, 10 ) );
 //    setPalette( pal );
     setAutoFillBackground( true );
+    setBackgroundRole(QPalette::WindowText);
+    setForegroundRole(QPalette::Window);
     setFrameStyle( QFrame::StyledPanel | QFrame::Sunken );
 
     QFont f(font());
     f.setBold(true);
     f.setPointSize(f.pointSize()+2);
     m_fileName->setFont(f);
+    m_fileName->setBackgroundRole(QPalette::WindowText);
+    m_fileName->setForegroundRole(QPalette::Window);
 
     f.setPointSize(f.pointSize()-2);
     for ( int i = 0; i < 2; ++i )
@@ -63,6 +67,8 @@ InfoWidget::InfoWidget(QWidget *parent)
     {
         l->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         l->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        l->setBackgroundRole(QPalette::WindowText);
+        l->setForegroundRole(QPalette::Window);
     }
 
     foreach(QLabel *l, QList<QLabel *>() << m_ownerLbl << m_typeLbl <<  m_mimeLbl << m_sizeLbl << m_lastMod[1] << m_perm[1])
@@ -70,6 +76,8 @@ InfoWidget::InfoWidget(QWidget *parent)
         l->setFont(f);
         l->setWordWrap(true);
         l->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        l->setBackgroundRole(QPalette::WindowText);
+        l->setForegroundRole(QPalette::Window);
     }
 
     setMaximumHeight( 68 );
@@ -97,8 +105,12 @@ void
 InfoWidget::paintEvent(QPaintEvent *event)
 {
     QLinearGradient lg(rect().topLeft(), rect().bottomLeft());
-    lg.setColorAt(0.0f, Operations::colorMid(Qt::white, palette().color(QPalette::Window), 1, 2));
-    lg.setColorAt(1.0f, Operations::colorMid(Qt::black, palette().color(QPalette::Window), 1, 3));
+    const QColor &bgBase = Operations::colorMid(palette().color(QPalette::Highlight), palette().color(backgroundRole()), 1, 5);
+    lg.setColorAt(0.0f, Operations::colorMid(Qt::black, bgBase, 1, 3));
+    lg.setColorAt(0.1f, Operations::colorMid(Qt::white, bgBase, 1, 2));
+    lg.setColorAt(0.4999f, Operations::colorMid(Qt::white, bgBase, 1, 20));
+    lg.setColorAt(0.5f, Operations::colorMid(Qt::black, bgBase, 1, 20));
+    lg.setColorAt(1.0f, Operations::colorMid(Qt::black, bgBase, 1, 3));
     QPainter p(this);
     p.fillRect(rect(), lg);
     p.end();

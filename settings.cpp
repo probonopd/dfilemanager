@@ -34,7 +34,7 @@ MainWindow::readSettings()
 
     m_tabWin->addDockWidget(Qt::LeftDockWidgetArea, m_dockLeft);
     m_tabWin->addDockWidget(Qt::RightDockWidgetArea, m_dockRight);
-    m_tabWin->addDockWidget(Qt::BottomDockWidgetArea, m_dockBottom);
+    m_tabWin->addDockWidget((Qt::DockWidgetArea)Configuration::config.docks.infoArea, m_dockBottom);
 
     m_statAct->setChecked(Configuration::settings()->value("statusVisible", true).toBool());
     m_pathVisibleAct->setChecked(Configuration::settings()->value("pathVisible", true).toBool());

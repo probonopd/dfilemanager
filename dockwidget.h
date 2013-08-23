@@ -71,6 +71,7 @@ public slots:
 
 private slots:
     void animate();
+    void locationChanged(const Qt::DockWidgetArea &area);
 
 private:
     QWidget *m_mainWindow;
