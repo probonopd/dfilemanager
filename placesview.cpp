@@ -231,6 +231,7 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Solid::Devic
     connect( m_view, SIGNAL(collapsed(QModelIndex)), this, SLOT(updateTb()) );
     connect( m_view->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateTb()) );
     QTimer::singleShot(200, this, SLOT(updateTb()));
+    setEditable(false);
 }
 
 void
@@ -294,6 +295,7 @@ DeviceManager::DeviceManager(const QStringList &texts, QObject *parent)
     populate();
     setDragEnabled(false);
     setDropEnabled(false);
+    setEditable(false);
 }
 
 void
