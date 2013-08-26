@@ -34,6 +34,7 @@ IconDialog::IconDialog(QWidget *parent) : QDialog(parent)
     m_listView = new QListView(this);
     m_listView->setModel(m_model);
     m_listView->setIconSize(QSize(32,32));
+    setWindowTitle(tr("Select icon"));
 
 
     QPushButton *cancel = new QPushButton(this);
@@ -59,34 +60,31 @@ IconDialog::IconDialog(QWidget *parent) : QDialog(parent)
 
 QString IconDialog::getIcon()
 {
-    QFileInfo file;
+    QList<QFileInfo> files;
     for (int i = 0; i < QIcon::themeSearchPaths().count(); i++)
-    {
-        file = QIcon::themeSearchPaths().at(i) + QIcon::themeName();
-        if (file.exists())
-            break;  //we found a valid icontheme path, no need to continue searching
-    }
+        files << QIcon::themeSearchPaths().at(i) + QIcon::themeName();
 
-    if (!file.exists())
+    if (files.isEmpty())
     {
         QMessageBox::information(this,"Could not find any valid icontheme path!", "Cannot continue, exiting");
         return QString();
     }
 
-    QDirIterator it(file.filePath(), QDirIterator::Subdirectories);
-    while (it.hasNext())
+    QStringList list;
+    foreach ( const QFileInfo &file, files )
     {
-        if (it.filePath().endsWith("png") && it.filePath().contains("16x16"))
+        QDirIterator it(file.filePath(), QDirIterator::Subdirectories);
+
+        while (it.hasNext())
         {
-            QImageReader reader;
-            reader.setFileName(it.filePath());
-            QIcon icon(QPixmap::fromImage(reader.read()));
-            QStandardItem *item = new QStandardItem;
-            item->setText(it.fileInfo().baseName());
-            item->setIcon(icon);
-            m_model->appendRow(item);
+            if (it.filePath().endsWith("png") && !list.contains(it.fileInfo().baseName()) )
+            {
+                QIcon icon(QPixmap::fromImage(QImageReader(it.filePath()).read()));
+                m_model->appendRow(new QStandardItem(icon, it.fileInfo().baseName()));
+                list << it.fileInfo().baseName();
+            }
+            it.next();
         }
-        it.next();
     }
     exec();
     if ( result() == 1 )

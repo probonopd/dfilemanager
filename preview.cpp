@@ -104,7 +104,7 @@ GraphicsScene::drawForeground(QPainter *painter, const QRectF &rect)
 void
 PixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    if (m_reflection.isNull() || pixmap().isNull())
+    if ( m_pix[0].isNull() )
         updatePixmaps();
     if (option->state & QStyle::State_MouseOver) //just to have some hover effect...
     {
@@ -113,16 +113,17 @@ PixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWi
         painter->translate(-SIZE/2.0f, -SIZE/2.0f);
     }
     painter->setRenderHints(QPainter::SmoothPixmapTransform);
-    painter->drawTiledPixmap(QRect(QPoint(0, SIZE)+offset().toPoint(), QSize(SIZE, SIZE)), m_reflection);
-    painter->drawTiledPixmap(QRectF(QPointF(0, 1)+offset(), QSizeF(SIZE, SIZE)), pixmap());
+    painter->drawTiledPixmap(QRect(QPoint(0, SIZE)+offset().toPoint(), QSize(SIZE, SIZE)), m_pix[1]);
+    painter->drawTiledPixmap(QRectF(QPointF(0, 1)+offset(), QSizeF(SIZE, SIZE)), m_pix[0]);
 }
 
 void
 PixmapItem::updatePixmaps()
 {
     const QModelIndex &index = m_scene->preView()->indexOfItem(this);
-    setPixmap(qvariant_cast<QPixmap>(m_scene->preView()->fsModel()->data(index, FileSystemModel::FlowPic)));
-    setReflection(qvariant_cast<QPixmap>(m_scene->preView()->fsModel()->data(index, FileSystemModel::Reflection)));
+    m_pix[0] = qvariant_cast<QPixmap>(m_scene->preView()->fsModel()->data(index, FileSystemModel::FlowPic));
+    m_pix[1] = qvariant_cast<QPixmap>(m_scene->preView()->fsModel()->data(index, FileSystemModel::Reflection));
+    setPixmap(m_pix[0]);
 }
 
 void
@@ -332,6 +333,7 @@ PreView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 
     const int &start = topLeft.row(), &end = bottomRight.row();
 
+    if ( m_items.count() > end )
     for ( int i = start; i <= end; ++i )
         m_items[i]->updatePixmaps();
 }
@@ -384,13 +386,12 @@ void
 PreView::reset()
 {
     clear();
-    if (m_fsModel)
-        if ( m_fsModel->rowCount(m_rootIndex) )
-        {
-            populate(0, m_fsModel->rowCount(m_rootIndex)-1);
-            m_scrollBar->setValue(0);
-            m_scrollBar->setRange(0, m_fsModel->rowCount(m_rootIndex)-1);
-        }
+    if ( m_fsModel && m_fsModel->rowCount(m_rootIndex) )
+    {
+        populate(0, m_fsModel->rowCount(m_rootIndex)-1);
+        m_scrollBar->setValue(0);
+        m_scrollBar->setRange(0, m_fsModel->rowCount(m_rootIndex)-1);
+    }
 }
 
 void
@@ -424,11 +425,10 @@ PreView::populate(const int &start, const int &end)
         QModelIndex index = m_fsModel->index(i, 0, m_rootIndex);
         if ( !index.isValid() )
             continue;
-        PixmapItem *pixItem = new PixmapItem(qvariant_cast<QPixmap>(m_fsModel->data(index, FileSystemModel::FlowPic)), m_scene, m_rootItem);
+        PixmapItem *pixItem = new PixmapItem(m_scene, m_rootItem);
         pixItem->setTransformOriginPoint(pixItem->boundingRect().center());
         pixItem->setY(m_y);
         pixItem->setAcceptHoverEvents(true);
-        pixItem->updatePixmaps();
         m_items.insert(i, pixItem);
     }
     setCenterIndex(m_fsModel->index(0, 0, m_rootIndex));

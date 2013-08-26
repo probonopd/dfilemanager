@@ -347,22 +347,18 @@ ViewContainer::deleteCurrentSelection()
     else
         delUs = m_selectModel->selectedIndexes();
 
-    DeleteDialog *delDialog = 0;
-    if ( !delDialog )
-        delDialog = new DeleteDialog(MainWindow::currentWindow());
-
-    delDialog->filesToDelete(delUs);
-
-    if(delDialog->result() == 0)
+    if ( DeleteDialog(delUs).result() == 0 )
         return;
 
-    for(int i = 0; i < delUs.count(); ++i)
+    QStringList delList;
+    for (int i = 0; i < delUs.count(); ++i)
     {
         QFileInfo file(m_fsModel->filePath(delUs.at(i)));
-        if(file.isWritable())
-            IO::Job::remove(file.filePath());
-//            fsModel->remove(delUs.at(i));
+        if (file.isWritable())
+            delList << file.filePath();
     }
+    if ( !delList.isEmpty() )
+        IO::Job::remove(delList);
 }
 
 void

@@ -20,12 +20,13 @@
 
 
 #include "deletedialog.h"
+#include "mainwindow.h"
 
 using namespace DFM;
 
-DeleteDialog::DeleteDialog(QWidget *parent) : QDialog(parent)
+DeleteDialog::DeleteDialog(const QModelIndexList &idxList, QWidget *parent) : QDialog(parent)
 {
-    fsm = new FileSystemModel(this);
+    fsm = MainWindow::currentWindow()->currentContainer()->model();
     setWindowTitle("Careful!");
     vLayout = new QVBoxLayout;
     hLayout = new QHBoxLayout;
@@ -59,10 +60,7 @@ DeleteDialog::DeleteDialog(QWidget *parent) : QDialog(parent)
              SLOT(accept()));
     connect( cancel, SIGNAL(released()),this,
              SLOT(reject()));
-}
 
-void DeleteDialog::filesToDelete(QModelIndexList &idxList)
-{
     model->clear();
     textLabel->clear();
     if(idxList.count() > 1)

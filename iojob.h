@@ -117,7 +117,7 @@ class IOThread : public QThread
 public:
     enum Type { Copy = 0, Remove };
     explicit IOThread(const QStringList &inf, const QString &dest, const bool &cut, const qint64 &totalSize, QObject *parent = 0);
-    explicit IOThread(const QString &path = QString(), QObject *parent = 0) : QThread(parent), m_type(Remove), m_rmPath(path) { connect(this, SIGNAL(finished()), this, SLOT(deleteLater())); }
+    explicit IOThread(const QStringList &paths = QStringList(), QObject *parent = 0) : QThread(parent), m_type(Remove), m_rmPaths(paths) { connect(this, SIGNAL(finished()), this, SLOT(deleteLater())); }
     void run();
     bool paused() { return m_pause; }
 
@@ -136,8 +136,8 @@ private:
     bool clone(const QString &in, const QString &out);
     bool remove(const QString &path) const;
     int currentProgress() { return int((((float)m_allProgress + m_fileProgress)/m_total)*100); }
-    QStringList m_inFiles;
-    QString m_destDir, m_inFile, m_newFile, m_rmPath;
+    QStringList m_inFiles, m_rmPaths;
+    QString m_destDir, m_inFile, m_newFile;
     bool m_cut, m_canceled;
     qint64 m_total, m_fileProgress, m_allProgress;
     QMutex m_mutex;
@@ -155,13 +155,13 @@ class Job : public QObject
 public:
     explicit Job(QObject *parent = 0);
     static inline void copy(const QStringList &sourceFiles, const QString &destination, const bool &cut = false) { instance()->cp(sourceFiles, destination, cut); }
-    static inline void remove(const QString &path) { instance()->rm(path); }
+    static inline void remove(const QStringList &paths) { instance()->rm(paths); }
     void getDirs(const QString &dir, quint64 *fileSize);
 public slots:
 protected:
     static Job *instance();
     void cp(const QStringList &copyFiles, const QString &destination, const bool &cut = false);
-    void rm(const QString &path) { (new IOThread(path, this))->start(); }
+    void rm(const QStringList &paths) { (new IOThread(paths, this))->start(); }
 private:
     quint64 m_fileSize, m_fileProgress;
     CopyDialog *m_copyDialog;

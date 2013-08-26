@@ -24,6 +24,7 @@
 #include "columnsview.h"
 #include "mainwindow.h"
 #include "operations.h"
+#include "config.h"
 
 QHash<QString, QImage> ThumbsLoader::m_loadedThumbs[4];
 QStringList ThumbsLoader::m_queue;
@@ -211,7 +212,6 @@ ThumbsLoader::loadThumb( const QString &path )
 void
 ThumbsLoader::genReflection(const QPair<QImage, QModelIndex> &imgStr)
 {
-
     if ( !m_currentView || !m_fsModel )
         return;
     const QModelIndex &index = imgStr.second;
@@ -224,13 +224,16 @@ ThumbsLoader::genReflection(const QPair<QImage, QModelIndex> &imgStr)
 QImage
 ThumbsLoader::pic(const QString &filePath, const Type &t)
 {
-    if ( m_loadedThumbs[t].contains(filePath) )
-        return m_loadedThumbs[t].value(filePath);
-    if ( t == Reflection && m_fsModel )
+    if ( DFM::Configuration::config.views.showThumbs )
+        if ( m_loadedThumbs[t].contains(filePath) )
+            return m_loadedThumbs[t].value(filePath);
+
+    if ( t >= Reflection && m_fsModel )
     {
-        const QIcon &icon = qvariant_cast<QIcon>(m_fsModel->data(m_fsModel->index(filePath), Qt::DecorationRole));
-        if ( m_loadedThumbs[FallBackRefl].contains(icon.name()) )
-            return m_loadedThumbs[FallBackRefl].value(icon.name());
+        const Type &ft = DFM::Configuration::config.views.showThumbs ? Reflection : FallBackRefl;
+        const QString &icon = qvariant_cast<QIcon>(m_fsModel->data(m_fsModel->index(filePath), Qt::DecorationRole)).name();
+        if ( m_loadedThumbs[ft].contains(icon) )
+            return m_loadedThumbs[ft].value(icon);
     }
     return QImage();
 }
@@ -267,6 +270,10 @@ void
 ThumbsLoader::loadThumbs()
 {
     m_timer->stop();
+
+    if ( !DFM::Configuration::config.views.showThumbs )
+        return;
+
     for ( int i = 0; i < m_fsModel->rowCount(m_currentView->rootIndex()); ++i )
     {
         const QModelIndex &index = m_fsModel->index( i, 0, m_currentView->rootIndex() );
@@ -291,6 +298,7 @@ ThumbsLoader::loadReflections()
         img.fill(Qt::transparent);
         QPainter p(&img);
         icon.paint(&p, img.rect());
+        p.end();
         m_imgQueue << QPair<QImage, QModelIndex>(img, index);
     }
     start();
@@ -320,8 +328,9 @@ ThumbsLoader::run()
 {
     while ( !m_imgQueue.isEmpty() )
         genReflection( m_imgQueue.takeFirst() );
-    while ( !m_queue.isEmpty() )
-        loadThumb( m_queue.takeFirst() );
+    if ( DFM::Configuration::config.views.showThumbs )
+        while ( !m_queue.isEmpty() )
+            loadThumb( m_queue.takeFirst() );
 }
 
 bool

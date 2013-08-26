@@ -40,11 +40,8 @@ class DeleteDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit DeleteDialog(QWidget *parent = 0);
+    explicit DeleteDialog(const QModelIndexList &idxList, QWidget *parent = 0);
     
-signals:
-public slots:
-    void filesToDelete(QModelIndexList &idxList);
 private:
     QStandardItemModel *model;
     QListView *listView;

@@ -385,7 +385,8 @@ IOThread::run()
     }
     case Remove:
     {
-        remove(m_rmPath);
+        foreach ( const QString &path, m_rmPaths )
+            remove(path);
         break;
     }
     }

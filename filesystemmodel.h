@@ -24,7 +24,7 @@
 
 #include <QFileSystemModel>
 #include <QPainter>
-
+#include <QAbstractItemView>
 #include <QDir>
 #include <QFileIconProvider>
 #include <QTimer>
@@ -33,8 +33,8 @@
 #include <QDateTime>
 #include <QUrl>
 #include <QLabel>
-#include <QStyle>
 #include <QDebug>
+#include <QMap>
 
 namespace DFM
 {
@@ -51,7 +51,7 @@ public:
         Thumbnail = Qt::UserRole +4,
         Reflection = Qt::UserRole + 5,
         FlowPic = Qt::UserRole + 6,
-        DecoImage = Qt::UserRole + 7
+        IconName = Qt::UserRole + 7
     };
     explicit FileSystemModel(QObject *parent = 0);
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
@@ -62,8 +62,11 @@ public:
 
 public slots:
     void setPath(const QString &path) { setRootPath(path); }
+
 private slots:
     void emitRootIndex( const QString &path ) { emit rootPathAsIndex(index(path)); }
+    void setCurrentView(QAbstractItemView *view);
+    void dirLoaded( const QString &path );
 
 signals:
     void rootPathAsIndex( const QModelIndex &index );
@@ -74,7 +77,8 @@ protected:
 
 private:
     QStringList m_nameThumbs;
-    QObject *m_parent; 
+    QMap<QString, QIcon> m_themedDirs;
+
 };
 
 }

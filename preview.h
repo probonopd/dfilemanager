@@ -83,12 +83,10 @@ public:
 class PixmapItem : public QGraphicsPixmapItem
 {
 public:
-    inline explicit PixmapItem( const QPixmap &pix = QPixmap(), GraphicsScene *scene = 0, QGraphicsItem *parent = 0 ) :
+    inline explicit PixmapItem( GraphicsScene *scene = 0, QGraphicsItem *parent = 0 ) :
         QGraphicsPixmapItem(parent),
-        m_reflection(QPixmap()),
-        m_scene(scene){ setPixmap(pix); }
+        m_scene(scene){ updatePixmaps(); }
     void rotate( const float &angle, const Qt::Axis &axis );
-    inline void setReflection( const QPixmap &reflection ) { m_reflection = reflection; }
     inline QRectF boundingRect() { return RECT; }
     inline void saveX() { m_savedX = pos().x(); }
     inline float savedX() { return m_savedX; }
@@ -96,7 +94,7 @@ public:
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
 private:
-    QPixmap m_reflection;
+    QPixmap m_pix[2];
     GraphicsScene *m_scene;
     float m_rotate, m_savedX;
 };

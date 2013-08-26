@@ -98,11 +98,13 @@ public:
     }
     inline virtual void paint( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
-        if ( !m_fsm )
+        if ( !m_fsModel )
             return;
 
         painter->save();
         painter->setRenderHint( QPainter::Antialiasing );
+
+        painter->setFont(qvariant_cast<QFont>(m_fsModel->data(index, Qt::FontRole)));
 
         const bool &selected = option.state & QStyle::State_Selected;
         const int &step = selected ? 8 : ViewAnimator::hoverLevel(m_iv, index);
@@ -126,8 +128,8 @@ public:
 
         const QImage &thumb( qvariant_cast<QImage>( index.data( FileSystemModel::Thumbnail ) ) );
         QIcon icon;
-        if ( m_fsm->fileInfo(index).isDir() )
-            icon = m_fsm->iconPix( m_fsm->fileInfo( index ), DECOSIZE.width() );
+        if ( m_fsModel->fileInfo(index).isDir() )
+            icon = m_fsModel->iconPix( m_fsModel->fileInfo( index ), DECOSIZE.width() );
         if ( icon.isNull() )
             icon = qvariant_cast<QIcon>( index.data( Qt::DecorationRole ) );
 
@@ -147,7 +149,7 @@ public:
 
         painter->restore();
     }
-    inline void setModel( FileSystemModel *fsModel ) { m_fsm = fsModel; }
+    inline void setModel( FileSystemModel *fsModel ) { m_fsModel = fsModel; }
 protected:
     inline QSize sizeHint( const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
@@ -158,7 +160,7 @@ protected:
     }
     inline QString elidedText( const QStyleOptionViewItem &option, const QModelIndex &index, int *h = 0, QRect *r = 0 ) const
     {
-        QFont font( option.font );
+        QFont font( qvariant_cast<QFont>(m_fsModel->data(index, Qt::FontRole)) );
         QFontMetrics fm( font );
 
         QTextLayout textLayout(TEXT, font);
@@ -194,7 +196,7 @@ private:
     QPixmap m_shadowData[9];
     int m_size;
     IconView *m_iv;
-    FileSystemModel *m_fsm;
+    FileSystemModel *m_fsModel;
 };
 
 IconView::IconView( QWidget *parent ) : QListView( parent ), m_scrollTimer( new QTimer(this) ), m_delta(0), m_newSize(0), m_sizeTimer(0)
