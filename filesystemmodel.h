@@ -23,6 +23,7 @@
 #define FILESYSTEMMODEL_H
 
 #include <QFileSystemModel>
+#include <QFileIconProvider>
 #include <QPainter>
 #include <QAbstractItemView>
 #include <QDir>
@@ -38,6 +39,24 @@
 
 namespace DFM
 {
+class FileSystemModel;
+class FileIconProvider : public QObject, public QFileIconProvider
+{
+    Q_OBJECT
+public:
+    inline FileIconProvider(FileSystemModel *model = 0);
+    QIcon icon(const QFileInfo &info) const;
+
+public slots:
+    void loadThemedFolders(const QString &path);
+
+signals:
+    void dataChanged(const QModelIndex &f, const QModelIndex &e);
+
+private:
+    QMap<QString, QIcon> m_themedDirs;
+    FileSystemModel *m_fsModel;
+};
 
 class FileSystemModel : public QFileSystemModel
 {
@@ -50,8 +69,7 @@ public:
         FilePermissions = Qt::UserRole + 3,
         Thumbnail = Qt::UserRole +4,
         Reflection = Qt::UserRole + 5,
-        FlowPic = Qt::UserRole + 6,
-        IconName = Qt::UserRole + 7
+        FlowPic = Qt::UserRole + 6
     };
     explicit FileSystemModel(QObject *parent = 0);
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
@@ -66,7 +84,6 @@ public slots:
 private slots:
     void emitRootIndex( const QString &path ) { emit rootPathAsIndex(index(path)); }
     void setCurrentView(QAbstractItemView *view);
-    void dirLoaded( const QString &path );
 
 signals:
     void rootPathAsIndex( const QModelIndex &index );
@@ -77,8 +94,7 @@ protected:
 
 private:
     QStringList m_nameThumbs;
-    QMap<QString, QIcon> m_themedDirs;
-
+    FileIconProvider *m_iconProvider;
 };
 
 }

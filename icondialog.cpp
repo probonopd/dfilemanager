@@ -33,7 +33,7 @@ IconDialog::IconDialog(QWidget *parent) : QDialog(parent)
     m_model = new QStandardItemModel(this);
     m_listView = new QListView(this);
     m_listView->setModel(m_model);
-    m_listView->setIconSize(QSize(32,32));
+    m_listView->setIconSize(QSize(16,16));
     setWindowTitle(tr("Select icon"));
 
 
@@ -87,7 +87,7 @@ QString IconDialog::getIcon()
         }
     }
     exec();
-    if ( result() == 1 )
+    if ( result() == Accepted )
         return m_listView->currentIndex().data().toString();
     return QString();
 }

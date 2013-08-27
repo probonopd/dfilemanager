@@ -63,8 +63,8 @@ protected:
     QImage pic( const QString &filePath, const Type &t = Thumb );
 
 private:
-    static QStringList m_queue;
-    static QList<QPair<QImage, QModelIndex> > m_imgQueue;
+    static QStringList m_thumbQueue;
+    static QList<QPair<QImage, QModelIndex> > m_refQueue;
     static QHash<QString, QImage> m_loadedThumbs[4];
     static QFileSystemWatcher *m_fsWatcher;
     static DFM::FileSystemModel *m_fsModel;

@@ -31,17 +31,51 @@ using namespace DFM;
 
 static QAbstractItemView *s_currentView = 0;
 
+FileIconProvider::FileIconProvider(FileSystemModel *model)
+    : QFileIconProvider()
+    , m_fsModel(model)
+{
+    connect ( model, SIGNAL(directoryLoaded(QString)), this, SLOT(loadThemedFolders(QString)) );
+    connect ( this, SIGNAL(dataChanged(QModelIndex,QModelIndex)), model, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
+}
+
+QIcon
+FileIconProvider::icon(const QFileInfo &info) const
+{
+    if ( info.isDir() && m_themedDirs.contains(info.filePath()) )
+        return m_themedDirs.value(info.filePath());
+
+    return QFileIconProvider::icon(info);
+}
+
+void
+FileIconProvider::loadThemedFolders(const QString &path)
+{
+    foreach ( const QString &file, QDir(path).entryList(QDir::NoDotAndDotDot|QDir::AllDirs) )
+    {
+        const QString &filePath = QString("%1%2%3").arg(path).arg(QDir::separator()).arg(file);
+        const QSettings settings(QString("%1%2.directory").arg(filePath).arg(QDir::separator()), QSettings::IniFormat);
+        QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString());
+        if ( !icon.isNull() )
+        {
+            m_themedDirs.insert(filePath, icon);
+            const QModelIndex &index = m_fsModel->index(filePath);
+            emit dataChanged(index, index);
+        }
+    }
+}
+
 FileSystemModel::FileSystemModel(QObject *parent) :
     QFileSystemModel(parent)
 {
     setResolveSymlinks(false);
+    setIconProvider(m_iconProvider = new FileIconProvider(this));
     setFilter(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::System);
     setNameFilterDisables(false);
     setReadOnly(false);
     connect ( MainWindow::currentWindow(), SIGNAL(viewChanged(QAbstractItemView*)), this, SLOT(setCurrentView(QAbstractItemView*)) );
     m_nameThumbs = supportedThumbs();
     connect ( this, SIGNAL(rootPathChanged(QString)), this, SLOT(emitRootIndex(QString)) );
-    connect ( this, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)) );
 }
 
 void
@@ -67,36 +101,11 @@ FileSystemModel::iconPix(const QFileInfo &info, const int &extent)
     return icon.pixmap(actSize);
 }
 
-void
-FileSystemModel::dirLoaded(const QString &path)
-{
-    for ( int i = 0; i < rowCount(index(path)); ++i )
-    {
-        if ( !QFileInfo(path).isDir() )
-            continue;
-        const QModelIndex &idx = index(i, 0, index(path));
-        const QSettings settings(QString("%1%2.directory").arg(filePath(idx)).arg(QDir::separator()), QSettings::IniFormat);
-        QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString());
-        if ( !icon.isNull() )
-        {
-            m_themedDirs.insert(filePath(idx), icon);
-            emit dataChanged(idx, idx);
-        }
-    }
-}
-
 QVariant
 FileSystemModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid() || index.model() != this)
         return QVariant();
-
-    if ( role == IconName )
-    {
-        const QIcon &icon = qvariant_cast<QIcon>(QFileSystemModel::data(index, role));
-        if ( !icon.isNull() )
-            return icon.name();
-    }
 
     if (index.column() == 3 && role == Qt::DisplayRole)
     {
@@ -114,12 +123,8 @@ FileSystemModel::data(const QModelIndex &index, int role) const
             return QString::number(QDir(filePath(index)).entryList(QDir::NoDotAndDotDot | QDir::AllEntries).count()) + " Entrie(s)";
 
     if (index.column() == 0 && role == Qt::ForegroundRole)
-    {
         if(fileInfo(index).isSymLink())
             return QColor(127, 127, 127, 255);
-//        if(filePath(index.parent()) == QDir::homePath())
-//            return Qt::white;
-    }
 
     if ( role == Qt::FontRole && s_currentView )
     {
@@ -128,49 +133,34 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         return font;
     }
 
-    if ( index.column() == 4 )
+    if ( index.column() == 4 && role == Qt::DisplayRole )
     {
-        if ( role == Qt::DisplayRole )
-        {
-            QString permission;
+        QString permission;
 
-            const QFileInfo file = fileInfo(index);
-            permission.append(file.permission(QFile::ReadUser) ? "r, " : "-, ");
-            permission.append(file.permission(QFile::WriteUser) ? "w, " : "-, ");
-            if(!file.isDir())
-                permission.append(file.isExecutable() && !fileInfo(index).isDir() ? "x, " : "-, ");
-            permission.append(file.owner());
+        const QFileInfo file = fileInfo(index);
+        permission.append(file.permission(QFile::ReadUser) ? "r, " : "-, ");
+        permission.append(file.permission(QFile::WriteUser) ? "w, " : "-, ");
+        if (!file.isDir())
+            permission.append(file.isExecutable() && !fileInfo(index).isDir() ? "x, " : "-, ");
+        permission.append(file.owner());
 
-            return permission;
-        }
-        return QVariant();
+        return permission;
     }
 
     if ( role == Qt::TextAlignmentRole )
     {
-        int align = Qt::AlignVCenter | Qt::AlignRight;
         if (index.column() == 1)
-            return align;
+            return int(Qt::AlignVCenter | Qt::AlignRight);
         if (index.column() == 3)
-            return QVariant(Qt::AlignVCenter | Qt::AlignLeft);
+            return int(Qt::AlignVCenter | Qt::AlignLeft);
     }
 
-    // sighs.... thumbnails... reflections... and other image/picture related shit.
+    if ( index.column() == 0
+         && role == Qt::DecorationRole
+         && fileInfo(index).isDir() )
+        return iconProvider()->icon(fileInfo(index));
 
-    if (index.column() == 0
-            && ( role == Qt::DecorationRole || role == FlowPic )
-            && fileInfo(index).isDir()
-            && m_themedDirs.contains(filePath(index)))
-    {
-        const QIcon &icon = m_themedDirs.value(filePath(index));
-
-        if (!icon.isNull())
-        {
-            if ( role == FlowPic )
-                return icon.pixmap(SIZE);
-            return icon;
-        }
-    }
+    //thumbnails in views...
 
     if ( Configuration::config.views.showThumbs
          && ( role == Qt::DecorationRole || role == Thumbnail )
@@ -187,16 +177,17 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         }
     }
 
+    //in flowview
+
     if ( role == Reflection )
         return QPixmap::fromImage(ThumbsLoader::thumb(filePath(index), ThumbsLoader::Reflection));
 
     if ( role == FlowPic )
     {
-        QPixmap p;
+        QPixmap p = iconProvider()->icon(fileInfo(index)).pixmap(SIZE);;
         if ( Configuration::config.views.showThumbs )
-            p = QPixmap::fromImage(ThumbsLoader::thumb(filePath(index), ThumbsLoader::FlowPic));
-        else
-            p = iconProvider()->icon(fileInfo(index)).pixmap(SIZE);
+            if ( !QPixmap::fromImage(ThumbsLoader::thumb(filePath(index), ThumbsLoader::FlowPic)).isNull() )
+                p = QPixmap::fromImage(ThumbsLoader::thumb(filePath(index), ThumbsLoader::FlowPic));
         if ( !p.isNull() )
             return p;
     }

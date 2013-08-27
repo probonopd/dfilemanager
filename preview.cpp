@@ -444,6 +444,8 @@ PreView::updateItemsPos()
 
     m_timeLine->stop();
     PixmapItem *center = m_items[m_row];
+    if ( center->pixmap().isNull() ) //not sure why this sometimes happens...
+        center->updatePixmaps();
     center->setZValue(m_items.count());
     center->setPos(m_x-SIZE/2.0f, m_y);
     center->setScale(1);

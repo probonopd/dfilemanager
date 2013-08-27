@@ -27,8 +27,8 @@
 #include "config.h"
 
 QHash<QString, QImage> ThumbsLoader::m_loadedThumbs[4];
-QStringList ThumbsLoader::m_queue;
-QList<QPair<QImage, QModelIndex> > ThumbsLoader::m_imgQueue;
+QStringList ThumbsLoader::m_thumbQueue;
+QList<QPair<QImage, QModelIndex> > ThumbsLoader::m_refQueue;
 QFileSystemWatcher *ThumbsLoader::m_fsWatcher = 0;
 DFM::FileSystemModel *ThumbsLoader::m_fsModel = 0;
 QTimer *ThumbsLoader::m_timer = 0;
@@ -224,16 +224,18 @@ ThumbsLoader::genReflection(const QPair<QImage, QModelIndex> &imgStr)
 QImage
 ThumbsLoader::pic(const QString &filePath, const Type &t)
 {
-    if ( DFM::Configuration::config.views.showThumbs )
-        if ( m_loadedThumbs[t].contains(filePath) )
-            return m_loadedThumbs[t].value(filePath);
+    if ( DFM::Configuration::config.views.showThumbs
+         && m_loadedThumbs[t].contains(filePath) )
+        return m_loadedThumbs[t].value(filePath);
 
     if ( t >= Reflection && m_fsModel )
     {
-        const Type &ft = DFM::Configuration::config.views.showThumbs ? Reflection : FallBackRefl;
-        const QString &icon = qvariant_cast<QIcon>(m_fsModel->data(m_fsModel->index(filePath), Qt::DecorationRole)).name();
-        if ( m_loadedThumbs[ft].contains(icon) )
-            return m_loadedThumbs[ft].value(icon);
+        const QModelIndex &idx = m_fsModel->index(filePath);
+        if ( !idx.isValid() )
+            return QImage();
+        const QString &icon = qvariant_cast<QIcon>(m_fsModel->data(idx, Qt::DecorationRole)).name();
+        if ( m_loadedThumbs[FallBackRefl].contains(icon) )
+            return m_loadedThumbs[FallBackRefl].value(icon);
     }
     return QImage();
 }
@@ -256,7 +258,7 @@ ThumbsLoader::disconnectView()
 void
 ThumbsLoader::connectView()
 {
-    m_fsModel = static_cast<DFM::FileSystemModel *>(m_currentView->model());
+    m_fsModel = qobject_cast<DFM::FileSystemModel *>(m_currentView->model());
     connect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
     connect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
     connect( m_fsModel, SIGNAL(layoutChanged()), instance(), SLOT(loadReflections()) );
@@ -279,8 +281,8 @@ ThumbsLoader::loadThumbs()
         const QModelIndex &index = m_fsModel->index( i, 0, m_currentView->rootIndex() );
         const QString file = m_fsModel->filePath(index);
         if ( QImageReader(file).canRead() )
-            if ( !m_loadedThumbs[Thumb].contains(file) && !m_queue.contains(file) )
-                m_queue << file;
+            if ( !m_loadedThumbs[Thumb].contains(file) && !m_thumbQueue.contains(file) )
+                m_thumbQueue << file;
     }
     start();
 }
@@ -299,7 +301,7 @@ ThumbsLoader::loadReflections()
         QPainter p(&img);
         icon.paint(&p, img.rect());
         p.end();
-        m_imgQueue << QPair<QImage, QModelIndex>(img, index);
+        m_refQueue << QPair<QImage, QModelIndex>(img, index);
     }
     start();
     m_timer->start();
@@ -308,8 +310,8 @@ ThumbsLoader::loadReflections()
 void
 ThumbsLoader::setCurrentView(QAbstractItemView *view)
 {
-    m_queue.clear();
-    m_imgQueue.clear();
+    m_thumbQueue.clear();
+    m_refQueue.clear();
     disconnectView();
     m_currentView = view;
     connectView();
@@ -319,18 +321,18 @@ ThumbsLoader::setCurrentView(QAbstractItemView *view)
 void
 ThumbsLoader::fileChanged(const QString &file)
 {
-    m_queue << file;
+    m_thumbQueue << file;
     start();
 }
 
 void
 ThumbsLoader::run()
 {
-    while ( !m_imgQueue.isEmpty() )
-        genReflection( m_imgQueue.takeFirst() );
+    while ( !m_refQueue.isEmpty() )
+        genReflection( m_refQueue.takeFirst() );
     if ( DFM::Configuration::config.views.showThumbs )
-        while ( !m_queue.isEmpty() )
-            loadThumb( m_queue.takeFirst() );
+        while ( !m_thumbQueue.isEmpty() )
+            loadThumb( m_thumbQueue.takeFirst() );
 }
 
 bool
