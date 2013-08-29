@@ -339,34 +339,6 @@ PreView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 }
 
 void
-PreView::rowsInserted(const QModelIndex &parent, int start, int end)
-{
-    if ( m_rootIndex != parent )
-        return;
-
-    populate(start, end);
-}
-
-void
-PreView::rowsRemoved(const QModelIndex &parent, int start, int end)
-{
-    if ( m_rootIndex != parent || m_items.isEmpty() )
-        return;
-
-    m_timeLine->stop();
-
-    for ( int i = start; i <= end; ++i )
-        delete m_items.takeAt(i);
-
-    m_scrollBar->blockSignals(true);
-    m_scrollBar->setRange(0, m_items.count());
-    m_scrollBar->setValue(qBound(0, start-1, m_items.count()));
-    m_scrollBar->blockSignals(false);
-    setCenterIndex(m_fsModel->index(qBound(0, start-1, m_items.count()), 0, m_rootIndex));
-    updateItemsPos();
-}
-
-void
 PreView::setCenterIndex(const QModelIndex &index)
 {
     if ( !index.isValid() )
@@ -418,6 +390,34 @@ PreView::resizeEvent(QResizeEvent *event)
 }
 
 void
+PreView::rowsRemoved(const QModelIndex &parent, int start, int end)
+{
+    if ( m_rootIndex != parent || m_items.isEmpty() )
+        return;
+
+    m_timeLine->stop();
+
+    for ( int i = start; i <= end; ++i )
+        delete m_items.takeAt(i);
+
+    m_scrollBar->blockSignals(true);
+    m_scrollBar->setRange(0, m_items.count());
+    m_scrollBar->setValue(qBound(0, start-1, m_items.count()));
+    m_scrollBar->blockSignals(false);
+    setCenterIndex(m_fsModel->index(qBound(0, start-1, m_items.count()), 0, m_rootIndex));
+    updateItemsPos();
+}
+
+void
+PreView::rowsInserted(const QModelIndex &parent, int start, int end)
+{
+    if ( m_rootIndex != parent )
+        return;
+
+    populate(start, end);
+}
+
+void
 PreView::populate(const int &start, const int &end)
 {
     for ( int i = start; i <= end; i++ )
@@ -431,7 +431,10 @@ PreView::populate(const int &start, const int &end)
         pixItem->setAcceptHoverEvents(true);
         m_items.insert(i, pixItem);
     }
-    setCenterIndex(m_fsModel->index(0, 0, m_rootIndex));
+    if ( m_centerIndex.isValid() && m_fsModel->hasIndex(m_centerIndex.row(), 0, m_centerIndex.parent()) )
+        setCenterIndex(m_centerIndex);
+    else
+        setCenterIndex(m_fsModel->index(0, 0, m_rootIndex));
     updateItemsPos();
     update();
 }

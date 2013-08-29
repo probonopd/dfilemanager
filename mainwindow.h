@@ -49,13 +49,14 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 public:
     explicit MainWindow( QStringList arguments = QStringList() );
-    ViewContainer *activeContainer() { return m_activeContainer; }
-    PlacesView *placesView() { return m_placesView; }
+    inline ViewContainer *activeContainer() { return m_activeContainer; }
+    inline PlacesView *placesView() { return m_placesView; }
+    inline QToolBar *toolBar() { return m_toolBar; }
     static ViewContainer *currentContainer();
     static MainWindow *currentWindow();
     static PlacesView *places();
     static QList<MainWindow *> openWindows();
-    InfoWidget *infoWidget() { return m_infoWidget; }
+    inline InfoWidget *infoWidget() { return m_infoWidget; }
     void updateConfig();
     void createMenus();
 
@@ -147,7 +148,7 @@ private:
     QMainWindow *m_tabWin;
 
     QMenu *m_fileMenu, *m_editMenu, *m_goMenu, *m_viewMenu, *m_helpMenu;
-    QToolBar *m_navToolBar, *m_viewToolBar;
+    QToolBar *m_toolBar;
 
     /* needs to get converted to enum / array */
     QAction *m_goBackAct, *m_goUpAct, *m_goForwardAct, *m_homeAct, *m_exitAct, *m_aboutAct, *m_aboutQtAct

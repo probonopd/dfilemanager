@@ -23,6 +23,7 @@
 #include "iojob.h"
 #include "settingsdialog.h"
 #include "propertiesdialog.h"
+#include "tabbar.h"
 #include <QToolTip>
 #include <QClipboard>
 #include <QMenuBar>
@@ -43,12 +44,10 @@ MainWindow::MainWindow(QStringList arguments)
     s_openWindows << this;
     QWidget *center = new QWidget(this);
     m_tabWin = new QMainWindow(this);
-    m_navToolBar = new QToolBar(tr("Show NavBar"), this);
-    m_viewToolBar = new QToolBar(tr("Show ViewBar"), this);
+    m_toolBar = new QToolBar(tr("Show ToolBar"), this);
     m_statusBar = statusBar();
-    m_filterBox = new SearchBox(m_viewToolBar);
-    m_toolBarSpacer = new QWidget(m_viewToolBar);
-    m_toolBarSpacer->setFixedHeight(1);
+    m_filterBox = new SearchBox(m_toolBar);
+    m_toolBarSpacer = new QWidget(m_toolBar);
     m_dockLeft = new Docks::DockWidget(m_tabWin, tr("Bookmarks"), Qt::SubWindow, Docks::Left);
     m_dockRight = new Docks::DockWidget(m_tabWin, tr("Recent Folders"), Qt::SubWindow, Docks::Right);
     m_dockBottom = new Docks::DockWidget(m_tabWin, tr("Information"), Qt::SubWindow, Docks::Bottom);
@@ -56,15 +55,26 @@ MainWindow::MainWindow(QStringList arguments)
     m_infoWidget = new InfoWidget(m_dockBottom);
     m_recentFoldersView = new RecentFoldersView(m_dockRight);
     m_iconSizeSlider = new QSlider(m_statusBar);
-    m_tabBar = new TabBar(center);
+
+    if ( Configuration::config.behaviour.gayWindow )
+    {
+        FooBar *fooBar = new FooBar(this);
+        fooBar->setVisible(true);
+        m_tabBar = new TabBar(fooBar);
+        fooBar->setTabBar(m_tabBar);
+        Configuration::config.behaviour.hideTabBarWhenOnlyOneTab = false;
+//        setContentsMargins(0, m_tabBar->height(), 0, 0);
+    }
+    else
+        m_tabBar = new TabBar(center);
+
     m_stackedWidget = new QStackedWidget(this);
     m_activeContainer = 0;
     m_fsModel = 0;
 
     int is = 16;
     QSize tbs(QSize(is, is));
-    m_navToolBar->setIconSize(tbs);
-    m_viewToolBar->setIconSize(tbs);
+    m_toolBar->setIconSize(tbs);
     m_dockBottom->setWidget(m_infoWidget);
 
     m_tabWin->setWindowFlags(0);
@@ -76,10 +86,8 @@ MainWindow::MainWindow(QStringList arguments)
 
     m_cut = false;
 
-    addToolBar(m_navToolBar);
-    addToolBar(m_viewToolBar);
-    m_navToolBar->setObjectName("navToolBar");
-    m_viewToolBar->setObjectName("viewToolBar");
+    addToolBar(m_toolBar);
+    m_toolBar->setObjectName("viewToolBar");
 
     setWindowIcon(QIcon::fromTheme("folder", QIcon(":/trolltech/styles/commonstyle/images/diropen-128.png")));
 
@@ -114,7 +122,8 @@ MainWindow::MainWindow(QStringList arguments)
     QVBoxLayout *vBox = new QVBoxLayout();
     vBox->setMargin(0);
     vBox->setSpacing(0);
-    vBox->addWidget(m_tabBar);
+    if ( !Configuration::config.behaviour.gayWindow )
+        vBox->addWidget(m_tabBar);
     vBox->addWidget(m_tabWin);
     center->setLayout(vBox);
 
@@ -134,6 +143,7 @@ MainWindow::MainWindow(QStringList arguments)
     m_placesView->installEventFilter(this);
     m_activeContainer->setFocus();
     m_statusBar->setVisible(m_statAct->isChecked());
+    QTimer::singleShot(200, m_toolBar, SLOT(update())); //should be superfluos but make sure toolbar is painted correctly....
 }
 
 void
@@ -427,11 +437,16 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
     }
 
     if (obj == m_placesView && (event->type() == QEvent::Resize || event->type() == QEvent::Show) && !m_dockLeft->isFloating())
-        if (m_toolBarSpacer->width() != m_placesView->viewport()->width()-(m_navToolBar->geometry().width() * m_navToolBar->isVisible()) )
+    {
+        int w = m_placesView->viewport()->width();
+        w -= m_toolBar->widgetForAction(m_goBackAct)->width();
+        w -= m_toolBar->widgetForAction(m_goForwardAct)->width();
+        if (m_toolBarSpacer->width() != w )
         {
-            const int &width = qMax(0, m_placesView->viewport()->width()-(m_navToolBar->geometry().width() * m_navToolBar->isVisible()) + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
+            const int &width = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
             m_toolBarSpacer->setFixedWidth(width);
         }
+    }
 
     if (obj == m_statusBar && event->type() == QEvent::Paint)
     {
@@ -713,6 +728,9 @@ MainWindow::windowActivationChange(bool wasActive)
         s_currentWindow = this;
         emit viewChanged(m_activeContainer->currentView());
     }
+    if ( Configuration::config.behaviour.gayWindow )
+        foreach ( WinButton *btn, findChildren<WinButton *>() )
+            btn->update();
 }
 
 MainWindow *MainWindow::currentWindow() { return s_currentWindow; }

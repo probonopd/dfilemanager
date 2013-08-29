@@ -249,6 +249,7 @@ ThumbsLoader::disconnectView()
     disconnect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
     disconnect( m_fsModel, SIGNAL(layoutChanged()),instance(), SLOT(loadReflections()));
     disconnect( m_fsModel, SIGNAL(directoryLoaded(QString)), m_timer, SLOT(start()) );
+    disconnect( m_fsModel, SIGNAL(rootPathChanged(QString)), instance(), SLOT(dirChanged()) );
     disconnect( instance(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), m_fsModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
     m_currentView->removeEventFilter( instance() );
     m_fsModel = 0;
@@ -263,10 +264,17 @@ ThumbsLoader::connectView()
     connect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
     connect( m_fsModel, SIGNAL(layoutChanged()), instance(), SLOT(loadReflections()) );
     connect( m_fsModel, SIGNAL(directoryLoaded(QString)), m_timer, SLOT(start()) );
+    connect( m_fsModel, SIGNAL(rootPathChanged(QString)), instance(), SLOT(dirChanged()) );
     connect( instance(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), m_fsModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
     m_currentView->installEventFilter( instance() );
 }
 
+void
+ThumbsLoader::dirChanged()
+{
+    if ( m_fsWatcher->files().count() )
+        m_fsWatcher->removePaths(m_fsWatcher->files());
+}
 
 void
 ThumbsLoader::loadThumbs()
@@ -284,6 +292,12 @@ ThumbsLoader::loadThumbs()
             if ( !m_loadedThumbs[Thumb].contains(file) && !m_thumbQueue.contains(file) )
                 m_thumbQueue << file;
     }
+
+//    const QFileInfoList &il = m_fsModel->rootDirectory().entryInfoList(m_fsModel->supportedThumbs(true), QDir::NoDotAndDotDot|QDir::Files, QDir::Name|QDir::IgnoreCase|QDir::DirsFirst);
+//    foreach ( const QFileInfo &info, il )
+//        if ( !m_loadedThumbs[Thumb].contains(info.filePath()) && !m_thumbQueue.contains(info.filePath()) )
+//            m_thumbQueue << info.filePath();
+
     start();
 }
 
@@ -310,6 +324,7 @@ ThumbsLoader::loadReflections()
 void
 ThumbsLoader::setCurrentView(QAbstractItemView *view)
 {
+    dirChanged();
     m_thumbQueue.clear();
     m_refQueue.clear();
     disconnectView();

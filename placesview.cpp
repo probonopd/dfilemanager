@@ -158,11 +158,10 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     }
 
 #ifdef Q_WS_X11
-    if ( index.parent().isValid() && Configuration::config.behaviour.devUsage )
-        if ( m_placesView->deviceManager()->isDevice(m_placesView->itemFromIndex<QStandardItem *>(index)) )
-            if ( DeviceItem *d = m_placesView->itemFromIndex<DeviceItem *>(index) )
-                if ( d->isMounted() )
-                    drawDeviceUsage(d->used(), painter, option);
+    if ( Configuration::config.behaviour.devUsage )
+        if ( DeviceItem *d = m_placesView->itemFromIndex<DeviceItem *>(index) )
+            if ( d->isMounted() )
+                drawDeviceUsage(d->used(), painter, option);
 #endif
 
     QApplication::style()->drawItemText(painter, textRect, textFlags, pal, true, TEXT, selected ? QPalette::HighlightedText : QPalette::Text);
@@ -208,6 +207,24 @@ PlacesViewDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, con
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef Q_WS_X11
+
+static inline QPixmap mountIcon( bool mounted, int size, QColor col )
+{
+    QPixmap pix( size, size );
+    pix.fill( Qt::transparent );
+    QPainter p( &pix );
+    QRect rect( pix.rect() );
+    const int d = rect.height()/3;
+    rect.adjust( d, d, -d, -d );
+    p.setRenderHint( QPainter::Antialiasing );
+    p.setPen( QPen( col, 2 ) );
+    if ( mounted )
+        p.setBrush( col );
+    p.drawEllipse( rect );
+    p.end();
+    return pix;
+}
+
 DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Solid::Device solid )
     : Place(QStringList())
     , m_view(view)
@@ -256,6 +273,38 @@ DeviceItem::setMounted( const bool &mount )
         m_solid.as<Solid::StorageAccess>()->teardown();
 }
 
+static QString spaceType[6] = { " Byte", " KiB", " MiB", " GiB", " TiB", " PiB" };
+
+static inline float realSize(const float size, int *t)
+{
+    float s = size;
+    while (s > 1024.0)
+    {
+        if (*t == 5)
+            break;
+        s = s/1024.0;
+        ++(*t);
+    }
+    return s;
+}
+
+
+static inline QString prettySize(quint64 bytes)
+{
+  if (bytes & (0x3fff<<50))
+     return QString::number( (bytes>>50) + ((bytes>>40) & (0x3ff)) / 1024.0, 'f', 2 ) + " PiB";
+  else if (bytes & (0x3ff<<40))
+     return QString::number( (bytes>>40) + ((bytes>>30) & (0x3ff)) / 1024.0, 'f', 2 ) + " TiB";
+  else if (bytes & (0x3ff<<30))
+     return QString::number( (bytes>>30) + ((bytes>>20) & (0x3ff)) / 1024.0, 'f', 2 ) + " GiB";
+  else if (bytes & (0x3ff<<20))
+     return QString::number( (bytes>>20) + ((bytes>>10) & (0x3ff)) / 1024.0, 'f', 2 ) + " MiB";
+  else if (bytes & (0x3ff<<10))
+     return QString::number( (bytes>>10) + ((bytes) & (0x3ff)) / 1024.0, 'f', 2 ) + " KiB";
+  else
+     return QString::number( bytes, 'f', 0 ) + "Bytes";
+}
+
 void
 DeviceItem::updateSpace()
 {
@@ -263,9 +312,9 @@ DeviceItem::updateSpace()
     {
         if ( Configuration::config.behaviour.devUsage )
             m_view->update( index() );
-        int t = 0;
-        QString free(QString::number(realSize((float)freeBytes(), &t)));
-        setToolTip(free + spaceType[t] + " Free");
+//        int t = 0;
+//        QString free(QString::number(realSize((float)freeBytes(), &t)));
+        setToolTip(prettySize(freeBytes()) + " Free");
     }
 }
 
@@ -273,14 +322,9 @@ void
 DeviceItem::changeState()
 {
     if (isMounted())
-    {
-        int t = 0;
-        setToolTip(QString::number(realSize((float)freeBytes(), &t)) + spaceType[t] + " Free");
-    }
+        setToolTip(prettySize(freeBytes()) + " Free");
     else
-    {
         setToolTip(QString());
-    }
     m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole())));
     m_tb->setToolTip( isMounted() ? "Unmount" : "Mount" );
 }
@@ -586,9 +630,15 @@ PlacesView::keyPressEvent( QKeyEvent *event )
 {
     if ( event->key() == Qt::Key_Delete )
         removePlace();
+    QTreeView::keyPressEvent( event );
+}
+
+void
+PlacesView::keyReleaseEvent(QKeyEvent *event)
+{
     if ( event->key() == Qt::Key_F2 )
         renPlace();
-    QTreeView::keyPressEvent( event );
+    QTreeView::keyReleaseEvent(event);
 }
 
 void

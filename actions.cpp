@@ -28,8 +28,8 @@ using namespace DFM;
 void
 MainWindow::createActions()
 {
-    QColor tbfgc(m_navToolBar->palette().color(m_navToolBar->foregroundRole()));
-    int tbis = m_navToolBar->iconSize().height();
+    QColor tbfgc(m_toolBar->palette().color(m_toolBar->foregroundRole()));
+    int tbis = m_toolBar->iconSize().height();
     m_delCurrentSelectionAct = new QAction(QIcon::fromTheme("edit-delete"), tr("&Delete"), this);
     //    delCurrentSelectionAct->setShortcuts( QList<QKeySequence>() << QKeySequence(Qt::SHIFT + Qt::Key_Delete));
     m_delCurrentSelectionAct->setShortcut(QKeySequence("Shift+Del"));
@@ -300,29 +300,27 @@ MainWindow::addBookmarks()
 void
 MainWindow::createToolBars()
 {
-    m_navToolBar->setMovable(false);
-    m_navToolBar->addAction(m_goBackAct);
-    m_navToolBar->addAction(m_goForwardAct);
-
-    m_viewToolBar->setMovable(false);
-    m_viewToolBar->addWidget(m_toolBarSpacer);
-    m_viewToolBar->addAction(m_iconViewAct);
-    m_viewToolBar->addAction(m_listViewAct);
-    m_viewToolBar->addAction(m_colViewAct);
-    m_viewToolBar->addAction(m_flowAct);
+    m_toolBar->setMovable(false);
+    m_toolBar->addAction(m_goBackAct);
+    m_toolBar->addAction(m_goForwardAct);
+    m_toolBar->addWidget(m_toolBarSpacer);
+    m_toolBar->addAction(m_iconViewAct);
+    m_toolBar->addAction(m_listViewAct);
+    m_toolBar->addAction(m_colViewAct);
+    m_toolBar->addAction(m_flowAct);
 
 //    filterBox->setPlaceholderText("Type to filter...");
-    QWidget *spacerMax = new QWidget(m_viewToolBar);
+    QWidget *spacerMax = new QWidget(m_toolBar);
     spacerMax->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-    QWidget *spacerMin = new QWidget(m_viewToolBar);
+    QWidget *spacerMin = new QWidget(m_toolBar);
     spacerMin->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
     spacerMin->setMaximumWidth(64);
-    m_viewToolBar->addWidget(spacerMin);
-    m_viewToolBar->addAction(m_configureAct);
-    m_viewToolBar->addSeparator();
-    m_viewToolBar->addAction(m_homeAct);
-    m_viewToolBar->addWidget(spacerMax);
-    m_viewToolBar->addWidget(m_filterBox);
+    m_toolBar->addWidget(spacerMin);
+    m_toolBar->addAction(m_configureAct);
+    m_toolBar->addSeparator();
+    m_toolBar->addAction(m_homeAct);
+    m_toolBar->addWidget(spacerMax);
+    m_toolBar->addWidget(m_filterBox);
 }
 
 void

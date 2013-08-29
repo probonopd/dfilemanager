@@ -23,10 +23,67 @@
 #define TABBAR_H
 
 #include <QTabBar>
+#include <QToolBar>
+#include <QWidget>
 #include <QMouseEvent>
 
 namespace DFM
 {
+
+class WinButton : public QWidget
+{
+    Q_OBJECT
+public:
+    enum Type { Close = 0, Min, Max };
+    WinButton(Type t = Close, QWidget *parent = 0);
+
+signals:
+    void clicked();
+
+protected:
+    void paintEvent(QPaintEvent *e);
+    void mousePressEvent(QMouseEvent *e);
+    void mouseReleaseEvent(QMouseEvent *e);
+
+private slots:
+    void toggleMax();
+
+private:
+    Type m_type;
+    bool m_hasPress;
+};
+
+class TabBar;
+
+class FooBar : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit FooBar(QWidget *parent = 0);
+    void setTabBar(TabBar *tabBar);
+    static int headHeight();
+    static QLinearGradient headGrad();
+    static QPainterPath tab( const QRect &r, int round = 4 );
+
+protected:
+    bool eventFilter(QObject *o, QEvent *e);
+    void paintEvent(QPaintEvent *e);
+    void mousePressEvent(QMouseEvent *e);
+    void mouseReleaseEvent(QMouseEvent *e);
+    void mouseMoveEvent(QMouseEvent *e);
+    QRegion shape();
+
+private slots:
+    void correctTabBarHeight();
+
+private:
+    TabBar *m_tabBar;
+    QToolBar *m_toolBar;
+    int m_topMargin;
+    bool m_hasPress;
+    QPoint m_pressPos;
+    friend class TabBar;
+};
 
 class TabBar : public QTabBar
 {
@@ -38,14 +95,17 @@ signals:
     void newTabRequest();
 
 protected:
-    inline virtual QSize tabSizeHint(int index) const { return QSize(qMin(150,rect().width()/count()), QTabBar::tabSizeHint(index).height()); }
+    virtual QSize tabSizeHint(int index) const;
     void mouseDoubleClickEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
+    void paintEvent(QPaintEvent *event);
+    void drawTab( QPainter *p, int index );
 
 private:
     void genNewTabButton();
 
-private slots:
+private:
+    friend class FooBar;
 };
 
 }

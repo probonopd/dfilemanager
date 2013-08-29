@@ -51,6 +51,7 @@ public slots:
     void loadThumbs();
     void fileChanged( const QString &file );
     void loadReflections();
+    void dirChanged();
 
 protected:
     explicit ThumbsLoader(QObject *parent = 0);

@@ -58,13 +58,13 @@ public:
     }
     inline Place(const QStringList &texts = QStringList()) : m_values(texts) { while (m_values.count() < 3) m_values << QString(); }
     inline Place( Place *p ) { m_values << p->name() << p->path() << p->iconName(); }
-    virtual inline QStringList values() { return m_values; }
-    virtual inline QString name() const { return m_values[Name]; }
-    virtual inline QString path() const { return m_values[Path]; }
-    virtual inline QString iconName() const { return m_values[Icon]; }
-    virtual inline void setName( const QString &name ) { m_values[Name] = name; }
-    virtual inline void setPath( const QString &path ) { m_values[Path] = path; }
-    virtual inline void setIconName( const QString &iconName ) { m_values[Icon] = iconName; }
+    virtual QStringList values() { return m_values; }
+    virtual QString name() const { return m_values[Name]; }
+    virtual QString path() const { return m_values[Path]; }
+    virtual QString iconName() const { return m_values[Icon]; }
+    virtual void setName( const QString &name ) { m_values[Name] = name; }
+    virtual void setPath( const QString &path ) { m_values[Path] = path; }
+    virtual void setIconName( const QString &iconName ) { m_values[Icon] = iconName; }
 
 private:
     QStringList m_values;
@@ -105,50 +105,14 @@ protected:
              return QSize(-1, option.decorationSize.height()+2);
          }
          else
-             return  QSize(-1, QFontMetrics(option.font).height()*3/2);
+             return  QSize(-1, option.fontMetrics.height()*3/2);
     }
     inline bool isHeader( const QModelIndex &index ) const { return !index.parent().isValid(); }
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
 
 private:
     PlacesView *m_placesView;
-    friend class PlacesView;
-    friend class PlacesModel;
-    friend class Place;
 };
-
-static inline float realSize(const float size, int *t)
-{
-    float s = size;
-    while (s > 1024.0)
-    {
-        if (*t == 5)
-            break;
-        s = s/1024.0;
-        ++(*t);
-    }
-    return s;
-}
-
-static QString spaceType[6] = { " Byte", " KiB", " MiB", " GiB", " TiB", " PiB" };
-
-static inline QPixmap mountIcon( const bool &mounted, const int &size, const QColor &col )
-{
-    QPixmap pix( size, size );
-    pix.fill( Qt::transparent );
-    QPainter p( &pix );
-    QRect rect( pix.rect() );
-    const int d = rect.height()/3;
-    rect.adjust( d, d, -d, -d );
-    p.setRenderHint( QPainter::Antialiasing );
-    p.setPen( QPen( col, 2 ) );
-    if ( mounted )
-        p.setBrush( col );
-    p.drawEllipse( rect );
-    p.end();
-    return pix;
-}
-
 
 #ifdef Q_WS_X11
 class DeviceManager;
@@ -166,8 +130,8 @@ public:
     inline quint64 freeBytes() const { return Operations::getDriveInfo<Operations::Free>(mountPath()); }
     inline quint64 totalBytes() const { return Operations::getDriveInfo<Operations::Total>(mountPath()); }
     inline int used() const { return usedBytes() ? (int)(((float)usedBytes()/(float)totalBytes())*100) : 0; }
-    inline QString name() const { return isMounted() ? mountPath() : m_solid.description(); }
-    inline QString path() const { return mountPath(); }
+    QString name() const { return isMounted() ? mountPath() : m_solid.description(); }
+    QString path() const { return mountPath(); }
 //    inline void mount() { setMounted(true); }
 //    inline void unMount() { setMounted(false); }
 
@@ -185,7 +149,6 @@ private:
     DeviceManager *m_manager;
     QTimer *m_timer;
     Solid::Device m_solid;
-    friend class DeviceManager;
 };
 
 class DeviceManager : public QObject, public Container
@@ -206,7 +169,6 @@ private slots:
 private:
     PlacesView *m_view;
     DeviceItems m_items;
-    friend class DeviceItem;
 };
 
 #endif
@@ -220,7 +182,6 @@ protected:
     inline QStringList mimeTypes() const { return QStringList() << "text/uri-list"; }
 private:
     PlacesView *m_places;
-    friend class PlacesView;
 };
 
 class PlacesView : public QTreeView
@@ -272,6 +233,7 @@ protected:
     void dropEvent(QDropEvent *event);
     void contextMenuEvent(QContextMenuEvent *);
     void keyPressEvent(QKeyEvent *event);
+    void keyReleaseEvent(QKeyEvent *);
     void mouseReleaseEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
 
@@ -288,8 +250,6 @@ private:
     PlacesModel *m_model;
     DeviceManager *m_devManager;
     QTimer *m_timer;
-    friend class PlacesViewDelegate;
-    friend class PlacesModel;
 };
 
 }
