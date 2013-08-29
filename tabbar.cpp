@@ -334,8 +334,8 @@ TabBar::mouseReleaseEvent(QMouseEvent *event)
 void
 TabBar::drawTab(QPainter *p, int index)
 {
-    QColor fg(palette().color(foregroundRole()));
-    QColor bg(palette().color(backgroundRole()));
+    QColor fg(parentWidget()->palette().color(foregroundRole()));
+    QColor bg(parentWidget()->palette().color(backgroundRole()));
 
     QRect r(tabRect(index));
     QString s(tabText(index));
@@ -414,7 +414,7 @@ TabBar::paintEvent(QPaintEvent *event)
         drawTab(&p, i);
     for ( int i = count(); i > currentIndex(); --i )
         drawTab(&p, i);
-    p.setPen(palette().color(foregroundRole()));
+    p.setPen(parentWidget()->palette().color(parentWidget()->foregroundRole()));
     p.drawLine(0, height()-2, width(), height()-2);
     drawTab(&p, currentIndex());
     p.end();
