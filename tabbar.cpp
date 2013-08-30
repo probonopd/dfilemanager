@@ -445,14 +445,15 @@ TabBar::drawTab(QPainter *p, int index)
         p->drawPath(FooBar::tab(shape.adjusted(2, 2, -2, 2), rndNess, tabShape));
     }
 
-    tabIcon(index).paint(p, QRect(r.x() == rect().x() ? overlap : r.x(), r.y(), 16, r.bottom()-3));
+    int leftMargin = 2;
+    tabIcon(index).paint(p, QRect(r.x() == rect().x() ? overlap+leftMargin : r.x()+leftMargin, r.y(), 16, r.bottom()-1));
     QFont f(font());
     f.setBold(index == currentIndex());
     int l = QFontMetrics(f).width(s);
     p->setFont(f);
 
     r.setRight(tabButton(index, RightSide)->geometry().x());
-    r.setLeft(r.x() == rect().x() ? r.left()+20+overlap : r.left()+20);
+    r.setLeft(r.x() == rect().x() ? r.left()+20+overlap+leftMargin : r.left()+20+leftMargin);
     int y = bg.value() > fg.value() ? 1 : -1;
     QColor emboss(Operations::colorMid(bg, y==1 ? Qt::white : Qt::black, 2, 1));
     p->setPen(emboss);
