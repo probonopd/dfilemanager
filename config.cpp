@@ -71,7 +71,7 @@ Configuration::readConfiguration()
     config.behaviour.gayWindow = settings()->value("behaviour.gayWindow", false).toBool();
     config.behaviour.tabShape = settings()->value("behaviour.gayWindow.tabShape", 0).toInt();
     config.behaviour.tabRoundness = settings()->value("behaviour.gayWindow.tabRoundness", 6).toInt();
-    config.behaviour.tabRoundness = settings()->value("behaviour.gayWindow.tabHeight", 22).toInt();
+    config.behaviour.tabHeight = settings()->value("behaviour.gayWindow.tabHeight", 22).toInt();
 
     Configuration::settings()->beginGroup("CustomActions");
     foreach ( const QString &string, settings()->childKeys() )
