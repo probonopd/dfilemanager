@@ -489,7 +489,7 @@ QSize
 TabBar::tabSizeHint(int index) const
 {
     if ( Configuration::config.behaviour.gayWindow )
-        return QSize(qMin(150,rect().width()/count()), 22/*QTabBar::tabSizeHint(index).height()+3*/);
+        return QSize(qMin(150,rect().width()/count()), Configuration::config.behaviour.tabHeight/*QTabBar::tabSizeHint(index).height()+3*/);
     else
         return QSize(qMin(150,rect().width()/count()), QTabBar::tabSizeHint(index).height());
 }

@@ -71,6 +71,7 @@ Configuration::readConfiguration()
     config.behaviour.gayWindow = settings()->value("behaviour.gayWindow", false).toBool();
     config.behaviour.tabShape = settings()->value("behaviour.gayWindow.tabShape", 0).toInt();
     config.behaviour.tabRoundness = settings()->value("behaviour.gayWindow.tabRoundness", 6).toInt();
+    config.behaviour.tabRoundness = settings()->value("behaviour.gayWindow.tabHeight", 22).toInt();
 
     Configuration::settings()->beginGroup("CustomActions");
     foreach ( const QString &string, settings()->childKeys() )
@@ -120,6 +121,7 @@ Configuration::writeConfiguration()
 //    settings()->setValue("behaviour.gayWindow", config.behaviour.gayWindow);
 //    settings()->setValue("behaviour.gayWindow.tabShape", config.behaviour.tabShape);
 //    settings()->setValue("behaviour.gayWindow.tabRoundness", config.behaviour.tabRoundness);
+//    settings()->setValue("behaviour.gayWindow.tabRoundness", config.behaviour.tabHeight);
 }
 
 static inline QString desktopInfo(const QString &desktop, bool name)
