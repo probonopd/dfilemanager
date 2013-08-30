@@ -57,6 +57,7 @@ public:
     static PlacesView *places();
     static QList<MainWindow *> openWindows();
     inline InfoWidget *infoWidget() { return m_infoWidget; }
+    inline QList<QAction *> acts() const { return m_actions; }
     void updateConfig();
     void createMenus();
 
@@ -146,6 +147,7 @@ private:
     QStackedWidget *m_stackedWidget;
     TabBar *m_tabBar;
     QMainWindow *m_tabWin;
+    QList<QAction *> m_actions;
 
     QMenu *m_fileMenu, *m_editMenu, *m_goMenu, *m_viewMenu, *m_helpMenu;
     QToolBar *m_toolBar;

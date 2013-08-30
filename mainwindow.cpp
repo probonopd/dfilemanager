@@ -309,6 +309,8 @@ MainWindow::rootPathChanged(QString index)
     m_activeContainer->setFilter("");
     m_placesView->activateAppropriatePlace(index);
     m_tabBar->setTabText(m_tabBar->currentIndex(),m_fsModel->rootDirectory().dirName());
+    if ( Configuration::config.behaviour.gayWindow )
+        m_tabBar->setTabIcon(m_tabBar->currentIndex(), m_fsModel->iconProvider()->icon(QFileInfo(m_fsModel->rootPath())));
 }
 
 void
@@ -603,7 +605,12 @@ MainWindow::addTab(const QString &path)
 
     container->addActions(actList);
     m_stackedWidget->addWidget(container);
-    m_tabBar->addTab(QFileInfo(newPath).fileName());
+    if (!m_fsModel)
+        m_fsModel = container->model();
+    if ( Configuration::config.behaviour.gayWindow )
+        m_tabBar->addTab(m_fsModel->iconProvider()->icon(QFileInfo(newPath)), QFileInfo(newPath).fileName());
+    else
+        m_tabBar->addTab(QFileInfo(newPath).fileName());
 
     if (Configuration::config.behaviour.hideTabBarWhenOnlyOneTab)
         m_tabBar->setVisible(m_tabBar->count() > 1);

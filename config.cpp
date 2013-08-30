@@ -69,6 +69,8 @@ Configuration::readConfiguration()
     config.views.singleClick = settings()->value("views.singleClick", false).toBool();
 
     config.behaviour.gayWindow = settings()->value("behaviour.gayWindow", false).toBool();
+    config.behaviour.tabShape = settings()->value("behaviour.gayWindow.tabShape", 0).toInt();
+    config.behaviour.tabRoundness = settings()->value("behaviour.gayWindow.tabRoundness", 6).toInt();
 
     Configuration::settings()->beginGroup("CustomActions");
     foreach ( const QString &string, settings()->childKeys() )
@@ -115,7 +117,9 @@ Configuration::writeConfiguration()
     settings()->setValue("hideTabBarWhenOnlyOne", config.behaviour.hideTabBarWhenOnlyOneTab);
     settings()->setValue("styleSheet", config.styleSheet);
     settings()->setValue("views.singleClick", config.views.singleClick);
-    settings()->setValue("behaviour.gayWindow", config.behaviour.gayWindow);
+//    settings()->setValue("behaviour.gayWindow", config.behaviour.gayWindow);
+//    settings()->setValue("behaviour.gayWindow.tabShape", config.behaviour.tabShape);
+//    settings()->setValue("behaviour.gayWindow.tabRoundness", config.behaviour.tabRoundness);
 }
 
 static inline QString desktopInfo(const QString &desktop, bool name)

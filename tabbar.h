@@ -34,7 +34,7 @@ class WinButton : public QWidget
 {
     Q_OBJECT
 public:
-    enum Type { Close = 0, Min, Max };
+    enum Type { Close = 0, Min, Max, Other };
     WinButton(Type t = Close, QWidget *parent = 0);
 
 signals:
@@ -59,11 +59,12 @@ class FooBar : public QWidget
 {
     Q_OBJECT
 public:
+    enum TabShape { Standard = 0, Chrome };
     explicit FooBar(QWidget *parent = 0);
     void setTabBar(TabBar *tabBar);
     static int headHeight();
     static QLinearGradient headGrad();
-    static QPainterPath tab( const QRect &r, int round = 4 );
+    static QPainterPath tab( const QRect &r, int round = 4, TabShape shape = Standard );
 
 protected:
     bool eventFilter(QObject *o, QEvent *e);
@@ -85,6 +86,14 @@ private:
     friend class TabBar;
 };
 
+class TabCloser : public WinButton
+{
+public:
+    inline explicit TabCloser(QWidget *parent = 0) : WinButton(WinButton::Other, parent) {}
+protected:
+    void paintEvent(QPaintEvent *);
+};
+
 class TabBar : public QTabBar
 {
     Q_OBJECT
@@ -99,12 +108,14 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void paintEvent(QPaintEvent *event);
+    void tabInserted(int index);
     void drawTab( QPainter *p, int index );
+
+private slots:
+    void tabCloseRequest();
 
 private:
     void genNewTabButton();
-
-private:
     friend class FooBar;
 };
 

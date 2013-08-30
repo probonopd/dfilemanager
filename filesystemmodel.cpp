@@ -44,7 +44,9 @@ FileIconProvider::icon(const QFileInfo &info) const
 {
     if ( info.isDir() && m_themedDirs.contains(info.filePath()) )
         return m_themedDirs.value(info.filePath());
-
+//    QIcon icn = QFileIconProvider::icon(info);
+//    if ( icn.name() == "application-octet-stream" )
+//        icn = QIcon::fromTheme("application-octet-stream");
     return QFileIconProvider::icon(info);
 }
 

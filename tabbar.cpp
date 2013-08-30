@@ -25,6 +25,7 @@
 #include "operations.h"
 
 #include <QTextLayout>
+#include <qmath.h>
 
 using namespace DFM;
 
@@ -41,6 +42,7 @@ WinButton::WinButton(Type t, QWidget *parent) : QWidget(parent), m_hasPress(fals
     case Close:
         connect(this, SIGNAL(clicked()), MainWindow::currentWindow(), SLOT(close()));
         break;
+    default:break;
     }
     setFixedSize(16, 16);
     setAttribute(Qt::WA_Hover);
@@ -164,18 +166,31 @@ FooBar::correctTabBarHeight()
 }
 
 QPainterPath
-FooBar::tab(const QRect &r, int round)
+FooBar::tab(const QRect &r, int round, TabShape shape)
 {
     int x = r.x(), y = r.y(), w = x+(r.width()-1), h = y+(r.height()-1);
     QPainterPath path;
-    path.moveTo(x, h);
-    path.quadTo(x+(round-2), h, x+round, h-round);
-    path.lineTo(x+round+2, y+round);
-    path.quadTo(x+round+3, y, x+(round*2), y);
-    path.lineTo(w-(round*2), y);
-    path.quadTo(w-(round+3), y, w-(round+2), y+round);
-    path.lineTo(w-round, h-round);
-    path.quadTo(w-(round-2), h, w, h);
+    if ( shape == Standard )
+    {
+        path.moveTo(x, h);
+        path.quadTo(x+(round), h, x+round, h-round);
+        path.lineTo(x+round, y+round);
+        path.quadTo(x+round, y, x+(round*2), y);
+        path.lineTo(w-(round*2), y);
+        path.quadTo(w-round, y, w-round, y+round);
+        path.lineTo(w-round, h-round);
+        path.quadTo(w-round, h, w, h);
+    }
+    else if ( shape == Chrome )
+    {
+        int half = h/2, hf = round/2;
+        path.moveTo(x, h);
+        path.quadTo(x+hf, h, x+round, half);
+        path.quadTo(x+round+hf, y, x+(round*2), y);
+        path.lineTo(w-(round*2), y);
+        path.quadTo(w-(round+hf), y, w-round, half);
+        path.quadTo(w-hf, h, w, h);
+    }
     return path;
 }
 
@@ -213,8 +228,8 @@ FooBar::paintEvent(QPaintEvent *e)
     p.setRenderHint(QPainter::Antialiasing);
     p.translate(0.5f, 0.5f);
 
-    QColor fg(parentWidget()->palette().color(foregroundRole()));
-    QColor bg(parentWidget()->palette().color(backgroundRole()));
+    QColor fg(parentWidget()->palette().color(parentWidget()->foregroundRole()));
+    QColor bg(parentWidget()->palette().color(parentWidget()->backgroundRole()));
 
     QLinearGradient lg(0, 0, 0, height());
     lg.setColorAt(0.0f, bg/*Operations::colorMid(bg, fg, 8, 1)*/);
@@ -293,6 +308,45 @@ FooBar::mouseMoveEvent(QMouseEvent *e)
     }
 }
 
+static QImage closer;
+
+static QImage closeImg( QColor color )
+{
+    QImage img(QSize(16, 16), QImage::Format_ARGB32);
+    img.fill(Qt::transparent);
+    QPainter p(&img);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.translate(0.5f, 0.5f);
+    p.setPen(QPen(color, 2.0f));
+    int a = 4;
+    p.setClipRect(img.rect().adjusted(0, a, 0, -(a+2)));
+    p.drawLine(img.rect().topLeft(), img.rect().bottomRight());
+    p.drawLine(img.rect().topRight(), img.rect().bottomLeft());
+    p.end();
+    return img;
+}
+
+void
+TabCloser::paintEvent(QPaintEvent *)
+{
+    if ( closer.isNull() )
+    {
+        QColor fg(palette().color(foregroundRole()));
+        QColor bg(palette().color(backgroundRole()));
+        int y = bg.value()>fg.value()?1:-1;
+        closer = QImage(QSize(16, 16), QImage::Format_ARGB32);
+        closer.fill(Qt::transparent);
+        QPainter p(&closer);
+        p.drawImage(closer.rect().translated(0, y), closeImg(y==1?QColor(255,255,255,bg.value()):QColor(0,0,0,bg.value())));
+        p.drawImage(closer.rect(), closeImg(fg));
+        p.end();
+    }
+
+    QPainter pt(this);
+    pt.drawImage(rect(), closer);
+    pt.end();
+}
+
 TabBar::TabBar(QWidget *parent) : QTabBar(parent)
 {
     setSelectionBehaviorOnRemove(QTabBar::SelectPreviousTab);
@@ -332,6 +386,14 @@ TabBar::mouseReleaseEvent(QMouseEvent *event)
 }
 
 void
+TabBar::tabCloseRequest()
+{
+    TabCloser *tc = static_cast<TabCloser *>(sender());
+    int index = tabAt(tc->geometry().center());
+    emit tabCloseRequested(index);
+}
+
+void
 TabBar::drawTab(QPainter *p, int index)
 {
     QColor fg(parentWidget()->palette().color(foregroundRole()));
@@ -347,54 +409,53 @@ TabBar::drawTab(QPainter *p, int index)
     it.setColorAt(1.0f, Operations::colorMid(bg, fg, 3, 1));
     p->setBrush(Qt::NoBrush);
 
+
+    FooBar::TabShape tabShape = (FooBar::TabShape)Configuration::config.behaviour.tabShape;
+    int rndNess = Configuration::config.behaviour.tabRoundness;
+
     QRect shape(r);
-    shape.setBottom(shape.bottom()-1);
+    shape.setBottom(shape.bottom()-3);
 //    shape.setTop(shape.top()+3);
-    int overlap = 8;
+    int overlap = qCeil((float)rndNess*1.5f);
     if ( shape.left() > overlap )
         shape.setLeft(shape.left()-overlap);
     if ( shape.right() < rect().width()-overlap )
         shape.setRight(shape.right()+overlap);
 
-//    for ( int i = 0; i < 9; i+=3 )
-//    {
-//        QColor alpha(0, 0, 0, 26);
-//        p->setPen(QPen(alpha, i));
-//        p->drawPath(FooBar::tab(shape, 6));
-//        if ( index == currentIndex() )
-//            p->drawLine(0, height()-2, width()-1, height()-2);
-//    }
-
     p->setPen(fg);
-    p->drawPath(FooBar::tab(shape, 6));
+
+    p->drawPath(FooBar::tab(shape, rndNess, tabShape));
     if ( index == currentIndex() )
         p->setBrush(FooBar::headGrad());
     else
         p->setBrush(it);
 
     p->setPen(QColor(255, 255, 255, bg.value()));
-    p->drawPath(FooBar::tab(shape.adjusted(1, 1, -1, 1), 6));
+    p->drawPath(FooBar::tab(shape.adjusted(1, 1, -1, 1), rndNess, tabShape));
 
     if ( index == currentIndex() )
     {
         p->setPen(QColor(255, 255, 255, bg.value()));
         p->drawLine(rect().bottomLeft(), rect().bottomRight());
         p->setPen(Qt::NoPen);
-        p->drawPath(FooBar::tab(shape.adjusted(2, 2, -2, 2), 5));
+        p->drawPath(FooBar::tab(shape.adjusted(2, 2, -2, 2), rndNess, tabShape));
     }
 
+    tabIcon(index).paint(p, QRect(r.x() == rect().x() ? overlap : r.x(), r.y(), 16, r.bottom()-3));
     QFont f(font());
     f.setBold(index == currentIndex());
     int l = QFontMetrics(f).width(s);
     p->setFont(f);
 
+    r.setRight(tabButton(index, RightSide)->geometry().x());
+    r.setLeft(r.x() == rect().x() ? r.left()+20+overlap : r.left()+20);
     int y = bg.value() > fg.value() ? 1 : -1;
     QColor emboss(Operations::colorMid(bg, y==1 ? Qt::white : Qt::black, 2, 1));
     p->setPen(emboss);
-    p->drawText(r.translated(0, y), l > r.width() ? Qt::AlignLeft|Qt::AlignVCenter : Qt::AlignCenter, s);
+    p->drawText(r.translated(0, y), /*l > r.width() ?*/ Qt::AlignLeft|Qt::AlignVCenter /*: Qt::AlignCenter*/, s);
 
     p->setPen(fg);
-    p->drawText(r, l > r.width() ? Qt::AlignLeft|Qt::AlignVCenter : Qt::AlignCenter, s);
+    p->drawText(r, /*l > r.width() ?*/ Qt::AlignLeft|Qt::AlignVCenter /*: Qt::AlignCenter*/, s);
 }
 
 void
@@ -427,4 +488,16 @@ TabBar::tabSizeHint(int index) const
 //        return QSize(qMin(150,rect().width()/count()), QTabBar::tabSizeHint(index).height()+3);
 //    else
         return QSize(qMin(150,rect().width()/count()), QTabBar::tabSizeHint(index).height());
+}
+
+void
+TabBar::tabInserted(int index)
+{
+    QTabBar::tabInserted(index);
+    if ( Configuration::config.behaviour.gayWindow )
+    {
+        TabCloser *tc = new TabCloser();
+        connect(tc, SIGNAL(clicked()), this, SLOT(tabCloseRequest()));
+        setTabButton(index, RightSide, tc);
+    }
 }
