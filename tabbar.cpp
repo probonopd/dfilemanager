@@ -158,6 +158,10 @@ FooBar::correctTabBarHeight()
     tl->setSpacing(0);
     tl->addWidget(m_tabBar);
 
+    QFont font = m_tabBar->font();
+    font.setPointSize(8);
+    m_tabBar->setFont(font);
+
     layout->addLayout(tl);
     setLayout(layout);
     setContentsMargins(0, 0, 0, 0);
@@ -414,7 +418,7 @@ TabBar::drawTab(QPainter *p, int index)
     int rndNess = Configuration::config.behaviour.tabRoundness;
 
     QRect shape(r);
-    shape.setBottom(shape.bottom()-3);
+    shape.setBottom(shape.bottom()-1);
 //    shape.setTop(shape.top()+3);
     int overlap = qCeil((float)rndNess*1.5f);
     if ( shape.left() > overlap )
@@ -484,9 +488,9 @@ TabBar::paintEvent(QPaintEvent *event)
 QSize
 TabBar::tabSizeHint(int index) const
 {
-//    if ( Configuration::config.behaviour.gayWindow )
-//        return QSize(qMin(150,rect().width()/count()), QTabBar::tabSizeHint(index).height()+3);
-//    else
+    if ( Configuration::config.behaviour.gayWindow )
+        return QSize(qMin(150,rect().width()/count()), 22/*QTabBar::tabSizeHint(index).height()+3*/);
+    else
         return QSize(qMin(150,rect().width()/count()), QTabBar::tabSizeHint(index).height());
 }
 
