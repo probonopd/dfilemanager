@@ -212,7 +212,7 @@ MainWindow::createActions()
     m_menuAct->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+M") );
     m_menuAct->setShortcutContext( Qt::ApplicationShortcut );
     m_menuAct->setObjectName("actionMenu");
-    m_menuAct->setCheckable(true);
+    m_menuAct->setEnabled(!Configuration::config.behaviour.gayWindow);
     connect(m_menuAct,SIGNAL(triggered()),this, SLOT(toggleMenuVisible()));
     addAction(m_menuAct);
 
@@ -278,6 +278,9 @@ MainWindow::createMenus()
     m_fileMenu->addAction(m_propertiesAct);
     m_fileMenu->addAction(m_exitAct);
 
+    m_mainMenu = new QMenu("Menu", this);
+    m_mainMenu->addMenu(m_fileMenu);
+
     m_editMenu = menuBar()->addMenu(tr("&Edit"));
     m_editMenu->addAction(m_mkDirAct);
     m_editMenu->addAction(m_delCurrentSelectionAct);
@@ -294,12 +297,14 @@ MainWindow::createMenus()
     m_editMenu->addAction(m_openInTabAct);
     m_editMenu->addSeparator();
     m_editMenu->addAction(m_configureAct);
+    m_mainMenu->addMenu(m_editMenu);
 
     m_viewMenu = menuBar()->addMenu(tr("&View"));
     m_viewMenu->addAction(m_menuAct);
     m_viewMenu->addAction(m_statAct);
     m_viewMenu->addAction(m_pathEditAct);
     m_viewMenu->addAction(m_pathVisibleAct);
+    m_mainMenu->addMenu(m_viewMenu);
 
     m_goMenu = new Menu(this);
     m_goMenu->setTitle(tr("&Go"));
@@ -311,6 +316,7 @@ MainWindow::createMenus()
     m_goMenu->addAction(m_homeAct);
     m_goMenu->addSeparator();
     connect ( m_goMenu, SIGNAL(aboutToShow()), this, SLOT(addBookmarks()) );
+    m_mainMenu->addMenu(m_goMenu);
 
     menuBar()->addSeparator();
 
@@ -318,6 +324,7 @@ MainWindow::createMenus()
     m_helpMenu->addAction(m_aboutAct);
     m_helpMenu->addAction(m_aboutQtAct);
     addAction(m_menuAct);
+    m_mainMenu->addMenu(m_helpMenu);
 }
 
 void

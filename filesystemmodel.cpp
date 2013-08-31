@@ -30,6 +30,7 @@
 using namespace DFM;
 
 static QAbstractItemView *s_currentView = 0;
+static QMap<QString, QIcon> s_themedDirs;
 
 FileIconProvider::FileIconProvider(FileSystemModel *model)
     : QFileIconProvider()
@@ -42,8 +43,8 @@ FileIconProvider::FileIconProvider(FileSystemModel *model)
 QIcon
 FileIconProvider::icon(const QFileInfo &info) const
 {
-    if ( info.isDir() && m_themedDirs.contains(info.filePath()) )
-        return m_themedDirs.value(info.filePath());
+    if ( info.isDir() && s_themedDirs.contains(info.filePath()) )
+        return s_themedDirs.value(info.filePath());
 //    QIcon icn = QFileIconProvider::icon(info);
 //    if ( icn.name() == "application-octet-stream" )
 //        icn = QIcon::fromTheme("application-octet-stream");
@@ -58,9 +59,9 @@ FileIconProvider::loadThemedFolders(const QString &path)
         const QString &filePath = QString("%1%2%3").arg(path).arg(QDir::separator()).arg(file);
         const QSettings settings(QString("%1%2.directory").arg(filePath).arg(QDir::separator()), QSettings::IniFormat);
         QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString());
-        if ( !icon.isNull() )
+        if ( !icon.isNull() && !s_themedDirs.contains(filePath) )
         {
-            m_themedDirs.insert(filePath, icon);
+            s_themedDirs.insert(filePath, icon);
             const QModelIndex &index = m_fsModel->index(filePath);
             emit dataChanged(index, index);
         }

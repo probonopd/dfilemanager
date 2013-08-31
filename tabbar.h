@@ -27,9 +27,11 @@
 #include <QWidget>
 #include <QMouseEvent>
 
+#include "mainwindow.h"
+
 namespace DFM
 {
-
+class MainWindow;
 class WinButton : public QWidget
 {
     Q_OBJECT
@@ -50,6 +52,7 @@ private slots:
 
 private:
     Type m_type;
+    MainWindow *m_mainWin;
     bool m_hasPress;
 };
 
@@ -83,6 +86,7 @@ private:
     int m_topMargin;
     bool m_hasPress;
     QPoint m_pressPos;
+    MainWindow *m_mainWin;
     friend class TabBar;
 };
 
@@ -109,6 +113,8 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
     void paintEvent(QPaintEvent *event);
     void tabInserted(int index);
+    void mouseMoveEvent(QMouseEvent *e);
+    void leaveEvent(QEvent *e);
     void drawTab( QPainter *p, int index );
 
 private slots:
@@ -117,6 +123,7 @@ private slots:
 private:
     void genNewTabButton();
     friend class FooBar;
+    int m_hoveredTab;
 };
 
 }

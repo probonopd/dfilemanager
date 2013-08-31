@@ -21,26 +21,34 @@
 
 #include "tabbar.h"
 #include "config.h"
-#include "mainwindow.h"
 #include "operations.h"
+#include "iconprovider.h"
 
 #include <QTextLayout>
 #include <qmath.h>
 
 using namespace DFM;
 
-WinButton::WinButton(Type t, QWidget *parent) : QWidget(parent), m_hasPress(false), m_type(t)
+static QColor bg;
+static QColor fg;
+static QColor hl;
+
+WinButton::WinButton(Type t, QWidget *parent)
+    : QWidget(parent)
+    , m_hasPress(false)
+    , m_type(t)
+    , m_mainWin(MainWindow::currentWindow())
 {
     switch ( t )
     {
     case Min:
-        connect(this, SIGNAL(clicked()), MainWindow::currentWindow(), SLOT(showMinimized()));
+        connect(this, SIGNAL(clicked()), m_mainWin, SLOT(showMinimized()));
         break;
     case Max:
         connect(this, SIGNAL(clicked()), this, SLOT(toggleMax()));
         break;
     case Close:
-        connect(this, SIGNAL(clicked()), MainWindow::currentWindow(), SLOT(close()));
+        connect(this, SIGNAL(clicked()), m_mainWin, SLOT(close()));
         break;
     default:break;
     }
@@ -98,21 +106,22 @@ WinButton::paintEvent(QPaintEvent *e)
 void
 WinButton::toggleMax()
 {
-    if ( MainWindow::currentWindow()->isMaximized() )
-        MainWindow::currentWindow()->showNormal();
+    if ( m_mainWin->isMaximized() )
+        m_mainWin->showNormal();
     else
-        MainWindow::currentWindow()->showMaximized();
+        m_mainWin->showMaximized();
 }
 
 FooBar::FooBar(QWidget *parent)
     : QWidget(parent)
     , m_tabBar(0L)
     , m_topMargin(8)
+    , m_mainWin(MainWindow::currentWindow())
     , m_toolBar(MainWindow::currentWindow()->toolBar())
     , m_hasPress(false)
     , m_pressPos(QPoint())
 {
-    MainWindow::currentWindow()->installEventFilter(this);
+    m_mainWin->installEventFilter(this);
     m_toolBar->installEventFilter(this);
     m_toolBar->setAttribute(Qt::WA_NoSystemBackground);
     m_toolBar->setAutoFillBackground(false);
@@ -161,12 +170,37 @@ FooBar::correctTabBarHeight()
     QFont font = m_tabBar->font();
     font.setPointSize(8);
     m_tabBar->setFont(font);
+    m_tabBar->setAttribute(Qt::WA_Hover);
+    m_tabBar->setMouseTracking(true);
 
     layout->addLayout(tl);
+    QToolButton *menu = new QToolButton(this);
+
+    QPixmap confPix(16, 16);
+    confPix.fill(Qt::transparent);
+    QPainter p(&confPix);
+
+    bg = m_mainWin->palette().color(backgroundRole());
+    fg = m_mainWin->palette().color(foregroundRole());
+    hl = m_mainWin->palette().color(QPalette::Highlight);
+    int y = bg.value() > fg.value() ? 1 : -1;
+    QColor emboss(y==1?QColor(255,255,255,bg.value()):QColor(0,0,0,fg.value()));
+
+    QPixmap emb(IconProvider::icon(IconProvider::Configure, 16, emboss, false).pixmap(16));
+    QPixmap realPix(IconProvider::icon(IconProvider::Configure, 16, fg, false).pixmap(16));
+
+    p.drawPixmap(confPix.rect().translated(0, y), emb);
+    p.drawPixmap(confPix.rect(), realPix);
+    p.end();
+
+    menu->setIcon(confPix);
+    menu->setMenu(m_mainWin->mainMenu());
+    menu->setPopupMode(QToolButton::InstantPopup);
+    layout->addWidget(menu);
     setLayout(layout);
     setContentsMargins(0, 0, 0, 0);
     setFixedHeight(m_tabBar->height()+m_topMargin);
-    MainWindow::currentWindow()->setContentsMargins(0, height(), 0, 0);
+    m_mainWin->setContentsMargins(0, height(), 0, 0);
 }
 
 QPainterPath
@@ -201,7 +235,7 @@ FooBar::tab(const QRect &r, int round, TabShape shape)
 QRegion
 FooBar::shape()
 {
-    int w = MainWindow::currentWindow()->width(), h = MainWindow::currentWindow()->height();
+    int w = m_mainWin->width(), h = m_mainWin->height();
     QRegion mask = QRegion(0, 2, w, h-4);
     mask += QRegion(2, 0, w-4, h);
     mask += QRegion(1, 1, w-2, h-2);
@@ -212,10 +246,6 @@ QLinearGradient
 FooBar::headGrad()
 {
     QWidget *w = MainWindow::currentWindow();
-    QPalette pal = w->palette();
-    QColor bg(pal.color(w->backgroundRole()));
-    QColor fg(pal.color(w->foregroundRole()));
-//    QColor mid(Operations::colorMid(bg ,fg, 10, 1));
     QColor topMid(Operations::colorMid(Qt::white, bg));
     QColor bottomMid(Operations::colorMid(Qt::black, bg, 1, 3));
     QLinearGradient lg(0, 0, 0, headHeight());
@@ -231,9 +261,6 @@ FooBar::paintEvent(QPaintEvent *e)
     p.setBrushOrigin(rect().topLeft());
     p.setRenderHint(QPainter::Antialiasing);
     p.translate(0.5f, 0.5f);
-
-    QColor fg(parentWidget()->palette().color(parentWidget()->foregroundRole()));
-    QColor bg(parentWidget()->palette().color(parentWidget()->backgroundRole()));
 
     QLinearGradient lg(0, 0, 0, height());
     lg.setColorAt(0.0f, bg/*Operations::colorMid(bg, fg, 8, 1)*/);
@@ -268,11 +295,11 @@ FooBar::paintEvent(QPaintEvent *e)
 bool
 FooBar::eventFilter(QObject *o, QEvent *e)
 {
-    if ( o == MainWindow::currentWindow()
+    if ( o == m_mainWin
          && e->type() == QEvent::Resize )
     {
-        resize(MainWindow::currentWindow()->width(), height());
-        MainWindow::currentWindow()->setMask(shape());
+        resize(m_mainWin->width(), height());
+        m_mainWin->setMask(shape());
         return false;
     }
     if ( o == m_toolBar && e->type() == QEvent::Paint )
@@ -307,7 +334,7 @@ FooBar::mouseMoveEvent(QMouseEvent *e)
 {
     if ( m_hasPress )
     {
-        MainWindow::currentWindow()->move(MainWindow::currentWindow()->pos()+(e->globalPos()-m_pressPos));
+        m_mainWin->move(m_mainWin->pos()+(e->globalPos()-m_pressPos));
         m_pressPos = e->globalPos();
     }
 }
@@ -335,8 +362,6 @@ TabCloser::paintEvent(QPaintEvent *)
 {
     if ( closer.isNull() )
     {
-        QColor fg(palette().color(foregroundRole()));
-        QColor bg(palette().color(backgroundRole()));
         int y = bg.value()>fg.value()?1:-1;
         closer = QImage(QSize(16, 16), QImage::Format_ARGB32);
         closer.fill(Qt::transparent);
@@ -400,9 +425,6 @@ TabBar::tabCloseRequest()
 void
 TabBar::drawTab(QPainter *p, int index)
 {
-    QColor fg(parentWidget()->palette().color(foregroundRole()));
-    QColor bg(parentWidget()->palette().color(backgroundRole()));
-
     QRect r(tabRect(index));
     QString s(tabText(index));
     if ( !r.isValid() )
@@ -410,7 +432,7 @@ TabBar::drawTab(QPainter *p, int index)
 
     QLinearGradient it(r.topLeft(), r.bottomLeft());
     it.setColorAt(0.0f, bg);
-    it.setColorAt(1.0f, Operations::colorMid(bg, fg, 3, 1));
+    it.setColorAt(1.0f, index==m_hoveredTab? Operations::colorMid(bg,hl) :Operations::colorMid(bg, fg, 3, 1));
     p->setBrush(Qt::NoBrush);
 
 
@@ -484,6 +506,32 @@ TabBar::paintEvent(QPaintEvent *event)
     p.drawLine(0, height()-2, width(), height()-2);
     drawTab(&p, currentIndex());
     p.end();
+}
+
+void
+TabBar::mouseMoveEvent(QMouseEvent *e)
+{
+    QTabBar::mouseMoveEvent(e);
+    if ( Configuration::config.behaviour.gayWindow )
+    {
+        int t = tabAt(e->pos());
+        if ( tabRect(t).isValid() )
+            m_hoveredTab = t;
+        else
+            m_hoveredTab = -1;
+        update();
+    }
+}
+
+void
+TabBar::leaveEvent(QEvent *e)
+{
+    QTabBar::leaveEvent(e);
+    if ( Configuration::config.behaviour.gayWindow )
+    {
+        m_hoveredTab = -1;
+        update();
+    }
 }
 
 QSize

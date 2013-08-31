@@ -54,7 +54,6 @@ signals:
     void dataChanged(const QModelIndex &f, const QModelIndex &e);
 
 private:
-    QMap<QString, QIcon> m_themedDirs;
     FileSystemModel *m_fsModel;
 };
 

@@ -44,6 +44,7 @@
 namespace DFM
 {
 
+class TabBar;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -58,6 +59,7 @@ public:
     static QList<MainWindow *> openWindows();
     inline InfoWidget *infoWidget() { return m_infoWidget; }
     inline QList<QAction *> acts() const { return m_actions; }
+    inline QMenu *mainMenu() { return m_mainMenu; }
     void updateConfig();
     void createMenus();
 
@@ -148,6 +150,7 @@ private:
     TabBar *m_tabBar;
     QMainWindow *m_tabWin;
     QList<QAction *> m_actions;
+    QMenu *m_mainMenu;
 
     QMenu *m_fileMenu, *m_editMenu, *m_goMenu, *m_viewMenu, *m_helpMenu;
     QToolBar *m_toolBar;

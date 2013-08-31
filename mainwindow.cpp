@@ -63,7 +63,6 @@ MainWindow::MainWindow(QStringList arguments)
         m_tabBar = new TabBar(fooBar);
         fooBar->setTabBar(m_tabBar);
         Configuration::config.behaviour.hideTabBarWhenOnlyOneTab = false;
-//        setContentsMargins(0, m_tabBar->height(), 0, 0);
     }
     else
         m_tabBar = new TabBar(center);
@@ -107,6 +106,9 @@ MainWindow::MainWindow(QStringList arguments)
     createMenus();
     createToolBars();
     createSlider();
+
+    if ( Configuration::config.behaviour.gayWindow )
+        menuBar()->hide();
 
     m_tabBar->setDocumentMode(true);
     m_tabWin->setCentralWidget(m_stackedWidget);
@@ -607,8 +609,13 @@ MainWindow::addTab(const QString &path)
     m_stackedWidget->addWidget(container);
     if (!m_fsModel)
         m_fsModel = container->model();
+    static_cast<FileIconProvider *>(m_fsModel->iconProvider())->loadThemedFolders(m_fsModel->rootPath());
     if ( Configuration::config.behaviour.gayWindow )
+    {
+        QString parentPath = newPath.mid(0, newPath.lastIndexOf(QDir::separator()));
+        static_cast<FileIconProvider *>(m_fsModel->iconProvider())->loadThemedFolders(parentPath);
         m_tabBar->addTab(m_fsModel->iconProvider()->icon(QFileInfo(newPath)), QFileInfo(newPath).fileName());
+    }
     else
         m_tabBar->addTab(QFileInfo(newPath).fileName());
 
