@@ -212,6 +212,7 @@ MainWindow::createActions()
     m_menuAct->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+M") );
     m_menuAct->setShortcutContext( Qt::ApplicationShortcut );
     m_menuAct->setObjectName("actionMenu");
+    m_menuAct->setCheckable(true);
     m_menuAct->setEnabled(!Configuration::config.behaviour.gayWindow);
     connect(m_menuAct,SIGNAL(triggered()),this, SLOT(toggleMenuVisible()));
     addAction(m_menuAct);
