@@ -115,7 +115,8 @@ Configuration::writeConfiguration()
     settings()->setValue("start.view", config.behaviour.view);
     settings()->setValue("iconView.iconSize", config.views.iconView.iconSize);
     settings()->setValue("flowSize", config.views.flowSize);
-    settings()->setValue("hideTabBarWhenOnlyOne", config.behaviour.hideTabBarWhenOnlyOneTab);
+    if ( !config.behaviour.gayWindow )
+        settings()->setValue("hideTabBarWhenOnlyOne", config.behaviour.hideTabBarWhenOnlyOneTab);
     settings()->setValue("styleSheet", config.styleSheet);
     settings()->setValue("views.singleClick", config.views.singleClick);
 //    settings()->setValue("behaviour.gayWindow", config.behaviour.gayWindow);

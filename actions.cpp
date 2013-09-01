@@ -326,6 +326,9 @@ MainWindow::createMenus()
     m_helpMenu->addAction(m_aboutQtAct);
     addAction(m_menuAct);
     m_mainMenu->addMenu(m_helpMenu);
+
+    if ( Configuration::config.behaviour.gayWindow )
+        m_menuAct->setChecked(false);
 }
 
 void
