@@ -47,6 +47,9 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
 
     m_back = false;
 
+    QString parentPath = rootPath.mid(0, rootPath.lastIndexOf(QDir::separator()));
+    static_cast<FileIconProvider *>(m_fsModel->iconProvider())->loadThemedFolders(parentPath);
+
     m_viewStack->layout()->setSpacing(0);
 //    setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
 

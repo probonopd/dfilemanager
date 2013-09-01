@@ -163,6 +163,9 @@ FileSystemModel::data(const QModelIndex &index, int role) const
          && fileInfo(index).isDir() )
         return iconProvider()->icon(fileInfo(index));
 
+    if ( role == IconName )
+        return iconProvider()->icon(fileInfo(index)).name();
+
     //thumbnails in views...
 
     if ( Configuration::config.views.showThumbs

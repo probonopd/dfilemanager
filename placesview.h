@@ -54,7 +54,7 @@ public:
     enum Info { Name = 0, Path = 1, Icon = 2 };
     inline Place(const QString &name = QString(), const QString &path = QString(), const QString &iconName = QString())
     {
-        m_values << name << path << iconName;
+        m_values << name << path << iconName; ;
     }
     inline Place(const QStringList &texts = QStringList()) : m_values(texts) { while (m_values.count() < 3) m_values << QString(); }
     inline Place( Place *p ) { m_values << p->name() << p->path() << p->iconName(); }

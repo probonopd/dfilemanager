@@ -215,7 +215,7 @@ ThumbsLoader::genReflection(const QPair<QImage, QModelIndex> &imgStr)
     if ( !m_currentView || !m_fsModel )
         return;
     const QModelIndex &index = imgStr.second;
-    const QString &name = qvariant_cast<QIcon>(m_fsModel->data(index, Qt::DecorationRole)).name();
+    const QString &name = m_fsModel->data(index, DFM::FileSystemModel::IconName).toString();
     if ( !m_loadedThumbs[FallBackRefl].contains(name) )
         m_loadedThumbs[FallBackRefl].insert(name, reflection(imgStr.first));
     emit dataChanged(index, index);

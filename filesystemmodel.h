@@ -68,7 +68,8 @@ public:
         FilePermissions = Qt::UserRole + 3,
         Thumbnail = Qt::UserRole +4,
         Reflection = Qt::UserRole + 5,
-        FlowPic = Qt::UserRole + 6
+        FlowPic = Qt::UserRole + 6,
+        IconName = Qt::UserRole + 7
     };
     explicit FileSystemModel(QObject *parent = 0);
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;

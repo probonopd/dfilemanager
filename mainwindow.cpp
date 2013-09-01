@@ -611,11 +611,7 @@ MainWindow::addTab(const QString &path)
         m_fsModel = container->model();
     static_cast<FileIconProvider *>(m_fsModel->iconProvider())->loadThemedFolders(m_fsModel->rootPath());
     if ( Configuration::config.behaviour.gayWindow )
-    {
-        QString parentPath = newPath.mid(0, newPath.lastIndexOf(QDir::separator()));
-        static_cast<FileIconProvider *>(m_fsModel->iconProvider())->loadThemedFolders(parentPath);
         m_tabBar->addTab(m_fsModel->iconProvider()->icon(QFileInfo(newPath)), QFileInfo(newPath).fileName());
-    }
     else
         m_tabBar->addTab(QFileInfo(newPath).fileName());
 

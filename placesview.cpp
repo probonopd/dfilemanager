@@ -125,8 +125,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     painter->setRenderHint( QPainter::Antialiasing );
 
     const bool &underMouse = option.state & QStyle::State_MouseOver,
-            &selected = option.state & QStyle::State_Selected,
-            &hasFocus = option.state & QStyle::State_HasFocus;
+            &selected = option.state & QStyle::State_Selected;
 
     QColor baseColor = m_placesView->palette().color( QPalette::Base );
     if ( underMouse )
@@ -233,7 +232,9 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Solid::Devic
     , m_timer(new QTimer(this))
     , m_solid(solid)
 {
-    m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole())));
+//    QColor mid = Operations::colorMid( m_view->palette().color( QPalette::Base ), m_view->palette().color( QPalette::Text ) );
+//    QColor fg = Operations::colorMid( m_view->palette().color( QPalette::Highlight ), mid, 1, 5 );
+    m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(QPalette::Text)));
     m_tb->setVisible(true);
     m_tb->setFixedSize(16, 16);
     m_tb->setToolTip( isMounted() ? "Unmount" : "Mount" );
