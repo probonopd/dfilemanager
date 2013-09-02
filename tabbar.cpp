@@ -319,6 +319,9 @@ FooBar::eventFilter(QObject *o, QEvent *e)
         if ( Configuration::config.behaviour.frame )
         {
             m_frame->resize(m_mainWin->size());
+            QRegion mask = m_frame->rect();
+            mask -= m_frame->rect().adjusted(1, 4, -1, -4);
+            m_frame->setMask(mask);
             move(0, 1);
         }
         m_mainWin->setMask(shape());
