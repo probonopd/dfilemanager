@@ -448,43 +448,6 @@ TabBar::tabCloseRequest()
 }
 
 void
-TabBar::genPixmaps()
-{
-    if ( !count() )
-        return;
-    QRect r(tabRect(0)); //all tabs have same size
-
-    FooBar::TabShape tabShape = (FooBar::TabShape)Configuration::config.behaviour.tabShape;
-    int rndNess = Configuration::config.behaviour.tabRoundness;
-
-    int overlap = qCeil((float)rndNess*1.5f);
-    QRect shape(r.adjusted(-overlap, 0, overlap, 0));
-
-    QPixmap p(shape.size());
-    p.fill(Qt::transparent);
-    QPainter pt(&p);
-    pt.setRenderHint(QPainter::Antialiasing);
-    pt.setPen(Qt::NoPen);
-    pt.setBrush(fg);
-    pt.drawPath(FooBar::tab(shape, rndNess, tabShape));
-
-    pt.setCompositionMode(QPainter::CompositionMode_DestinationOut);
-    pt.drawPath(FooBar::tab(shape.adjusted(1, 1, -1, 0), rndNess, tabShape));
-    pt.setCompositionMode(QPainter::CompositionMode_SourceOver);
-
-    QLinearGradient it(shape.topLeft(), shape.bottomLeft());
-    it.setColorAt(0.0f, bg);
-    it.setColorAt(1.0f, /*index==m_hoveredTab ? Operations::colorMid(bg,hl) : */Operations::colorMid(bg, fg, 3, 1));
-
-    pt.setBrush(it);
-    pt.drawPath(FooBar::tab(shape.adjusted(1, 1, -1, 0), rndNess, tabShape));
-    pt.end();
-
-    m_pix[0] = p;
-
-}
-
-void
 TabBar::drawTab(QPainter *p, int index)
 {
     QRect r(tabRect(index));
@@ -609,14 +572,6 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
             m_hoveredTab = -1;
         update();
     }
-}
-
-void
-TabBar::resizeEvent(QResizeEvent *e)
-{
-    QTabBar::resizeEvent(e);
-    if ( Configuration::config.behaviour.gayWindow )
-        genPixmaps();
 }
 
 void

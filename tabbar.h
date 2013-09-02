@@ -126,9 +126,7 @@ protected:
     void tabInserted(int index);
     void mouseMoveEvent(QMouseEvent *e);
     void leaveEvent(QEvent *e);
-    void resizeEvent(QResizeEvent *e);
     void drawTab( QPainter *p, int index );
-    void genPixmaps();
 
 private slots:
     void tabCloseRequest();
@@ -137,7 +135,6 @@ private:
     void genNewTabButton();
     friend class FooBar;
     int m_hoveredTab;
-    QPixmap m_pix[3];
 };
 
 }
