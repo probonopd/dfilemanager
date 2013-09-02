@@ -266,18 +266,20 @@ CopyDialog::pauseCLicked()
 
 //--------------------------------------------------------------------------------------------------------------
 
-Job *jobInstance = 0;
-
 Job::Job(QObject *parent)
     : QObject(parent)
-    , m_copyDialog(new CopyDialog(MainWindow::currentWindow())) { }
+    , m_copyDialog(0) { }
 
-Job
-*Job::instance()
+void
+Job::remove(const QStringList &paths)
 {
-    if ( !jobInstance )
-        jobInstance = new Job( qApp );
-    return jobInstance;
+    (new Job(MainWindow::currentWindow()))->rm(paths);
+}
+
+void
+Job::copy(const QStringList &sourceFiles, const QString &destination, bool cut)
+{
+    (new Job(MainWindow::currentWindow()))->cp(sourceFiles, destination, cut);
 }
 
 void
@@ -295,7 +297,7 @@ Job::getDirs(const QString &dir, quint64 *fileSize)
 }
 
 void
-Job::cp(const QStringList &copyFiles, const QString &destination, const bool &cut)
+Job::cp(const QStringList &copyFiles, const QString &destination, bool cut)
 {
     m_canceled = false;
     m_cut = cut;
@@ -315,6 +317,9 @@ Job::cp(const QStringList &copyFiles, const QString &destination, const bool &cu
             m_fileSize += fileInfo.size();
     }
 
+    if ( m_copyDialog )
+        delete m_copyDialog;
+    m_copyDialog = new CopyDialog(MainWindow::currentWindow());
     m_copyDialog->setWindowTitle(cut ? "Moving..." : "Copying...");
     m_copyDialog->setSizeGripEnabled(false);
     m_copyDialog->show();

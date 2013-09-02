@@ -32,6 +32,16 @@
 namespace DFM
 {
 class MainWindow;
+
+class WindowFrame : public QWidget
+{
+public:
+    inline explicit WindowFrame(QWidget *parent = 0) : QWidget(parent) {setAttribute(Qt::WA_TransparentForMouseEvents);}
+protected:
+    void paintEvent(QPaintEvent *);
+
+};
+
 class WinButton : public QWidget
 {
     Q_OBJECT
@@ -87,6 +97,7 @@ private:
     bool m_hasPress;
     QPoint m_pressPos;
     MainWindow *m_mainWin;
+    WindowFrame *m_frame;
     friend class TabBar;
 };
 
@@ -115,7 +126,9 @@ protected:
     void tabInserted(int index);
     void mouseMoveEvent(QMouseEvent *e);
     void leaveEvent(QEvent *e);
+    void resizeEvent(QResizeEvent *e);
     void drawTab( QPainter *p, int index );
+    void genPixmaps();
 
 private slots:
     void tabCloseRequest();
@@ -124,6 +137,7 @@ private:
     void genNewTabButton();
     friend class FooBar;
     int m_hoveredTab;
+    QPixmap m_pix[3];
 };
 
 }

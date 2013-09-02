@@ -32,6 +32,19 @@ using namespace DFM;
 static QColor bg;
 static QColor fg;
 static QColor hl;
+static QColor high;
+static QColor low;
+
+void
+WindowFrame::paintEvent(QPaintEvent *)
+{
+    QPainter p(this);
+    p.translate(0.5f, 0.5f);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(fg);
+    p.drawRoundedRect(rect().adjusted(0, 0, -1, -1), 2, 2);
+    p.end();
+}
 
 WinButton::WinButton(Type t, QWidget *parent)
     : QWidget(parent)
@@ -87,17 +100,17 @@ WinButton::paintEvent(QPaintEvent *e)
     p.setRenderHint(QPainter::Antialiasing);
 
     QRect r(rect().adjusted(3, 3, -4, -4));
-    QColor fg(isActiveWindow() ? QColor(fcolors[m_type]) : QColor(127, 127, 127, 255));
-    QColor mid(Operations::colorMid(fg, Qt::black, 12, 10));
+    QColor f(isActiveWindow() ? QColor(fcolors[m_type]) : fg);
+    QColor mid(Operations::colorMid(f, Qt::black, 12, 10));
     QRadialGradient rg(r.center()+QPointF(0, (underMouse()&&!m_hasPress)?-1:1), (float)r.width()*0.7f);
-    rg.setColorAt(0.0f, fg);
+    rg.setColorAt(0.0f, f);
     rg.setColorAt(1.0f, mid);
 
     p.setPen(Qt::NoPen);
     p.setBrush(QColor(255, 255, 255,  127));
     p.drawEllipse(r.translated(0.0f, 1.0f));
 
-    p.setPen(Operations::colorMid(fg, Qt::black));
+    p.setPen(Operations::colorMid(f, Qt::black));
     p.setBrush(rg);
     p.drawEllipse(r);
     p.end();
@@ -122,6 +135,8 @@ FooBar::FooBar(QWidget *parent)
     , m_pressPos(QPoint())
 {
     m_mainWin->installEventFilter(this);
+    if ( Configuration::config.behaviour.frame )
+        m_frame = new WindowFrame(m_mainWin);
     m_toolBar->installEventFilter(this);
     m_toolBar->setAttribute(Qt::WA_NoSystemBackground);
     m_toolBar->setAutoFillBackground(false);
@@ -183,8 +198,10 @@ FooBar::correctTabBarHeight()
     bg = m_mainWin->palette().color(backgroundRole());
     fg = m_mainWin->palette().color(foregroundRole());
     hl = m_mainWin->palette().color(QPalette::Highlight);
+    high = Operations::colorMid(bg, Qt::white);
+    low = Operations::colorMid(bg, Qt::black);
     int y = bg.value() > fg.value() ? 1 : -1;
-    QColor emboss(y==1?QColor(255,255,255,bg.value()):QColor(0,0,0,fg.value()));
+    QColor emboss(y==1?high:low);
 
     QPixmap emb(IconProvider::icon(IconProvider::Configure, 16, emboss, false).pixmap(16));
     QPixmap realPix(IconProvider::icon(IconProvider::Configure, 16, fg, false).pixmap(16));
@@ -200,7 +217,7 @@ FooBar::correctTabBarHeight()
     setLayout(layout);
     setContentsMargins(0, 0, 0, 0);
     setFixedHeight(m_tabBar->height()+m_topMargin);
-    m_mainWin->setContentsMargins(0, height(), 0, 0);
+    m_mainWin->setContentsMargins(0, height()+(int)Configuration::config.behaviour.frame, 0, 0);
 }
 
 QPainterPath
@@ -246,8 +263,8 @@ QLinearGradient
 FooBar::headGrad()
 {
     QWidget *w = MainWindow::currentWindow();
-    QColor topMid(Operations::colorMid(Qt::white, bg));
-    QColor bottomMid(Operations::colorMid(Qt::black, bg, 1, 3));
+    QColor topMid(Operations::colorMid(Qt::white, bg, 1, 4));
+    QColor bottomMid(Operations::colorMid(Qt::black, bg, 1, 4));
     QLinearGradient lg(0, 0, 0, headHeight());
     lg.setColorAt(0.0f, topMid);
     lg.setColorAt(1.0f, bottomMid);
@@ -270,7 +287,7 @@ FooBar::paintEvent(QPaintEvent *e)
 
     p.setPen(fg);
     p.drawLine(0, height()-2, width(), height()-2);
-    p.setPen(QColor(255, 255, 255, bg.value()));
+    p.setPen(high);
     p.drawLine(0, height()-1, width(), height()-1);
 
     QPainterPath path;
@@ -283,7 +300,7 @@ FooBar::paintEvent(QPaintEvent *e)
     path.closeSubpath();
 
     QLinearGradient pg(0, 0, 0, r);
-    pg.setColorAt(0.0f, QColor(255, 255, 255, bg.value()));
+    pg.setColorAt(0.0f, high);
     pg.setColorAt(1.0f, Qt::transparent);
 
     p.setPen(QPen(pg, 1.0f, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
@@ -299,6 +316,11 @@ FooBar::eventFilter(QObject *o, QEvent *e)
          && e->type() == QEvent::Resize )
     {
         resize(m_mainWin->width(), height());
+        if ( Configuration::config.behaviour.frame )
+        {
+            m_frame->resize(m_mainWin->size());
+            move(0, 1);
+        }
         m_mainWin->setMask(shape());
         return false;
     }
@@ -366,7 +388,7 @@ TabCloser::paintEvent(QPaintEvent *)
         closer = QImage(QSize(16, 16), QImage::Format_ARGB32);
         closer.fill(Qt::transparent);
         QPainter p(&closer);
-        p.drawImage(closer.rect().translated(0, y), closeImg(y==1?QColor(255,255,255,bg.value()):QColor(0,0,0,bg.value())));
+        p.drawImage(closer.rect().translated(0, y), closeImg(y==1?high:low));
         p.drawImage(closer.rect(), closeImg(fg));
         p.end();
     }
@@ -423,6 +445,43 @@ TabBar::tabCloseRequest()
 }
 
 void
+TabBar::genPixmaps()
+{
+    if ( !count() )
+        return;
+    QRect r(tabRect(0)); //all tabs have same size
+
+    FooBar::TabShape tabShape = (FooBar::TabShape)Configuration::config.behaviour.tabShape;
+    int rndNess = Configuration::config.behaviour.tabRoundness;
+
+    int overlap = qCeil((float)rndNess*1.5f);
+    QRect shape(r.adjusted(-overlap, 0, overlap, 0));
+
+    QPixmap p(shape.size());
+    p.fill(Qt::transparent);
+    QPainter pt(&p);
+    pt.setRenderHint(QPainter::Antialiasing);
+    pt.setPen(Qt::NoPen);
+    pt.setBrush(fg);
+    pt.drawPath(FooBar::tab(shape, rndNess, tabShape));
+
+    pt.setCompositionMode(QPainter::CompositionMode_DestinationOut);
+    pt.drawPath(FooBar::tab(shape.adjusted(1, 1, -1, 0), rndNess, tabShape));
+    pt.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
+    QLinearGradient it(shape.topLeft(), shape.bottomLeft());
+    it.setColorAt(0.0f, bg);
+    it.setColorAt(1.0f, /*index==m_hoveredTab ? Operations::colorMid(bg,hl) : */Operations::colorMid(bg, fg, 3, 1));
+
+    pt.setBrush(it);
+    pt.drawPath(FooBar::tab(shape.adjusted(1, 1, -1, 0), rndNess, tabShape));
+    pt.end();
+
+    m_pix[0] = p;
+
+}
+
+void
 TabBar::drawTab(QPainter *p, int index)
 {
     QRect r(tabRect(index));
@@ -430,40 +489,50 @@ TabBar::drawTab(QPainter *p, int index)
     if ( !r.isValid() )
         return;
 
-    QLinearGradient it(r.topLeft(), r.bottomLeft());
-    it.setColorAt(0.0f, bg);
-    it.setColorAt(1.0f, index==m_hoveredTab? Operations::colorMid(bg,hl) :Operations::colorMid(bg, fg, 3, 1));
-    p->setBrush(Qt::NoBrush);
-
-
     FooBar::TabShape tabShape = (FooBar::TabShape)Configuration::config.behaviour.tabShape;
     int rndNess = Configuration::config.behaviour.tabRoundness;
 
     int overlap = qCeil((float)rndNess*1.5f);
-    QRect shape(r.adjusted(-overlap, 0, overlap, -1));
+    QRect shape(r.adjusted(-overlap, 1, overlap, 0));
 
     if ( shape.left() < rect().left() )
         shape.setLeft(rect().left());
     if ( shape.right() > rect().right() )
         shape.setRight(rect().right());
 
-    p->setPen(fg);
-
-    p->drawPath(FooBar::tab(shape, rndNess, tabShape));
-    if ( index == currentIndex() )
-        p->setBrush(FooBar::headGrad());
-    else
-        p->setBrush(it);
-
-    p->setPen(QColor(255, 255, 255, bg.value()));
-    p->drawPath(FooBar::tab(shape.adjusted(1, 1, -1, 1), rndNess, tabShape));
+    p->setPen(QPen(fg, 3.0f));
+    p->drawPath(FooBar::tab(shape, rndNess, tabShape)); //dark frame on all tabs
 
     if ( index == currentIndex() )
     {
-        p->setPen(QColor(255, 255, 255, bg.value()));
+        p->setPen(high);
         p->drawLine(rect().bottomLeft(), rect().bottomRight());
-        p->setPen(Qt::NoPen);
-        p->drawPath(FooBar::tab(shape.adjusted(2, 2, -2, 2), rndNess, tabShape));
+        p->setPen(QPen(FooBar::headGrad(), 1.0f));
+        p->drawLine(shape.bottomLeft(), shape.bottomRight());
+        p->setBrush(FooBar::headGrad());
+
+        QLinearGradient hg(shape.topLeft(), shape.bottomLeft());
+        hg.setColorAt(0.0f, Operations::colorMid(high, Qt::white));
+        hg.setColorAt(1.0f, high);
+
+        p->setPen(QPen(hg, 1.5f));
+        p->drawPath(FooBar::tab(shape, rndNess, tabShape));
+    }
+    else
+    {
+        QLinearGradient it(r.topLeft(), r.bottomLeft());
+        it.setColorAt(0.0f, bg);
+        it.setColorAt(1.0f, index==m_hoveredTab ? Operations::colorMid(bg,hl) : Operations::colorMid(bg, fg, 3, 1));
+
+        QColor h = high;
+        h.setAlpha(bg.value());
+        QLinearGradient hg(shape.topLeft(), shape.bottomLeft());
+        hg.setColorAt(0.0f, Operations::colorMid(h, Qt::white));
+        hg.setColorAt(1.0f, h);
+
+        p->setPen(QPen(hg, 1.5f));
+        p->setBrush(it);
+        p->drawPath(FooBar::tab(shape.adjusted(0, 0, 0, 0), rndNess, tabShape));
     }
 
     //icon
@@ -518,7 +587,7 @@ TabBar::paintEvent(QPaintEvent *event)
         drawTab(&p, i);
     for ( int i = count(); i > currentIndex(); --i )
         drawTab(&p, i);
-    p.setPen(parentWidget()->palette().color(parentWidget()->foregroundRole()));
+    p.setPen(fg);
     p.drawLine(0, height()-2, width(), height()-2);
     drawTab(&p, currentIndex());
     p.end();
@@ -540,6 +609,14 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
 }
 
 void
+TabBar::resizeEvent(QResizeEvent *e)
+{
+    QTabBar::resizeEvent(e);
+    if ( Configuration::config.behaviour.gayWindow )
+        genPixmaps();
+}
+
+void
 TabBar::leaveEvent(QEvent *e)
 {
     QTabBar::leaveEvent(e);
@@ -554,7 +631,7 @@ QSize
 TabBar::tabSizeHint(int index) const
 {
     if ( Configuration::config.behaviour.gayWindow )
-        return QSize(qMin(150,rect().width()/count()), Configuration::config.behaviour.tabHeight/*QTabBar::tabSizeHint(index).height()+3*/);
+        return QSize(qMin(Configuration::config.behaviour.tabWidth,rect().width()/count()), Configuration::config.behaviour.tabHeight/*QTabBar::tabSizeHint(index).height()+3*/);
     else
         return QSize(qMin(150,rect().width()/count()), QTabBar::tabSizeHint(index).height());
 }

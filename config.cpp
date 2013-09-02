@@ -72,6 +72,8 @@ Configuration::readConfiguration()
     config.behaviour.tabShape = settings()->value("behaviour.gayWindow.tabShape", 0).toInt();
     config.behaviour.tabRoundness = settings()->value("behaviour.gayWindow.tabRoundness", 6).toInt();
     config.behaviour.tabHeight = settings()->value("behaviour.gayWindow.tabHeight", 22).toInt();
+    config.behaviour.tabWidth = settings()->value("behaviour.gayWindow.tabWidth", 150).toInt();
+    config.behaviour.frame = settings()->value("behaviour.gayWindow.frame", false).toBool();
 
     Configuration::settings()->beginGroup("CustomActions");
     foreach ( const QString &string, settings()->childKeys() )
@@ -123,13 +125,15 @@ Configuration::writeConfiguration()
 //    settings()->setValue("behaviour.gayWindow.tabShape", config.behaviour.tabShape);
 //    settings()->setValue("behaviour.gayWindow.tabRoundness", config.behaviour.tabRoundness);
 //    settings()->setValue("behaviour.gayWindow.tabRoundness", config.behaviour.tabHeight);
+//    settings()->setValue("behaviour.gayWindow.tabWidth", config.behaviour.tabWidth);
+//    settings()->setValue("behaviour.gayWindow.frame", config.behaviour.frame);
 }
 
 static inline QString desktopInfo(const QString &desktop, bool name)
 {
     QString appsPath("/usr/share/applications/");
     QFileInfo desktopFileInfo(appsPath + desktop);
-    if(!desktopFileInfo.exists())
+    if (!desktopFileInfo.exists())
     {
         QString addToPath = desktop.split("-").at(0);
         QString newDesktop = desktop.split("-").at(1);

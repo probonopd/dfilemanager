@@ -149,15 +149,15 @@ class Job : public QObject
     Q_OBJECT
 public:
     explicit Job(QObject *parent = 0);
-    static inline void copy(const QStringList &sourceFiles, const QString &destination, const bool &cut = false) { instance()->cp(sourceFiles, destination, cut); }
-    static inline void remove(const QStringList &paths) { instance()->rm(paths); }
+    static void copy(const QStringList &sourceFiles, const QString &destination, bool cut = false);
+    static void remove(const QStringList &paths);
     void getDirs(const QString &dir, quint64 *fileSize);
+    void cp(const QStringList &copyFiles, const QString &destination, bool cut = false);
+    void rm(const QStringList &paths) { (new IOThread(paths, this))->start(); }
+
 public slots:
     void fileExists( const QStringList files ) { m_ioThread->setMode(FileExistsDialog::mode(files)); }
-protected:
-    static Job *instance();
-    void cp(const QStringList &copyFiles, const QString &destination, const bool &cut = false);
-    void rm(const QStringList &paths) { (new IOThread(paths, this))->start(); }
+
 private:
     quint64 m_fileSize, m_fileProgress;
     CopyDialog *m_copyDialog;
