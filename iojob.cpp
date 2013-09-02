@@ -145,7 +145,7 @@ CopyDialog::CopyDialog(QWidget *parent)
     m_hideFinished = Configuration::settings()->value("hideCPDWhenFinished", 0).toBool();
     m_cbHideFinished->setChecked(m_hideFinished);
 
-    setWindowModality(Qt::ApplicationModal);
+    setWindowModality(Qt::WindowModal);
 
     QFont boldFont(font());
     boldFont.setBold(true);
@@ -207,24 +207,6 @@ CopyDialog::CopyDialog(QWidget *parent)
 }
 
 void
-CopyDialog::hideEvent(QHideEvent *event)
-{
-    Configuration::settings()->setValue("hideCPDWhenFinished", m_hideFinished);
-    QDialog::hideEvent(event);
-}
-
-void
-CopyDialog::showEvent(QShowEvent *event)
-{
-    m_hideFinished = Configuration::settings()->value("hideCPDWhenFinished", 0).toBool();
-    m_cbHideFinished->setChecked(m_hideFinished);
-    m_ok->setEnabled(m_progress->value() == 100);
-    m_cancel->setEnabled(m_progress->value() < 100);
-    m_pause->setEnabled(m_progress->value() < 100);
-    QDialog::showEvent(event);
-}
-
-void
 CopyDialog::setInfo(QString from, QString to, int completeProgress, int currentProgress)
 {
     m_progress->setValue(completeProgress);
@@ -264,11 +246,16 @@ CopyDialog::pauseCLicked()
     emit pauseRequest(m_paused);
 }
 
+void
+CopyDialog::finishedToggled(bool enabled)
+{
+    m_hideFinished = enabled;
+    Configuration::settings()->setValue("hideCPDWhenFinished", m_hideFinished);
+}
+
 //--------------------------------------------------------------------------------------------------------------
 
-Job::Job(QObject *parent)
-    : QObject(parent)
-    , m_copyDialog(0) { }
+Job::Job(QObject *parent) : QObject(parent) {}
 
 void
 Job::remove(const QStringList &paths)
@@ -317,31 +304,27 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut)
             m_fileSize += fileInfo.size();
     }
 
-    if ( m_copyDialog )
-        delete m_copyDialog;
-    m_copyDialog = new CopyDialog(MainWindow::currentWindow());
-    m_copyDialog->setWindowTitle(cut ? "Moving..." : "Copying...");
-    m_copyDialog->setSizeGripEnabled(false);
-    m_copyDialog->show();
+    CopyDialog *copyDialog = new CopyDialog(MainWindow::currentWindow());
+    copyDialog->setWindowTitle(cut ? "Moving..." : "Copying...");
+    copyDialog->setSizeGripEnabled(false);
+    copyDialog->show();
 
 #ifdef Q_WS_X11
     if ( m_fileSize > Operations::getDriveInfo<Operations::Free>( destination ) )
     {
         QMessageBox::critical(MainWindow::currentWindow(), tr("not enough room on destination"), QString("%1 has not enough space").arg(destination));
-        m_copyDialog->hide();
+        copyDialog->hide();
         return;
     }
 #endif
 
     m_ioThread = new IOThread(copyFiles, destination, cut, m_fileSize, this);
-    connect(m_copyDialog, SIGNAL(pauseRequest(bool)), m_ioThread, SLOT(setPaused(bool)));
-    connect(m_copyDialog, SIGNAL(rejected()), m_ioThread, SLOT(cancelCopy()));
-    connect(m_ioThread, SIGNAL(copyProgress(QString, QString, int, int)), m_copyDialog, SLOT(setInfo(QString, QString, int, int)));
-    connect(m_ioThread, SIGNAL(finished()), m_copyDialog, SLOT(finished()));
-//    connect(iot, SIGNAL(fileExists(QString)), m_fileExistsDialog, SLOT(getMode(QString)));
+    connect(copyDialog, SIGNAL(pauseRequest(bool)), m_ioThread, SLOT(setPaused(bool)));
+    connect(copyDialog, SIGNAL(rejected()), m_ioThread, SLOT(cancelCopy()));
+    connect(m_ioThread, SIGNAL(copyProgress(QString, QString, int, int)), copyDialog, SLOT(setInfo(QString, QString, int, int)));
+    connect(m_ioThread, SIGNAL(finished()), copyDialog, SLOT(finished()));
     connect(m_ioThread, SIGNAL(fileExists(QStringList)), this, SLOT(fileExists(QStringList)));
-    connect(m_ioThread, SIGNAL(pauseToggled(bool,bool)), m_copyDialog, SLOT(pauseToggled(bool, bool)));
-//    connect(m_fileExistsDialog, SIGNAL(fileExistsData(Mode,QString)), iot, SLOT(fileExistsAction(Mode,QString)));
+    connect(m_ioThread, SIGNAL(pauseToggled(bool,bool)), copyDialog, SLOT(pauseToggled(bool, bool)));
     m_ioThread->start(); //start copying....
 }
 

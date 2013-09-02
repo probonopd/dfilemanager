@@ -88,10 +88,6 @@ public slots:
     void finished();
     void pauseToggled( const bool &pause, const bool &cut ) { setWindowTitle(cut ? (pause ? "Moving... [paused]" : "Moving..." ) : (pause ? "Copying... [paused]" : "Copying... ")); }
 
-protected:
-    void hideEvent(QHideEvent *);
-    void showEvent(QShowEvent *);
-
 private:
     QProgressBar *m_progress, *m_fileProgress;
     QPushButton *m_ok, *m_cancel, *m_pause;
@@ -101,7 +97,7 @@ private:
 
 private slots:
     void pauseCLicked();
-    void finishedToggled(bool enabled) {  m_hideFinished = enabled; }
+    void finishedToggled(bool enabled);
 };
 
 //-----------------------------------------------------------------------------------------------
@@ -160,7 +156,6 @@ public slots:
 
 private:
     quint64 m_fileSize, m_fileProgress;
-    CopyDialog *m_copyDialog;
     FileExistsDialog *m_fileExistsDialog;
     bool m_canceled, m_cut;
     IOThread *m_ioThread;
