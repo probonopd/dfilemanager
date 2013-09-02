@@ -53,28 +53,23 @@ class FileExistsDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit FileExistsDialog(QWidget *parent = 0);
-    QString newName() { return m_file; }
-    static void getNewInfo(Mode *m, QString *file);
-public slots:
-    Mode getMode(const QString &file);
-protected:
-    bool event(QEvent *);
-signals:
-    void fileExistsData( const Mode &m, const QString &newName );
+    FileExistsDialog(const QStringList &files, QWidget *parent = 0);
+    QPair<Mode, QString> getMode();
+    static QPair<Mode, QString> mode( const QStringList &files );
 
-private slots:
+protected:
+    bool event(QEvent *e);
+
+protected slots:
+    void accept();
     void textChanged(const QString &text);
 
 private:
     QPushButton *m_overWrite, *m_overWriteAll, *m_skip, *m_skipAll, *m_newName;
     QLineEdit *m_edit;
     QLabel *m_name;
-    QString m_file;
-    Mode m_mode;
-
-private slots:
-    void continueAction();
+    QString m_file, m_newFileName;
+    Mode m_mode;   
 };
 
 //-----------------------------------------------------------------------------------------------
@@ -120,15 +115,15 @@ public:
     explicit IOThread(const QStringList &paths = QStringList(), QObject *parent = 0) : QThread(parent), m_type(Remove), m_rmPaths(paths) { connect(this, SIGNAL(finished()), this, SLOT(deleteLater())); }
     void run();
     bool paused() { return m_pause; }
+    void setMode( QPair<Mode, QString> mode ) { m_mode = mode.first; m_newFile = mode.second; if ( m_mode == Cancel ) cancelCopy(); else setPaused(false); }
 
 public slots:
     void cancelCopy() { m_canceled = true; qDebug() << "cancelling copy..."; }
     void setPaused(bool pause);
-    void fileExistsAction(const Mode &m, const QString &file);
 
 signals:
     void copyProgress(const QString &inFile, const QString &outFile, const int &progress, const int &currentProgress);
-    void fileExists(const QString &file);
+    void fileExists(const QStringList &files);
     void pauseToggled( const bool &pause, const bool &cut );
 
 private:
@@ -158,6 +153,7 @@ public:
     static inline void remove(const QStringList &paths) { instance()->rm(paths); }
     void getDirs(const QString &dir, quint64 *fileSize);
 public slots:
+    void fileExists( const QStringList files ) { m_ioThread->setMode(FileExistsDialog::mode(files)); }
 protected:
     static Job *instance();
     void cp(const QStringList &copyFiles, const QString &destination, const bool &cut = false);
@@ -167,7 +163,7 @@ private:
     CopyDialog *m_copyDialog;
     FileExistsDialog *m_fileExistsDialog;
     bool m_canceled, m_cut;
-    IOThread *m_thread;
+    IOThread *m_ioThread;
 };
 
 }

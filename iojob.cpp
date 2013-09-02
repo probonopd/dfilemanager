@@ -30,7 +30,7 @@
 using namespace DFM;
 using namespace IO;
 
-FileExistsDialog::FileExistsDialog(QWidget *parent)
+FileExistsDialog::FileExistsDialog( const QStringList &files, QWidget *parent)
     : QDialog(parent)
     , m_overWrite(new QPushButton(this))
     , m_overWriteAll(new QPushButton(this))
@@ -39,20 +39,30 @@ FileExistsDialog::FileExistsDialog(QWidget *parent)
     , m_newName(new QPushButton(this))
     , m_edit(new QLineEdit(this))
     , m_name(new QLabel(this))
+    , m_file(files[1])
 {
     m_overWrite->setText(tr("Overwrite"));
     m_overWriteAll->setText(tr("Overwrite All"));
     m_skip->setText(tr("Skip"));
     m_skipAll->setText(tr("Skip All"));
     m_newName->setText(tr("New Name"));
+    m_edit->setText(QFileInfo(m_file).fileName());
+    m_name->setText("File " + m_file + " already exists, what do you do?");
 
     setWindowModality(Qt::ApplicationModal);
 
-    connect(m_overWrite, SIGNAL(clicked()), this, SLOT(continueAction()));
-    connect(m_overWriteAll, SIGNAL(clicked()), this, SLOT(continueAction()));
-    connect(m_skip, SIGNAL(clicked()), this, SLOT(continueAction()));
-    connect(m_skipAll, SIGNAL(clicked()), this, SLOT(continueAction()));
-    connect(m_newName, SIGNAL(clicked()), this, SLOT(continueAction()));
+    QFileInfo inInfo(files[0]);
+    QFileInfo outInfo(files[1]);
+
+    m_overWrite->setEnabled( !(inInfo.path() == outInfo.path() && inInfo.isDir()) );
+    m_overWriteAll->setEnabled( !(inInfo.path() == outInfo.path() && inInfo.isDir()) );
+    m_newName->setEnabled(false);
+
+    connect(m_overWrite, SIGNAL(clicked()), this, SLOT(accept()));
+    connect(m_overWriteAll, SIGNAL(clicked()), this, SLOT(accept()));
+    connect(m_skip, SIGNAL(clicked()), this, SLOT(accept()));
+    connect(m_skipAll, SIGNAL(clicked()), this, SLOT(accept()));
+    connect(m_newName, SIGNAL(clicked()), this, SLOT(accept()));
     connect(m_edit, SIGNAL(textChanged(QString)), this, SLOT(textChanged(QString)));
 
     QVBoxLayout *vBox = new QVBoxLayout();
@@ -71,30 +81,10 @@ FileExistsDialog::FileExistsDialog(QWidget *parent)
     setWindowFlags( ( ( windowFlags() | Qt::CustomizeWindowHint ) & ~Qt::WindowCloseButtonHint ) );
 }
 
-void
-FileExistsDialog::getNewInfo(Mode *m, QString *file)
-{
-    FileExistsDialog d(MainWindow::currentWindow());
-    *m = d.getMode(*file);
-    if ( *m == NewName )
-        *file = d.newName();
-}
-
-Mode
-FileExistsDialog::getMode(const QString &file)
-{
-    m_mode = Cancel;
-    m_file = file;
-    m_overWrite->setEnabled(true);
-    m_overWriteAll->setEnabled(true);
-    m_newName->setEnabled(false);
-    m_edit->setText(QFileInfo(file).fileName());
-    m_name->setText("File " + m_file + " already exists, what do you do?");
-    show();
-}
+QPair<Mode, QString> FileExistsDialog::mode(const QStringList &files) { return FileExistsDialog(files, MainWindow::currentWindow()).getMode(); }
 
 void
-FileExistsDialog::continueAction()
+FileExistsDialog::accept()
 {
     if (sender() == m_overWrite)
         m_mode = Overwrite;
@@ -106,15 +96,15 @@ FileExistsDialog::continueAction()
         m_mode = SkipAll;
     else if (sender() == m_newName)
         m_mode = NewName;
+    QDialog::accept();
+}
 
-    m_file = QFileInfo(m_file).dir().path() + QDir::separator() +  m_edit->text();
-    if ( m_mode == NewName && QFileInfo(m_file).exists() )
-    {
-        getMode(m_file);
-        return;
-    }
-    emit fileExistsData(m_mode, m_file);
-    hide();
+QPair<Mode, QString>
+FileExistsDialog::getMode()
+{
+    m_mode = Cancel;
+    exec();
+    return QPair<Mode, QString>(m_mode, m_newFileName);
 }
 
 void
@@ -123,16 +113,19 @@ FileExistsDialog::textChanged(const QString &text)
     const bool hasChanged = text != QFileInfo(m_file).fileName();
     m_overWrite->setEnabled( !hasChanged );
     m_overWriteAll->setEnabled( !hasChanged );
-    m_newName->setEnabled( hasChanged /*&& !QFileInfo( QFileInfo(m_file).path() + QDir::separator() + text ).exists()*/ );
+    m_newFileName = QString("%1%2%3").arg(QFileInfo(m_file).path()).arg(QDir::separator()).arg(text);
+    if ( QFileInfo(m_newFileName).exists() )
+        m_name->setText("File " + m_newFileName + " already exists, what do you do?");
+    m_newName->setEnabled( hasChanged && !QFileInfo(m_newFileName).exists() );
 }
 
 bool
-FileExistsDialog::event(QEvent *event)
+FileExistsDialog::event(QEvent *e)
 {
-    if ( QKeyEvent *ke = dynamic_cast<QKeyEvent*>(event) )
+    if ( QKeyEvent *ke = dynamic_cast<QKeyEvent*>(e) )
         if ( ke->key() == Qt::Key_Escape )
             return true; //user should not can escape
-    return QDialog::event(event);
+    return QDialog::event(e);
 }
 
 //--------------------------------------------------------------------------------------------------------------
@@ -275,9 +268,9 @@ CopyDialog::pauseCLicked()
 
 Job *jobInstance = 0;
 
-Job::Job(QObject *parent) : QObject(parent)
-  , m_fileExistsDialog(new FileExistsDialog(MainWindow::currentWindow()))
-  , m_copyDialog(new CopyDialog(MainWindow::currentWindow())) { }
+Job::Job(QObject *parent)
+    : QObject(parent)
+    , m_copyDialog(new CopyDialog(MainWindow::currentWindow())) { }
 
 Job
 *Job::instance()
@@ -332,15 +325,16 @@ Job::cp(const QStringList &copyFiles, const QString &destination, const bool &cu
     }
 #endif
 
-    IOThread *iot = new IOThread(copyFiles, destination, cut, m_fileSize, this);
-    connect(m_copyDialog, SIGNAL(pauseRequest(bool)), iot, SLOT(setPaused(bool)));
-    connect(m_copyDialog, SIGNAL(rejected()), iot, SLOT(cancelCopy()));
-    connect(iot, SIGNAL(copyProgress(QString, QString, int, int)), m_copyDialog, SLOT(setInfo(QString, QString, int, int)));
-    connect(iot, SIGNAL(finished()), m_copyDialog, SLOT(finished()));
-    connect(iot, SIGNAL(fileExists(QString)), m_fileExistsDialog, SLOT(getMode(QString)));
-    connect(iot, SIGNAL(pauseToggled(bool,bool)), m_copyDialog, SLOT(pauseToggled(bool, bool)));
-    connect(m_fileExistsDialog, SIGNAL(fileExistsData(Mode,QString)), iot, SLOT(fileExistsAction(Mode,QString)));
-    iot->start(); //start copying....
+    m_ioThread = new IOThread(copyFiles, destination, cut, m_fileSize, this);
+    connect(m_copyDialog, SIGNAL(pauseRequest(bool)), m_ioThread, SLOT(setPaused(bool)));
+    connect(m_copyDialog, SIGNAL(rejected()), m_ioThread, SLOT(cancelCopy()));
+    connect(m_ioThread, SIGNAL(copyProgress(QString, QString, int, int)), m_copyDialog, SLOT(setInfo(QString, QString, int, int)));
+    connect(m_ioThread, SIGNAL(finished()), m_copyDialog, SLOT(finished()));
+//    connect(iot, SIGNAL(fileExists(QString)), m_fileExistsDialog, SLOT(getMode(QString)));
+    connect(m_ioThread, SIGNAL(fileExists(QStringList)), this, SLOT(fileExists(QStringList)));
+    connect(m_ioThread, SIGNAL(pauseToggled(bool,bool)), m_copyDialog, SLOT(pauseToggled(bool, bool)));
+//    connect(m_fileExistsDialog, SIGNAL(fileExistsData(Mode,QString)), iot, SLOT(fileExistsAction(Mode,QString)));
+    m_ioThread->start(); //start copying....
 }
 
 //---------------------------------------------------------------------------------------------------------
@@ -364,7 +358,6 @@ IOThread::IOThread(const QStringList &inf, const QString &dest, const bool &cut,
 void
 IOThread::run()
 {
-
     switch (m_type)
     {
     case Copy:
@@ -412,9 +405,9 @@ IOThread::copyRecursive(const QString &inFile, const QString &outFile, bool cut,
     bool error = false;
 
     if (!m_overWriteAll && !m_skipAll)
-        if (QFileInfo(outFile).exists() && !QFileInfo(outFile).isDir())
+        if (QFileInfo(outFile).exists())
         {
-            emit fileExists(outFile);
+            emit fileExists(QStringList() << inFile << outFile);
             setPaused(true);
         }
 
@@ -451,7 +444,7 @@ IOThread::copyRecursive(const QString &inFile, const QString &outFile, bool cut,
         return error;
     }
 
-    if (!m_newFile.isEmpty() && m_mode == NewName && !isDir)
+    if (!m_newFile.isEmpty() && m_mode == NewName)
     {
         of = m_newFile;
         m_newFile.clear();
@@ -558,25 +551,4 @@ IOThread::remove(const QString &path) const
             error |= QFile::remove(info.filePath());
     }
     return error;
-}
-
-void
-IOThread::fileExistsAction(const Mode &m, const QString &file)
-{
-    m_mode = m;
-    if (m == Cancel)
-    {
-        cancelCopy();
-        return;
-    }
-    if (m == NewName)
-    {
-        if (QFileInfo(file).exists())
-        {
-            emit fileExists(file);
-            return;
-        }
-        m_newFile = file;
-    }
-    setPaused(false);
 }

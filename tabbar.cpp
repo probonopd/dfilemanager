@@ -439,14 +439,13 @@ TabBar::drawTab(QPainter *p, int index)
     FooBar::TabShape tabShape = (FooBar::TabShape)Configuration::config.behaviour.tabShape;
     int rndNess = Configuration::config.behaviour.tabRoundness;
 
-    QRect shape(r);
-    shape.setBottom(shape.bottom()-1);
-//    shape.setTop(shape.top()+3);
     int overlap = qCeil((float)rndNess*1.5f);
-    if ( shape.left() > overlap )
-        shape.setLeft(shape.left()-overlap);
-    if ( shape.right() < rect().width()-overlap )
-        shape.setRight(shape.right()+overlap);
+    QRect shape(r.adjusted(-overlap, 0, overlap, -1));
+
+    if ( shape.left() < rect().left() )
+        shape.setLeft(rect().left());
+    if ( shape.right() > rect().right() )
+        shape.setRight(rect().right());
 
     p->setPen(fg);
 
