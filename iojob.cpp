@@ -303,18 +303,21 @@ Job::cp(const QStringList &copyFiles, const QString &destination, const bool &cu
     m_fileSize = 0;
     m_fileProgress = 0;
 
-    m_copyDialog->setWindowTitle(cut ? "Moving..." : "Copying...");
-    m_copyDialog->setSizeGripEnabled(false);
-    m_copyDialog->show();
-
     foreach (const QString &file, copyFiles)
     {
+        if ( QFileInfo(file).path() != destination && file.startsWith(destination) )
+            return;
+
         QFileInfo fileInfo(file);
         if (fileInfo.isDir())
             getDirs(file, &m_fileSize);
         else
             m_fileSize += fileInfo.size();
     }
+
+    m_copyDialog->setWindowTitle(cut ? "Moving..." : "Copying...");
+    m_copyDialog->setSizeGripEnabled(false);
+    m_copyDialog->show();
 
 #ifdef Q_WS_X11
     if ( m_fileSize > Operations::getDriveInfo<Operations::Free>( destination ) )
