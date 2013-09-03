@@ -105,12 +105,9 @@ void
 InfoWidget::paintEvent(QPaintEvent *event)
 {
     QLinearGradient lg(rect().topLeft(), rect().bottomLeft());
-    const QColor &bgBase = Operations::colorMid(palette().color(QPalette::Highlight), palette().color(backgroundRole()), 1, 5);
-    lg.setColorAt(0.0f, Operations::colorMid(Qt::black, bgBase, 1, 3));
-    lg.setColorAt(0.1f, Operations::colorMid(Qt::white, bgBase, 1, 2));
-    lg.setColorAt(0.4999f, Operations::colorMid(Qt::white, bgBase, 1, 20));
-    lg.setColorAt(0.5f, Operations::colorMid(Qt::black, bgBase, 1, 20));
-    lg.setColorAt(1.0f, Operations::colorMid(Qt::black, bgBase, 1, 3));
+    const QColor &bgBase = palette().color(backgroundRole());
+    lg.setColorAt(0.0f, Operations::colorMid(Qt::white, bgBase, 1, 4));
+    lg.setColorAt(1.0f, Operations::colorMid(Qt::black, bgBase, 1, 4));
     QPainter p(this);
     p.fillRect(rect(), lg);
     p.end();
