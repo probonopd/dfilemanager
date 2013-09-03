@@ -42,12 +42,12 @@ protected:
 
 };
 
-class WinButton : public QWidget
+class WinButton : public QFrame
 {
     Q_OBJECT
 public:
     enum Type { Close = 0, Min, Max, Other };
-    WinButton(Type t = Close, QWidget *parent = 0);
+    WinButton(Type t = Other, QWidget *parent = 0);
 
 signals:
     void clicked();

@@ -47,7 +47,7 @@ WindowFrame::paintEvent(QPaintEvent *)
 }
 
 WinButton::WinButton(Type t, QWidget *parent)
-    : QWidget(parent)
+    : QFrame(parent)
     , m_hasPress(false)
     , m_type(t)
     , m_mainWin(MainWindow::currentWindow())
@@ -56,15 +56,22 @@ WinButton::WinButton(Type t, QWidget *parent)
     {
     case Min:
         connect(this, SIGNAL(clicked()), m_mainWin, SLOT(showMinimized()));
+        setProperty("type", "min");
+        setObjectName("minButton");
         break;
     case Max:
         connect(this, SIGNAL(clicked()), this, SLOT(toggleMax()));
+        setProperty("type", "max");
+        setObjectName("maxButton");
         break;
     case Close:
         connect(this, SIGNAL(clicked()), m_mainWin, SLOT(close()));
+        setProperty("type", "close");
+        setObjectName("closeButton");
         break;
     default:break;
     }
+
     setFixedSize(16, 16);
     setAttribute(Qt::WA_Hover);
 }
@@ -95,6 +102,11 @@ static uint fcolors[3] = { 0xFFE55E4F, 0xFFF8C76D, 0xFFA1D886 };
 void
 WinButton::paintEvent(QPaintEvent *e)
 {
+    if ( !Configuration::config.styleSheet.isEmpty() )
+    {
+        QWidget::paintEvent(e);
+        return;
+    }
     QPainter p(this);
     p.translate(0.5f, 0.5f);
     p.setRenderHint(QPainter::Antialiasing);
