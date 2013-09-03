@@ -109,11 +109,20 @@ protected:
     void paintEvent(QPaintEvent *);
 };
 
+class TabButton : public WinButton
+{
+public:
+    inline explicit TabButton(QWidget *parent = 0) : WinButton(WinButton::Other, parent) {setFixedSize(28, 18);}
+protected:
+    void paintEvent(QPaintEvent *e);
+};
+
 class TabBar : public QTabBar
 {
     Q_OBJECT
 public:
     explicit TabBar(QWidget *parent = 0);
+    inline void setAddTabButton(QWidget *addButton);
     
 signals:
     void newTabRequest();
@@ -124,8 +133,11 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
     void paintEvent(QPaintEvent *event);
     void tabInserted(int index);
+    void tabRemoved(int index);
     void mouseMoveEvent(QMouseEvent *e);
     void leaveEvent(QEvent *e);
+    void resizeEvent(QResizeEvent *e);
+    void correctAddButtonPos();
     void drawTab( QPainter *p, int index );
 
 private slots:
@@ -135,6 +147,7 @@ private:
     void genNewTabButton();
     friend class FooBar;
     int m_hoveredTab;
+    QWidget *m_addButton;
 };
 
 }
