@@ -415,29 +415,33 @@ TabButton::paintEvent(QPaintEvent *e)
     p.translate(0.5f, 0.5f);
     p.setRenderHint(QPainter::Antialiasing);
 
-    QRect pr(rect().adjusted(1, 1, -1, -1));
-    int px = pr.x(), py = pr.y(), pw = pr.width()-1, ph = pr.height()-1;
-    QPainterPath path(QPoint(px+pw*0.05f, py));
-    path.lineTo(px+pw*0.75f, py);
-    path.quadTo(px+pw*0.85f, py, px+pw, py+ph*0.95f);
-    path.quadTo(px+pw, py+ph, px+pw*0.95f, py+ph);
-    path.lineTo(px+pw*0.25f, py+ph);
-    path.quadTo(px+pw*0.15f, py+ph, px, py+ph*0.05f);
-    path.quadTo(px, py, px+pw*0.05f, py);
-    path.closeSubpath();
-
     int y = bg.value()>fg.value()?1:-1;
     QColor emb(y==1?high:low);
-    p.setPen(emb);
-    p.drawPath(path.translated(0,y));
 
-    QLinearGradient it(pr.topLeft(), pr.bottomLeft());
-    it.setColorAt(0.0f, QColor(255,255,255,underMouse()?127:63));
-    it.setColorAt(1.0f, Qt::transparent);
+    if ( Configuration::config.behaviour.tabShape == FooBar::Chrome )
+    {
+        QRect pr(rect().adjusted(1, 1, -1, -1));
+        int px = pr.x(), py = pr.y(), pw = pr.width()-1, ph = pr.height()-1;
+        QPainterPath path(QPoint(px+pw*0.05f, py));
+        path.lineTo(px+pw*0.75f, py);
+        path.quadTo(px+pw*0.85f, py, px+pw, py+ph*0.95f);
+        path.quadTo(px+pw, py+ph, px+pw*0.95f, py+ph);
+        path.lineTo(px+pw*0.25f, py+ph);
+        path.quadTo(px+pw*0.15f, py+ph, px, py+ph*0.05f);
+        path.quadTo(px, py, px+pw*0.05f, py);
+        path.closeSubpath();
 
-    p.setBrush(it);
-    p.setPen(fg);
-    p.drawPath(path);
+        p.setPen(emb);
+        p.drawPath(path.translated(0,y));
+
+        QLinearGradient it(pr.topLeft(), pr.bottomLeft());
+        it.setColorAt(0.0f, QColor(255,255,255,underMouse()?127:63));
+        it.setColorAt(1.0f, Qt::transparent);
+
+        p.setBrush(it);
+        p.setPen(fg);
+        p.drawPath(path);
+    }
 
     QRect vert(QPoint(0,0), QSize(2, 8));
     vert.moveCenter(rect().center());
@@ -488,7 +492,7 @@ TabBar::correctAddButtonPos()
 {
     if ( !m_addButton || !count() )
         return;
-    int x = tabRect(count()-1).right()+Configuration::config.behaviour.tabRoundness;
+    int x = tabRect(count()-1).right()+Configuration::config.behaviour.tabOverlap/2;
     int y = qFloor((float)rect().height()/2.0f-(float)m_addButton->height()/2.0f);
     m_addButton->move(x, y);
 }
@@ -544,7 +548,7 @@ TabBar::drawTab(QPainter *p, int index)
     FooBar::TabShape tabShape = (FooBar::TabShape)Configuration::config.behaviour.tabShape;
     int rndNess = Configuration::config.behaviour.tabRoundness;
 
-    int overlap = qCeil((float)rndNess*1.5f);
+    int overlap = Configuration::config.behaviour.tabOverlap;
     QRect shape(r.adjusted(-overlap, 1, overlap, 0));
 
     if ( shape.left() < rect().left() )
