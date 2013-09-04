@@ -740,7 +740,11 @@ MainWindow::windowActivationChange(bool wasActive)
     }
     if ( Configuration::config.behaviour.gayWindow )
         foreach ( WinButton *btn, findChildren<WinButton *>() )
+        {
+            btn->setProperty("isActive", isActiveWindow());
+            btn->setStyleSheet(qApp->styleSheet());
             btn->update();
+        }
 }
 
 MainWindow *MainWindow::currentWindow() { return s_currentWindow; }

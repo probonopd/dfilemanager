@@ -56,17 +56,17 @@ WinButton::WinButton(Type t, QWidget *parent)
     {
     case Min:
         connect(this, SIGNAL(clicked()), m_mainWin, SLOT(showMinimized()));
-        setProperty("type", "min");
+//        setProperty("type", "min");
         setObjectName("minButton");
         break;
     case Max:
         connect(this, SIGNAL(clicked()), this, SLOT(toggleMax()));
-        setProperty("type", "max");
+//        setProperty("type", "max");
         setObjectName("maxButton");
         break;
     case Close:
         connect(this, SIGNAL(clicked()), m_mainWin, SLOT(close()));
-        setProperty("type", "close");
+//        setProperty("type", "close");
         setObjectName("closeButton");
         break;
     default:break;
@@ -104,7 +104,7 @@ WinButton::paintEvent(QPaintEvent *e)
 {
     if ( !Configuration::config.styleSheet.isEmpty() )
     {
-        QWidget::paintEvent(e);
+        QFrame::paintEvent(e);
         return;
     }
     QPainter p(this);

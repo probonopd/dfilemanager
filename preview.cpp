@@ -398,7 +398,8 @@ PreView::rowsRemoved(const QModelIndex &parent, int start, int end)
     m_timeLine->stop();
 
     for ( int i = start; i <= end; ++i )
-        delete m_items.takeAt(i);
+        if ( m_items.count() > i )
+            delete m_items.takeAt(i);
 
     m_scrollBar->blockSignals(true);
     m_scrollBar->setRange(0, m_items.count());

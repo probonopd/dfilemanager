@@ -32,6 +32,7 @@
 #include <QComboBox>
 #include <QStyleOptionComboBox>
 #include <QEvent>
+#include <QBoxLayout>
 
 #include "filesystemmodel.h"
 #include "Proxystyle/proxystyle.h"
@@ -204,7 +205,7 @@ protected:
     void keyPressEvent(QKeyEvent *e) { if ( e->key() == Qt::Key_Escape ) emit cancelEdit(); else QComboBox::keyPressEvent(e); }
 };
 
-class PathNavigator : public QToolBar
+class PathNavigator : public QFrame
 {
     Q_OBJECT
 public:
@@ -219,9 +220,10 @@ public slots:
     void setPath(const QString &path);
 
 protected:
-    inline virtual QSize sizeHint() { return QSize(QToolBar::sizeHint().width(), iconSize().height()); }
-    inline virtual void mousePressEvent(QMouseEvent *e) { QToolBar::mousePressEvent(e); m_hasPress = true; }
-    inline virtual void mouseReleaseEvent(QMouseEvent *e) { QToolBar::mouseReleaseEvent(e); if ( m_hasPress ) emit edit(); }
+//    inline virtual QSize sizeHint() { return QSize(QToolBar::sizeHint().width(), iconSize().height()); }
+    inline virtual void mousePressEvent(QMouseEvent *e) { QFrame::mousePressEvent(e); m_hasPress = true; }
+    inline virtual void mouseReleaseEvent(QMouseEvent *e) { QFrame::mouseReleaseEvent(e); if ( m_hasPress ) emit edit(); }
+    void clear();
 
 private slots:
      void genNavFromPath(const QString &path);
@@ -230,6 +232,8 @@ private:
     QString m_path;
     QStringList m_pathList;
     FileSystemModel *m_fsModel;
+    QHBoxLayout *m_layout;
+    QList<QWidget *> m_widgets;
     bool m_hasPress;
 };
 

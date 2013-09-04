@@ -77,17 +77,19 @@ NavButton::mouseReleaseEvent(QMouseEvent *e)
         e->accept();
 }
 
-PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model ) : QToolBar( parent ), m_fsModel(model), m_hasPress(false)
+PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model )
+    : QFrame( parent )
+    , m_fsModel(model)
+    , m_hasPress(false)
+    , m_layout(new QHBoxLayout(this))
 {
-#if QT_VERSION < 0x050000
-    if ( qApp->styleSheet().isEmpty() )
-        setStyle( new MyStyle( style()->objectName() ) );
-#endif
     connect( this, SIGNAL( pathChanged( QString ) ), this, SLOT( genNavFromPath( QString ) ) );
     setForegroundRole( QPalette::Text );
     setBackgroundRole( QPalette::Base );
-    setMaximumHeight( iconSize().height() + 5 );
+    setMaximumHeight( 23 );
     setContentsMargins( 5, 0, 0, 0 );
+    m_layout->setContentsMargins(0, 0, 0, 0);
+    m_layout->setSpacing(0);
     if ( layout() )
         layout()->setContentsMargins(0, 0, 0, 0);
 }
@@ -99,6 +101,16 @@ PathNavigator::setPath( const QString &path )
         return;
     m_path = path;
     emit pathChanged( path );
+}
+
+void
+PathNavigator::clear()
+{
+    while (QLayoutItem *wItem = m_layout->takeAt(0))
+    {
+        delete wItem->widget();
+        delete wItem;
+    }
 }
 
 void
@@ -138,15 +150,16 @@ PathNavigator::genNavFromPath( const QString &path )
         else
             nb->setIcon( qvariant_cast<QIcon>( m_fsModel->data( m_fsModel->index( newPath ), Qt::DecorationRole ) ) );
 
-        addWidget( nb );
+        m_layout->addWidget( nb );
         connect( nb, SIGNAL( navPath( QString ) ), m_fsModel, SLOT( setPath( QString ) ) );
 
         if ( newPath != path )
         {
             PathSeparator *separator = new PathSeparator( this, newPath, m_fsModel );
-            addWidget( separator );
+            m_layout->addWidget( separator );
         }
     }
+    m_layout->addStretch();
 }
 
 BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel) : QStackedWidget(parent)
@@ -158,7 +171,7 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel) : QStackedWi
     addWidget(m_pathNav);
     addWidget(m_pathBox);
 
-    setMaximumHeight(m_pathNav->iconSize().height() + 5);
+    setMaximumHeight(23);
     setFrameStyle( QFrame::StyledPanel | QFrame::Sunken );
     setAutoFillBackground(true);
     setBackgroundRole(QPalette::Base);
@@ -170,7 +183,7 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel) : QStackedWi
     m_pathBox->setInsertPolicy(QComboBox::InsertAtBottom);
     m_pathBox->setEditable(true);
     m_pathBox->setDuplicatesEnabled(false);
-    m_pathBox->setMaximumHeight(m_pathNav->iconSize().height() + 5);
+    m_pathBox->setMaximumHeight(23);
     m_pathBox->installEventFilter(this);
 
 
