@@ -28,6 +28,29 @@
 using namespace DFM;
 
 void
+PathSeparator::paintEvent(QPaintEvent *)
+{
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(Qt::NoPen);
+    QColor fg = palette().color(foregroundRole());
+    QColor bg = palette().color(backgroundRole());
+
+    int y = bg.value()>fg.value()?1:-1;
+    QColor hl = Operations::colorMid(bg, y==1?Qt::white:Qt::black);
+    QRect r = rect();
+    QPainterPath triangle;
+    triangle.moveTo(r.topLeft());
+    triangle.lineTo(r.adjusted(0, r.height()/2, 0, 0).topRight());
+    triangle.lineTo(r.bottomLeft());
+    p.setBrush(hl);
+    p.drawPath(triangle.translated(0, y));
+    p.setBrush(fg);
+    p.drawPath(triangle);
+    p.end();
+}
+
+void
 Menu::mousePressEvent(QMouseEvent *e)
 {
     if ( e->button() == Qt::LeftButton )
@@ -43,24 +66,17 @@ Menu::mousePressEvent(QMouseEvent *e)
         e->accept();
 }
 
-void
-NavButton::paintEvent(QPaintEvent *event)
+NavButton::NavButton(QWidget *parent, const QString &path)
+    :QToolButton(parent)
+    , m_path(path)
 {
-    QPainter p(this);
-    p.setPen(palette().color(QPalette::Text));
-    QRect r(rect());
-    r.setLeft(r.left() + 5);
-    QPixmap pix(icon().pixmap(iconSize().height()));
-    if ( pix.size() != iconSize() )
-        pix = pix.scaled(iconSize());
-//    style()->drawItemPixmap(&p, r, Qt::AlignLeft | Qt::AlignVCenter, pix);
-    style()->drawItemText(&p, r.adjusted(icon().isNull() ? 0 : 20,0,0,0), Qt::AlignLeft | Qt::AlignVCenter, palette(), true, text(), QPalette::Text);
-    r.setSize(iconSize());
-    r.moveCenter(rect().center());
-    r.moveLeft(rect().left() + 5);
-    p.drawTiledPixmap(r, pix);
-    p.end();
-//    QToolButton::paintEvent(event);
+    setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    connect(this, SIGNAL(released()), this, SLOT(emitPath()));
+    setMinimumHeight(16);
+    setIconSize(QSize(16, 16));
+    QFont f(qApp->font());
+    f.setPointSize(f.pointSize()-1);
+    setFont(f);
 }
 
 void
@@ -87,11 +103,9 @@ PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model )
     setForegroundRole( QPalette::Text );
     setBackgroundRole( QPalette::Base );
     setMaximumHeight( 23 );
-    setContentsMargins( 5, 0, 0, 0 );
-    m_layout->setContentsMargins(0, 0, 0, 0);
-    m_layout->setSpacing(0);
-    if ( layout() )
-        layout()->setContentsMargins(0, 0, 0, 0);
+    setContentsMargins( 0, 0, 0, 0 );
+    m_layout->setContentsMargins( 0, 0, 0, 0 );
+    m_layout->setSpacing( 0 );
 }
 
 void

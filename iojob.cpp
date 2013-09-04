@@ -294,7 +294,8 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut)
 
     foreach (const QString &file, copyFiles)
     {
-        if ( QFileInfo(file).path() != destination && file.startsWith(destination) )
+        if ( QFileInfo(file).isDir() )
+        if ( QFileInfo(file).path() != destination && destination.startsWith(file) )
             return;
 
         QFileInfo fileInfo(file);

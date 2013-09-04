@@ -406,6 +406,7 @@ PlacesView::PlacesView( QWidget *parent )
     : QTreeView( parent )
     , m_timer(new QTimer(this))
     , m_devManager(0L)
+    , m_lastClicked(0L)
 {
     ViewAnimator::manage(this);
     setModel(m_model = new PlacesModel(this));
@@ -491,10 +492,10 @@ PlacesView::dropEvent( QDropEvent *event )
 
 #ifdef Q_WS_X11
     if ( itemAt<DeviceItem *>(event->pos())
-         ||  ( dynamic_cast<DeviceItem *>(m_lastClicked)
+         ||  ( m_lastClicked && dynamic_cast<DeviceItem *>(m_lastClicked)
                && dropIndicatorPosition() != OnItem
                && event->source() == this )
-         || dynamic_cast<DeviceManager *>(m_lastClicked)
+         || m_lastClicked && dynamic_cast<DeviceManager *>(m_lastClicked)
          || ( itemAt<DeviceManager *>(event->pos())
               && dropIndicatorPosition() != AboveItem ) )
     {

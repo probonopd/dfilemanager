@@ -45,21 +45,13 @@ class NavButton : public QToolButton
 {
     Q_OBJECT
 public:
-    inline explicit NavButton(QWidget *parent = 0, const QString &path = QString()) : QToolButton(parent), m_path(path)
-    {
-        setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-        connect(this, SIGNAL(released()), this, SLOT(emitPath()));
-        setMinimumHeight(16);
-    }
+    explicit NavButton(QWidget *parent = 0, const QString &path = QString());
 
 signals:
     void navPath(const QString &path);
 
-public slots:
-
 protected:
     void mouseReleaseEvent(QMouseEvent *);
-    void paintEvent(QPaintEvent *);
     inline QSize sizeHint() { return QSize(QToolButton::sizeHint().width(), iconSize().height()); }
 private slots:
     void emitPath() { emit navPath(m_path); }
@@ -83,33 +75,18 @@ signals:
 class PathSeparator : public QWidget
 {
     Q_OBJECT
-    Q_PROPERTY(int animLevel READ animLevel WRITE setAnimLevel)
 public:
     inline explicit PathSeparator(QWidget *parent, const QString &path = QString(), FileSystemModel *fsModel = 0)
         : QWidget(parent)
-        , m_animLevel(0)
-        , m_animation(new QPropertyAnimation(this, "animLevel"))
         , m_path(path)
         , m_fsModel(fsModel)
     {
         setAttribute(Qt::WA_Hover);
-        m_animation->setDuration(300);
-        setFixedSize(16,16);
-    }
-    inline int animLevel() const { return m_animLevel; }
-
-public slots:
-    inline void setAnimLevel (const int &animLevel)
-    {
-        if (animLevel != m_animLevel)
-        {
-            m_animLevel = animLevel;
-            update();
-        }
+        setFixedSize(7, 9);
     }
 
 protected:
-    inline virtual void mousePressEvent(QMouseEvent *event)
+    virtual void mousePressEvent(QMouseEvent *event)
     {
         Menu menu;
         foreach( QFileInfo info, QDir( m_path ).entryInfoList( QDir::AllDirs | QDir::NoDotAndDotDot ) )
@@ -122,62 +99,7 @@ protected:
         }
         menu.exec(event->globalPos());
     }
-
-    inline virtual void paintEvent(QPaintEvent *)
-    {
-        QPainter p(this);
-#if 0   //carved circle look
-        p.setPen(Qt::NoPen);
-        p.setRenderHint(QPainter::Antialiasing);
-        QColor high = palette().color(QPalette::Highlight);
-        QColor fg = palette().color(QPalette::WindowText);
-        QColor bg = palette().color(QPalette::Window);
-        QRect r = rect().adjusted(2,2,-2,-2);
-        QLinearGradient linGrad(r.topLeft(),r.bottomLeft());
-        linGrad.setColorAt(0,Operations::colorMid(bg,Qt::black,1,1));
-        linGrad.setColorAt(1,Operations::colorMid(bg,Qt::white,1,1));
-        p.setBrush(linGrad);
-        p.drawEllipse(r);
-        QColor brush = Operations::colorMid(high,fg,uM,2);
-        p.setBrush(brush);
-        p.drawEllipse(rect().adjusted(5,5,-5,-5));
-#endif
-        p.setRenderHint(QPainter::Antialiasing);
-        p.setPen(Qt::NoPen);
-        QColor fg = palette().color(QPalette::WindowText);
-        QColor bg = palette().color(QPalette::Window);
-        QRect r = rect().adjusted(4, 4, -4, -4);
-        QLinearGradient linGrad(r.topLeft(), r.bottomLeft());
-        linGrad.setColorAt(0, Qt::transparent);
-        linGrad.setColorAt(0.5, fg);
-        linGrad.setColorAt(1, Qt::transparent);
-        p.translate(m_animLevel, 0);
-        p.rotate(m_animLevel*5.5);
-        QPainterPath triangle;
-        triangle.moveTo(r.topLeft());
-        triangle.lineTo(r.adjusted(0, r.height()/2, 0, 0).topRight());
-        triangle.lineTo(r.bottomLeft());
-        if (!m_animLevel)
-        {
-            p.setBrush(Operations::colorMid(bg, Qt::white, 1, 1));
-            p.drawPath(triangle.translated(0,1));
-        }
-        p.setBrush(fg);
-        p.drawPath(triangle);
-        p.end();
-    }
-    inline virtual void enterEvent(QEvent *)
-    {
-        m_animation->setStartValue(0);
-        m_animation->setEndValue(8);
-        m_animation->start();
-    }
-    inline virtual void leaveEvent(QEvent *)
-    {
-        m_animation->setStartValue(m_animLevel);
-        m_animation->setEndValue(0);
-        m_animation->start();
-    }
+    virtual void paintEvent(QPaintEvent *);
 
 private slots:
     inline void setPath()
@@ -188,9 +110,7 @@ private slots:
     }
 
 private:
-    int m_animLevel;
     QString m_path;
-    QPropertyAnimation *m_animation;
     FileSystemModel *m_fsModel;
 };
 
