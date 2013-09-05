@@ -70,9 +70,7 @@ DeleteDialog::DeleteDialog(const QModelIndexList &idxList, QWidget *parent) : QD
 
     foreach(QModelIndex index, idxList)
     {
-        QStandardItem *item = new QStandardItem;
-        item->setText(fsm->filePath(index));
-        item->setIcon(fsm->fileIcon(index));
+        QStandardItem *item = new QStandardItem(fsm->fileIcon(index), fsm->filePath(index));
         item->setEditable(false);
         item->setSelectable(false);
         model->appendRow(item);

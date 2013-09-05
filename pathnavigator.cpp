@@ -21,9 +21,11 @@
 
 #include "pathnavigator.h"
 #include "mainwindow.h"
+#include "iojob.h"
 #include <QDebug>
 #include <QCompleter>
 #include <QDirModel>
+#include <QMessageBox>
 
 using namespace DFM;
 
@@ -70,16 +72,73 @@ NavButton::NavButton(QWidget *parent, const QString &path)
     :QToolButton(parent)
     , m_path(path)
     , m_nav(static_cast<PathNavigator *>(parent))
+    , m_hasData(false)
 {
     setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     connect(this, SIGNAL(released()), this, SLOT(emitPath()));
-    setMinimumHeight(16);
-    setMinimumWidth(23);
+    setFixedHeight(23);
+    if ( m_nav->path() != path )
+        setMinimumWidth(23);
     setIconSize(QSize(16, 16));
     QFont f(qApp->font());
     f.setPointSize(f.pointSize()-1);
     setFont(f);
-//    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+    setAcceptDrops(true);
+}
+
+void
+NavButton::dragEnterEvent(QDragEnterEvent *e)
+{
+    if ( m_path != m_nav->path() )
+    if ( e->mimeData()->hasUrls() )
+    {
+        e->acceptProposedAction();
+        m_hasData = true;
+        update();
+    }
+}
+
+void
+NavButton::dropEvent(QDropEvent *e)
+{
+    QStringList files;
+    foreach ( const QUrl &file, e->mimeData()->urls() )
+        files << file.toLocalFile();
+    if ( QMessageBox::question(MainWindow::currentWindow(), tr("Are you sure?"), tr("you are about to move some files..."), QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes )
+        IO::Job::copy(files, m_path, true);
+    m_hasData = false;
+    update();
+}
+
+void
+NavButton::leaveEvent(QEvent *e)
+{
+    QToolButton::leaveEvent(e);
+    m_hasData = false;
+    update();
+}
+
+void
+NavButton::dragLeaveEvent(QDragLeaveEvent *e)
+{
+    QToolButton::dragLeaveEvent(e);
+    m_hasData = false;
+    update();
+}
+
+void
+NavButton::paintEvent(QPaintEvent *e)
+{
+    QToolButton::paintEvent(e);
+    if ( m_hasData )
+    {
+        QRectF r(rect());
+        r.adjust(0.5f, 0.5f, -0.5f, -0.5f);
+        QPainter p(this);
+        p.setPen(palette().color(foregroundRole()));
+        p.drawRect(r);
+        p.end();
+    }
 }
 
 void

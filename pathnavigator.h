@@ -45,20 +45,26 @@ class NavButton : public QToolButton
 {
     Q_OBJECT
 public:
-    explicit NavButton(QWidget *parent = 0, const QString &path = QString());
+    NavButton(QWidget *parent = 0, const QString &path = QString());
 
 signals:
     void navPath(const QString &path);
 
 protected:
     void mouseReleaseEvent(QMouseEvent *);
+    void leaveEvent(QEvent *);
+    void dragEnterEvent(QDragEnterEvent *);
+    void dragLeaveEvent(QDragLeaveEvent *);
+    void dropEvent(QDropEvent *);
+    void paintEvent(QPaintEvent *);
+
 private slots:
     void emitPath() { emit navPath(m_path); }
 
 private:
     QString m_path;
     PathNavigator *m_nav;
-
+    bool m_hasData;
 };
 
 class Menu : public QMenu
