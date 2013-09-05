@@ -40,7 +40,7 @@
 
 namespace DFM
 {
-
+class PathNavigator;
 class NavButton : public QToolButton
 {
     Q_OBJECT
@@ -52,12 +52,12 @@ signals:
 
 protected:
     void mouseReleaseEvent(QMouseEvent *);
-    inline QSize sizeHint() { return QSize(QToolButton::sizeHint().width(), iconSize().height()); }
 private slots:
     void emitPath() { emit navPath(m_path); }
 
 private:
     QString m_path;
+    PathNavigator *m_nav;
 
 };
 
@@ -131,6 +131,8 @@ class PathNavigator : public QFrame
 public:
     explicit PathNavigator(QWidget *parent = 0, FileSystemModel *model = 0);
     inline QString path() const { return m_path; }
+    inline QList<NavButton *> navButtons() { return QList<NavButton *>(findChildren<NavButton *>()); }
+    inline int count() { return navButtons().count(); }
     
 signals:
     void pathChanged(const QString &path);
@@ -140,9 +142,8 @@ public slots:
     void setPath(const QString &path);
 
 protected:
-//    inline virtual QSize sizeHint() { return QSize(QToolBar::sizeHint().width(), iconSize().height()); }
-    inline virtual void mousePressEvent(QMouseEvent *e) { QFrame::mousePressEvent(e); m_hasPress = true; }
-    inline virtual void mouseReleaseEvent(QMouseEvent *e) { QFrame::mouseReleaseEvent(e); if ( m_hasPress ) emit edit(); }
+    void mousePressEvent(QMouseEvent *e) { QFrame::mousePressEvent(e); m_hasPress = true; }
+    void mouseReleaseEvent(QMouseEvent *e) { QFrame::mouseReleaseEvent(e); if ( m_hasPress ) emit edit(); m_hasPress = false; }
     void clear();
 
 private slots:

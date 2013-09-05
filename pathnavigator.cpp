@@ -69,14 +69,17 @@ Menu::mousePressEvent(QMouseEvent *e)
 NavButton::NavButton(QWidget *parent, const QString &path)
     :QToolButton(parent)
     , m_path(path)
+    , m_nav(static_cast<PathNavigator *>(parent))
 {
     setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     connect(this, SIGNAL(released()), this, SLOT(emitPath()));
     setMinimumHeight(16);
+    setMinimumWidth(23);
     setIconSize(QSize(16, 16));
     QFont f(qApp->font());
     f.setPointSize(f.pointSize()-1);
     setFont(f);
+//    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 }
 
 void
@@ -106,6 +109,7 @@ PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model )
     setContentsMargins( 0, 0, 0, 0 );
     m_layout->setContentsMargins( 0, 0, 0, 0 );
     m_layout->setSpacing( 0 );
+    setLayout(m_layout);
 }
 
 void
@@ -120,10 +124,10 @@ PathNavigator::setPath( const QString &path )
 void
 PathNavigator::clear()
 {
-    while (QLayoutItem *wItem = m_layout->takeAt(0))
+    while (QLayoutItem *item = m_layout->takeAt(0))
     {
-        delete wItem->widget();
-        delete wItem;
+        delete item->widget();
+        delete item;
     }
 }
 
@@ -141,14 +145,12 @@ PathNavigator::genNavFromPath( const QString &path )
     }
     m_pathList << path;
 
-    foreach ( QString newPath, m_pathList )
+    foreach ( const QString &newPath, m_pathList )
     {
         NavButton *nb = new NavButton( this, newPath );
         QString buttonText( QFileInfo( newPath ).fileName().isEmpty() ? "/." : QFileInfo( newPath ).fileName() );
 
-        nb->setMaximumWidth( 192 );
-
-        buttonText = nb->fontMetrics().elidedText( buttonText, Qt::ElideRight, 164 );
+//        buttonText = nb->fontMetrics().elidedText( buttonText, Qt::ElideRight, 164 );
         nb->setText( buttonText );
 
         QFont font = nb->font();
