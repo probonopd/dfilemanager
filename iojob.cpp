@@ -302,11 +302,13 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut, bool
 {
     if ( ask )
     {
+        if ( QApplication::overrideCursor() )
+            QApplication::restoreOverrideCursor();
         QString title(tr("Are you sure?"));
-        QString message(tr("Do you want to move:"));
+        QString message(tr("Do you want to move:<br>"));
         foreach (const QString &file, copyFiles)
-            message.append("<br>").append(file);
-        message.append(tr("<br>to ")).append(destination).append(" ?");
+            message.append("<br> - ").append(file);
+        message.append(tr("<br><br>-> ")).append(destination).append(" ?");
 
         if ( QMessageBox::question(MainWindow::currentWindow(), title, message, QMessageBox::Yes, QMessageBox::No) == QMessageBox::No )
             return;

@@ -516,6 +516,7 @@ TabBar::correctAddButtonPos()
 void
 TabBar::dragEnterEvent(QDragEnterEvent *e)
 {
+    m_hasPress = false;
     if ( e->mimeData()->hasUrls() )
         e->acceptProposedAction();
 }
@@ -523,18 +524,25 @@ TabBar::dragEnterEvent(QDragEnterEvent *e)
 void
 TabBar::dropEvent(QDropEvent *e)
 {
+    m_hasPress = false;
     MainWindow *w = MainWindow::windowFor(this);
     int tab = tabAt(e->pos());
+    int activeTab = currentIndex();
     if ( e->mimeData()->property("tab").isValid() ) //dragging a tab inside tabbar
         if ( tab != -1 )
         {
             QRect r = tabRect(tab);
             int fromTab = e->mimeData()->property("tab").toInt();
-            int toTab = e->pos().x() > r.center().x() ? tab+1 : tab;
+            int toTab = e->pos().x() > r.center().x() && tab < fromTab ? tab+1 : tab;
             if ( fromTab == toTab )
                 return;
 
             moveTab(fromTab, toTab);
+            if ( fromTab == activeTab ) //when moving the activeTab this seems to be necessary
+            {
+                setCurrentIndex(toTab == 0 ? toTab+1 : toTab-1);
+                setCurrentIndex(toTab);
+            }
             return;
         }
     if ( tab != -1 )
@@ -562,6 +570,7 @@ TabBar::resizeEvent(QResizeEvent *e)
 void
 TabBar::mouseDoubleClickEvent(QMouseEvent *event)
 {
+    m_hasPress = false;
     QTabBar::mouseDoubleClickEvent(event);
     if (rect().contains(event->pos()))
     {
@@ -726,7 +735,6 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
     }
     if ( m_hasPress && tabAt(e->pos()) != -1 )
     {
-        m_hasPress = false;
         QDrag *drag = new QDrag(this);
         QMimeData *data = new QMimeData();
         data->setUrls(QList<QUrl>() << QUrl(MainWindow::windowFor(this)->containerForTab(tabAt(e->pos()))->model()->rootPath()));
@@ -734,6 +742,8 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
         drag->setMimeData(data);
         drag->exec();
     }
+    if ( m_hasPress )
+        m_hasPress = false;
 }
 
 void
@@ -745,6 +755,8 @@ TabBar::leaveEvent(QEvent *e)
         m_hoveredTab = -1;
         update();
     }
+    if ( m_hasPress )
+        m_hasPress = false;
 }
 
 QSize
