@@ -33,18 +33,18 @@
 
 using namespace DFM;
 
-static Operations *s_instance = 0;
+static Ops *s_instance = 0;
 
-Operations
-*Operations::instance()
+Ops
+*Ops::instance()
 {
     if ( !s_instance )
-        s_instance = new Operations(qApp);
+        s_instance = new Ops(qApp);
     return s_instance;
 }
 
 QString
-Operations::getMimeType(const QString &file)
+Ops::getMimeType(const QString &file)
 {
 #ifdef Q_WS_X11
     const magic_t &mgcMime = magic_open( MAGIC_MIME_TYPE );
@@ -56,7 +56,7 @@ Operations::getMimeType(const QString &file)
 }
 
 QString
-Operations::getFileType(const QString &file)
+Ops::getFileType(const QString &file)
 {
 #ifdef Q_WS_X11
     magic_t mgcMime = magic_open( MAGIC_CONTINUE ); //print anything we can get
@@ -68,7 +68,7 @@ Operations::getFileType(const QString &file)
 }
 
 QColor
-Operations::colorMid(const QColor c1, const QColor c2, int i1, int i2)
+Ops::colorMid(const QColor c1, const QColor c2, int i1, int i2)
 {
     int r,g,b,a;
     int i3 = i1+i2;
@@ -80,7 +80,7 @@ Operations::colorMid(const QColor c1, const QColor c2, int i1, int i2)
 }
 
 void
-Operations::openFile(const QString &file)
+Ops::openFile(const QString &file)
 {
     if(!QFileInfo(file).exists())
         return;
@@ -106,7 +106,7 @@ Operations::openFile(const QString &file)
 }
 
 void
-Operations::openWith()
+Ops::openWith()
 {
     QAction *action = static_cast<QAction *>( sender() );
     QString program( action->data().toString().split( " " ).at( 0 ) );
@@ -114,7 +114,7 @@ Operations::openWith()
 }
 
 void
-Operations::customActionTriggered()
+Ops::customActionTriggered()
 {
     QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
     const QString &app = action.takeFirst();
@@ -138,7 +138,7 @@ Operations::customActionTriggered()
 }
 
 void
-Operations::setRootPath()
+Ops::setRootPath()
 {
     QAction *action = static_cast<QAction *>(sender());
     MainWindow::currentContainer()->model()->setRootPath(action->data().toString());

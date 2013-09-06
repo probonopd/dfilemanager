@@ -147,9 +147,9 @@ protected:
     void leaveEvent(QEvent *e);
     void resizeEvent(QResizeEvent *e);
     void dragEnterEvent(QDragEnterEvent *e);
-    void dragMoveEvent(QDragMoveEvent *);
+    void dragLeaveEvent(QDragLeaveEvent *e);
+    void dragMoveEvent(QDragMoveEvent *e);
     void dropEvent(QDropEvent *e);
-    void keyPressEvent(QKeyEvent *e);
     void correctAddButtonPos();
     void drawTab( QPainter *p, int index );
 

@@ -87,6 +87,7 @@ signals:
     void entered(const QModelIndex &index);
     void viewportEntered();
     void leftView();
+    void filterChanged();
     
 public slots:
     void activate(const QModelIndex &index);

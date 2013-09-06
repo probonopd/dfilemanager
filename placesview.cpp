@@ -39,8 +39,8 @@ inline static QLinearGradient simple( QRect rect, QColor color, int strength )
     white.setAlpha( color.alpha() );
 
     QLinearGradient s( rect.topLeft(), rect.bottomLeft() );
-    s.setColorAt( 0, Operations::colorMid( color, white, 100, strength ) );
-    s.setColorAt( 1, Operations::colorMid( color, black, 100, strength ) );
+    s.setColorAt( 0, Ops::colorMid( color, white, 100, strength ) );
+    s.setColorAt( 1, Ops::colorMid( color, black, 100, strength ) );
     return s;
 }
 
@@ -110,7 +110,7 @@ inline static void drawDeviceUsage( const int &usage, QPainter *painter, const Q
     if ( !( option.state & ( QStyle::State_MouseOver | QStyle::State_Selected ) ) )
         renderFrame( rect, painter, QColor( 0, 0, 0, 32 ), 15 );
     rect.setWidth( rect.width()*usage/100 );
-    QColor progress(Operations::colorMid(Qt::green, Qt::red, 100-usage, usage));
+    QColor progress(Ops::colorMid(Qt::green, Qt::red, 100-usage, usage));
     progress.setAlpha(64);
     painter->fillRect( rect, simple( rect, progress, 80 ) );
     renderFrame( rect.adjusted(1, 1, -1, -1), painter, QColor(255, 255, 255, 64));
@@ -136,8 +136,8 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     int indent = DECOSIZE.height(), textMargin = indent + ( isHeader( index ) ? 0 : DECOSIZE.width() );
     QRect textRect( RECT.adjusted( textMargin, 0, 0, 0 ) );
 
-    QColor mid = Operations::colorMid( PAL.color( QPalette::Base ), PAL.color( QPalette::Text ) );
-    QColor fg = isHeader( index ) ? Operations::colorMid( PAL.color( QPalette::Highlight ), mid, 1, 5 ) : PAL.color( QPalette::Text );
+    QColor mid = Ops::colorMid( PAL.color( QPalette::Base ), PAL.color( QPalette::Text ) );
+    QColor fg = isHeader( index ) ? Ops::colorMid( PAL.color( QPalette::Highlight ), mid, 1, 5 ) : PAL.color( QPalette::Text );
     QPalette pal(PAL);
     pal.setColor(QPalette::Text, fg);
     const QStyleOptionViewItem &copy(option);
@@ -432,8 +432,8 @@ PlacesView::PlacesView( QWidget *parent )
 
     //base color... slight hihglight tint
     QPalette pal = palette();
-    QColor midC = Operations::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
-    pal.setColor( QPalette::Base, Operations::colorMid( Qt::black, midC, 1, 10 ) );
+    QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
+    pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
     setPalette( pal );
 
     connect ( this, SIGNAL(changed()), this, SLOT(store()) );
@@ -750,7 +750,7 @@ QMenu
     {
         QAction *action = new QAction(container(cont)->place(i)->name(), qApp);
         action->setData(container(cont)->place(i)->path());
-        connect (action, SIGNAL(triggered()), Operations::instance(), SLOT(setRootPath()));
+        connect (action, SIGNAL(triggered()), Ops::instance(), SLOT(setRootPath()));
         menu->addAction(action);
     }
     return menu;

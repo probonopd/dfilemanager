@@ -106,8 +106,8 @@ InfoWidget::paintEvent(QPaintEvent *event)
 {
     QLinearGradient lg(rect().topLeft(), rect().bottomLeft());
     const QColor &bgBase = palette().color(backgroundRole());
-    lg.setColorAt(0.0f, Operations::colorMid(Qt::white, bgBase, 1, 4));
-    lg.setColorAt(1.0f, Operations::colorMid(Qt::black, bgBase, 1, 4));
+    lg.setColorAt(0.0f, Ops::colorMid(Qt::white, bgBase, 1, 4));
+    lg.setColorAt(1.0f, Ops::colorMid(Qt::black, bgBase, 1, 4));
     QPainter p(this);
     p.fillRect(rect(), lg);
     p.end();
@@ -154,8 +154,8 @@ InfoWidget::hovered(const QModelIndex &index)
     m_tw->setPixmap(pix);
     m_fileName->setText(fsModel->data(fsModel->index(fsModel->filePath(index), 0)).toString());
     m_ownerLbl->setText(fsModel->fileInfo(index).owner());
-    m_typeLbl->setText(Operations::getFileType(fsModel->filePath(index)));
-    m_mimeLbl->setText(Operations::getMimeType(fsModel->filePath(index)));
+    m_typeLbl->setText(Ops::getFileType(fsModel->filePath(index)));
+    m_mimeLbl->setText(Ops::getMimeType(fsModel->filePath(index)));
 
     m_lastMod[1]->setText(fsModel->data(fsModel->index(index.row(), 3, index.parent())).toString());
     const QString &s(fsModel->data(fsModel->index(index.row(), 4, index.parent())).toString());

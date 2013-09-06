@@ -84,7 +84,7 @@ void
 GraphicsScene::drawBackground(QPainter *painter, const QRectF &rect)
 {
     QGraphicsScene::drawBackground(painter, rect);
-    QColor c = Operations::colorMid(palette().color(QPalette::Highlight), Qt::black);
+    QColor c = Ops::colorMid(palette().color(QPalette::Highlight), Qt::black);
     c.setHsv(c.hue(), qMin(64, c.saturation()), c.value(), c.alpha());
     painter->fillRect(rect, c);
 }
@@ -542,7 +542,7 @@ PreView::mouseReleaseEvent(QMouseEvent *event)
                 if ( QFileInfo(file).isDir() )
                     m_fsModel->setRootPath(file);
                 else
-                    Operations::openFile(file);
+                    Ops::openFile(file);
             }
             else
                 m_scrollBar->setValue(index.row());

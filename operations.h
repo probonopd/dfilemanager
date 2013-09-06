@@ -53,7 +53,7 @@ public:
    }
 };
 
-class Operations : public QObject
+class Ops : public QObject
 {
     Q_OBJECT
 public:
@@ -61,7 +61,7 @@ public:
     static QString getFileType(const QString &file);
     static QColor colorMid(const QColor c1, const QColor c2, int i1 = 1, int i2 = 1);
     static void openFile( const QString &file );
-    static Operations *instance();
+    static Ops *instance();
 
     template<typename T> static inline T absWinFor( QWidget *w )
     {
@@ -103,7 +103,7 @@ public slots:
     void customActionTriggered();
     void setRootPath();
 protected:
-    Operations(QObject *parent = 0) : QObject(parent) {}
+    Ops(QObject *parent = 0) : QObject(parent) {}
 };
 
 }

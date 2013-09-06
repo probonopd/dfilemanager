@@ -334,7 +334,7 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut, bool
     copyDialog->show();
 
 #ifdef Q_WS_X11
-    if ( m_fileSize > Operations::getDriveInfo<Operations::Free>( destination ) )
+    if ( m_fileSize > Ops::getDriveInfo<Ops::Free>( destination ) )
     {
         QMessageBox::critical(MainWindow::currentWindow(), tr("not enough room on destination"), QString("%1 has not enough space").arg(destination));
         copyDialog->hide();
@@ -387,13 +387,13 @@ IOThread::run()
     case Copy:
     {
         bool done = false;
-        const quint64 &destId = Operations::getDriveInfo<Operations::Id>( m_destDir );
+        const quint64 &destId = Ops::getDriveInfo<Ops::Id>( m_destDir );
         while (!m_canceled && !done)
         {
             foreach (QString inFile, m_inFiles)
             {
                 m_inFile = inFile;
-                const bool &sameDisk = destId != 0 && ( (quint64)Operations::getDriveInfo<Operations::Id>( inFile ) ==  destId );
+                const bool &sameDisk = destId != 0 && ( (quint64)Ops::getDriveInfo<Ops::Id>( inFile ) ==  destId );
                 copyRecursive( inFile, m_destDir+QDir::separator()+QFileInfo(inFile).fileName(), m_cut, sameDisk );
             }
             done = true;

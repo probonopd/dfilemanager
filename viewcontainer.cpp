@@ -339,6 +339,7 @@ ViewContainer::setFilter(QString filter)
 {
     VIEWS(setFilter(filter));
     m_dirFilter = filter;
+    emit filterChanged();
 }
 
 void

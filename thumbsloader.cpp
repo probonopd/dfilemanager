@@ -25,6 +25,7 @@
 #include "mainwindow.h"
 #include "operations.h"
 #include "config.h"
+#include "viewcontainer.h"
 
 QHash<QString, QImage> ThumbsLoader::m_loadedThumbs[4];
 QStringList ThumbsLoader::m_thumbQueue;
@@ -136,13 +137,13 @@ static QImage reflection( const QImage &img = QImage() )
     p.end();
     int size = refl.width() * refl.height();
     QRgb *pixel = reinterpret_cast<QRgb *>(refl.bits());
-    QColor bg = DFM::Operations::colorMid(qApp->palette().color(QPalette::Highlight), Qt::black);
+    QColor bg = DFM::Ops::colorMid(qApp->palette().color(QPalette::Highlight), Qt::black);
     bg.setHsv(bg.hue(), qMin(64, bg.saturation()), bg.value(), bg.alpha());
     for ( int i = 0; i < size; ++i )
         if ( qAlpha(pixel[i]) )
         {
             QColor c = QColor(pixel[i]);
-            c = DFM::Operations::colorMid(c, bg, 1, 4);
+            c = DFM::Ops::colorMid(c, bg, 1, 4);
             pixel[i] = qRgba(c.red(), c.green(), c.blue(), qAlpha(pixel[i]));
         }
     return blurred( refl, refl.rect(), 5 );
@@ -245,6 +246,8 @@ ThumbsLoader::disconnectView()
 {
     if ( !m_currentView )
         return;
+    if ( DFM::ViewContainer *vc = qobject_cast<DFM::ViewContainer *>(m_currentView->parentWidget()->parentWidget()) )
+        disconnect(vc, SIGNAL(filterChanged()), m_timer, SLOT(start()));
     disconnect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
     disconnect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
     disconnect( m_fsModel, SIGNAL(layoutChanged()),instance(), SLOT(loadReflections()));
@@ -260,6 +263,8 @@ void
 ThumbsLoader::connectView()
 {
     m_fsModel = qobject_cast<DFM::FileSystemModel *>(m_currentView->model());
+    if ( DFM::ViewContainer *vc = qobject_cast<DFM::ViewContainer *>(m_currentView->parentWidget()->parentWidget()) )
+        connect(vc, SIGNAL(filterChanged()), m_timer, SLOT(start()));
     connect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
     connect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
     connect( m_fsModel, SIGNAL(layoutChanged()), instance(), SLOT(loadReflections()) );

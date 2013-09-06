@@ -45,7 +45,7 @@ FlowView::FlowView(QWidget *parent) : QWidget(parent)
     m_splitter->restoreState( Configuration::config.views.flowSize );
 
     connect( m_preView, SIGNAL(centerIndexChanged(QModelIndex)), this, SLOT(flowCurrentIndexChanged(QModelIndex)) );
-    connect( m_preView, SIGNAL(centerIndexChanged(QModelIndex)), Operations::absWinFor<MainWindow *>(this)->infoWidget(), SLOT(hovered(QModelIndex)) );
+    connect( m_preView, SIGNAL(centerIndexChanged(QModelIndex)), Ops::absWinFor<MainWindow *>(this)->infoWidget(), SLOT(hovered(QModelIndex)) );
     connect( m_splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(saveSplitter()) );
 
 

@@ -116,7 +116,7 @@ WinButton::paintEvent(QPaintEvent *e)
 
     QRect r(rect().adjusted(3, 3, -4, -4));
     QColor f(isActiveWindow() ? QColor(fcolors[m_type]) : fg);
-    QColor mid(Operations::colorMid(f, Qt::black, 12, 10));
+    QColor mid(Ops::colorMid(f, Qt::black, 12, 10));
     QRadialGradient rg(r.center()+QPointF(0, (underMouse()&&!m_hasPress)?-1:1), (float)r.width()*0.7f);
     rg.setColorAt(0.0f, f);
     rg.setColorAt(1.0f, mid);
@@ -125,7 +125,7 @@ WinButton::paintEvent(QPaintEvent *e)
     p.setBrush(QColor(255, 255, 255,  127));
     p.drawEllipse(r.translated(0.0f, 1.0f));
 
-    p.setPen(Operations::colorMid(f, Qt::black));
+    p.setPen(Ops::colorMid(f, Qt::black));
     p.setBrush(rg);
     p.drawEllipse(r);
     p.end();
@@ -219,8 +219,8 @@ FooBar::correctTabBarHeight()
     bg = m_mainWin->palette().color(backgroundRole());
     fg = m_mainWin->palette().color(foregroundRole());
     hl = m_mainWin->palette().color(QPalette::Highlight);
-    high = Operations::colorMid(bg, Qt::white);
-    low = Operations::colorMid(bg, Qt::black);
+    high = Ops::colorMid(bg, Qt::white);
+    low = Ops::colorMid(bg, Qt::black);
     int y = bg.value() > fg.value() ? 1 : -1;
     QColor emboss(y==1?high:low);
 
@@ -284,8 +284,8 @@ QLinearGradient
 FooBar::headGrad()
 {
     QWidget *w = MainWindow::currentWindow();
-    QColor topMid(Operations::colorMid(Qt::white, bg, 1, 4));
-    QColor bottomMid(Operations::colorMid(Qt::black, bg, 1, 4));
+    QColor topMid(Ops::colorMid(Qt::white, bg, 1, 4));
+    QColor bottomMid(Ops::colorMid(Qt::black, bg, 1, 4));
     QLinearGradient lg(0, 0, 0, headHeight());
     lg.setColorAt(0.0f, topMid);
     lg.setColorAt(1.0f, bottomMid);
@@ -302,7 +302,7 @@ FooBar::paintEvent(QPaintEvent *e)
 
     QLinearGradient lg(0, 0, 0, height());
     lg.setColorAt(0.0f, bg/*Operations::colorMid(bg, fg, 8, 1)*/);
-    lg.setColorAt(1.0f, Operations::colorMid(bg, fg, 2, 1));
+    lg.setColorAt(1.0f, Ops::colorMid(bg, fg, 2, 1));
 
     p.fillRect(rect(), lg);
 
@@ -486,7 +486,7 @@ DropIndicator::paintEvent(QPaintEvent *)
 {
     QLinearGradient lg(rect().topLeft(), rect().topRight());
     lg.setColorAt(0.0f, Qt::transparent);
-    lg.setColorAt(0.5f, hl);
+    lg.setColorAt(0.5f, Configuration::config.behaviour.gayWindow ? hl : palette().color(QPalette::Highlight));
     lg.setColorAt(1.0f, Qt::transparent);
 
     QPainter p(this);
@@ -531,6 +531,8 @@ TabBar::correctAddButtonPos()
 void
 TabBar::dragEnterEvent(QDragEnterEvent *e)
 {
+    if ( e->mimeData()->property("tab").isValid() )
+        m_dropIndicator->show();
     m_hasPress = false;
     if ( e->mimeData()->hasUrls() )
         e->acceptProposedAction();
@@ -541,19 +543,16 @@ TabBar::dragMoveEvent(QDragMoveEvent *e)
 {
     if ( e->mimeData()->property("tab").isValid() && tabAt(e->pos()) != -1 )
     {
-        int tab = tabAt(e->pos());
-        int activeTab = currentIndex();
-        QRect r = tabRect(tab);
-        int fromTab = e->mimeData()->property("tab").toInt();
-        int toTab = tab;
-        if ( tab > fromTab && e->pos().x() < r.center().x() )
-            --toTab;
-        else if ( tab < fromTab && e->pos().x() > r.center().x() )
-            ++toTab;
-
-        m_dropIndicator->setVisible(toTab != fromTab);
-        m_dropIndicator->move(toTab < fromTab ? tabRect(toTab).topLeft()-QPoint(4, 0) : tabRect(toTab).topRight()-QPoint(3, 0));
+        QRect r = tabRect(tabAt(e->pos()));
+        m_dropIndicator->setVisible(true);
+        m_dropIndicator->move(e->pos().x() > r.center().x() ? r.topRight()-QPoint(3, 0) : r.topLeft()-QPoint(4, 0));
     }
+}
+
+void
+TabBar::dragLeaveEvent(QDragLeaveEvent *e)
+{
+    m_dropIndicator->hide();
 }
 
 void
@@ -563,7 +562,6 @@ TabBar::dropEvent(QDropEvent *e)
     m_hasPress = false;
     MainWindow *w = MainWindow::window(this);
     int tab = tabAt(e->pos());
-    int activeTab = currentIndex();
     if ( e->mimeData()->property("tab").isValid() ) //dragging a tab inside tabbar
         if ( tab != -1 )
         {
@@ -616,16 +614,68 @@ TabBar::mouseDoubleClickEvent(QMouseEvent *event)
 }
 
 void
-TabBar::mouseReleaseEvent(QMouseEvent *event)
+TabBar::mousePressEvent(QMouseEvent *e)
 {
-    m_hasPress = false;
-    if (event->button() == Qt::MiddleButton && tabAt(event->pos()) > -1)
+    e->accept();
+    m_hasPress = true;
+    if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
+        QCoreApplication::sendEvent(bar, e);
+}
+
+void
+TabBar::mouseMoveEvent(QMouseEvent *e)
+{
+    QTabBar::mouseMoveEvent(e);
+    if ( Configuration::config.behaviour.gayWindow )
     {
-        emit tabCloseRequested(tabAt(event->pos()));
-        event->accept();
-        return;
+        int t = tabAt(e->pos());
+        if ( tabRect(t).isValid() )
+            m_hoveredTab = t;
+        else
+            m_hoveredTab = -1;
+        update();
     }
-//    QTabBar::mouseReleaseEvent(event);
+    if ( m_hasPress && tabAt(e->pos()) != -1 )
+    {
+        QDrag *drag = new QDrag(this);
+        QMimeData *data = new QMimeData();
+        data->setUrls(QList<QUrl>() << QUrl(MainWindow::window(this)->containerForTab(tabAt(e->pos()))->model()->rootPath()));
+        data->setProperty("tab", tabAt(e->pos()));
+        drag->setMimeData(data);
+        drag->setPixmap(tabIcon(tabAt(e->pos())).pixmap(16));
+        drag->exec();
+        connect(drag, SIGNAL(destroyed()), m_dropIndicator, SLOT(hide()));
+    }
+    if ( m_hasPress )
+        m_hasPress = false;
+    if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
+        QCoreApplication::sendEvent(bar, e);
+    if ( m_dropIndicator->isVisible() )
+        m_dropIndicator->setVisible(false);
+}
+
+void
+TabBar::leaveEvent(QEvent *e)
+{
+    QTabBar::leaveEvent(e);
+    if ( Configuration::config.behaviour.gayWindow )
+    {
+        m_hoveredTab = -1;
+        update();
+    }
+    if ( m_hasPress )
+        m_hasPress = false;
+}
+
+void
+TabBar::mouseReleaseEvent(QMouseEvent *e)
+{
+    e->accept();
+    if ( m_hasPress && tabAt(e->pos()) != -1 )
+        setCurrentIndex(tabAt(e->pos()));
+    m_hasPress = false;
+    if (e->button() == Qt::MiddleButton && tabAt(e->pos()) > -1)
+        emit tabCloseRequested(tabAt(e->pos()));
 }
 
 void
@@ -667,7 +717,7 @@ TabBar::drawTab(QPainter *p, int index)
         p->setBrush(FooBar::headGrad());
 
         QLinearGradient hg(shape.topLeft(), shape.bottomLeft());
-        hg.setColorAt(0.0f, Operations::colorMid(high, Qt::white));
+        hg.setColorAt(0.0f, Ops::colorMid(high, Qt::white));
         hg.setColorAt(1.0f, high);
 
         p->setPen(QPen(hg, 1.5f));
@@ -676,13 +726,13 @@ TabBar::drawTab(QPainter *p, int index)
     else
     {
         QLinearGradient it(r.topLeft(), r.bottomLeft());
-        it.setColorAt(0.0f, bg);
-        it.setColorAt(1.0f, index==m_hoveredTab ? Operations::colorMid(bg,hl) : Operations::colorMid(bg, fg, 3, 1));
+        it.setColorAt(0.0f, index==m_hoveredTab ? Ops::colorMid(bg, Qt::white, 5, 1) : bg);
+        it.setColorAt(1.0f, Ops::colorMid(bg, fg, index==m_hoveredTab ? 7 : 3, 1));
 
         QColor h = high;
         h.setAlpha(bg.value());
         QLinearGradient hg(shape.topLeft(), shape.bottomLeft());
-        hg.setColorAt(0.0f, Operations::colorMid(h, Qt::white));
+        hg.setColorAt(0.0f, Ops::colorMid(h, Qt::white));
         hg.setColorAt(1.0f, h);
 
         p->setPen(QPen(hg, 1.5f));
@@ -706,7 +756,7 @@ TabBar::drawTab(QPainter *p, int index)
     r.setLeft(r.x() == rect().x() ? r.left()+20+overlap+leftMargin : r.left()+20+leftMargin);
 
     int y = bg.value() > fg.value() ? 1 : -1;
-    QColor emboss(Operations::colorMid(bg, y==1 ? Qt::white : Qt::black, 2, 1));
+    QColor emboss(Ops::colorMid(bg, y==1 ? Qt::white : Qt::black, 2, 1));
 
     QLinearGradient embGrad(r.topLeft(), r.topRight());
     embGrad.setColorAt(0, emboss);
@@ -746,68 +796,6 @@ TabBar::paintEvent(QPaintEvent *event)
     p.drawLine(0, height()-2, width(), height()-2);
     drawTab(&p, currentIndex());
     p.end();
-}
-
-void
-TabBar::mousePressEvent(QMouseEvent *e)
-{
-//    QTabBar::mousePressEvent(e);
-    e->accept();
-    setCurrentIndex(tabAt(e->pos()));
-    m_hasPress = true;
-    if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
-        QCoreApplication::sendEvent(bar, e);
-}
-
-void
-TabBar::mouseMoveEvent(QMouseEvent *e)
-{
-    QTabBar::mouseMoveEvent(e);
-    if ( Configuration::config.behaviour.gayWindow )
-    {
-        int t = tabAt(e->pos());
-        if ( tabRect(t).isValid() )
-            m_hoveredTab = t;
-        else
-            m_hoveredTab = -1;
-        update();
-    }
-    if ( m_hasPress && tabAt(e->pos()) != -1 )
-    {
-        QDrag *drag = new QDrag(this);
-        QMimeData *data = new QMimeData();
-        data->setUrls(QList<QUrl>() << QUrl(MainWindow::window(this)->containerForTab(tabAt(e->pos()))->model()->rootPath()));
-        data->setProperty("tab", tabAt(e->pos()));
-        drag->setMimeData(data);
-        drag->exec();
-    }
-    if ( m_hasPress )
-        m_hasPress = false;
-    if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
-        QCoreApplication::sendEvent(bar, e);
-    if ( m_dropIndicator->isVisible() )
-        m_dropIndicator->setVisible(false);
-}
-
-void
-TabBar::keyPressEvent(QKeyEvent *e)
-{
-    QTabBar::keyPressEvent(e);
-    if ( e->key() == Qt::Key_Escape )
-        m_dropIndicator->setVisible(false);
-}
-
-void
-TabBar::leaveEvent(QEvent *e)
-{
-    QTabBar::leaveEvent(e);
-    if ( Configuration::config.behaviour.gayWindow )
-    {
-        m_hoveredTab = -1;
-        update();
-    }
-    if ( m_hasPress )
-        m_hasPress = false;
 }
 
 QSize

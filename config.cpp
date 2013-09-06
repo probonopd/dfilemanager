@@ -82,7 +82,7 @@ Configuration::readConfiguration()
     {
         QStringList actions = settings()->value(string).toStringList(); //0 == name, 1 == cmd, 2 == keysequence
         QAction *action = new QAction(actions[0], this);
-        connect ( action, SIGNAL(triggered()), Operations::instance(), SLOT(customActionTriggered()) );
+        connect ( action, SIGNAL(triggered()), Ops::instance(), SLOT(customActionTriggered()) );
         action->setData(actions[1]);
         if ( actions.count() > 2 )
             action->setShortcut(QKeySequence(actions[2]));
@@ -210,7 +210,7 @@ Configuration::openWithActions(const QString &file)
         }
     }
 
-    QStringList apps = QStringList() << appsMap[Operations::getMimeType(file)] << appsMap[mimeMap[QFileInfo(file).suffix()]];
+    QStringList apps = QStringList() << appsMap[Ops::getMimeType(file)] << appsMap[mimeMap[QFileInfo(file).suffix()]];
     apps.removeDuplicates();
 
     QList<QAction *> actionList;
@@ -218,7 +218,7 @@ Configuration::openWithActions(const QString &file)
     {
         QAction *action = new QAction(desktopInfo(app, true), instance() );
         action->setProperty("file", file);
-        connect( action, SIGNAL( triggered() ), Operations::instance(), SLOT( openWith() ) );
+        connect( action, SIGNAL( triggered() ), Ops::instance(), SLOT( openWith() ) );
         QVariant var;
         var.setValue(desktopInfo(app, false));
         action->setData(var);

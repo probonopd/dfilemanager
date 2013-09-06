@@ -38,7 +38,7 @@ PathSeparator::paintEvent(QPaintEvent *)
     QColor bg = palette().color(backgroundRole());
 
     int y = bg.value()>fg.value()?1:-1;
-    QColor hl = Operations::colorMid(bg, y==1?Qt::white:Qt::black);
+    QColor hl = Ops::colorMid(bg, y==1?Qt::white:Qt::black);
     QRect r = rect();
     QPainterPath triangle;
     triangle.moveTo(r.topLeft());
@@ -246,8 +246,8 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel) : QStackedWi
     setAutoFillBackground(true);
     setBackgroundRole(QPalette::Base);
     QPalette pal = palette();
-    QColor midC = Operations::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
-    pal.setColor( QPalette::Base, Operations::colorMid( Qt::black, midC, 1, 10 ) );
+    QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
+    pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
     setPalette( pal );
 
     m_pathBox->setInsertPolicy(QComboBox::InsertAtBottom);

@@ -38,8 +38,8 @@ RecentFoldersView::RecentFoldersView(QWidget *parent) : QListView(parent), m_mod
 
     //base color... slight hihglight tint
     QPalette pal = palette();
-    QColor midC = Operations::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
-    pal.setColor( QPalette::Base, Operations::colorMid( Qt::black, midC, 1, 10 ) );
+    QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
+    pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
     setPalette( pal );
 }
 
