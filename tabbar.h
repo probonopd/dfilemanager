@@ -117,6 +117,14 @@ protected:
     void paintEvent(QPaintEvent *e);
 };
 
+class DropIndicator : public QWidget
+{
+public:
+    inline explicit DropIndicator(QWidget *parent = 0) : QWidget(parent){}
+protected:
+    void paintEvent(QPaintEvent *);
+};
+
 class TabBar : public QTabBar
 {
     Q_OBJECT
@@ -139,7 +147,9 @@ protected:
     void leaveEvent(QEvent *e);
     void resizeEvent(QResizeEvent *e);
     void dragEnterEvent(QDragEnterEvent *e);
+    void dragMoveEvent(QDragMoveEvent *);
     void dropEvent(QDropEvent *e);
+    void keyPressEvent(QKeyEvent *e);
     void correctAddButtonPos();
     void drawTab( QPainter *p, int index );
 
@@ -152,6 +162,7 @@ private:
     int m_hoveredTab;
     bool m_hasPress;
     QWidget *m_addButton;
+    DropIndicator *m_dropIndicator;
 };
 
 }

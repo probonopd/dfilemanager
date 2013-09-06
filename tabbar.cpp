@@ -481,7 +481,20 @@ TabButton::paintEvent(QPaintEvent *e)
     p.end();
 }
 
-TabBar::TabBar(QWidget *parent) : QTabBar(parent), m_addButton(0), m_hasPress(false)
+void
+DropIndicator::paintEvent(QPaintEvent *)
+{
+    QLinearGradient lg(rect().topLeft(), rect().topRight());
+    lg.setColorAt(0.0f, Qt::transparent);
+    lg.setColorAt(0.5f, hl);
+    lg.setColorAt(1.0f, Qt::transparent);
+
+    QPainter p(this);
+    p.fillRect(rect(), lg);
+    p.end();
+}
+
+TabBar::TabBar(QWidget *parent) : QTabBar(parent), m_addButton(0), m_hasPress(false), m_dropIndicator(new DropIndicator(this))
 {
     setSelectionBehaviorOnRemove(QTabBar::SelectPreviousTab);
     setDocumentMode(true);
@@ -494,6 +507,8 @@ TabBar::TabBar(QWidget *parent) : QTabBar(parent), m_addButton(0), m_hasPress(fa
     setExpanding(false);
     setElideMode(Qt::ElideRight);
     setAcceptDrops(true);
+    m_dropIndicator->setFixedWidth(8);
+    m_dropIndicator->setVisible(false);
 }
 
 void
@@ -522,10 +537,31 @@ TabBar::dragEnterEvent(QDragEnterEvent *e)
 }
 
 void
+TabBar::dragMoveEvent(QDragMoveEvent *e)
+{
+    if ( e->mimeData()->property("tab").isValid() && tabAt(e->pos()) != -1 )
+    {
+        int tab = tabAt(e->pos());
+        int activeTab = currentIndex();
+        QRect r = tabRect(tab);
+        int fromTab = e->mimeData()->property("tab").toInt();
+        int toTab = tab;
+        if ( tab > fromTab && e->pos().x() < r.center().x() )
+            --toTab;
+        else if ( tab < fromTab && e->pos().x() > r.center().x() )
+            ++toTab;
+
+        m_dropIndicator->setVisible(toTab != fromTab);
+        m_dropIndicator->move(toTab < fromTab ? tabRect(toTab).topLeft()-QPoint(4, 0) : tabRect(toTab).topRight()-QPoint(3, 0));
+    }
+}
+
+void
 TabBar::dropEvent(QDropEvent *e)
 {
+    m_dropIndicator->setVisible(false);
     m_hasPress = false;
-    MainWindow *w = MainWindow::windowFor(this);
+    MainWindow *w = MainWindow::window(this);
     int tab = tabAt(e->pos());
     int activeTab = currentIndex();
     if ( e->mimeData()->property("tab").isValid() ) //dragging a tab inside tabbar
@@ -589,7 +625,7 @@ TabBar::mouseReleaseEvent(QMouseEvent *event)
         event->accept();
         return;
     }
-    QTabBar::mouseReleaseEvent(event);
+//    QTabBar::mouseReleaseEvent(event);
 }
 
 void
@@ -715,8 +751,12 @@ TabBar::paintEvent(QPaintEvent *event)
 void
 TabBar::mousePressEvent(QMouseEvent *e)
 {
-    QTabBar::mousePressEvent(e);
+//    QTabBar::mousePressEvent(e);
+    e->accept();
+    setCurrentIndex(tabAt(e->pos()));
     m_hasPress = true;
+    if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
+        QCoreApplication::sendEvent(bar, e);
 }
 
 void
@@ -736,13 +776,25 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
     {
         QDrag *drag = new QDrag(this);
         QMimeData *data = new QMimeData();
-        data->setUrls(QList<QUrl>() << QUrl(MainWindow::windowFor(this)->containerForTab(tabAt(e->pos()))->model()->rootPath()));
+        data->setUrls(QList<QUrl>() << QUrl(MainWindow::window(this)->containerForTab(tabAt(e->pos()))->model()->rootPath()));
         data->setProperty("tab", tabAt(e->pos()));
         drag->setMimeData(data);
         drag->exec();
     }
     if ( m_hasPress )
         m_hasPress = false;
+    if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
+        QCoreApplication::sendEvent(bar, e);
+    if ( m_dropIndicator->isVisible() )
+        m_dropIndicator->setVisible(false);
+}
+
+void
+TabBar::keyPressEvent(QKeyEvent *e)
+{
+    QTabBar::keyPressEvent(e);
+    if ( e->key() == Qt::Key_Escape )
+        m_dropIndicator->setVisible(false);
 }
 
 void
