@@ -533,7 +533,11 @@ TabBar::dropEvent(QDropEvent *e)
         {
             QRect r = tabRect(tab);
             int fromTab = e->mimeData()->property("tab").toInt();
-            int toTab = e->pos().x() > r.center().x() && tab < fromTab ? tab+1 : tab;
+            int toTab = tab;
+            if ( tab > fromTab && e->pos().x() < r.center().x() )
+                --toTab;
+            else if ( tab < fromTab && e->pos().x() > r.center().x() )
+                ++toTab;
             if ( fromTab == toTab )
                 return;
 
