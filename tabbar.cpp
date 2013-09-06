@@ -542,11 +542,6 @@ TabBar::dropEvent(QDropEvent *e)
                 return;
 
             moveTab(fromTab, toTab);
-            if ( fromTab == activeTab ) //when moving the activeTab this seems to be necessary
-            {
-                setCurrentIndex(toTab == 0 ? toTab+1 : toTab-1);
-                setCurrentIndex(toTab);
-            }
             return;
         }
     if ( tab != -1 )

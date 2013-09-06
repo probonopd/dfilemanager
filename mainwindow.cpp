@@ -639,8 +639,11 @@ void
 MainWindow::tabMoved(int from, int to)
 {
     QWidget *w = m_stackedWidget->widget(from);
+
     m_stackedWidget->removeWidget(w);
     m_stackedWidget->insertWidget(to, w);
+    if ( to == m_tabBar->currentIndex() )
+        m_stackedWidget->setCurrentWidget(m_stackedWidget->widget(to));
 }
 
 void
