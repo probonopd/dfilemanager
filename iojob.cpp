@@ -255,7 +255,15 @@ CopyDialog::finishedToggled(bool enabled)
 
 //--------------------------------------------------------------------------------------------------------------
 
-Job::Job(QObject *parent) : QObject(parent) {}
+Job::Job(QObject *parent)
+    : QObject(parent)
+    , m_canceled(false)
+    , m_cut(false)
+    , m_fileSize(0)
+    , m_fileProgress(0)
+{
+
+}
 
 void
 Job::remove(const QStringList &paths)
@@ -292,12 +300,6 @@ Job::getDirs(const QString &dir, quint64 *fileSize)
 void
 Job::cp(const QStringList &copyFiles, const QString &destination, bool cut, bool ask)
 {
-    m_canceled = false;
-    m_cut = cut;
-
-    m_fileSize = 0;
-    m_fileProgress = 0;
-
     if ( ask )
     {
         QString title(tr("Are you sure?"));
@@ -309,7 +311,7 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut, bool
         if ( QMessageBox::question(MainWindow::currentWindow(), title, message, QMessageBox::Yes, QMessageBox::No) == QMessageBox::No )
             return;
     }
-
+    m_cut = cut;
     foreach (const QString &file, copyFiles)
     {
         if ( QFileInfo(file).isDir() )

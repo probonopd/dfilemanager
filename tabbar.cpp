@@ -27,6 +27,8 @@
 
 #include <QTextLayout>
 #include <qmath.h>
+#include <QMessageBox>
+#include <QDrag>
 
 using namespace DFM;
 
@@ -479,7 +481,7 @@ TabButton::paintEvent(QPaintEvent *e)
     p.end();
 }
 
-TabBar::TabBar(QWidget *parent) : QTabBar(parent), m_addButton(0)
+TabBar::TabBar(QWidget *parent) : QTabBar(parent), m_addButton(0), m_hasPress(false)
 {
     setSelectionBehaviorOnRemove(QTabBar::SelectPreviousTab);
     setDocumentMode(true);
@@ -487,7 +489,7 @@ TabBar::TabBar(QWidget *parent) : QTabBar(parent), m_addButton(0)
         setTabsClosable(true);
     else
         setAttribute(Qt::WA_NoSystemBackground);
-    setMovable(true);
+    setMovable(false);
     setDrawBase(true);
     setExpanding(false);
     setElideMode(Qt::ElideRight);
@@ -522,16 +524,30 @@ void
 TabBar::dropEvent(QDropEvent *e)
 {
     MainWindow *w = MainWindow::windowFor(this);
-    if ( tabAt(e->pos()) != -1 )
+    int tab = tabAt(e->pos());
+    if ( e->mimeData()->property("tab").isValid() ) //dragging a tab inside tabbar
+        if ( tab != -1 )
+        {
+            QRect r = tabRect(tab);
+            int fromTab = e->mimeData()->property("tab").toInt();
+            int toTab = e->pos().x() > r.center().x() ? tab+1 : tab;
+            if ( fromTab == toTab )
+                return;
+
+            moveTab(fromTab, toTab);
+            return;
+        }
+    if ( tab != -1 )
     {
-        const QString &dest = w->containerForTab(tabAt(e->pos()))->model()->rootPath();
+        const QString &dest = w->containerForTab(tab)->model()->rootPath();
         IO::Job::copy(e->mimeData()->urls(), dest, true, true);
     }
     else
     {
-        foreach ( const QUrl &file, e->mimeData()->urls() )
-            if ( QFileInfo(file.toLocalFile()).isDir() )
-                w->addTab(file.toLocalFile());
+        if ( e->mimeData()->urls().count() == 1 || QMessageBox::question(w, tr("Are you sure?"), QString(tr("You are about to open %1 tabs").arg(e->mimeData()->urls().count())), QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes )
+            foreach ( const QUrl &file, e->mimeData()->urls() )
+                if ( QFileInfo(file.toLocalFile()).isDir() )
+                    w->addTab(file.toLocalFile());
     }
 }
 
@@ -558,6 +574,7 @@ TabBar::mouseDoubleClickEvent(QMouseEvent *event)
 void
 TabBar::mouseReleaseEvent(QMouseEvent *event)
 {
+    m_hasPress = false;
     if (event->button() == Qt::MiddleButton && tabAt(event->pos()) > -1)
     {
         emit tabCloseRequested(tabAt(event->pos()));
@@ -688,6 +705,13 @@ TabBar::paintEvent(QPaintEvent *event)
 }
 
 void
+TabBar::mousePressEvent(QMouseEvent *e)
+{
+    QTabBar::mousePressEvent(e);
+    m_hasPress = true;
+}
+
+void
 TabBar::mouseMoveEvent(QMouseEvent *e)
 {
     QTabBar::mouseMoveEvent(e);
@@ -699,6 +723,16 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
         else
             m_hoveredTab = -1;
         update();
+    }
+    if ( m_hasPress && tabAt(e->pos()) != -1 )
+    {
+        m_hasPress = false;
+        QDrag *drag = new QDrag(this);
+        QMimeData *data = new QMimeData();
+        data->setUrls(QList<QUrl>() << QUrl(MainWindow::windowFor(this)->containerForTab(tabAt(e->pos()))->model()->rootPath()));
+        data->setProperty("tab", tabAt(e->pos()));
+        drag->setMimeData(data);
+        drag->exec();
     }
 }
 

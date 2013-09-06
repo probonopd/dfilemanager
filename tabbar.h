@@ -128,7 +128,8 @@ signals:
     void newTabRequest();
 
 protected:
-    virtual QSize tabSizeHint(int index) const;
+    QSize tabSizeHint(int index) const;
+    void mousePressEvent(QMouseEvent *e);
     void mouseDoubleClickEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void paintEvent(QPaintEvent *event);
@@ -149,6 +150,7 @@ private:
     void genNewTabButton();
     friend class FooBar;
     int m_hoveredTab;
+    bool m_hasPress;
     QWidget *m_addButton;
 };
 
