@@ -145,10 +145,12 @@ class Job : public QObject
     Q_OBJECT
 public:
     explicit Job(QObject *parent = 0);
-    static void copy(const QStringList &sourceFiles, const QString &destination, bool cut = false);
+    static void copy(const QStringList &sourceFiles, const QString &destination, bool cut = false, bool ask = false);
+    static void copy(const QList<QUrl> &sourceFiles, const QString & destination, bool cut = false, bool ask = false);
     static void remove(const QStringList &paths);
     void getDirs(const QString &dir, quint64 *fileSize);
-    void cp(const QStringList &copyFiles, const QString &destination, bool cut = false);
+    void cp(const QStringList &copyFiles, const QString &destination, bool cut = false, bool ask = false);
+    void cp(const QList<QUrl> &copyFiles, const QString &destination, bool cut = false, bool ask = false);
     void rm(const QStringList &paths) { (new IOThread(paths, this))->start(); }
 
 public slots:

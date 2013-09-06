@@ -289,14 +289,10 @@ MainWindow::pasteSelection()
 {
     const QMimeData *mimeData = QApplication::clipboard()->mimeData();
 
-    if(!mimeData->hasUrls())
+    if (!mimeData->hasUrls())
         return;
 
-    QStringList copyFiles;
-    foreach(QUrl url,QList<QUrl>(mimeData->urls()))
-        copyFiles << url.toLocalFile();
-
-    IO::Job::copy(copyFiles, m_fsModel->rootPath(), m_cut);
+    IO::Job::copy(mimeData->urls(), m_fsModel->rootPath(), m_cut, m_cut);
 
     QApplication::clipboard()->clear();
 

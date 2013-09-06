@@ -19,7 +19,6 @@
 ***************************************************************************/
 
 #include <QImageReader>
-#include <QMessageBox>
 
 #include "filesystemmodel.h"
 #include "iojob.h"
@@ -222,17 +221,8 @@ FileSystemModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int 
     if (!data->hasUrls())
         return false;
 
-    bool error = false;
-    int ret = QMessageBox::question(MainWindow::currentWindow(), tr("Are you sure?"), tr("you are about to move some stuff..."), QMessageBox::Yes, QMessageBox::No);
-    if (ret == QMessageBox::Yes)
-    {
-        QStringList cp;
-        foreach(QUrl url, data->urls())
-            cp << url.toLocalFile();
-        IO::Job::copy(cp, filePath(parent));
-    }
-
-    return error;
+    IO::Job::copy(data->urls(), filePath(parent), true, true);
+    return true;
 }
 
 int

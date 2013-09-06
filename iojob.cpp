@@ -264,9 +264,15 @@ Job::remove(const QStringList &paths)
 }
 
 void
-Job::copy(const QStringList &sourceFiles, const QString &destination, bool cut)
+Job::copy(const QStringList &sourceFiles, const QString &destination, bool cut, bool ask)
 {
-    (new Job(MainWindow::currentWindow()))->cp(sourceFiles, destination, cut);
+    (new Job(MainWindow::currentWindow()))->cp(sourceFiles, destination, cut, ask);
+}
+
+void
+Job::copy(const QList<QUrl> &sourceFiles, const QString &destination, bool cut, bool ask)
+{
+    (new Job(MainWindow::currentWindow()))->cp(sourceFiles, destination, cut, ask);
 }
 
 void
@@ -284,7 +290,7 @@ Job::getDirs(const QString &dir, quint64 *fileSize)
 }
 
 void
-Job::cp(const QStringList &copyFiles, const QString &destination, bool cut)
+Job::cp(const QStringList &copyFiles, const QString &destination, bool cut, bool ask)
 {
     m_canceled = false;
     m_cut = cut;
@@ -292,11 +298,24 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut)
     m_fileSize = 0;
     m_fileProgress = 0;
 
+    if ( ask )
+    {
+        QString title(tr("Are you sure?"));
+        QString message(tr("Do you want to move:"));
+        foreach (const QString &file, copyFiles)
+            message.append("<br>").append(file);
+        message.append(tr("<br>to ")).append(destination).append(" ?");
+
+        if ( QMessageBox::question(MainWindow::currentWindow(), title, message, QMessageBox::Yes, QMessageBox::No) == QMessageBox::No )
+            return;
+    }
+
     foreach (const QString &file, copyFiles)
     {
         if ( QFileInfo(file).isDir() )
-        if ( QFileInfo(file).path() != destination && destination.startsWith(file) )
-            return;
+            if ( destination.startsWith(file)
+                 || ( QFileInfo(file).path() == destination && cut ) )
+                return;
 
         QFileInfo fileInfo(file);
         if (fileInfo.isDir())
@@ -327,6 +346,15 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut)
     connect(m_ioThread, SIGNAL(fileExists(QStringList)), this, SLOT(fileExists(QStringList)));
     connect(m_ioThread, SIGNAL(pauseToggled(bool,bool)), copyDialog, SLOT(pauseToggled(bool, bool)));
     m_ioThread->start(); //start copying....
+}
+
+void
+Job::cp(const QList<QUrl> &copyFiles, const QString &destination, bool cut, bool ask)
+{
+    QStringList files;
+    foreach ( const QUrl &url, copyFiles )
+        files << url.toLocalFile();
+    cp(files, destination, cut, ask);
 }
 
 //---------------------------------------------------------------------------------------------------------

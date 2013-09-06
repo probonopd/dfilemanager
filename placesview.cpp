@@ -27,7 +27,6 @@
 
 #include <QInputDialog>
 #include <QMenu>
-#include <QMessageBox>
 #include <QMetaObject>
 #include <QMetaProperty>
 
@@ -530,9 +529,7 @@ PlacesView::dropEvent( QDropEvent *event )
             if ( place ) //dropping files on a place
             {
                 QApplication::restoreOverrideCursor();
-                int ret = QMessageBox::question(MainWindow::currentWindow(), tr("Are you sure?"), tr("you are about to move some stuff..."), QMessageBox::Yes, QMessageBox::No);
-                if ( ret == QMessageBox::Yes )
-                    IO::Job::copy( files, place->path(), true );
+                IO::Job::copy( files, place->path(), true, true );
                 RETURN;
             }
 

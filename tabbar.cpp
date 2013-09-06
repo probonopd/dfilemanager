@@ -23,6 +23,7 @@
 #include "config.h"
 #include "operations.h"
 #include "iconprovider.h"
+#include "iojob.h"
 
 #include <QTextLayout>
 #include <qmath.h>
@@ -490,6 +491,7 @@ TabBar::TabBar(QWidget *parent) : QTabBar(parent), m_addButton(0)
     setDrawBase(true);
     setExpanding(false);
     setElideMode(Qt::ElideRight);
+    setAcceptDrops(true);
 }
 
 void
@@ -507,6 +509,30 @@ TabBar::correctAddButtonPos()
     int x = tabRect(count()-1).right()+Configuration::config.behaviour.tabOverlap/2;
     int y = qFloor((float)rect().height()/2.0f-(float)m_addButton->height()/2.0f);
     m_addButton->move(x, y);
+}
+
+void
+TabBar::dragEnterEvent(QDragEnterEvent *e)
+{
+    if ( e->mimeData()->hasUrls() )
+        e->acceptProposedAction();
+}
+
+void
+TabBar::dropEvent(QDropEvent *e)
+{
+    MainWindow *w = MainWindow::windowFor(this);
+    if ( tabAt(e->pos()) != -1 )
+    {
+        const QString &dest = w->containerForTab(tabAt(e->pos()))->model()->rootPath();
+        IO::Job::copy(e->mimeData()->urls(), dest, true, true);
+    }
+    else
+    {
+        foreach ( const QUrl &file, e->mimeData()->urls() )
+            if ( QFileInfo(file.toLocalFile()).isDir() )
+                w->addTab(file.toLocalFile());
+    }
 }
 
 void

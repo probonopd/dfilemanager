@@ -25,7 +25,6 @@
 #include <QDebug>
 #include <QCompleter>
 #include <QDirModel>
-#include <QMessageBox>
 
 using namespace DFM;
 
@@ -101,11 +100,7 @@ NavButton::dragEnterEvent(QDragEnterEvent *e)
 void
 NavButton::dropEvent(QDropEvent *e)
 {
-    QStringList files;
-    foreach ( const QUrl &file, e->mimeData()->urls() )
-        files << file.toLocalFile();
-    if ( QMessageBox::question(MainWindow::currentWindow(), tr("Are you sure?"), tr("you are about to move some files..."), QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes )
-        IO::Job::copy(files, m_path, true);
+    IO::Job::copy(e->mimeData()->urls(), m_path, true, true);
     m_hasData = false;
     update();
 }

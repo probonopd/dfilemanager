@@ -55,8 +55,10 @@ public:
     inline QToolBar *toolBar() { return m_toolBar; }
     static ViewContainer *currentContainer();
     static MainWindow *currentWindow();
+    static MainWindow *windowFor( QWidget *w ) { QWidget *p = w; while ( p->parentWidget() ) p = p->parentWidget(); return static_cast<MainWindow *>(p); }
     static PlacesView *places();
     static QList<MainWindow *> openWindows();
+    inline ViewContainer *containerForTab( int tab ) { return static_cast<ViewContainer *>(m_stackedWidget->widget(tab)); }
     inline InfoWidget *infoWidget() { return m_infoWidget; }
     inline QList<QAction *> acts() const { return m_actions; }
     inline QMenu *mainMenu() { return m_mainMenu; }
