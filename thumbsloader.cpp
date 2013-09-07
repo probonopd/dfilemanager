@@ -225,7 +225,7 @@ ThumbsLoader::genReflection(const QPair<QImage, QModelIndex> &imgStr)
 QImage
 ThumbsLoader::pic(const QString &filePath, const Type &t)
 {
-    if ( DFM::Configuration::config.views.showThumbs
+    if ( DFM::Store::config.views.showThumbs
          && m_loadedThumbs[t].contains(filePath) )
         return m_loadedThumbs[t].value(filePath);
 
@@ -286,7 +286,7 @@ ThumbsLoader::loadThumbs()
 {
     m_timer->stop();
 
-    if ( !DFM::Configuration::config.views.showThumbs )
+    if ( !DFM::Store::config.views.showThumbs )
         return;
 
     for ( int i = 0; i < m_fsModel->rowCount(m_currentView->rootIndex()); ++i )
@@ -350,7 +350,7 @@ ThumbsLoader::run()
 {
     while ( !m_refQueue.isEmpty() )
         genReflection( m_refQueue.takeFirst() );
-    if ( DFM::Configuration::config.views.showThumbs )
+    if ( DFM::Store::config.views.showThumbs )
         while ( !m_thumbQueue.isEmpty() )
             loadThumb( m_thumbQueue.takeFirst() );
 }

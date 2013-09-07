@@ -156,7 +156,7 @@ protected:
         int ds = DECOSIZE.height();
         int h;
         elidedText(option, index, &h);
-        return QSize(ds+(Configuration::config.views.iconView.textWidth*2), ds+h);
+        return QSize(ds+(Store::config.views.iconView.textWidth*2), ds+h);
     }
     inline QString elidedText( const QStyleOptionViewItem &option, const QModelIndex &index, int *h = 0, QRect *r = 0 ) const
     {
@@ -176,7 +176,7 @@ protected:
             if (!line.isValid())
                 break;
 
-            line.setLineWidth(DECOSIZE.height()+Configuration::config.views.iconView.textWidth*2);
+            line.setLineWidth(DECOSIZE.height()+Store::config.views.iconView.textWidth*2);
             height += leading;
             height += line.height();
             widthUsed += line.naturalTextWidth();
@@ -204,7 +204,7 @@ IconView::IconView( QWidget *parent ) : QListView( parent ), m_scrollTimer( new 
     setItemDelegate( new IconDelegate( this ) );
     ViewAnimator::manage(this);
     setMovement( QListView::Snap );
-    const int &iSize = Configuration::config.views.iconView.iconSize*16;
+    const int &iSize = Store::config.views.iconView.iconSize*16;
     setSelectionMode( QAbstractItemView::ExtendedSelection );
     setResizeMode( QListView::Adjust );
     setIconSize( QSize( iSize, iSize ) );
@@ -247,7 +247,7 @@ IconView::wheelEvent( QWheelEvent * event )
         }
         else
         {
-            if ( Configuration::config.views.iconView.smoothScroll )
+            if ( Store::config.views.iconView.smoothScroll )
             {
                 m_delta += numDegrees;
                 if ( !m_scrollTimer->isActive() )
@@ -429,12 +429,12 @@ void
 IconView::contextMenuEvent( QContextMenuEvent *event )
 {
     QMenu popupMenu;
-    if ( Configuration::customActions().count() )
-        popupMenu.addMenu(Configuration::customActionsMenu());
+    if ( Store::customActions().count() )
+        popupMenu.addMenu(Store::customActionsMenu());
     popupMenu.addActions( actions() );
     const QString &file = static_cast<FileSystemModel *>( model() )->filePath( indexAt( event->pos() ) );
     QMenu openWith( tr( "Open With" ), this );
-    openWith.addActions( Configuration::openWithActions( file ) );
+    openWith.addActions( Store::openWithActions( file ) );
     foreach( QAction *action, actions() )
     {
         popupMenu.addAction( action );

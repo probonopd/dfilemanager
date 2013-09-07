@@ -49,8 +49,6 @@ FileExistsDialog::FileExistsDialog( const QStringList &files, QWidget *parent)
     m_edit->setText(QFileInfo(m_file).fileName());
     m_name->setText("File " + m_file + " already exists, what do you do?");
 
-    setWindowModality(Qt::ApplicationModal);
-
     QFileInfo inInfo(files[0]);
     QFileInfo outInfo(files[1]);
 
@@ -79,6 +77,7 @@ FileExistsDialog::FileExistsDialog( const QStringList &files, QWidget *parent)
     vBox->addLayout(hBox);
     setLayout(vBox);
     setWindowFlags( ( ( windowFlags() | Qt::CustomizeWindowHint ) & ~Qt::WindowCloseButtonHint ) );
+    setWindowModality(Qt::WindowModal);
 }
 
 QPair<Mode, QString> FileExistsDialog::mode(const QStringList &files) { return FileExistsDialog(files, MainWindow::currentWindow()).getMode(); }
@@ -142,7 +141,7 @@ CopyDialog::CopyDialog(QWidget *parent)
     , m_to(new QLabel(this))
     , m_cbHideFinished(new QCheckBox(this))
 {
-    m_hideFinished = Configuration::settings()->value("hideCPDWhenFinished", 0).toBool();
+    m_hideFinished = Store::settings()->value("hideCPDWhenFinished", 0).toBool();
     m_cbHideFinished->setChecked(m_hideFinished);
 
     setWindowModality(Qt::WindowModal);
@@ -250,20 +249,10 @@ void
 CopyDialog::finishedToggled(bool enabled)
 {
     m_hideFinished = enabled;
-    Configuration::settings()->setValue("hideCPDWhenFinished", m_hideFinished);
+    Store::settings()->setValue("hideCPDWhenFinished", m_hideFinished);
 }
 
-//--------------------------------------------------------------------------------------------------------------
-
-Job::Job(QObject *parent)
-    : QObject(parent)
-    , m_canceled(false)
-    , m_cut(false)
-    , m_fileSize(0)
-    , m_fileProgress(0)
-{
-
-}
+//--------------------------------------------------------------------------------------------------------------    
 
 void
 Job::remove(const QStringList &paths)
@@ -313,7 +302,7 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut, bool
         if ( QMessageBox::question(MainWindow::currentWindow(), title, message, QMessageBox::Yes, QMessageBox::No) == QMessageBox::No )
             return;
     }
-    m_cut = cut;
+    quint64 fileSize = 0;
     foreach (const QString &file, copyFiles)
     {
         if ( QFileInfo(file).isDir() )
@@ -323,9 +312,9 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut, bool
 
         QFileInfo fileInfo(file);
         if (fileInfo.isDir())
-            getDirs(file, &m_fileSize);
+            getDirs(file, &fileSize);
         else
-            m_fileSize += fileInfo.size();
+            fileSize += fileInfo.size();
     }
 
     CopyDialog *copyDialog = new CopyDialog(MainWindow::currentWindow());
@@ -334,22 +323,22 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut, bool
     copyDialog->show();
 
 #ifdef Q_WS_X11
-    if ( m_fileSize > Ops::getDriveInfo<Ops::Free>( destination ) )
+    if ( fileSize > Ops::getDriveInfo<Ops::Free>( destination ) )
     {
         QMessageBox::critical(MainWindow::currentWindow(), tr("not enough room on destination"), QString("%1 has not enough space").arg(destination));
-        copyDialog->hide();
+        copyDialog->reject();
         return;
     }
 #endif
 
-    m_ioThread = new IOThread(copyFiles, destination, cut, m_fileSize, this);
-    connect(copyDialog, SIGNAL(pauseRequest(bool)), m_ioThread, SLOT(setPaused(bool)));
-    connect(copyDialog, SIGNAL(rejected()), m_ioThread, SLOT(cancelCopy()));
-    connect(m_ioThread, SIGNAL(copyProgress(QString, QString, int, int)), copyDialog, SLOT(setInfo(QString, QString, int, int)));
-    connect(m_ioThread, SIGNAL(finished()), copyDialog, SLOT(finished()));
-    connect(m_ioThread, SIGNAL(fileExists(QStringList)), this, SLOT(fileExists(QStringList)));
-    connect(m_ioThread, SIGNAL(pauseToggled(bool,bool)), copyDialog, SLOT(pauseToggled(bool, bool)));
-    m_ioThread->start(); //start copying....
+    IOThread *ioThread = new IOThread(copyFiles, destination, cut, fileSize, this);
+    connect(copyDialog, SIGNAL(pauseRequest(bool)), ioThread, SLOT(setPaused(bool)));
+    connect(copyDialog, SIGNAL(rejected()), ioThread, SLOT(cancelCopy()));
+    connect(ioThread, SIGNAL(copyProgress(QString, QString, int, int)), copyDialog, SLOT(setInfo(QString, QString, int, int)));
+    connect(ioThread, SIGNAL(finished()), copyDialog, SLOT(finished()));
+    connect(ioThread, SIGNAL(fileExists(QStringList)), ioThread, SLOT(fileExistsSlot(QStringList)));
+    connect(ioThread, SIGNAL(pauseToggled(bool,bool)), copyDialog, SLOT(pauseToggled(bool, bool)));
+    ioThread->start(); //start copying....
 }
 
 void

@@ -37,7 +37,7 @@ static QList<MainWindow *> s_openWindows;
 
 MainWindow::MainWindow(QStringList arguments)
 { 
-    addActions(Configuration::customActions());
+    addActions(Store::customActions());
 //    APP->setMainWindow(this);
     connect ( this, SIGNAL(viewChanged(QAbstractItemView*)), ThumbsLoader::instance(), SLOT(setCurrentView(QAbstractItemView*)) );
     s_currentWindow = this;
@@ -56,13 +56,13 @@ MainWindow::MainWindow(QStringList arguments)
     m_recentFoldersView = new RecentFoldersView(m_dockRight);
     m_iconSizeSlider = new QSlider(m_statusBar);
 
-    if ( Configuration::config.behaviour.gayWindow )
+    if ( Store::config.behaviour.gayWindow )
     {
         FooBar *fooBar = new FooBar(this);
         fooBar->setVisible(true);
         m_tabBar = new TabBar(fooBar);
         fooBar->setTabBar(m_tabBar);
-        Configuration::config.behaviour.hideTabBarWhenOnlyOneTab = false;
+        Store::config.behaviour.hideTabBarWhenOnlyOneTab = false;
     }
     else
         m_tabBar = new TabBar(center);
@@ -107,13 +107,13 @@ MainWindow::MainWindow(QStringList arguments)
     createToolBars();
     createSlider();
 
-    if ( Configuration::config.behaviour.gayWindow )
+    if ( Store::config.behaviour.gayWindow )
         menuBar()->hide();
 
     m_tabBar->setDocumentMode(true);
     m_tabWin->setCentralWidget(m_stackedWidget);
 
-    QString startPath = Configuration::config.startPath;
+    QString startPath = Store::config.startPath;
     m_appPath = arguments[0];
     if ( QFileInfo(arguments.at(0)).isDir() )
         startPath = arguments.at(0);
@@ -124,7 +124,7 @@ MainWindow::MainWindow(QStringList arguments)
     QVBoxLayout *vBox = new QVBoxLayout();
     vBox->setMargin(0);
     vBox->setSpacing(0);
-    if ( !Configuration::config.behaviour.gayWindow )
+    if ( !Store::config.behaviour.gayWindow )
         vBox->addWidget(m_tabBar);
     vBox->addWidget(m_tabWin);
     center->setLayout(vBox);
@@ -139,7 +139,7 @@ MainWindow::MainWindow(QStringList arguments)
     m_statusBar->installEventFilter(this);
     toggleMenuVisible();
 
-    m_pathVisibleAct->setChecked(Configuration::settings()->value("pathVisible", true).toBool());
+    m_pathVisibleAct->setChecked(Store::settings()->value("pathVisible", true).toBool());
     hidePath();
 
     m_placesView->installEventFilter(this);
@@ -307,7 +307,7 @@ MainWindow::rootPathChanged(QString index)
     m_activeContainer->setFilter("");
     m_placesView->activateAppropriatePlace(index);
     m_tabBar->setTabText(m_tabBar->currentIndex(),m_fsModel->rootDirectory().dirName());
-    if ( Configuration::config.behaviour.gayWindow )
+    if ( Store::config.behaviour.gayWindow )
         m_tabBar->setTabIcon(m_tabBar->currentIndex(), m_fsModel->iconProvider()->icon(QFileInfo(m_fsModel->rootPath())));
 }
 
@@ -606,12 +606,12 @@ MainWindow::addTab(const QString &path)
     if (!m_fsModel)
         m_fsModel = container->model();
     static_cast<FileIconProvider *>(m_fsModel->iconProvider())->loadThemedFolders(m_fsModel->rootPath());
-    if ( Configuration::config.behaviour.gayWindow )
+    if ( Store::config.behaviour.gayWindow )
         m_tabBar->addTab(m_fsModel->iconProvider()->icon(QFileInfo(newPath)), QFileInfo(newPath).fileName());
     else
         m_tabBar->addTab(QFileInfo(newPath).fileName());
 
-    if (Configuration::config.behaviour.hideTabBarWhenOnlyOneTab)
+    if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
         m_tabBar->setVisible(m_tabBar->count() > 1);
 }
 
@@ -654,7 +654,7 @@ MainWindow::tabClosed(int tab)
     m_tabBar->removeTab(tab);
     removedWidget->deleteLater();
     m_activeContainer->setFocus();
-    if (Configuration::config.behaviour.hideTabBarWhenOnlyOneTab)
+    if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
         m_tabBar->setVisible(m_tabBar->count() > 1);
 }
 
@@ -707,11 +707,7 @@ MainWindow::fileProperties()
 {
     QModelIndex fileIndex = m_activeContainer->selectionModel()->currentIndex();
     QString file = m_fsModel->filePath(fileIndex);
-    static PropertiesDialog *propertiesDialog = 0;
-    if (!propertiesDialog)
-        propertiesDialog = new PropertiesDialog(this);
-    propertiesDialog->setFile(file);
-    propertiesDialog->show();
+    PropertiesDialog(this, file).exec();
 }
 
 void
@@ -719,7 +715,7 @@ MainWindow::hidePath()
 {
     foreach ( BreadCrumbs *bc, findChildren<BreadCrumbs *>() )
         bc->setVisible(m_pathVisibleAct->isChecked());
-    Configuration::settings()->setValue("pathVisible", m_pathVisibleAct->isChecked());
+    Store::settings()->setValue("pathVisible", m_pathVisibleAct->isChecked());
 }
 
 void
@@ -737,7 +733,7 @@ MainWindow::windowActivationChange(bool wasActive)
         s_currentWindow = this;
         emit viewChanged(m_activeContainer->currentView());
     }
-    if ( Configuration::config.behaviour.gayWindow )
+    if ( Store::config.behaviour.gayWindow )
         foreach ( WinButton *btn, findChildren<WinButton *>() )
         {
             btn->setProperty("isActive", isActiveWindow());

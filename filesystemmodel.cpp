@@ -167,7 +167,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
     //thumbnails in views...
 
-    if ( Configuration::config.views.showThumbs
+    if ( Store::config.views.showThumbs
          && ( role == Qt::DecorationRole || role == Thumbnail )
          && index.column() == 0 )
     {
@@ -190,7 +190,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     if ( role == FlowPic )
     {
         QPixmap p = iconProvider()->icon(fileInfo(index)).pixmap(SIZE);;
-        if ( Configuration::config.views.showThumbs )
+        if ( Store::config.views.showThumbs )
             if ( !QPixmap::fromImage(ThumbsLoader::thumb(filePath(index), ThumbsLoader::FlowPic)).isNull() )
                 p = QPixmap::fromImage(ThumbsLoader::thumb(filePath(index), ThumbsLoader::FlowPic));
         if ( !p.isNull() )

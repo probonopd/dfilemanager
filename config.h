@@ -62,10 +62,10 @@ typedef struct Config
 } Config;
 
 
-class Configuration : public QObject
+class Store : public QObject
 {
 public:
-    static Configuration *instance();
+    static Store *instance();
     static inline void readConfig() { instance()->readConfiguration(); }
     static inline void writeConfig() { instance()->writeConfiguration(); }
     static QList<QAction *> customActions() { return instance()->ca(); }
@@ -75,7 +75,7 @@ public:
     static Config config;
 
 protected:
-    Configuration( QObject *parent = 0 );
+    Store( QObject *parent = 0 );
     void readConfiguration();
     void writeConfiguration();
     inline QList<QAction *> ca() const { return m_customActions; }

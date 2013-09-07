@@ -27,19 +27,19 @@ using namespace DFM;
 void
 MainWindow::readSettings()
 {
-    restoreState(Configuration::settings()->value("windowState").toByteArray(), 1);
-    m_tabWin->restoreState(Configuration::settings()->value("tabWindowState").toByteArray(), 1);
-    resize(Configuration::settings()->value("size", QSize(800, 300)).toSize());
-    move(Configuration::settings()->value("pos", QPoint(200, 200)).toPoint());
+    restoreState(Store::settings()->value("windowState").toByteArray(), 1);
+    m_tabWin->restoreState(Store::settings()->value("tabWindowState").toByteArray(), 1);
+    resize(Store::settings()->value("size", QSize(800, 300)).toSize());
+    move(Store::settings()->value("pos", QPoint(200, 200)).toPoint());
 
     m_tabWin->addDockWidget(Qt::LeftDockWidgetArea, m_dockLeft);
     m_tabWin->addDockWidget(Qt::RightDockWidgetArea, m_dockRight);
-    m_tabWin->addDockWidget((Qt::DockWidgetArea)Configuration::config.docks.infoArea, m_dockBottom);
+    m_tabWin->addDockWidget((Qt::DockWidgetArea)Store::config.docks.infoArea, m_dockBottom);
 
-    m_statAct->setChecked(Configuration::settings()->value("statusVisible", true).toBool());
-    m_pathVisibleAct->setChecked(Configuration::settings()->value("pathVisible", true).toBool());
-    m_pathEditAct->setChecked(Configuration::settings()->value("pathEditable", false).toBool());
-    m_menuAct->setChecked(Configuration::settings()->value("menuVisible", true).toBool());
+    m_statAct->setChecked(Store::settings()->value("statusVisible", true).toBool());
+    m_pathVisibleAct->setChecked(Store::settings()->value("pathVisible", true).toBool());
+    m_pathEditAct->setChecked(Store::settings()->value("pathEditable", false).toBool());
+    m_menuAct->setChecked(Store::settings()->value("menuVisible", true).toBool());
     m_placesView->populate();
     updateConfig();
 }
@@ -49,21 +49,21 @@ MainWindow::updateIcons()
 {
     const QColor &tbfgc(m_toolBar->palette().color(m_toolBar->foregroundRole()));
     const int &tbis = m_toolBar->iconSize().height();
-    m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
-    m_goBackAct->setIcon(IconProvider::icon(IconProvider::GoBack, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
-    m_goForwardAct->setIcon(IconProvider::icon(IconProvider::GoForward, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
-    m_iconViewAct->setIcon(IconProvider::icon(IconProvider::IconView, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
-    m_listViewAct->setIcon(IconProvider::icon(IconProvider::DetailsView, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
-    m_colViewAct->setIcon(IconProvider::icon(IconProvider::ColumnsView, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
-    m_flowAct->setIcon(IconProvider::icon(IconProvider::FlowView, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
-    m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
-    m_configureAct->setIcon(IconProvider::icon(IconProvider::Configure, tbis, tbfgc, Configuration::config.behaviour.systemIcons));
+    m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_goBackAct->setIcon(IconProvider::icon(IconProvider::GoBack, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_goForwardAct->setIcon(IconProvider::icon(IconProvider::GoForward, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_iconViewAct->setIcon(IconProvider::icon(IconProvider::IconView, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_listViewAct->setIcon(IconProvider::icon(IconProvider::DetailsView, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_colViewAct->setIcon(IconProvider::icon(IconProvider::ColumnsView, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_flowAct->setIcon(IconProvider::icon(IconProvider::FlowView, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_configureAct->setIcon(IconProvider::icon(IconProvider::Configure, tbis, tbfgc, Store::config.behaviour.systemIcons));
 }
 
 void
 MainWindow::updateConfig()
 {
-    m_tabBar->setVisible(m_tabBar->count() > 1 ? true : !Configuration::config.behaviour.hideTabBarWhenOnlyOneTab);
+    m_tabBar->setVisible(m_tabBar->count() > 1 ? true : !Store::config.behaviour.hideTabBarWhenOnlyOneTab);
     if ( m_activeContainer )
         m_activeContainer->refresh();
     updateIcons();
@@ -73,14 +73,14 @@ MainWindow::updateConfig()
 void
 MainWindow::writeSettings()
 {
-    Configuration::settings()->setValue("pos", pos());
-    Configuration::settings()->setValue("size", size());
-    Configuration::settings()->setValue("windowState", saveState(1));
-    Configuration::settings()->setValue("tabWindowState", m_tabWin->saveState(1));
-    Configuration::settings()->setValue("statusVisible", m_statAct->isChecked());
-    Configuration::settings()->setValue("pathVisible", m_pathVisibleAct->isChecked());
-    Configuration::settings()->setValue("pathEditable", m_pathEditAct->isChecked());
-    Configuration::settings()->setValue("menuVisible", m_menuAct->isChecked());
-    Configuration::writeConfig();
+    Store::settings()->setValue("pos", pos());
+    Store::settings()->setValue("size", size());
+    Store::settings()->setValue("windowState", saveState(1));
+    Store::settings()->setValue("tabWindowState", m_tabWin->saveState(1));
+    Store::settings()->setValue("statusVisible", m_statAct->isChecked());
+    Store::settings()->setValue("pathVisible", m_pathVisibleAct->isChecked());
+    Store::settings()->setValue("pathEditable", m_pathEditAct->isChecked());
+    Store::settings()->setValue("menuVisible", m_menuAct->isChecked());
+    Store::writeConfig();
     m_placesView->store();
 }

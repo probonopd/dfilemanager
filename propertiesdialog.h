@@ -34,8 +34,7 @@ class PropertiesDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit PropertiesDialog( QWidget *parent = 0, QString filePath = QString() );
-    void setFile( const QString &filePath ) { enableButtons(QFileInfo(filePath)); }
+    PropertiesDialog( QWidget *parent = 0, QString filePath = QString() );
     
 protected:
     void enableButtons(QFileInfo fileInfo);

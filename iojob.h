@@ -122,6 +122,9 @@ signals:
     void fileExists(const QStringList &files);
     void pauseToggled( const bool &pause, const bool &cut );
 
+private slots:
+    void fileExistsSlot( const QStringList &files ) { setMode(FileExistsDialog::mode(files)); }
+
 private:
     bool copyRecursive(const QString &inFile, const QString &outFile, bool cut, bool sameDisk);
     bool clone(const QString &in, const QString &out);
@@ -144,7 +147,7 @@ class Job : public QObject
 {
     Q_OBJECT
 public:
-    explicit Job(QObject *parent = 0);
+    inline explicit Job(QObject *parent = 0) : QObject(parent){}
     static void copy(const QStringList &sourceFiles, const QString &destination, bool cut = false, bool ask = false);
     static void copy(const QList<QUrl> &sourceFiles, const QString & destination, bool cut = false, bool ask = false);
     static void remove(const QStringList &paths);
@@ -152,15 +155,6 @@ public:
     void cp(const QStringList &copyFiles, const QString &destination, bool cut = false, bool ask = false);
     void cp(const QList<QUrl> &copyFiles, const QString &destination, bool cut = false, bool ask = false);
     void rm(const QStringList &paths) { (new IOThread(paths, this))->start(); }
-
-public slots:
-    void fileExists( const QStringList files ) { m_ioThread->setMode(FileExistsDialog::mode(files)); }
-
-private:
-    quint64 m_fileSize, m_fileProgress;
-    FileExistsDialog *m_fileExistsDialog;
-    bool m_canceled, m_cut;
-    IOThread *m_ioThread;
 };
 
 }

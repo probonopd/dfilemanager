@@ -156,7 +156,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     }
 
 #ifdef Q_WS_X11
-    if ( Configuration::config.behaviour.devUsage )
+    if ( Store::config.behaviour.devUsage )
         if ( DeviceItem *d = m_placesView->itemFromIndex<DeviceItem *>(index) )
             if ( d->isMounted() )
                 drawDeviceUsage(d->used(), painter, option);
@@ -230,6 +230,8 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Solid::Devic
     , m_tb(new QToolButton(m_view))
     , m_timer(new QTimer(this))
     , m_solid(solid)
+    , m_isVisible(true)
+    , m_isHidden(false)
 {
 //    QColor mid = Operations::colorMid( m_view->palette().color( QPalette::Base ), m_view->palette().color( QPalette::Text ) );
 //    QColor fg = Operations::colorMid( m_view->palette().color( QPalette::Highlight ), mid, 1, 5 );
@@ -249,17 +251,53 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Solid::Devic
     connect( m_view->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateTb()) );
     QTimer::singleShot(200, this, SLOT(updateTb()));
     setEditable(false);
+
+    QAction *sh = new QAction(tr("setHidden"), this);
+    connect( sh, SIGNAL(triggered()), this, SLOT(hidden()) );
+
+    QAction *sv = new QAction(tr("setVisible"), this);
+    connect( sv, SIGNAL(triggered()), this, SLOT(shown()) );
+
+    m_actions << sh << sv;
 }
 
 void
 DeviceItem::updateTb()
 {
     QRect rect = m_view->visualRect(index());
-    m_tb->setVisible(m_view->isExpanded(m_manager->index()));
+    if ( isVisible() )
+        m_tb->setVisible(m_view->isExpanded(m_manager->index()));
     const int &add = (rect.height()/2.0f)-(m_tb->height()/2.0f);
     const int &x = 8, &y = rect.y()+add;
     m_tb->move(x, y);
 }
+
+void
+DeviceItem::setVisible(bool v)
+{
+    m_isVisible = v;
+    m_view->setRowHidden(row(), m_manager->index(), !v);
+    m_tb->setVisible(v);
+    foreach ( DeviceItem *d, m_view->deviceManager()->deviceItems() )
+        d->updateTb();
+}
+
+void DeviceItem::hide() { setVisible(false); }
+void DeviceItem::show() { setVisible(true); }
+
+void
+DeviceItem::setHidden(bool h)
+{
+    if ( h )
+    {
+        m_view->addHiddenDevice( devPath() );
+        hide();
+    }
+    else
+        m_view->removeHiddenDevice( devPath() );
+}
+
+bool DeviceItem::isHidden() const { return m_view->hiddenDevices().contains(devPath()); }
 
 void
 DeviceItem::setMounted( const bool &mount )
@@ -288,7 +326,6 @@ static inline float realSize(const float size, int *t)
     return s;
 }
 
-
 static inline QString prettySize(quint64 bytes)
 {
   if (bytes & (0x3fff<<50))
@@ -310,7 +347,7 @@ DeviceItem::updateSpace()
 {
     if ( isMounted() )
     {
-        if ( Configuration::config.behaviour.devUsage )
+        if ( Store::config.behaviour.devUsage )
             m_view->update( index() );
 //        int t = 0;
 //        QString free(QString::number(realSize((float)freeBytes(), &t)));
@@ -340,6 +377,11 @@ DeviceManager::DeviceManager(const QStringList &texts, QObject *parent)
     setDragEnabled(false);
     setDropEnabled(false);
     setEditable(false);
+    QAction *as = new QAction(tr("show hidden devices"), this);
+    connect( as, SIGNAL(triggered()), m_view, SLOT(showHiddenDevices()) );
+    QAction *ah = new QAction(tr("hide hidden devices"), this);
+    connect( ah, SIGNAL(triggered()), m_view, SLOT(hideHiddenDevices()) );
+    m_actions << as << ah;
 }
 
 void
@@ -732,13 +774,36 @@ PlacesView::activateAppropriatePlace( const QString &path )
 }
 
 void
+PlacesView::showHiddenDevices()
+{
+    m_hiddenDevices.removeDuplicates();
+    foreach ( DeviceItem *d, deviceManager()->deviceItems() )
+        d->show();
+}
+
+void
+PlacesView::hideHiddenDevices()
+{
+    m_hiddenDevices.removeDuplicates();
+    foreach ( DeviceItem *d, deviceManager()->deviceItems() )
+        if ( d->isHidden() || m_hiddenDevices.contains(d->devPath()) )
+            d->hide();
+}
+
+void
 PlacesView::contextMenuEvent( QContextMenuEvent *event )
 {
     if ( indexAt( event->pos() ).isValid() && indexAt( event->pos() ).parent().isValid() )
         m_lastClicked = itemAt( event->pos() );
 
     QMenu popupMenu;
-    popupMenu.addActions( actions() );
+
+    if ( DeviceItem *d = itemAt<DeviceItem *>(event->pos()) )
+        popupMenu.addActions(d->actions());
+    else if ( DeviceManager *dm = itemAt<DeviceManager *>(event->pos()) )
+        popupMenu.addActions(dm->actions());
+    else
+        popupMenu.addActions( actions() );
     popupMenu.exec( event->globalPos() );
 }
 
@@ -801,6 +866,14 @@ PlacesView::populate()
 #ifdef Q_WS_X11
     m_model->appendRow(m_devManager = new DeviceManager(QStringList() << tr("Devices"), this));
     expand(m_devManager->index());
+
+    QStringList hiddenDevices = s.value("hiddenDevices", QStringList()).toStringList();
+    if ( hiddenDevices.count() )
+    {
+        m_hiddenDevices = hiddenDevices;
+        hideHiddenDevices();
+    }
+
 #endif
 }
 
@@ -832,6 +905,8 @@ PlacesView::store()
         }
         s.endGroup();
     }
+
+    s.setValue("hiddenDevices", m_hiddenDevices);
     m_timer->start();
 }
 

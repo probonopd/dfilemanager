@@ -43,11 +43,11 @@ int main(int argc, char *argv[])
 #endif
         QApplication app(argc, argv);
 
-        DFM::Configuration::readConfig();
+        DFM::Store::readConfig();
 
-        if ( !DFM::Configuration::config.styleSheet.isEmpty() )
+        if ( !DFM::Store::config.styleSheet.isEmpty() )
         {
-            QFile file(DFM::Configuration::config.styleSheet);
+            QFile file(DFM::Store::config.styleSheet);
             file.open(QFile::ReadOnly);
             app.setStyleSheet(file.readAll());
             file.close();

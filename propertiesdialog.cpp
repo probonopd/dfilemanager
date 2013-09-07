@@ -22,8 +22,17 @@
 #include "propertiesdialog.h"
 #include <QGroupBox>
 
-PropertiesDialog::PropertiesDialog(QWidget *parent, QString filePath) : QDialog(parent), ownerRead(new QCheckBox(this)), ownerWrite(new QCheckBox(this)), ownerExecute(new QCheckBox(this))
-  , groupRead(new QCheckBox(this)), groupWrite(new QCheckBox(this)), groupExecute(new QCheckBox(this)), othersRead(new QCheckBox(this)), othersWrite(new QCheckBox(this)), othersExecute(new QCheckBox(this))
+PropertiesDialog::PropertiesDialog(QWidget *parent, QString filePath)
+    : QDialog(parent)
+    , ownerRead(new QCheckBox(this))
+    , ownerWrite(new QCheckBox(this))
+    , ownerExecute(new QCheckBox(this))
+    , groupRead(new QCheckBox(this))
+    , groupWrite(new QCheckBox(this))
+    , groupExecute(new QCheckBox(this))
+    , othersRead(new QCheckBox(this))
+    , othersWrite(new QCheckBox(this))
+    , othersExecute(new QCheckBox(this))
 {
     QFileInfo fileInfo(filePath);
     QGroupBox *gboRead = new QGroupBox("Owner");

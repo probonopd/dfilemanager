@@ -41,7 +41,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
     m_columnsView = new ColumnsView(this);
     m_flowView = new FlowView(this);
     m_breadCrumbs = new BreadCrumbs( this, m_fsModel );
-    m_breadCrumbs->setVisible(Configuration::settings()->value("pathVisible", true).toBool());
+    m_breadCrumbs->setVisible(Store::settings()->value("pathVisible", true).toBool());
 
     m_myView = Icon;
 
@@ -56,7 +56,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
     setModel(m_fsModel);
     setSelectionModel(new QItemSelectionModel(m_fsModel));
 
-    if ( Configuration::config.views.singleClick )
+    if ( Store::config.views.singleClick )
     {
         connect( m_iconView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)) );
         connect( m_detailsView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
@@ -109,8 +109,8 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
     setLayout(layout);
 
     m_fsModel->setRootPath(rootPath);
-    setView((View)Configuration::config.behaviour.view);
-    emit iconSizeChanged(Configuration::config.views.iconView.iconSize*16);
+    setView((View)Store::config.behaviour.view);
+    emit iconSizeChanged(Store::config.views.iconView.iconSize*16);
 }
 
 void
@@ -157,10 +157,10 @@ void
 ViewContainer::addActions(QList<QAction *> actions)
 {
     VIEWS(addActions(actions));
-    Configuration::settings()->beginGroup("Scripts");
-    foreach ( const QString &string, Configuration::settings()->childKeys())
+    Store::settings()->beginGroup("Scripts");
+    foreach ( const QString &string, Store::settings()->childKeys())
     {
-        QStringList actions = Configuration::settings()->value(string).toStringList(); //0 == name, 1 == script, 2 == keysequence
+        QStringList actions = Store::settings()->value(string).toStringList(); //0 == name, 1 == script, 2 == keysequence
         QAction *action = new QAction(actions[0], this);
         action->setData(actions[1]);
         if ( actions.count() > 2 )
@@ -168,7 +168,7 @@ ViewContainer::addActions(QList<QAction *> actions)
         connect (action, SIGNAL(triggered()), this, SLOT(scriptTriggered()));
         VIEWS(addAction(action));
     }
-    Configuration::settings()->endGroup();
+    Store::settings()->endGroup();
 }
 
 void
@@ -506,7 +506,7 @@ ViewContainer::currentFilter()
 void
 ViewContainer::settingsChanged()
 {
-    if ( Configuration::config.views.singleClick )
+    if ( Store::config.views.singleClick )
     {
         disconnect( m_iconView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
         disconnect( m_detailsView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));

@@ -53,13 +53,13 @@ DockWidget::DockWidget(QWidget *parent, const QString &title, const Qt::WindowFl
 //    m_mainWindow->installEventFilter(this);
     if ( m_position == Bottom )
         connect ( this, SIGNAL(dockLocationChanged(Qt::DockWidgetArea)), this, SLOT(locationChanged(Qt::DockWidgetArea)) );
-    setLocked( bool( Configuration::config.docks.lock & pos ) );
+    setLocked( bool( Store::config.docks.lock & pos ) );
 }
 
 void
 DockWidget::locationChanged(const Qt::DockWidgetArea &area)
 {
-    Configuration::config.docks.infoArea = (int)area;
+    Store::config.docks.infoArea = (int)area;
 }
 
 void

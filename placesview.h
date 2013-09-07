@@ -126,10 +126,14 @@ public:
     inline bool isMounted() const { return m_solid.isValid() && m_solid.as<Solid::StorageAccess>()->isAccessible(); }
     inline QString mountPath() const { return m_solid.isValid() ? m_solid.as<Solid::StorageAccess>()->filePath() : QString(); }
     inline QString devPath() const { return m_solid.isValid() ? m_solid.as<Solid::Block>()->device() : QString(); }
+    inline QString product() const { return m_solid.isValid() ? m_solid.product() : QString(); }
     inline quint64 usedBytes() const { return Ops::getDriveInfo<Ops::Used>(mountPath()); }
     inline quint64 freeBytes() const { return Ops::getDriveInfo<Ops::Free>(mountPath()); }
     inline quint64 totalBytes() const { return Ops::getDriveInfo<Ops::Total>(mountPath()); }
     inline int used() const { return usedBytes() ? (int)(((float)usedBytes()/(float)totalBytes())*100) : 0; }
+    inline bool isVisible() const { return m_isVisible; }
+    bool isHidden() const;
+    inline QList<QAction *> actions() const { return QList<QAction *>() << (isHidden() ? m_actions[1] : m_actions[0]); }
     QString name() const { return isMounted() ? mountPath() : m_solid.description(); }
     QString path() const { return mountPath(); }
 //    inline void mount() { setMounted(true); }
@@ -137,6 +141,12 @@ public:
 
 public slots:
     void updateTb();
+    void setVisible( bool v );
+    void setHidden( bool h );
+    void hidden() { setHidden(true);  }
+    void shown() { setHidden(false); }
+    void hide();
+    void show();
 
 private slots:
     inline void toggleMount() { setMounted(!isMounted()); }
@@ -144,11 +154,13 @@ private slots:
     void changeState();
 
 private:
+    bool m_isVisible, m_isHidden;
     PlacesView *m_view;
     QToolButton *m_tb;
     DeviceManager *m_manager;
     QTimer *m_timer;
     Solid::Device m_solid;
+    QList<QAction *> m_actions;
 };
 
 class DeviceManager : public QObject, public Container
@@ -160,6 +172,7 @@ public:
     inline DeviceItems deviceItems() { return m_items; }
     DeviceItem *deviceItemForFile( const QString &file );
     inline bool isDevice( const QStandardItem *item ) { return (bool)(item->parent() == this); }
+    inline QList<QAction *> actions() const { return m_actions; }
 
 private slots:
     void populate();
@@ -169,6 +182,7 @@ private slots:
 private:
     PlacesView *m_view;
     DeviceItems m_items;
+    QList<QAction *> m_actions;
 };
 
 #endif
@@ -191,6 +205,9 @@ public:
     typedef QList<Container *> Containers;
     PlacesView( QWidget *parent );
     QMenu *containerAsMenu( const int &cont );
+    inline QStringList hiddenDevices() const { return m_hiddenDevices; }
+    inline void addHiddenDevice( const QString &devPath ) { if ( !m_hiddenDevices.contains(devPath) ) m_hiddenDevices << devPath; }
+    inline void removeHiddenDevice( const QString &devPath ) { m_hiddenDevices.removeOne(devPath); }
     inline DeviceManager *deviceManager() { return m_devManager; }
     inline QModelIndex indexFromItem( QStandardItem *item ) const { return m_model->indexFromItem(item); }
 
@@ -244,12 +261,15 @@ signals:
 
 private slots:
     void emitPath(const QModelIndex &index);
+    void showHiddenDevices();
+    void hideHiddenDevices();
 
 private:
     QStandardItem *m_lastClicked;
     PlacesModel *m_model;
     DeviceManager *m_devManager;
     QTimer *m_timer;
+    QStringList m_hiddenDevices;
 };
 
 }

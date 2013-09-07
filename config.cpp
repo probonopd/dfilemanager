@@ -26,10 +26,10 @@
 
 using namespace DFM;
 
-static Configuration *inst = 0;
-Config Configuration::config;
+static Store *inst = 0;
+Config Store::config;
 
-Configuration::Configuration(QObject *parent) : QObject(parent)
+Store::Store(QObject *parent) : QObject(parent)
 {
 #ifdef Q_WS_X11
     m_settings = new QSettings("dfm", "dfm");
@@ -39,16 +39,16 @@ Configuration::Configuration(QObject *parent) : QObject(parent)
     m_customActionsMenu.setTitle(tr("Custom Actions"));
 }
 
-Configuration
-*Configuration::instance()
+Store
+*Store::instance()
 {
     if ( !inst )
-        inst = new Configuration(qApp);
+        inst = new Store(qApp);
     return inst;
 }
 
 void
-Configuration::readConfiguration()
+Store::readConfiguration()
 {
     config.docks.lock = settings()->value( "docks.lock", 0 ).toInt();
     config.docks.infoArea = settings()->value("docks.infoArea", 8).toInt();
@@ -77,7 +77,7 @@ Configuration::readConfiguration()
     config.behaviour.newTabButton = settings()->value("behaviour.gayWindow.newTabButton", false).toBool();
     config.behaviour.tabOverlap = settings()->value("behaviour.gayWindow.tabOverlap", 8).toInt();
 
-    Configuration::settings()->beginGroup("CustomActions");
+    Store::settings()->beginGroup("CustomActions");
     foreach ( const QString &string, settings()->childKeys() )
     {
         QStringList actions = settings()->value(string).toStringList(); //0 == name, 1 == cmd, 2 == keysequence
@@ -89,7 +89,7 @@ Configuration::readConfiguration()
         m_customActions << action;
         m_customActionsMenu.addAction(action);
     }
-    Configuration::settings()->endGroup();
+    Store::settings()->endGroup();
 
 //    Configuration::settings()->beginGroup("Scripts");
 //    foreach ( const QString &string, Configuration::settings()->childKeys())
@@ -106,7 +106,7 @@ Configuration::readConfiguration()
 }
 
 void
-Configuration::writeConfiguration()
+Store::writeConfiguration()
 {
     settings()->setValue("startPath", config.startPath);
     settings()->setValue("docks.lock", config.docks.lock);
@@ -171,7 +171,7 @@ static inline QString desktopInfo(const QString &desktop, bool name)
 }
 
 QList<QAction *>
-Configuration::openWithActions(const QString &file)
+Store::openWithActions(const QString &file)
 {
     QFile mimeTypes("/usr/share/mime/globs");
     mimeTypes.open(QFile::ReadOnly);

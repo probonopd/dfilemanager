@@ -31,7 +31,7 @@ class DetailsDelegate : public QStyledItemDelegate
 protected:
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        return QStyledItemDelegate::sizeHint(option, index) + QSize(0, Configuration::config.views.detailsView.rowPadding*2);
+        return QStyledItemDelegate::sizeHint(option, index) + QSize(0, Store::config.views.detailsView.rowPadding*2);
     }
 };
 
@@ -94,12 +94,12 @@ void
 DetailsView::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu popupMenu;
-    if ( Configuration::customActions().count() )
-        popupMenu.addMenu(Configuration::customActionsMenu());
+    if ( Store::customActions().count() )
+        popupMenu.addMenu(Store::customActionsMenu());
     popupMenu.addActions( actions() );
     const QString &file = static_cast<FileSystemModel *>( model() )->filePath( indexAt( event->pos() ) );
     QMenu openWith( tr( "Open With" ), this );
-    openWith.addActions( Configuration::openWithActions( file ) );
+    openWith.addActions( Store::openWithActions( file ) );
     foreach( QAction *action, actions() )
     {
         popupMenu.addAction( action );

@@ -105,7 +105,7 @@ static uint fcolors[3] = { 0xFFE55E4F, 0xFFF8C76D, 0xFFA1D886 };
 void
 WinButton::paintEvent(QPaintEvent *e)
 {
-    if ( !Configuration::config.styleSheet.isEmpty() )
+    if ( !Store::config.styleSheet.isEmpty() )
     {
         QFrame::paintEvent(e);
         return;
@@ -150,7 +150,7 @@ FooBar::FooBar(QWidget *parent)
     , m_pressPos(QPoint())
 {
     m_mainWin->installEventFilter(this);
-    if ( Configuration::config.behaviour.frame )
+    if ( Store::config.behaviour.frame )
         m_frame = new WindowFrame(m_mainWin);
     m_toolBar->installEventFilter(this);
     m_toolBar->setAttribute(Qt::WA_NoSystemBackground);
@@ -202,7 +202,7 @@ FooBar::correctTabBarHeight()
     m_tabBar->setFont(font);
     m_tabBar->setAttribute(Qt::WA_Hover);
     m_tabBar->setMouseTracking(true);
-    if ( Configuration::config.behaviour.newTabButton )
+    if ( Store::config.behaviour.newTabButton )
     {
         TabButton *tb = new TabButton(m_tabBar);
         connect(tb, SIGNAL(clicked()), m_tabBar, SIGNAL(newTabRequest()));
@@ -238,7 +238,7 @@ FooBar::correctTabBarHeight()
     setLayout(layout);
     setContentsMargins(0, 0, 0, 0);
     setFixedHeight(m_tabBar->height()+m_topMargin);
-    m_mainWin->setContentsMargins(0, height()+(int)Configuration::config.behaviour.frame, 0, 0);
+    m_mainWin->setContentsMargins(0, height()+(int)Store::config.behaviour.frame, 0, 0);
 }
 
 QPainterPath
@@ -337,7 +337,7 @@ FooBar::eventFilter(QObject *o, QEvent *e)
          && e->type() == QEvent::Resize )
     {
         resize(m_mainWin->width(), height());
-        if ( Configuration::config.behaviour.frame )
+        if ( Store::config.behaviour.frame )
         {
             m_frame->resize(m_mainWin->size());
             QRegion mask = m_frame->rect();
@@ -433,7 +433,7 @@ TabButton::paintEvent(QPaintEvent *e)
     int y = bg.value()>fg.value()?1:-1;
     QColor emb(y==1?high:low);
 
-    if ( Configuration::config.behaviour.tabShape == FooBar::Chrome )
+    if ( Store::config.behaviour.tabShape == FooBar::Chrome )
     {
         QRect pr(rect().adjusted(1, 1, -1, -1));
         int px = pr.x(), py = pr.y(), pw = pr.width()-1, ph = pr.height()-1;
@@ -486,7 +486,7 @@ DropIndicator::paintEvent(QPaintEvent *)
 {
     QLinearGradient lg(rect().topLeft(), rect().topRight());
     lg.setColorAt(0.0f, Qt::transparent);
-    lg.setColorAt(0.5f, Configuration::config.behaviour.gayWindow ? hl : palette().color(QPalette::Highlight));
+    lg.setColorAt(0.5f, Store::config.behaviour.gayWindow ? hl : palette().color(QPalette::Highlight));
     lg.setColorAt(1.0f, Qt::transparent);
 
     QPainter p(this);
@@ -498,7 +498,7 @@ TabBar::TabBar(QWidget *parent) : QTabBar(parent), m_addButton(0), m_hasPress(fa
 {
     setSelectionBehaviorOnRemove(QTabBar::SelectPreviousTab);
     setDocumentMode(true);
-    if ( !Configuration::config.behaviour.gayWindow )
+    if ( !Store::config.behaviour.gayWindow )
         setTabsClosable(true);
     else
         setAttribute(Qt::WA_NoSystemBackground);
@@ -523,7 +523,7 @@ TabBar::correctAddButtonPos()
 {
     if ( !m_addButton || !count() )
         return;
-    int x = tabRect(count()-1).right()+Configuration::config.behaviour.tabOverlap/2;
+    int x = tabRect(count()-1).right()+Store::config.behaviour.tabOverlap/2;
     int y = qFloor((float)rect().height()/2.0f-(float)m_addButton->height()/2.0f);
     m_addButton->move(x, y);
 }
@@ -596,7 +596,7 @@ void
 TabBar::resizeEvent(QResizeEvent *e)
 {
     QTabBar::resizeEvent(e);
-    if ( Configuration::config.behaviour.gayWindow && m_addButton )
+    if ( Store::config.behaviour.gayWindow && m_addButton )
         correctAddButtonPos();
 }
 
@@ -626,7 +626,7 @@ void
 TabBar::mouseMoveEvent(QMouseEvent *e)
 {
     QTabBar::mouseMoveEvent(e);
-    if ( Configuration::config.behaviour.gayWindow )
+    if ( Store::config.behaviour.gayWindow )
     {
         int t = tabAt(e->pos());
         if ( tabRect(t).isValid() )
@@ -658,7 +658,7 @@ void
 TabBar::leaveEvent(QEvent *e)
 {
     QTabBar::leaveEvent(e);
-    if ( Configuration::config.behaviour.gayWindow )
+    if ( Store::config.behaviour.gayWindow )
     {
         m_hoveredTab = -1;
         update();
@@ -694,10 +694,10 @@ TabBar::drawTab(QPainter *p, int index)
     if ( !r.isValid() )
         return;
 
-    FooBar::TabShape tabShape = (FooBar::TabShape)Configuration::config.behaviour.tabShape;
-    int rndNess = Configuration::config.behaviour.tabRoundness;
+    FooBar::TabShape tabShape = (FooBar::TabShape)Store::config.behaviour.tabShape;
+    int rndNess = Store::config.behaviour.tabRoundness;
 
-    int overlap = Configuration::config.behaviour.tabOverlap;
+    int overlap = Store::config.behaviour.tabOverlap;
     QRect shape(r.adjusted(-overlap, 1, overlap, 0));
 
     if ( shape.left() < rect().left() )
@@ -778,7 +778,7 @@ TabBar::drawTab(QPainter *p, int index)
 void
 TabBar::paintEvent(QPaintEvent *event)
 {
-    if ( !Configuration::config.behaviour.gayWindow )
+    if ( !Store::config.behaviour.gayWindow )
     {
         QTabBar::paintEvent(event);
         return;
@@ -801,8 +801,8 @@ TabBar::paintEvent(QPaintEvent *event)
 QSize
 TabBar::tabSizeHint(int index) const
 {
-    if ( Configuration::config.behaviour.gayWindow )
-        return QSize(qMin(Configuration::config.behaviour.tabWidth,(width()/count())-(m_addButton?qCeil(((float)m_addButton->width()/(float)count())+2):0)), Configuration::config.behaviour.tabHeight/*QTabBar::tabSizeHint(index).height()+3*/);
+    if ( Store::config.behaviour.gayWindow )
+        return QSize(qMin(Store::config.behaviour.tabWidth,(width()/count())-(m_addButton?qCeil(((float)m_addButton->width()/(float)count())+2):0)), Store::config.behaviour.tabHeight/*QTabBar::tabSizeHint(index).height()+3*/);
     else
         return QSize(qMin(150,width()/count()), QTabBar::tabSizeHint(index).height());
 }
@@ -811,7 +811,7 @@ void
 TabBar::tabInserted(int index)
 {
     QTabBar::tabInserted(index);
-    if ( Configuration::config.behaviour.gayWindow )
+    if ( Store::config.behaviour.gayWindow )
     {
         TabCloser *tc = new TabCloser();
         connect(tc, SIGNAL(clicked()), this, SLOT(tabCloseRequest()));
@@ -824,6 +824,6 @@ void
 TabBar::tabRemoved(int index)
 {
     QTabBar::tabRemoved(index);
-    if ( Configuration::config.behaviour.gayWindow )
+    if ( Store::config.behaviour.gayWindow )
         correctAddButtonPos();
 }
