@@ -32,6 +32,7 @@
 #include <QToolButton>
 #include <QPainter>
 #include <QDebug>
+#include <QAction>
 
 #include <QMainWindow>
 #include "operations.h"
@@ -133,7 +134,7 @@ public:
     inline int used() const { return usedBytes() ? (int)(((float)usedBytes()/(float)totalBytes())*100) : 0; }
     inline bool isVisible() const { return m_isVisible; }
     bool isHidden() const;
-    inline QList<QAction *> actions() const { return QList<QAction *>() << (isHidden() ? m_actions[1] : m_actions[0]); }
+    inline QList<QAction *> actions() const { return m_actions; }
     QString name() const { return isMounted() ? mountPath() : m_solid.description(); }
     QString path() const { return mountPath(); }
 //    inline void mount() { setMounted(true); }
@@ -142,9 +143,7 @@ public:
 public slots:
     void updateTb();
     void setVisible( bool v );
-    void setHidden( bool h );
-    void hidden() { setHidden(true);  }
-    void shown() { setHidden(false); }
+    void setHidden();
     void hide();
     void show();
 
@@ -178,6 +177,7 @@ private slots:
     void populate();
     void deviceAdded( const QString &dev );
     void deviceRemoved( const QString &dev );
+    void showHiddenDevices();
 
 private:
     PlacesView *m_view;
@@ -234,6 +234,9 @@ public:
         return c;
     }
 
+    void showHiddenDevices();
+    void hideHiddenDevices();
+
 public slots:
     void renPlace();
     void addPlace(QString name, QString path, QIcon icon, QStandardItem *parent = 0, const bool &storeSettings = true);
@@ -261,8 +264,6 @@ signals:
 
 private slots:
     void emitPath(const QModelIndex &index);
-    void showHiddenDevices();
-    void hideHiddenDevices();
 
 private:
     QStandardItem *m_lastClicked;

@@ -160,9 +160,14 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
         if ( DeviceItem *d = m_placesView->itemFromIndex<DeviceItem *>(index) )
             if ( d->isMounted() )
                 drawDeviceUsage(d->used(), painter, option);
+    if ( DeviceItem *d = m_placesView->itemFromIndex<DeviceItem *>(index) )
+        if ( d->isHidden() )
+            painter->setOpacity(0.5f);
 #endif
 
     QApplication::style()->drawItemText(painter, textRect, textFlags, pal, true, TEXT, selected ? QPalette::HighlightedText : QPalette::Text);
+    if ( painter->opacity() < 1.0f )
+        painter->setOpacity(1.0f);
     if ( isHeader( index ) )
     {
         QRect arrowRect( 0, 0, 8, 8 );
@@ -252,13 +257,11 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Solid::Devic
     QTimer::singleShot(200, this, SLOT(updateTb()));
     setEditable(false);
 
-    QAction *sh = new QAction(tr("setHidden"), this);
-    connect( sh, SIGNAL(triggered()), this, SLOT(hidden()) );
+    QAction *a = new QAction(tr("hidden"), this);
+    a->setCheckable(true);
+    connect( a, SIGNAL(triggered()), this, SLOT(setHidden()) );
 
-    QAction *sv = new QAction(tr("setVisible"), this);
-    connect( sv, SIGNAL(triggered()), this, SLOT(shown()) );
-
-    m_actions << sh << sv;
+    m_actions << a;
 }
 
 void
@@ -282,19 +285,22 @@ DeviceItem::setVisible(bool v)
         d->updateTb();
 }
 
-void DeviceItem::hide() { setVisible(false); }
+void DeviceItem::hide() { setVisible(false); if ( isHidden() ) m_actions[0]->setChecked(true); }
 void DeviceItem::show() { setVisible(true); }
 
 void
-DeviceItem::setHidden(bool h)
+DeviceItem::setHidden()
 {
-    if ( h )
+    if ( QAction *a = static_cast<QAction *>(sender()) )
     {
-        m_view->addHiddenDevice( devPath() );
-        hide();
+        if ( a->isChecked() )
+        {
+            m_view->addHiddenDevice( devPath() );
+            hide();
+        }
+        else
+            m_view->removeHiddenDevice( devPath() );
     }
-    else
-        m_view->removeHiddenDevice( devPath() );
 }
 
 bool DeviceItem::isHidden() const { return m_view->hiddenDevices().contains(devPath()); }
@@ -378,10 +384,19 @@ DeviceManager::DeviceManager(const QStringList &texts, QObject *parent)
     setDropEnabled(false);
     setEditable(false);
     QAction *as = new QAction(tr("show hidden devices"), this);
-    connect( as, SIGNAL(triggered()), m_view, SLOT(showHiddenDevices()) );
-    QAction *ah = new QAction(tr("hide hidden devices"), this);
-    connect( ah, SIGNAL(triggered()), m_view, SLOT(hideHiddenDevices()) );
-    m_actions << as << ah;
+    as->setCheckable(true);
+    connect( as, SIGNAL(triggered()), this, SLOT(showHiddenDevices()) );
+    m_actions << as;
+}
+
+void
+DeviceManager::showHiddenDevices()
+{
+    QAction *a = static_cast<QAction *>(sender());
+    if ( a->isChecked() )
+        m_view->showHiddenDevices();
+    else
+        m_view->hideHiddenDevices();
 }
 
 void
@@ -778,7 +793,8 @@ PlacesView::showHiddenDevices()
 {
     m_hiddenDevices.removeDuplicates();
     foreach ( DeviceItem *d, deviceManager()->deviceItems() )
-        d->show();
+        if ( d->isHidden() )
+            d->show();
 }
 
 void
@@ -786,7 +802,7 @@ PlacesView::hideHiddenDevices()
 {
     m_hiddenDevices.removeDuplicates();
     foreach ( DeviceItem *d, deviceManager()->deviceItems() )
-        if ( d->isHidden() || m_hiddenDevices.contains(d->devPath()) )
+        if ( d->isHidden() )
             d->hide();
 }
 
