@@ -285,7 +285,16 @@ DeviceItem::setVisible(bool v)
         d->updateTb();
 }
 
-void DeviceItem::hide() { setVisible(false); if ( isHidden() ) m_actions[0]->setChecked(true); }
+void DeviceItem::hide()
+{
+    setVisible(false);
+    if ( isHidden() )
+    {
+        m_actions[0]->setChecked(true);
+        m_view->deviceManager()->actions().at(0)->setEnabled(true);
+    }
+}
+
 void DeviceItem::show() { setVisible(true); }
 
 void
@@ -300,6 +309,11 @@ DeviceItem::setHidden()
         }
         else
             m_view->removeHiddenDevice( devPath() );
+    }
+    if ( m_view->hiddenDevices().isEmpty() )
+    {
+        m_view->deviceManager()->actions().at(0)->setChecked(false);
+        m_view->deviceManager()->actions().at(0)->setEnabled(false);
     }
 }
 
