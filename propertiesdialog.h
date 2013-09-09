@@ -22,6 +22,7 @@
 #ifndef PROPERTIESDIALOG_H
 #define PROPERTIESDIALOG_H
 
+#include <QWidget>
 #include <QDialog>
 #include <QCheckBox>
 #include <QLayout>
@@ -29,6 +30,77 @@
 #include <QDir>
 #include <QDebug>
 #include <QPushButton>
+#include <QLabel>
+#include <QGroupBox>
+#include <QThread>
+#include <QTimer>
+#include <QComboBox>
+#include <QLineEdit>
+
+class SizeThread : public QThread
+{
+    Q_OBJECT
+public:
+    SizeThread( QObject *parent = 0, const QString &file = QString() );
+
+signals:
+    void newSize( const QString &size );
+
+private slots:
+    void emitSize();
+
+protected:
+    void run();
+    void calculate( const QString &file );
+
+private:
+    QTimer *m_timer;
+    QString m_file;
+    quint64 m_size;
+    uint m_subDirs, m_files;
+};
+
+
+
+class GeneralInfo : public QGroupBox
+{
+    Q_OBJECT
+public:
+    GeneralInfo( QWidget *parent = 0, const QString &file = QString() );
+    inline QString newName() const { return m_nameEdit->text(); }
+
+private:
+    QLineEdit *m_nameEdit;
+};
+
+
+
+class Rights : public QGroupBox
+{
+    Q_OBJECT
+public:
+    enum Perm { UserRead = 0,
+                UserWrite,
+                UserExe,
+                GroupRead,
+                GroupWrite,
+                GroupExe,
+                OthersRead,
+                OthersWrite,
+                OthersExe };
+    Rights( QWidget *parent = 0, const QString &file = QString() );
+    inline QCheckBox *box( Perm p ) { return m_box[p]; }
+
+private:
+    QCheckBox *m_box[OthersExe+1];
+};
+
+class PreViewWidget : public QGroupBox
+{
+    Q_OBJECT
+public:
+    PreViewWidget( QWidget *parent = 0, const QString &file = QString() );
+};
 
 class PropertiesDialog : public QDialog
 {
@@ -43,8 +115,9 @@ private slots:
     void accept();
 
 private:
-    QCheckBox *ownerRead,*ownerWrite,*ownerExecute,*groupRead,*groupWrite,*groupExecute,*othersRead,*othersWrite,*othersExecute;
-    QString currentFile;
+    Rights *m_r;
+    GeneralInfo *m_g;
+    QString m_currentFile;
     
 };
 

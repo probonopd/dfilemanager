@@ -62,6 +62,7 @@ public:
     static QColor colorMid(const QColor c1, const QColor c2, int i1 = 1, int i2 = 1);
     static void openFile( const QString &file );
     static Ops *instance();
+    static QString prettySize(quint64 bytes);
 
     template<typename T> static inline T absWinFor( QWidget *w )
     {
