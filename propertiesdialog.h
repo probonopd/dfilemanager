@@ -41,7 +41,7 @@ class SizeThread : public QThread
 {
     Q_OBJECT
 public:
-    SizeThread( QObject *parent = 0, const QString &file = QString() );
+    SizeThread( QObject *parent = 0, const QStringList &files = QStringList() );
 
 signals:
     void newSize( const QString &size );
@@ -55,9 +55,9 @@ protected:
 
 private:
     QTimer *m_timer;
-    QString m_file;
+    QStringList m_files;
     quint64 m_size;
-    uint m_subDirs, m_files;
+    uint m_subDirs, m_fileCount;
 };
 
 
@@ -66,7 +66,7 @@ class GeneralInfo : public QGroupBox
 {
     Q_OBJECT
 public:
-    GeneralInfo( QWidget *parent = 0, const QString &file = QString() );
+    GeneralInfo( QWidget *parent = 0, const QStringList &files = QStringList() );
     inline QString newName() const { return m_nameEdit->text(); }
 
 private:
@@ -88,7 +88,7 @@ public:
                 OthersRead,
                 OthersWrite,
                 OthersExe };
-    Rights( QWidget *parent = 0, const QString &file = QString() );
+    Rights( QWidget *parent = 0, const QStringList &files = QStringList() );
     inline QCheckBox *box( Perm p ) { return m_box[p]; }
 
 private:
@@ -99,17 +99,18 @@ class PreViewWidget : public QGroupBox
 {
     Q_OBJECT
 public:
-    PreViewWidget( QWidget *parent = 0, const QString &file = QString() );
+    PreViewWidget( QWidget *parent = 0, const QStringList &files = QStringList() );
 };
 
 class PropertiesDialog : public QDialog
 {
     Q_OBJECT
 public:
-    PropertiesDialog( QWidget *parent = 0, QString filePath = QString() );
-    
+    static void forFile( const QString &file );
+    static void forFiles( const QStringList &files );
+
 protected:
-    void enableButtons(QFileInfo fileInfo);
+    PropertiesDialog( QWidget *parent = 0, const QStringList &files = QStringList() );
 
 private slots:
     void accept();
@@ -117,7 +118,7 @@ private slots:
 private:
     Rights *m_r;
     GeneralInfo *m_g;
-    QString m_currentFile;
+    QStringList m_files;
     
 };
 

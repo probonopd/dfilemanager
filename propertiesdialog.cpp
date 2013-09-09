@@ -25,23 +25,25 @@
 #include "mainwindow.h"
 #include <QDateTime>
 #include <QGroupBox>
-#include <QDirIterator>
-#include <QTextLayout>
+#include <QProgressBar>
 
-SizeThread::SizeThread(QObject *parent, const QString &file)
+SizeThread::SizeThread(QObject *parent, const QStringList &files)
     : QThread(parent)
     , m_timer(new QTimer(this))
-    , m_file(file)
+    , m_files(files)
     , m_subDirs(0)
-    , m_files(0)
+    , m_fileCount(0)
     , m_size(0)
 {
     connect( m_timer, SIGNAL(timeout()), this, SLOT(emitSize()) );
+    connect( this, SIGNAL(finished()), this, SLOT(deleteLater()) );
+    connect( this, SIGNAL(finished()), m_timer, SLOT(stop()) );
+    connect( this, SIGNAL(finished()), this, SLOT(emitSize()) );
     m_timer->start(200);
     start();
 }
 
-void SizeThread::run() { calculate(m_file); }
+void SizeThread::run() { while ( m_files.count() ) calculate(m_files.takeFirst()); }
 
 void
 SizeThread::calculate( const QString &file )
@@ -54,16 +56,15 @@ SizeThread::calculate( const QString &file )
         const QFileInfoList &entries = QDir(file).entryInfoList(filter);
         foreach ( const QFileInfo &entry, entries )
         {
-            QString file(entry.filePath());
             if (entry.isDir())
                 ++m_subDirs;
-            calculate(file);
+            calculate(entry.filePath());
         }
     }
     else
     {
         m_size += f.size();
-        ++m_files;
+        ++m_fileCount;
     }
 }
 
@@ -73,82 +74,122 @@ SizeThread::emitSize()
     QString s;
     s.append(DFM::Ops::prettySize(m_size));
     s.append(QString("\n%1 byte(s),").arg(QString::number(m_size)));
-    s.append(QString("\n%1 file(s),").arg(QString::number(m_files)));
+    s.append(QString("\n%1 file(s),").arg(QString::number(m_fileCount)));
     s.append(QString("\n%1 SubDir(s)").arg(QString::number(m_subDirs)));
+    if ( sender() == m_timer )
+        s.append("\n ... still calculating.");
     emit newSize(s);
 }
 
 
 
-GeneralInfo::GeneralInfo(QWidget *parent, const QString &file)
+GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     : QGroupBox(parent)
 {
     setTitle(tr("General:"));
     QGridLayout *l = new QGridLayout(this);
-    QFileInfo f(file);
 
     Qt::Alignment left = Qt::AlignLeft|Qt::AlignVCenter,
             right = Qt::AlignRight|Qt::AlignVCenter;
 
     int row = 0;
+    bool many = bool(files.count() > 1);
+    const QString &file = files[0];
+    QFileInfo f(file);
 
-    l->addWidget(m_nameEdit = new QLineEdit(f.fileName()), row, 0, 1, -1, left);
-    m_nameEdit->setMinimumWidth(256);
+    const QString &location = many ? DFM::MainWindow::currentContainer()->model()->rootPath() : f.path();
+    DFM::DeviceItem *di = DFM::MainWindow::places()->deviceManager()->deviceItemForFile(location);
 
-    l->addWidget(new QLabel(tr("Mimetype:"), this), ++row, 0, right);
-    l->addWidget(new QLabel(DFM::Ops::getMimeType(file), this), row, 1, left);
+    if ( many )
+    {
+        int fileCount = 0, dirCount = 0;
+        foreach ( const QString &file, files )
+            if ( QFileInfo(file).isDir() )
+                ++dirCount;
+            else
+                ++fileCount;
 
-    l->addWidget(new QLabel(tr("Location:"), this), ++row, 0, right);
-    l->addWidget(new QLabel(f.path(), this), row, 1, left);
+        QString s;
+        if ( dirCount && fileCount )
+            s = QString("%1 file(s) and %2 dir(s) selected").arg(QString::number(fileCount), QString::number(dirCount));
+        else if ( dirCount )
+            s = QString("%1 dir(s) selected").arg(QString::number(dirCount));
+        else
+            s = QString("%1 file(s) selected").arg(QString::number(fileCount));
+        window()->setWindowTitle(s);
+        l->addWidget(new QLabel(s, this), row, 0, 1, 2, left);
+    }
+    else
+    {
+        window()->setWindowTitle(f.fileName());
+        l->addWidget(m_nameEdit = new QLineEdit(f.fileName()), row, 0, 1, -1, left);
+        m_nameEdit->setMinimumWidth(256);
+
+        l->addWidget(new QLabel(tr("Mimetype:"), this), ++row, 0, right);
+        l->addWidget(new QLabel(DFM::Ops::getMimeType(file), this), row, 1, left);
+
+        l->addWidget(new QLabel(tr("Created:"), this), ++row, 0, right);
+        l->addWidget(new QLabel(f.created().toString(), this), row, 1, left);
+
+        l->addWidget(new QLabel(tr("Read:"), this), ++row, 0, right);
+        l->addWidget(new QLabel(f.lastRead().toString(), this), row, 1, left);
+
+        l->addWidget(new QLabel(tr("Modified:"), this), ++row, 0, right);
+        l->addWidget(new QLabel(f.lastModified().toString(), this), row, 1, left);
+    }
 
     l->addWidget(new QLabel(tr("Size:"), this), ++row, 0, right);
-    QLabel *sl = new QLabel(DFM::Ops::prettySize(f.size()), this);
+    QLabel *sl = new QLabel(this);
     l->addWidget(sl, row, 1, left);
+    if ( many || f.isDir() )
+        connect( (new SizeThread(this, files)), SIGNAL(newSize(QString)), sl, SLOT(setText(QString)));
+    else
+        sl->setText(DFM::Ops::prettySize(f.size()));
 
-    l->addWidget(new QLabel(tr("Created:"), this), ++row, 0, right);
-    l->addWidget(new QLabel(f.created().toString(), this), row, 1, left);
-
-    l->addWidget(new QLabel(tr("Read:"), this), ++row, 0, right);
-    l->addWidget(new QLabel(f.lastRead().toString(), this), row, 1, left);
-
-    l->addWidget(new QLabel(tr("Modified:"), this), ++row, 0, right);
-    l->addWidget(new QLabel(f.lastModified().toString(), this), row, 1, left);
+    l->addWidget(new QLabel(tr("Location:"), this), ++row, 0, right);
+    l->addWidget(new QLabel(location, this), row, 1, left);
 
     l->addWidget(new QLabel(tr("MountPath:"), this), ++row, 0, right);
-    l->addWidget(new QLabel(DFM::MainWindow::places()->deviceManager()->deviceItemForFile(file)->mountPath(), this), row, 1, left);
+    l->addWidget(new QLabel(di->mountPath(), this), row, 1, left);
 
-    if ( QFileInfo(file).isDir() )
-        connect( (new SizeThread(this, file)), SIGNAL(newSize(QString)), sl, SLOT(setText(QString)));
+    QProgressBar *pb = new QProgressBar(this);
+    pb->setMinimum(0);
+    pb->setMaximum(100);
+    pb->setValue(di->used());
+    QString free = QString("%1 Free").arg(DFM::Ops::prettySize(di->usedBytes()));
+    pb->setFormat(free);
+    l->addWidget(new QLabel(tr("Device Usage:"), this), ++row, 0, right);
+    l->addWidget(pb, row, 1, left);
 }
 
 
-Rights::Rights(QWidget *parent, const QString &file)
+Rights::Rights(QWidget *parent, const QStringList &files)
     : QGroupBox(parent)
 {
     setTitle(tr("Permissions:"));
     QGridLayout *l = new QGridLayout(this);
 
-    l->addWidget(new QLabel(tr("Read"), this), 0, 1);
-    l->addWidget(new QLabel(tr("Write"), this), 0, 2);
-    l->addWidget(new QLabel(tr("Exec"), this), 0, 3);
+    l->addWidget(new QLabel(tr("Read"), this), 0, 1, Qt::AlignCenter);
+    l->addWidget(new QLabel(tr("Write"), this), 0, 2, Qt::AlignCenter);
+    l->addWidget(new QLabel(tr("Exec"), this), 0, 3, Qt::AlignCenter);
 
     l->addWidget(new QLabel(tr("User:"), this), 1, 0, Qt::AlignRight);
     l->addWidget(new QLabel(tr("Group:"), this), 2, 0, Qt::AlignRight);
     l->addWidget(new QLabel(tr("Other:"), this), 3, 0, Qt::AlignRight);
 
-    l->addWidget(m_box[UserRead] = new QCheckBox(this), 1, 1);
-    l->addWidget(m_box[UserWrite] = new QCheckBox(this), 1, 2);
-    l->addWidget(m_box[UserExe] = new QCheckBox(this), 1, 3);
+    l->addWidget(m_box[UserRead] = new QCheckBox(this), 1, 1, Qt::AlignCenter);
+    l->addWidget(m_box[UserWrite] = new QCheckBox(this), 1, 2, Qt::AlignCenter);
+    l->addWidget(m_box[UserExe] = new QCheckBox(this), 1, 3, Qt::AlignCenter);
 
-    l->addWidget(m_box[GroupRead] = new QCheckBox(this), 2, 1);
-    l->addWidget(m_box[GroupWrite] = new QCheckBox(this), 2, 2);
-    l->addWidget(m_box[GroupExe] = new QCheckBox(this), 2, 3);
+    l->addWidget(m_box[GroupRead] = new QCheckBox(this), 2, 1, Qt::AlignCenter);
+    l->addWidget(m_box[GroupWrite] = new QCheckBox(this), 2, 2, Qt::AlignCenter);
+    l->addWidget(m_box[GroupExe] = new QCheckBox(this), 2, 3, Qt::AlignCenter);
 
-    l->addWidget(m_box[OthersRead] = new QCheckBox(this), 3, 1);
-    l->addWidget(m_box[OthersWrite] = new QCheckBox(this), 3, 2);
-    l->addWidget(m_box[OthersExe] = new QCheckBox(this), 3, 3);
+    l->addWidget(m_box[OthersRead] = new QCheckBox(this), 3, 1, Qt::AlignCenter);
+    l->addWidget(m_box[OthersWrite] = new QCheckBox(this), 3, 2, Qt::AlignCenter);
+    l->addWidget(m_box[OthersExe] = new QCheckBox(this), 3, 3, Qt::AlignCenter);
 
-    QFileInfo f(file);
+    QFileInfo f(files.first());
     m_box[UserRead]->setChecked(f.permission(QFile::ReadUser));
     m_box[UserWrite]->setChecked(f.permission(QFile::WriteUser));
     m_box[UserExe]->setEnabled(!f.isDir());
@@ -165,7 +206,7 @@ Rights::Rights(QWidget *parent, const QString &file)
     m_box[OthersExe]->setChecked(!f.isDir() && f.permission(QFile::ExeOther));
 }
 
-PreViewWidget::PreViewWidget(QWidget *parent, const QString &file)
+PreViewWidget::PreViewWidget(QWidget *parent, const QStringList &files)
     : QGroupBox(parent)
 {
     setTitle(tr("Preview:"));
@@ -175,6 +216,7 @@ PreViewWidget::PreViewWidget(QWidget *parent, const QString &file)
     l->addWidget(label);
     l->addStretch();
     label->setFixedSize(256, 256);
+    const QString &file = files.first();
     DFM::FileSystemModel *fsModel = DFM::MainWindow::currentContainer()->model();
     const QModelIndex &index = fsModel->index(file);
     if ( index.isValid() )
@@ -202,12 +244,10 @@ PreViewWidget::PreViewWidget(QWidget *parent, const QString &file)
         hide();
 }
 
-PropertiesDialog::PropertiesDialog(QWidget *parent, QString filePath)
+PropertiesDialog::PropertiesDialog(QWidget *parent, const QStringList &files)
     : QDialog(parent)
-    , m_currentFile(filePath)
+    , m_files(files)
 {
-    QFileInfo fileInfo(filePath);
-    setWindowTitle(fileInfo.fileName());
     setSizeGripEnabled(false);
 
     QPushButton *ok = new QPushButton(tr("OK"),this);
@@ -224,9 +264,12 @@ PropertiesDialog::PropertiesDialog(QWidget *parent, QString filePath)
 
     QVBoxLayout *vbox = new QVBoxLayout(this);
     vbox->setSizeConstraint(QLayout::SetFixedSize);
-    vbox->addWidget(m_g = new GeneralInfo(this, filePath));
-    vbox->addWidget(new PreViewWidget(this, filePath));
-    vbox->addWidget(m_r = new Rights(this, filePath));
+    vbox->addWidget(m_g = new GeneralInfo(this, files));
+    if ( files.count() == 1 )
+    {
+        vbox->addWidget(new PreViewWidget(this, files));
+        vbox->addWidget(m_r = new Rights(this, files));
+    }
     vbox->addLayout(btns);
 }
 
@@ -234,8 +277,14 @@ PropertiesDialog::PropertiesDialog(QWidget *parent, QString filePath)
 void
 PropertiesDialog::accept()
 {
-    QFile file(m_currentFile);
-    QFileInfo fileInfo(m_currentFile);
+    if ( m_files.count() > 1 )
+    {
+        QDialog::accept();
+        return;
+    }
+
+    QFile file(m_files.first());
+    QFileInfo fileInfo(m_files.first());
     if (fileInfo.isWritable())
     {
         QFile::Permissions permissions = file.permissions();
@@ -250,8 +299,21 @@ PropertiesDialog::accept()
         if (m_r->box(Rights::OthersExe)->isChecked()) permissions |= QFile::ExeOther; else permissions &= ~QFile::ExeOther;
         file.setPermissions(permissions);
         const QString &newFile = QString("%1%2%3").arg(fileInfo.path(), QDir::separator(), m_g->newName());
-        if ( newFile != m_currentFile )
+        if ( newFile != m_files.first() )
             QFile::rename(fileInfo.filePath(), newFile);
     }
     QDialog::accept();
+}
+
+void
+PropertiesDialog::forFile(const QString &file)
+{
+    PropertiesDialog(DFM::MainWindow::currentWindow(), QStringList() << file).exec();
+}
+
+void
+PropertiesDialog::forFiles(const QStringList &files)
+{
+    if ( files.count())
+        PropertiesDialog(DFM::MainWindow::currentWindow(), files).exec();
 }

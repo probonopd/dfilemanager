@@ -705,9 +705,14 @@ MainWindow::showSettings()
 void
 MainWindow::fileProperties()
 {
-    QModelIndex fileIndex = m_activeContainer->selectionModel()->currentIndex();
-    QString file = m_fsModel->filePath(fileIndex);
-    PropertiesDialog(this, file).exec();
+    QStringList files;
+    foreach ( const QModelIndex &index, m_activeContainer->selectionModel()->selectedIndexes() )
+    {
+        if ( index.column() != 0 )
+            continue;
+        files << m_fsModel->filePath(index);
+    }
+    PropertiesDialog::forFiles(files);
 }
 
 void

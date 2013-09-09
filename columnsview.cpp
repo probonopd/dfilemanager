@@ -39,7 +39,7 @@ ColumnsView::ColumnsView(QWidget *parent) : QListView(parent)
     setDefaultDropAction(Qt::MoveAction);
     setAcceptDrops(true);
     setDragEnabled(true);
-    setEditTriggers(QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
+    setEditTriggers(QAbstractItemView::SelectedClicked|QAbstractItemView::EditKeyPressed);
     setSelectionMode(QAbstractItemView::ExtendedSelection);
     setSelectionRectVisible(true);
     setWrapping(true);
