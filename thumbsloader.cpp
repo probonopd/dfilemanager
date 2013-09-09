@@ -222,19 +222,46 @@ ThumbsLoader::genReflection(const QPair<QImage, QModelIndex> &imgStr)
     emit dataChanged(index, index);
 }
 
+static QMap<QString, QImage> customIcns;
+
 QImage
 ThumbsLoader::pic(const QString &filePath, const Type &t)
 {
+    if ( DFM::Store::config.icons.customIcons.contains(filePath) )
+    {
+        if ( t == FlowPic )
+        {
+        if ( customIcns.contains(filePath) )
+            return customIcns.value(filePath);
+
+        QImage img(SIZE, SIZE, QImage::Format_ARGB32);
+        img.fill(Qt::transparent);
+        QPainter p(&img);
+        QPixmap old = DFM::Store::config.icons.customIcons.value(filePath);
+        QRect r = old.rect();
+        r.moveCenter(img.rect().center());
+        p.drawTiledPixmap(r, old);
+        p.end();
+        customIcns.insert(filePath, img);
+        return img;
+        }
+        else
+            goto reflectionOps;
+    }
+
     if ( DFM::Store::config.views.showThumbs
          && m_loadedThumbs[t].contains(filePath) )
         return m_loadedThumbs[t].value(filePath);
+
+reflectionOps:
 
     if ( t >= Reflection && m_fsModel )
     {
         const QModelIndex &idx = m_fsModel->index(filePath);
         if ( !idx.isValid() )
             return QImage();
-        const QString &icon = qvariant_cast<QIcon>(m_fsModel->data(idx, Qt::DecorationRole)).name();
+        const QString &icon = m_fsModel->data(idx, DFM::FileSystemModel::IconName).toString();
+        qDebug() << icon;
         if ( m_loadedThumbs[FallBackRefl].contains(icon) )
             return m_loadedThumbs[FallBackRefl].value(icon);
     }

@@ -77,7 +77,29 @@ Store::readConfiguration()
     config.behaviour.newTabButton = settings()->value("behaviour.gayWindow.newTabButton", false).toBool();
     config.behaviour.tabOverlap = settings()->value("behaviour.gayWindow.tabOverlap", 8).toInt();
 
-    Store::settings()->beginGroup("CustomActions");
+    settings()->beginGroup("CustomIcons");
+
+    int extent = 256;
+    foreach ( const QString &key, settings()->childKeys() )
+    {
+         QStringList icon = settings()->value(key).toStringList();
+         if ( icon.count() != 2 )
+             continue;
+         QImageReader r(icon[1]);
+         if ( !r.canRead() )
+             continue;
+         QSize thumbsize = r.size();
+         if ( qMax( thumbsize.width(), thumbsize.height() ) > extent )
+             thumbsize.scale( extent, extent, Qt::KeepAspectRatio );
+         r.setScaledSize(thumbsize);
+
+         const QImage image(r.read());
+         config.icons.customIcons.insert(icon[0], QPixmap::fromImage(image));
+    }
+
+    settings()->endGroup();
+
+    settings()->beginGroup("CustomActions");
     foreach ( const QString &string, settings()->childKeys() )
     {
         QStringList actions = settings()->value(string).toStringList(); //0 == name, 1 == cmd, 2 == keysequence
@@ -89,7 +111,7 @@ Store::readConfiguration()
         m_customActions << action;
         m_customActionsMenu.addAction(action);
     }
-    Store::settings()->endGroup();
+    settings()->endGroup();
 
 //    Configuration::settings()->beginGroup("Scripts");
 //    foreach ( const QString &string, Configuration::settings()->childKeys())

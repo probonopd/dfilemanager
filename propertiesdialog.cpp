@@ -97,7 +97,8 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     const QString &file = files[0];
     QFileInfo f(file);
 
-    const QString &location = many ? DFM::MainWindow::currentContainer()->model()->rootPath() : f.path();
+    DFM::FileSystemModel *fsModel = DFM::MainWindow::currentContainer()->model();
+    const QString &location = many ? fsModel->rootPath() : f.path();
     DFM::DeviceItem *di = DFM::MainWindow::places()->deviceManager()->deviceItemForFile(location);
 
     if ( many )
@@ -122,8 +123,11 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     else
     {
         window()->setWindowTitle(f.fileName());
-        l->addWidget(m_nameEdit = new QLineEdit(f.fileName()), row, 0, 1, -1, left);
-        m_nameEdit->setMinimumWidth(256);
+        QLabel *iconLabel = new QLabel(this);
+        iconLabel->setPixmap(qvariant_cast<QIcon>(fsModel->data(fsModel->index(f.filePath()), Qt::DecorationRole)).pixmap(32));
+        l->addWidget(iconLabel, row, 0, right);
+        l->addWidget(m_nameEdit = new QLineEdit(f.fileName()), row, 1, left);
+        m_nameEdit->setMinimumWidth(128);
 
         l->addWidget(new QLabel(tr("Mimetype:"), this), ++row, 0, right);
         l->addWidget(new QLabel(DFM::Ops::getMimeType(file), this), row, 1, left);
@@ -158,6 +162,7 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     pb->setValue(di->used());
     QString free = QString("%1 Free").arg(DFM::Ops::prettySize(di->freeBytes()));
     pb->setFormat(free);
+    pb->setMinimumWidth(128);
     l->addWidget(new QLabel(tr("Device Usage:"), this), ++row, 0, right);
     l->addWidget(pb, row, 1, left);
 }

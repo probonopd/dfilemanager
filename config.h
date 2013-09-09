@@ -40,6 +40,7 @@ typedef struct Config
         int tabShape, tabRoundness, tabHeight, tabWidth, tabOverlap;
         int view;
     } behaviour;
+
     struct views
     {
         QByteArray flowSize;
@@ -59,6 +60,11 @@ typedef struct Config
     {
         int lock, infoArea;
     } docks;
+
+    struct icons
+    {
+        QMap<QString, QPixmap> customIcons;
+    } icons;
 } Config;
 
 

@@ -42,6 +42,10 @@ FileIconProvider::FileIconProvider(FileSystemModel *model)
 QIcon
 FileIconProvider::icon(const QFileInfo &info) const
 {
+#if 0
+    if ( Store::config.icons.customIcons.contains(info.filePath()) )
+        return QIcon(Store::config.icons.customIcons.value(info.filePath()));
+#endif
     if ( info.isDir() && s_themedDirs.contains(info.filePath()) )
         return s_themedDirs.value(info.filePath());
 //    QIcon icn = QFileIconProvider::icon(info);
@@ -157,13 +161,25 @@ FileSystemModel::data(const QModelIndex &index, int role) const
             return int(Qt::AlignVCenter | Qt::AlignLeft);
     }
 
+    if ( index.column() > 0 )
+        return QFileSystemModel::data(index, role);
+
+    if ( role == IconName )
+    {
+        if ( Store::config.icons.customIcons.contains(filePath(index)) )
+            return QString("custom%1").arg(filePath(index).replace("/", "-"));
+        return iconProvider()->icon(fileInfo(index)).name();
+    }
+
+    if ( role == Qt::DecorationRole
+        && Store::config.icons.customIcons.contains(filePath(index)) )
+            return QIcon(Store::config.icons.customIcons.value(filePath(index)));
+
     if ( index.column() == 0
          && role == Qt::DecorationRole
          && fileInfo(index).isDir() )
         return iconProvider()->icon(fileInfo(index));
 
-    if ( role == IconName )
-        return iconProvider()->icon(fileInfo(index)).name();
 
     //thumbnails in views...
 
@@ -175,10 +191,16 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         if ( !pix.isNull() )
         {
             if (role == Qt::DecorationRole)
-                return QIcon(pix);
+                if ( Store::config.icons.customIcons.contains(filePath(index)) )
+                    return QIcon(Store::config.icons.customIcons.value(filePath(index)));
+                else
+                    return QIcon(pix);
 
             if (role == Thumbnail)
-                return pix.toImage();
+                if ( Store::config.icons.customIcons.contains(filePath(index)) )
+                    return Store::config.icons.customIcons.value(filePath(index)).toImage();
+                else
+                    return pix.toImage();
         }
     }
 
@@ -189,7 +211,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
     if ( role == FlowPic )
     {
-        QPixmap p = iconProvider()->icon(fileInfo(index)).pixmap(SIZE);;
+        QPixmap p = iconProvider()->icon(fileInfo(index)).pixmap(SIZE);
         if ( Store::config.views.showThumbs )
             if ( !QPixmap::fromImage(ThumbsLoader::thumb(filePath(index), ThumbsLoader::FlowPic)).isNull() )
                 p = QPixmap::fromImage(ThumbsLoader::thumb(filePath(index), ThumbsLoader::FlowPic));

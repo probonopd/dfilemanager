@@ -128,7 +128,9 @@ public:
 
         const QImage &thumb( qvariant_cast<QImage>( index.data( FileSystemModel::Thumbnail ) ) );
         QIcon icon;
-        if ( m_fsModel->fileInfo(index).isDir() )
+        if ( Store::config.icons.customIcons.contains(m_fsModel->filePath(index)) )
+            icon = Store::config.icons.customIcons.value(m_fsModel->filePath(index));
+        else if ( m_fsModel->fileInfo(index).isDir() )
             icon = m_fsModel->iconPix( m_fsModel->fileInfo( index ), DECOSIZE.width() );
         if ( icon.isNull() )
             icon = qvariant_cast<QIcon>( index.data( Qt::DecorationRole ) );
