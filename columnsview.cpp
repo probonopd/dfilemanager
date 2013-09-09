@@ -44,6 +44,7 @@ ColumnsView::ColumnsView(QWidget *parent) : QListView(parent)
     setSelectionRectVisible(true);
     setWrapping(true);
     setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 }
 
 void

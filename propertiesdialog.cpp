@@ -208,6 +208,7 @@ PropertiesDialog::PropertiesDialog(QWidget *parent, QString filePath)
 {
     QFileInfo fileInfo(filePath);
     setWindowTitle(fileInfo.fileName());
+    setSizeGripEnabled(false);
 
     QPushButton *ok = new QPushButton(tr("OK"),this);
     QPushButton *cancel = new QPushButton(tr("Cancel"),this);
@@ -222,6 +223,7 @@ PropertiesDialog::PropertiesDialog(QWidget *parent, QString filePath)
     btns->addStretch();
 
     QVBoxLayout *vbox = new QVBoxLayout(this);
+    vbox->setSizeConstraint(QLayout::SetFixedSize);
     vbox->addWidget(m_g = new GeneralInfo(this, filePath));
     vbox->addWidget(new PreViewWidget(this, filePath));
     vbox->addWidget(m_r = new Rights(this, filePath));
