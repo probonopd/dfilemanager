@@ -156,7 +156,7 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     pb->setMinimum(0);
     pb->setMaximum(100);
     pb->setValue(di->used());
-    QString free = QString("%1 Free").arg(DFM::Ops::prettySize(di->usedBytes()));
+    QString free = QString("%1 Free").arg(DFM::Ops::prettySize(di->freeBytes()));
     pb->setFormat(free);
     l->addWidget(new QLabel(tr("Device Usage:"), this), ++row, 0, right);
     l->addWidget(pb, row, 1, left);
