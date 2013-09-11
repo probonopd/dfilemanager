@@ -126,7 +126,6 @@ public:
 
         QApplication::style()->drawItemText(painter, tr, textFlags(), PAL, option.state & QStyle::State_Enabled, et, selected ? QPalette::HighlightedText : QPalette::Text);
 
-        const QImage &thumb( qvariant_cast<QImage>( index.data( FileSystemModel::Thumbnail ) ) );
         QIcon icon;
         if ( Store::config.icons.customIcons.contains(m_fsModel->filePath(index)) )
             icon = Store::config.icons.customIcons.value(m_fsModel->filePath(index));
@@ -135,9 +134,9 @@ public:
         if ( icon.isNull() )
             icon = qvariant_cast<QIcon>( index.data( Qt::DecorationRole ) );
 
-
-        const bool &isThumb = !thumb.isNull();
-        QPixmap pixmap = icon.pixmap( isThumb && thumb.width() > thumb.height()+14 ? DECOSIZE.height()+14 : DECOSIZE.height() );
+        const bool &isThumb = m_fsModel->hasThumb(m_fsModel->filePath(index));
+        QSize s(icon.pixmap(DECOSIZE.width()).size());
+        QPixmap pixmap = icon.pixmap( isThumb && s.width() > s.height()+16 ? DECOSIZE.height()+16 : DECOSIZE.height() );
         QRect theRect = pixmap.rect();
         theRect.moveCenter( QPoint( RECT.center().rx(), RECT.y()+( DECOSIZE.height()/2 ) ) );
         if ( isThumb )

@@ -36,7 +36,7 @@ typedef struct Config
     QString startPath, styleSheet;
     struct behaviour
     {
-        bool hideTabBarWhenOnlyOneTab, systemIcons, devUsage, gayWindow, frame, newTabButton;
+        bool hideTabBarWhenOnlyOneTab, systemIcons, devUsage, gayWindow, frame, newTabButton, windowsStyle, invertedColors;
         int tabShape, tabRoundness, tabHeight, tabWidth, tabOverlap;
         int view;
     } behaviour;

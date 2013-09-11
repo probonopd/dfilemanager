@@ -39,7 +39,7 @@ MainWindow::MainWindow(QStringList arguments)
 { 
     addActions(Store::customActions());
 //    APP->setMainWindow(this);
-    connect ( this, SIGNAL(viewChanged(QAbstractItemView*)), ThumbsLoader::instance(), SLOT(setCurrentView(QAbstractItemView*)) );
+//    connect ( this, SIGNAL(viewChanged(QAbstractItemView*)), ThumbsLoader::instance(), SLOT(setCurrentView(QAbstractItemView*)) );
     s_currentWindow = this;
     s_openWindows << this;
     QWidget *center = new QWidget(this);

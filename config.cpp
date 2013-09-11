@@ -26,7 +26,7 @@
 
 using namespace DFM;
 
-static Store *inst = 0;
+static Store *s_instance = 0;
 Config Store::config;
 
 Store::Store(QObject *parent) : QObject(parent)
@@ -42,9 +42,9 @@ Store::Store(QObject *parent) : QObject(parent)
 Store
 *Store::instance()
 {
-    if ( !inst )
-        inst = new Store(qApp);
-    return inst;
+    if ( !s_instance )
+        s_instance = new Store(qApp);
+    return s_instance;
 }
 
 void
@@ -76,6 +76,8 @@ Store::readConfiguration()
     config.behaviour.frame = settings()->value("behaviour.gayWindow.frame", false).toBool();
     config.behaviour.newTabButton = settings()->value("behaviour.gayWindow.newTabButton", false).toBool();
     config.behaviour.tabOverlap = settings()->value("behaviour.gayWindow.tabOverlap", 8).toInt();
+    config.behaviour.windowsStyle = settings()->value("behaviour.gayWindow.windowsStyle", false).toBool();
+    config.behaviour.invertedColors = settings()->value("behaviour.gayWindow.invertedColors", false).toBool();
 
     settings()->beginGroup("CustomIcons");
 
@@ -145,6 +147,7 @@ Store::writeConfiguration()
         settings()->setValue("hideTabBarWhenOnlyOne", config.behaviour.hideTabBarWhenOnlyOneTab);
     settings()->setValue("styleSheet", config.styleSheet);
     settings()->setValue("views.singleClick", config.views.singleClick);
+
 //    settings()->setValue("behaviour.gayWindow", config.behaviour.gayWindow);
 //    settings()->setValue("behaviour.gayWindow.tabShape", config.behaviour.tabShape);
 //    settings()->setValue("behaviour.gayWindow.tabRoundness", config.behaviour.tabRoundness);
@@ -153,6 +156,8 @@ Store::writeConfiguration()
 //    settings()->setValue("behaviour.gayWindow.frame", config.behaviour.frame);
 //    settings()->setValue("behaviour.gayWindow.newTabButton", config.behaviour.newTabButton);
 //    settings()->setValue("behaviour.gayWindow.tabOverlap", config.behaviour.tabOverlap);
+//    settings()->setValue("behaviour.gayWindow.windowsStyle", config.behaviour.windowsStyle);
+//    settings()->setValue("behaviour.gayWindow.invertedColors", config.behaviour.invertedColors);
 }
 
 static inline QString desktopInfo(const QString &desktop, bool name)

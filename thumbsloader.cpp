@@ -27,369 +27,122 @@
 #include "config.h"
 #include "viewcontainer.h"
 
-QHash<QString, QImage> ThumbsLoader::m_loadedThumbs[4];
-QStringList ThumbsLoader::m_thumbQueue;
-QList<QPair<QImage, QModelIndex> > ThumbsLoader::m_refQueue;
-QFileSystemWatcher *ThumbsLoader::m_fsWatcher = 0;
-DFM::FileSystemModel *ThumbsLoader::m_fsModel = 0;
-QTimer *ThumbsLoader::m_timer = 0;
+using namespace DFM;
 
+static QHash<QString, QImage> s_thumbs;
 static QImageReader ir;
 static QRect vr;
-
- /* blurring function below from:
-  * http://stackoverflow.com/questions/3903223/qt4-how-to-blur-qpixmap-image
-  * unclear to me who wrote it.
-  */
-static QImage blurred(const QImage& image, const QRect& rect, int radius, bool alphaOnly = false)
-{
-    int tab[] = { 14, 10, 8, 6, 5, 5, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2 };
-    int alpha = (radius < 1)  ? 16 : (radius > 17) ? 1 : tab[radius-1];
-
-    QImage result = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
-    int r1 = rect.top();
-    int r2 = rect.bottom();
-    int c1 = rect.left();
-    int c2 = rect.right();
-
-    int bpl = result.bytesPerLine();
-    int rgba[4];
-    unsigned char* p;
-
-    int i1 = 0;
-    int i2 = 3;
-
-    if (alphaOnly)
-        i1 = i2 = (QSysInfo::ByteOrder == QSysInfo::BigEndian ? 0 : 3);
-
-    for (int col = c1; col <= c2; col++) {
-        p = result.scanLine(r1) + col * 4;
-        for (int i = i1; i <= i2; i++)
-            rgba[i] = p[i] << 4;
-
-        p += bpl;
-        for (int j = r1; j < r2; j++, p += bpl)
-            for (int i = i1; i <= i2; i++)
-                p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
-    }
-
-    for (int row = r1; row <= r2; row++) {
-        p = result.scanLine(row) + c1 * 4;
-        for (int i = i1; i <= i2; i++)
-            rgba[i] = p[i] << 4;
-
-        p += 4;
-        for (int j = c1; j < c2; j++, p += 4)
-            for (int i = i1; i <= i2; i++)
-                p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
-    }
-
-    for (int col = c1; col <= c2; col++) {
-        p = result.scanLine(r2) + col * 4;
-        for (int i = i1; i <= i2; i++)
-            rgba[i] = p[i] << 4;
-
-        p -= bpl;
-        for (int j = r1; j < r2; j++, p -= bpl)
-            for (int i = i1; i <= i2; i++)
-                p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
-    }
-
-    for (int row = r1; row <= r2; row++) {
-        p = result.scanLine(row) + c2 * 4;
-        for (int i = i1; i <= i2; i++)
-            rgba[i] = p[i] << 4;
-
-        p -= 4;
-        for (int j = c1; j < c2; j++, p -= 4)
-            for (int i = i1; i <= i2; i++)
-                p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
-    }
-
-    return result;
-}
-
-static QImage flowImg( const QImage &image )
-{
-    QImage p(SIZE, SIZE, QImage::Format_ARGB32);
-    p.fill(Qt::transparent);
-    QPainter pt(&p);
-    QRect r = image.rect();
-    r.moveCenter(p.rect().center());
-    r.moveBottom(p.rect().bottom()-1);
-    pt.setBrushOrigin(r.topLeft());
-    pt.fillRect(r, image);
-    pt.end();
-    return p;
-}
-
-static QImage reflection( const QImage &img = QImage() )
-{
-    QImage refl(SIZE, SIZE, QImage::Format_ARGB32);
-    refl.fill( Qt::transparent);
-    QRect r = img.rect();
-    r.moveCenter(refl.rect().center());
-    r.moveTop(refl.rect().top());
-    QPainter p(&refl);
-    p.setBrushOrigin(r.topLeft());
-    if ( !img.isNull() )
-        p.fillRect(r, img.mirrored());
-    p.end();
-    int size = refl.width() * refl.height();
-    QRgb *pixel = reinterpret_cast<QRgb *>(refl.bits());
-    QColor bg = DFM::Ops::colorMid(qApp->palette().color(QPalette::Highlight), Qt::black);
-    bg.setHsv(bg.hue(), qMin(64, bg.saturation()), bg.value(), bg.alpha());
-    for ( int i = 0; i < size; ++i )
-        if ( qAlpha(pixel[i]) )
-        {
-            QColor c = QColor(pixel[i]);
-            c = DFM::Ops::colorMid(c, bg, 1, 4);
-            pixel[i] = qRgba(c.red(), c.green(), c.blue(), qAlpha(pixel[i]));
-        }
-    return blurred( refl, refl.rect(), 5 );
-}
-
-ThumbsLoader *inst = 0;
 
 ThumbsLoader::ThumbsLoader(QObject *parent) :
     QThread(parent),
     m_extent(256),
-    m_currentView(0){}
+    m_fsModel(static_cast<DFM::FileSystemModel *>(parent))
+{}
 
+bool ThumbsLoader::hasThumb(const QString &file) { return s_thumbs.contains(file); }
 
-ThumbsLoader
-*ThumbsLoader::instance()
+void
+ThumbsLoader::queueFile(const QString &file)
 {
-    if ( !inst )
-    {
-        inst = new ThumbsLoader(qApp);
-        m_fsWatcher = new QFileSystemWatcher(inst);
-        m_timer = new QTimer(inst);
-        m_timer->setInterval(200);
-        connect ( m_fsWatcher, SIGNAL(fileChanged(QString)), inst, SLOT(fileChanged(QString)) );
-        connect ( m_timer, SIGNAL(timeout()), inst, SLOT(loadThumbs()) );
-    }
-    return inst;
+    if ( m_queue.contains(file) || s_thumbs.contains(file) )
+        return;
+    m_queue << file;
+    start();
+}
+
+QImage
+ThumbsLoader::thumb(const QString &file)
+{
+    if ( hasThumb(file) )
+        return s_thumbs.value(file);
+    return QImage();
 }
 
 void
 ThumbsLoader::loadThumb( const QString &path )
 {
-    if ( !m_currentView || !m_fsModel )
-        return;
     if ( !QFileInfo(path).exists() )
     {
-        for ( int i = 0; i<3; ++i )
-            m_loadedThumbs[i].remove(path);
-        m_fsWatcher->removePath(path);
+        s_thumbs.remove(path);
         return;
     }
     ir.setFileName(path);
     if ( !ir.canRead() || path.endsWith( "xcf", Qt::CaseInsensitive ) )
         return;
 
-    const QModelIndex &index = m_fsModel->index(path);
-    if ( vr.intersects(m_currentView->visualRect(index)) )
+    QSize thumbsize = ir.size();
+    if ( qMax( thumbsize.width(), thumbsize.height() ) > m_extent )
+        thumbsize.scale( m_extent, m_extent, Qt::KeepAspectRatio );
+    ir.setScaledSize(thumbsize);
+
+    const QImage image(ir.read());
+
+    if ( !image.isNull() )
     {
-        QSize thumbsize = ir.size();
-        if ( qMax( thumbsize.width(), thumbsize.height() ) > m_extent )
-            thumbsize.scale( m_extent, m_extent, Qt::KeepAspectRatio );
-        ir.setScaledSize(thumbsize);
-
-        const QImage image(ir.read());
-
-        if ( !image.isNull() )
-        {
-            if ( !m_fsWatcher->files().contains(path) )
-                m_fsWatcher->addPath(path);
-            m_loadedThumbs[Thumb].insert(path, image);
-            m_loadedThumbs[Reflection].insert(path, reflection(image));
-            m_loadedThumbs[FlowPic].insert(path, flowImg(image));
-            emit dataChanged(index, index);
-        }
+        s_thumbs.insert(path, image);
+        emit thumbFor(path);
     }
-}
-
-void
-ThumbsLoader::genReflection(const QPair<QImage, QModelIndex> &imgStr)
-{
-    if ( !m_currentView || !m_fsModel )
-        return;
-    const QModelIndex &index = imgStr.second;
-    const QString &name = m_fsModel->data(index, DFM::FileSystemModel::IconName).toString();
-    if ( !m_loadedThumbs[FallBackRefl].contains(name) )
-        m_loadedThumbs[FallBackRefl].insert(name, reflection(imgStr.first));
-    emit dataChanged(index, index);
-}
-
-static QMap<QString, QImage> customIcns;
-
-QImage
-ThumbsLoader::pic(const QString &filePath, const Type &t)
-{
-    if ( DFM::Store::config.icons.customIcons.contains(filePath) )
-    {
-        if ( t == FlowPic )
-        {
-        if ( customIcns.contains(filePath) )
-            return customIcns.value(filePath);
-
-        QImage img(SIZE, SIZE, QImage::Format_ARGB32);
-        img.fill(Qt::transparent);
-        QPainter p(&img);
-        QPixmap old = DFM::Store::config.icons.customIcons.value(filePath);
-        QRect r = old.rect();
-        r.moveCenter(img.rect().center());
-        p.drawTiledPixmap(r, old);
-        p.end();
-        customIcns.insert(filePath, img);
-        return img;
-        }
-        else
-            goto reflectionOps;
-    }
-
-    if ( DFM::Store::config.views.showThumbs
-         && m_loadedThumbs[t].contains(filePath) )
-        return m_loadedThumbs[t].value(filePath);
-
-reflectionOps:
-
-    if ( t >= Reflection && m_fsModel )
-    {
-        const QModelIndex &idx = m_fsModel->index(filePath);
-        if ( !idx.isValid() )
-            return QImage();
-        const QString &icon = m_fsModel->data(idx, DFM::FileSystemModel::IconName).toString();
-        qDebug() << icon;
-        if ( m_loadedThumbs[FallBackRefl].contains(icon) )
-            return m_loadedThumbs[FallBackRefl].value(icon);
-    }
-    return QImage();
-}
-
-void
-ThumbsLoader::disconnectView()
-{
-    if ( !m_currentView )
-        return;
-    if ( DFM::ViewContainer *vc = qobject_cast<DFM::ViewContainer *>(m_currentView->parentWidget()->parentWidget()) )
-        disconnect(vc, SIGNAL(filterChanged()), m_timer, SLOT(start()));
-    disconnect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
-    disconnect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
-    disconnect( m_fsModel, SIGNAL(layoutChanged()),instance(), SLOT(loadReflections()));
-    disconnect( m_fsModel, SIGNAL(directoryLoaded(QString)), m_timer, SLOT(start()) );
-    disconnect( m_fsModel, SIGNAL(rootPathChanged(QString)), instance(), SLOT(dirChanged()) );
-    disconnect( instance(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), m_fsModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
-    m_currentView->removeEventFilter( instance() );
-    m_fsModel = 0;
-    m_currentView = 0;
-}
-
-void
-ThumbsLoader::connectView()
-{
-    m_fsModel = qobject_cast<DFM::FileSystemModel *>(m_currentView->model());
-    if ( DFM::ViewContainer *vc = qobject_cast<DFM::ViewContainer *>(m_currentView->parentWidget()->parentWidget()) )
-        connect(vc, SIGNAL(filterChanged()), m_timer, SLOT(start()));
-    connect( m_currentView->verticalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
-    connect( m_currentView->horizontalScrollBar(), SIGNAL(valueChanged(int)), m_timer, SLOT(start()) );
-    connect( m_fsModel, SIGNAL(layoutChanged()), instance(), SLOT(loadReflections()) );
-    connect( m_fsModel, SIGNAL(directoryLoaded(QString)), m_timer, SLOT(start()) );
-    connect( m_fsModel, SIGNAL(rootPathChanged(QString)), instance(), SLOT(dirChanged()) );
-    connect( instance(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), m_fsModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
-    m_currentView->installEventFilter( instance() );
-}
-
-void
-ThumbsLoader::dirChanged()
-{
-    if ( m_fsWatcher->files().count() )
-        m_fsWatcher->removePaths(m_fsWatcher->files());
-}
-
-void
-ThumbsLoader::loadThumbs()
-{
-    m_timer->stop();
-
-    if ( !DFM::Store::config.views.showThumbs )
-        return;
-
-    for ( int i = 0; i < m_fsModel->rowCount(m_currentView->rootIndex()); ++i )
-    {
-        const QModelIndex &index = m_fsModel->index( i, 0, m_currentView->rootIndex() );
-        const QString file = m_fsModel->filePath(index);
-        if ( QImageReader(file).canRead() )
-            if ( !m_loadedThumbs[Thumb].contains(file) && !m_thumbQueue.contains(file) )
-                m_thumbQueue << file;
-    }
-
-//    const QFileInfoList &il = m_fsModel->rootDirectory().entryInfoList(m_fsModel->supportedThumbs(true), QDir::NoDotAndDotDot|QDir::Files, QDir::Name|QDir::IgnoreCase|QDir::DirsFirst);
-//    foreach ( const QFileInfo &info, il )
-//        if ( !m_loadedThumbs[Thumb].contains(info.filePath()) && !m_thumbQueue.contains(info.filePath()) )
-//            m_thumbQueue << info.filePath();
-
-    start();
-}
-
-void
-ThumbsLoader::loadReflections()
-{
-    for ( int i = 0; i < m_fsModel->rowCount(m_currentView->rootIndex()); ++i )
-    {
-        const QModelIndex &index = m_fsModel->index( i, 0, m_currentView->rootIndex() );
-        const QIcon &icon = qvariant_cast<QIcon>(m_fsModel->data(index, Qt::DecorationRole));
-        if ( m_loadedThumbs[FallBackRefl].contains(icon.name()) )
-            continue;
-        QImage img(SIZE, SIZE, QImage::Format_ARGB32);
-        img.fill(Qt::transparent);
-        QPainter p(&img);
-        icon.paint(&p, img.rect());
-        p.end();
-        m_refQueue << QPair<QImage, QModelIndex>(img, index);
-    }
-    start();
-    m_timer->start();
-}
-
-void
-ThumbsLoader::setCurrentView(QAbstractItemView *view)
-{
-    dirChanged();
-    m_thumbQueue.clear();
-    m_refQueue.clear();
-    disconnectView();
-    m_currentView = view;
-    connectView();
-    m_timer->start();
-}
-
-void
-ThumbsLoader::fileChanged(const QString &file)
-{
-    m_thumbQueue << file;
-    start();
 }
 
 void
 ThumbsLoader::run()
 {
-    while ( !m_refQueue.isEmpty() )
-        genReflection( m_refQueue.takeFirst() );
-    if ( DFM::Store::config.views.showThumbs )
-        while ( !m_thumbQueue.isEmpty() )
-            loadThumb( m_thumbQueue.takeFirst() );
+    while ( !m_queue.isEmpty() )
+        loadThumb(m_queue.takeFirst());
+}
+
+QHash<QString, QImage> s_images[2];
+
+ImagesThread::ImagesThread(QObject *parent)
+    :QThread(parent)
+    ,m_fsModel(static_cast<FileSystemModel *>(parent))
+{}
+
+void
+ImagesThread::removeData(const QString &file)
+{
+    for ( int i = 0; i < 2; ++i )
+        s_images[i].remove(file);
+    m_pixQueue.removeOne(file);
+}
+
+void
+ImagesThread::genImagesFor(const QString &file)
+{
+    const QImage &source = m_sourceImgs.take(file);
+    s_images[0].insert(file, Ops::flowImg(source));
+    s_images[1].insert(file, Ops::reflection(source));
+    emit imagesReady(file);
+}
+
+void ImagesThread::run()
+{
+    while ( !m_pixQueue.isEmpty() )
+        genImagesFor(m_pixQueue.takeFirst());
+}
+
+QImage
+ImagesThread::flowData(const QString &file, const bool refl)
+{
+    if ( hasData(file) )
+        return s_images[refl].value(file);
+    return QImage();
 }
 
 bool
-ThumbsLoader::eventFilter(QObject *o, QEvent *e)
+ImagesThread::hasData(const QString &file)
 {
-    if ( m_currentView )
-    if ( o == m_currentView && e->type() == QEvent::Resize )
-    {
-        vr = m_currentView->viewport()->rect();
-        m_timer->start();
-    }
-    return false;
+    return s_images[0].contains(file);
+}
+
+void
+ImagesThread::queueFile(const QString &file )
+{
+    if ( m_pixQueue.contains(file) || s_images[0].contains(file) )
+        return;
+    m_pixQueue << file;
+    const QIcon &icon = qvariant_cast<QIcon>(m_fsModel->data(m_fsModel->index(file), Qt::DecorationRole));
+    const QImage &source = icon.pixmap(SIZE).toImage();
+    m_sourceImgs.insert(file, source);
+    start();
 }

@@ -96,6 +96,12 @@ WinButton::mouseReleaseEvent(QMouseEvent *e)
     e->accept();
 }
 
+void
+WinButton::mouseMoveEvent(QMouseEvent *e)
+{
+    e->accept();
+}
+
 //static uint fcolors[3] = {0xFFBF0303, 0xFFF3C300, 0xFF00892B};
 //static uint fcolors[3] = { 0xFFD86F6B, 0xFFD8CA6B, 0xFF76D86B };
 //static uint fcolors[3] = { 0xFFBF2929, 0xFF29BF29, 0xFFBFBF29 };
@@ -121,9 +127,11 @@ WinButton::paintEvent(QPaintEvent *e)
     rg.setColorAt(0.0f, f);
     rg.setColorAt(1.0f, mid);
 
+    int y = bg.value()>fg.value()?1:-1;
+
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor(255, 255, 255,  127));
-    p.drawEllipse(r.translated(0.0f, 1.0f));
+    p.setBrush(y==1?high:low);
+    p.drawEllipse(r.translated(0.0f, y));
 
     p.setPen(Ops::colorMid(f, Qt::black));
     p.setBrush(rg);
@@ -181,43 +189,26 @@ void
 FooBar::correctTabBarHeight()
 {
     m_tabBar->setFixedHeight(m_tabBar->tabSizeHint(m_tabBar->currentIndex()).height());
-    QHBoxLayout *layout = new QHBoxLayout(this);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(0);
-    layout->addSpacing(4);
-    layout->addWidget(new WinButton(WinButton::Close, this));
-    layout->addSpacing(3);
-    layout->addWidget(new WinButton(WinButton::Min, this));
-    layout->addSpacing(3);
-    layout->addWidget(new WinButton(WinButton::Max, this));
-    layout->addSpacing(4);
-
-    QHBoxLayout *tl = new QHBoxLayout();
-    tl->setContentsMargins(0, m_topMargin, 0, 0);
-    tl->setSpacing(0);
-    tl->addWidget(m_tabBar);
-
-    QFont font = m_tabBar->font();
-    font.setPointSize(8);
-    m_tabBar->setFont(font);
-    m_tabBar->setAttribute(Qt::WA_Hover);
-    m_tabBar->setMouseTracking(true);
-    if ( Store::config.behaviour.newTabButton )
-    {
-        TabButton *tb = new TabButton(m_tabBar);
-        connect(tb, SIGNAL(clicked()), m_tabBar, SIGNAL(newTabRequest()));
-        m_tabBar->setAddTabButton(tb);
-    }
-
-    layout->addLayout(tl);
-    QToolButton *menu = new QToolButton(this);
 
     QPixmap confPix(16, 16);
     confPix.fill(Qt::transparent);
     QPainter p(&confPix);
 
-    bg = m_mainWin->palette().color(backgroundRole());
-    fg = m_mainWin->palette().color(foregroundRole());
+    if ( Store::config.behaviour.invertedColors )
+    {
+        fg = m_mainWin->palette().color(backgroundRole());
+        bg = m_mainWin->palette().color(foregroundRole());
+        QPalette tpal = m_toolBar->palette();
+        tpal.setColor(m_toolBar->foregroundRole(), fg);
+        tpal.setColor(m_toolBar->backgroundRole(), bg);
+        m_toolBar->setPalette(tpal);
+    }
+    else
+    {
+        bg = m_mainWin->palette().color(backgroundRole());
+        fg = m_mainWin->palette().color(foregroundRole());
+    }
+
     hl = m_mainWin->palette().color(QPalette::Highlight);
     high = Ops::colorMid(bg, Qt::white);
     low = Ops::colorMid(bg, Qt::black);
@@ -231,10 +222,54 @@ FooBar::correctTabBarHeight()
     p.drawPixmap(confPix.rect(), realPix);
     p.end();
 
+    QToolButton *menu = new QToolButton(this);
     menu->setIcon(confPix);
     menu->setMenu(m_mainWin->mainMenu());
     menu->setPopupMode(QToolButton::InstantPopup);
-    layout->addWidget(menu);
+
+    QHBoxLayout *layout = new QHBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+
+    QHBoxLayout *tl = new QHBoxLayout();
+    tl->setContentsMargins(0, m_topMargin, 0, 0);
+    tl->setSpacing(0);
+    tl->addWidget(m_tabBar);
+    if ( Store::config.behaviour.windowsStyle )
+    {
+        layout->addWidget(menu);
+        layout->addLayout(tl);
+        layout->addWidget(new WinButton(WinButton::Min, this));
+        layout->addSpacing(3);
+        layout->addWidget(new WinButton(WinButton::Max, this));
+        layout->addSpacing(3);
+        layout->addWidget(new WinButton(WinButton::Close, this));
+        layout->addSpacing(4);
+    }
+    else
+    {
+        layout->addSpacing(4);
+        layout->addWidget(new WinButton(WinButton::Close, this));
+        layout->addSpacing(3);
+        layout->addWidget(new WinButton(WinButton::Min, this));
+        layout->addSpacing(3);
+        layout->addWidget(new WinButton(WinButton::Max, this));
+        layout->addLayout(tl);
+        layout->addWidget(menu);
+    }
+
+    QFont font = m_tabBar->font();
+    font.setPointSize(8);
+    m_tabBar->setFont(font);
+    m_tabBar->setAttribute(Qt::WA_Hover);
+    m_tabBar->setMouseTracking(true);
+    if ( Store::config.behaviour.newTabButton )
+    {
+        TabButton *tb = new TabButton(m_tabBar);
+        connect(tb, SIGNAL(clicked()), m_tabBar, SIGNAL(newTabRequest()));
+        m_tabBar->setAddTabButton(tb);
+    }
+
     setLayout(layout);
     setContentsMargins(0, 0, 0, 0);
     setFixedHeight(m_tabBar->height()+m_topMargin);
@@ -302,11 +337,11 @@ FooBar::paintEvent(QPaintEvent *e)
 
     QLinearGradient lg(0, 0, 0, height());
     lg.setColorAt(0.0f, bg/*Operations::colorMid(bg, fg, 8, 1)*/);
-    lg.setColorAt(1.0f, Ops::colorMid(bg, fg, 2, 1));
+    lg.setColorAt(1.0f, Ops::colorMid(bg, Qt::black, 10, 1));
 
     p.fillRect(rect(), lg);
 
-    p.setPen(fg);
+    p.setPen(low);
     p.drawLine(0, height()-2, width(), height()-2);
     p.setPen(high);
     p.drawLine(0, height()-1, width(), height()-1);
@@ -705,7 +740,7 @@ TabBar::drawTab(QPainter *p, int index)
     if ( shape.right() > rect().right() )
         shape.setRight(rect().right());
 
-    p->setPen(QPen(fg, 3.0f));
+    p->setPen(QPen(low, 3.0f));
     p->drawPath(FooBar::tab(shape, rndNess, tabShape)); //dark frame on all tabs
 
     if ( index == currentIndex() )
@@ -727,7 +762,7 @@ TabBar::drawTab(QPainter *p, int index)
     {
         QLinearGradient it(r.topLeft(), r.bottomLeft());
         it.setColorAt(0.0f, index==m_hoveredTab ? Ops::colorMid(bg, Qt::white, 5, 1) : bg);
-        it.setColorAt(1.0f, Ops::colorMid(bg, fg, index==m_hoveredTab ? 7 : 3, 1));
+        it.setColorAt(1.0f, Ops::colorMid(bg, Qt::black, index==m_hoveredTab ? 15 : 10, 1));
 
         QColor h = high;
         h.setAlpha(bg.value());
@@ -792,7 +827,7 @@ TabBar::paintEvent(QPaintEvent *event)
         drawTab(&p, i);
     for ( int i = count(); i > currentIndex(); --i )
         drawTab(&p, i);
-    p.setPen(fg);
+    p.setPen(low);
     p.drawLine(0, height()-2, width(), height()-2);
     drawTab(&p, currentIndex());
     p.end();

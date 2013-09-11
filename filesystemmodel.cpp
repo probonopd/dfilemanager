@@ -82,6 +82,26 @@ FileSystemModel::FileSystemModel(QObject *parent) :
     connect ( MainWindow::currentWindow(), SIGNAL(viewChanged(QAbstractItemView*)), this, SLOT(setCurrentView(QAbstractItemView*)) );
     m_nameThumbs = supportedThumbs();
     connect ( this, SIGNAL(rootPathChanged(QString)), this, SLOT(emitRootIndex(QString)) );
+    m_thumbsLoader = new ThumbsLoader(this);
+    connect ( m_thumbsLoader, SIGNAL(thumbFor(QString)), this, SLOT(thumbFor(QString)) );
+    m_it = new ImagesThread(this);
+    connect ( m_it, SIGNAL(imagesReady(QString)), this, SLOT(flowDataAvailable(QString)) );
+}
+
+void
+FileSystemModel::thumbFor(const QString &file)
+{
+    const QModelIndex &idx = index(file);
+    emit dataChanged(idx, idx);
+    m_it->removeData(file);
+    m_it->queueFile(file);
+}
+
+void
+FileSystemModel::flowDataAvailable(const QString &file)
+{
+    const QModelIndex &idx = index(file);
+    emit flowDataChanged(idx, idx);
 }
 
 void
@@ -90,10 +110,12 @@ FileSystemModel::setCurrentView(QAbstractItemView *view)
     s_currentView = view;
 }
 
+bool FileSystemModel::hasThumb(const QString &file) { return m_thumbsLoader->hasThumb(file); }
+
 QPixmap
 FileSystemModel::iconPix(const QFileInfo &info, const int &extent)
 {
-    const QSettings settings(QString("%1%2.directory").arg(info.filePath()).arg(QDir::separator()), QSettings::IniFormat);
+    const QSettings settings(QString("%1%2.directory").arg(info.filePath(), QDir::separator()), QSettings::IniFormat);
     QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString());
     if ( icon.isNull() )
         icon = QIcon::fromTheme("inode-directory");
@@ -128,10 +150,6 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         if (fileInfo(index).isDir())
             return QString::number(QDir(filePath(index)).entryList(QDir::NoDotAndDotDot | QDir::AllEntries).count()) + " Entrie(s)";
 
-    if (index.column() == 0 && role == Qt::ForegroundRole)
-        if(fileInfo(index).isSymLink())
-            return QColor(127, 127, 127, 255);
-
     if ( role == Qt::FontRole && s_currentView )
     {
         QFont font = s_currentView->font();
@@ -142,14 +160,12 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     if ( index.column() == 4 && role == Qt::DisplayRole )
     {
         QString permission;
-
         const QFileInfo file = fileInfo(index);
         permission.append(file.permission(QFile::ReadUser) ? "r, " : "-, ");
         permission.append(file.permission(QFile::WriteUser) ? "w, " : "-, ");
         if (!file.isDir())
             permission.append(file.isExecutable() && !fileInfo(index).isDir() ? "x, " : "-, ");
         permission.append(file.owner());
-
         return permission;
     }
 
@@ -161,64 +177,42 @@ FileSystemModel::data(const QModelIndex &index, int role) const
             return int(Qt::AlignVCenter | Qt::AlignLeft);
     }
 
-    if ( index.column() > 0 )
-        return QFileSystemModel::data(index, role);
+    const QString &file = filePath(index);
 
-    if ( role == IconName )
+    const bool customIcon = Store::config.icons.customIcons.contains(file);
+
+    if ( index.column() == 0 && role == Qt::DecorationRole && customIcon )
+        return QIcon(Store::config.icons.customIcons.value(file));
+
+    if ( role < FlowImg )
+        if (index.column() > 0
+                || !supportedThumbs().contains(fileInfo(index).suffix(), Qt::CaseInsensitive)
+                || !Store::config.views.showThumbs)
+            return QFileSystemModel::data(index, role);
+
+    if ( role == Qt::DecorationRole )
     {
-        if ( Store::config.icons.customIcons.contains(filePath(index)) )
-            return QString("custom%1").arg(filePath(index).replace("/", "-"));
-        return iconProvider()->icon(fileInfo(index)).name();
-    }
-
-    if ( role == Qt::DecorationRole
-        && Store::config.icons.customIcons.contains(filePath(index)) )
-            return QIcon(Store::config.icons.customIcons.value(filePath(index)));
-
-    if ( index.column() == 0
-         && role == Qt::DecorationRole
-         && fileInfo(index).isDir() )
-        return iconProvider()->icon(fileInfo(index));
-
-
-    //thumbnails in views...
-
-    if ( Store::config.views.showThumbs
-         && ( role == Qt::DecorationRole || role == Thumbnail )
-         && index.column() == 0 )
-    {
-        const QPixmap &pix = QPixmap::fromImage(ThumbsLoader::thumb(filePath(index)));
-        if ( !pix.isNull() )
+        if ( m_thumbsLoader->hasThumb(file) )
+            return QIcon(QPixmap::fromImage(m_thumbsLoader->thumb(file)));
+        else
         {
-            if (role == Qt::DecorationRole)
-                if ( Store::config.icons.customIcons.contains(filePath(index)) )
-                    return QIcon(Store::config.icons.customIcons.value(filePath(index)));
-                else
-                    return QIcon(pix);
-
-            if (role == Thumbnail)
-                if ( Store::config.icons.customIcons.contains(filePath(index)) )
-                    return Store::config.icons.customIcons.value(filePath(index)).toImage();
-                else
-                    return pix.toImage();
+            m_thumbsLoader->queueFile(file);
+            return iconProvider()->icon(QFileInfo(file));
         }
     }
 
-    //in flowview
-
-    if ( role == Reflection )
-        return QPixmap::fromImage(ThumbsLoader::thumb(filePath(index), ThumbsLoader::Reflection));
-
-    if ( role == FlowPic )
+    if ( role >= FlowImg )
     {
-        QPixmap p = iconProvider()->icon(fileInfo(index)).pixmap(SIZE);
-        if ( Store::config.views.showThumbs )
-            if ( !QPixmap::fromImage(ThumbsLoader::thumb(filePath(index), ThumbsLoader::FlowPic)).isNull() )
-                p = QPixmap::fromImage(ThumbsLoader::thumb(filePath(index), ThumbsLoader::FlowPic));
-        if ( !p.isNull() )
-            return p;
+        if ( m_it->hasData(file) )
+            return QPixmap::fromImage(m_it->flowData(file, role == FlowRefl));
+        else
+        {
+            m_it->queueFile(file);
+            if ( role == FlowRefl )
+                return QPixmap();
+            return iconProvider()->icon(QFileInfo(file)).pixmap(SIZE);
+        }
     }
-
     return QFileSystemModel::data(index, role);
 }
 

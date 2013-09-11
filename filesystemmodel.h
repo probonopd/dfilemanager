@@ -36,6 +36,7 @@
 #include <QLabel>
 #include <QDebug>
 #include <QMap>
+#include "thumbsloader.h"
 
 namespace DFM
 {
@@ -56,7 +57,8 @@ signals:
 private:
     FileSystemModel *m_fsModel;
 };
-
+class ThumbsLoader;
+class ImagesThread;
 class FileSystemModel : public QFileSystemModel
 {
     Q_OBJECT
@@ -66,11 +68,8 @@ public:
         FilePathRole = Qt::UserRole + 1,
         FileNameRole = Qt::UserRole + 2,
         FilePermissions = Qt::UserRole + 3,
-        Thumbnail = Qt::UserRole +4,
-        Reflection = Qt::UserRole + 5,
-        FlowPic = Qt::UserRole + 6,
-        IconName = Qt::UserRole + 7,
-        ReflGen = Qt::UserRole +8
+        FlowImg = Qt::UserRole + 4,
+        FlowRefl = Qt::UserRole +5
     };
     explicit FileSystemModel(QObject *parent = 0);
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
@@ -78,6 +77,8 @@ public:
     static QPixmap iconPix(const QFileInfo &info,const int &extent);
     static QStringList supportedThumbs( const bool &filter = false );
     inline void refresh() { const QString &path = rootPath(); setRootPath(""); setRootPath(path); }
+    bool hasThumb( const QString &file );
+    bool hasFlowData( const QString &file );
 
 public slots:
     void setPath(const QString &path) { setRootPath(path); }
@@ -85,9 +86,12 @@ public slots:
 private slots:
     void emitRootIndex( const QString &path ) { emit rootPathAsIndex(index(path)); }
     void setCurrentView(QAbstractItemView *view);
+    void thumbFor( const QString &file );
+    void flowDataAvailable( const QString &file );
 
 signals:
     void rootPathAsIndex( const QModelIndex &index );
+    void flowDataChanged( const QModelIndex &start, const QModelIndex &end );
 
 protected:
     virtual int columnCount(const QModelIndex &parent) const;
@@ -96,6 +100,8 @@ protected:
 private:
     QStringList m_nameThumbs;
     FileIconProvider *m_iconProvider;
+    ThumbsLoader *m_thumbsLoader;
+    ImagesThread *m_it;
 };
 
 }

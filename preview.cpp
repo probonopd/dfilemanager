@@ -28,6 +28,7 @@
 #include <QCoreApplication>
 #include <QBitmap>
 #include <QElapsedTimer>
+#include <QApplication>
 #include "operations.h"
 #include <qmath.h>
 
@@ -101,6 +102,24 @@ GraphicsScene::drawForeground(QPainter *painter, const QRectF &rect)
     painter->fillRect(rect, rg);
 }
 
+PixmapItem::PixmapItem(GraphicsScene *scene, QGraphicsItem *parent)
+    : QGraphicsPixmapItem(parent)
+    , m_scene(scene)
+    , m_isUpdateingPixmaps(false)
+{
+    m_preView = m_scene->preView();
+}
+
+void
+PixmapItem::updatePixmaps()
+{
+    const QString &file = m_preView->fsModel()->filePath(m_preView->indexOfItem(this));
+    const QModelIndex &index = m_preView->fsModel()->index(file);
+    m_pix[0] = qvariant_cast<QPixmap>(m_preView->fsModel()->data(index, FileSystemModel::FlowImg));
+    m_pix[1] = qvariant_cast<QPixmap>(m_preView->fsModel()->data(index, FileSystemModel::FlowRefl));
+    setPixmap(m_pix[0]);
+}
+
 void
 PixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
@@ -118,15 +137,6 @@ PixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWi
 }
 
 void
-PixmapItem::updatePixmaps()
-{
-    const QModelIndex &index = m_scene->preView()->indexOfItem(this);
-    m_pix[0] = qvariant_cast<QPixmap>(m_scene->preView()->fsModel()->data(index, FileSystemModel::FlowPic));
-    m_pix[1] = qvariant_cast<QPixmap>(m_scene->preView()->fsModel()->data(index, FileSystemModel::Reflection));
-    setPixmap(m_pix[0]);
-}
-
-void
 PixmapItem::rotate(const float &angle, const Qt::Axis &axis)
 {
     QTransform t;
@@ -137,21 +147,22 @@ PixmapItem::rotate(const float &angle, const Qt::Axis &axis)
     m_rotate = angle;
 }
 
-PreView::PreView(QWidget *parent) : QGraphicsView(parent)
-  , m_scene(new GraphicsScene(rect(), this))
-  , m_fsModel(0)
-  , m_row(-1)
-  , m_nextRow(-1)
-  , m_newRow(-1)
-  , m_pressed(0)
-  , m_y(0.0f)
-  , m_x(0.0f)
-  , m_timeLine(new QTimeLine(250, this))
-  , m_scrollBar(0)
-  , m_rootItem(new RootItem(m_scene))
-  , m_wantsDrag(false)
-  , m_perception(0.0f)
-  , m_pressPos(QPointF())
+PreView::PreView(QWidget *parent)
+    : QGraphicsView(parent)
+    , m_scene(new GraphicsScene(rect(), this))
+    , m_fsModel(0)
+    , m_row(-1)
+    , m_nextRow(-1)
+    , m_newRow(-1)
+    , m_pressed(0)
+    , m_y(0.0f)
+    , m_x(0.0f)
+    , m_timeLine(new QTimeLine(250, this))
+    , m_scrollBar(0)
+    , m_rootItem(new RootItem(m_scene))
+    , m_wantsDrag(false)
+    , m_perception(0.0f)
+    , m_pressPos(QPointF())
 {
     QGLFormat glf = QGLFormat::defaultFormat();
     glf.setSampleBuffers(true);
@@ -202,6 +213,14 @@ PreView::PreView(QWidget *parent) : QGraphicsView(parent)
     dse->setOffset(0);
     dse->setColor(Qt::black);
     m_textItem->setGraphicsEffect(dse);
+}
+
+QModelIndex
+PreView::indexOfItem(PixmapItem *item)
+{
+    if ( m_items.contains(item) )
+        return m_fsModel->index(m_items.indexOf(item), 0, m_rootIndex);
+    return QModelIndex();
 }
 
 void
@@ -311,14 +330,23 @@ PreView::wheelEvent(QWheelEvent *event)
     else if ( event->modifiers() & Qt::MetaModifier )
         m_rootItem->setScale(m_rootItem->scale()+((float)event->delta()*0.001f));
     else
-        QCoreApplication::sendEvent(m_scrollBar, event);
+        m_scrollBar->setValue(m_scrollBar->value()+(event->delta()>0?-1:1));
+//        QCoreApplication::sendEvent(m_scrollBar, event);
+}
+
+void
+PreView::enterEvent(QEvent *e)
+{
+    QGraphicsView::enterEvent(e);
+    if ( QApplication::overrideCursor() )
+        QApplication::restoreOverrideCursor();
 }
 
 void
 PreView::setModel(FileSystemModel *fsModel)
 {
     m_fsModel = fsModel;
-    connect(m_fsModel, SIGNAL(dataChanged(const QModelIndex & , const QModelIndex &)), this, SLOT(dataChanged(const QModelIndex & , const QModelIndex &)));
+    connect(m_fsModel, SIGNAL(flowDataChanged(const QModelIndex & , const QModelIndex &)), this, SLOT(dataChanged(const QModelIndex & , const QModelIndex &)));
     connect(m_fsModel, SIGNAL(layoutChanged()),this, SLOT(reset()));
     connect(m_fsModel, SIGNAL(modelReset()),this, SLOT(reset()));
     connect(m_fsModel, SIGNAL(rowsInserted(const QModelIndex & , int , int)), this, SLOT(rowsInserted(const QModelIndex & , int , int)));
@@ -364,6 +392,16 @@ PreView::reset()
         m_scrollBar->setValue(0);
         m_scrollBar->setRange(0, m_fsModel->rowCount(m_rootIndex)-1);
     }
+}
+
+void
+PreView::showEvent(QShowEvent *event)
+{
+    QGraphicsView::showEvent(event);
+    const float &bottom = bMargin+m_scrollBar->height()+m_textItem->boundingRect().height();
+    m_y = (rect().size().height()/2.0f-SIZE/2.0f)-bottom;
+    m_x = rect().size().width()/2.0f;
+    m_items[m_row]->updatePixmaps();
 }
 
 void
@@ -443,13 +481,11 @@ PreView::populate(const int &start, const int &end)
 void
 PreView::updateItemsPos()
 {
-    if ( !m_items.count() || m_row == -1 || m_row > m_fsModel->rowCount(m_rootIndex)-1 )
+    if ( !m_items.count() || m_row == -1 || m_row > m_fsModel->rowCount(m_rootIndex)-1 || !isVisible() )
         return;
 
     m_timeLine->stop();
     PixmapItem *center = m_items[m_row];
-    if ( center->pixmap().isNull() ) //not sure why this sometimes happens...
-        center->updatePixmaps();
     center->setZValue(m_items.count());
     center->setPos(m_x-SIZE/2.0f, m_y);
     center->setScale(1);
@@ -457,6 +493,8 @@ PreView::updateItemsPos()
     center->setOffset(0, 0);
 
     correctItemsPos(m_row-1, m_row+1 );
+    if ( center->pixmap().isNull() ) //not sure why this sometimes happens...
+        center->updatePixmaps();
 }
 
 static float xpos = 0.0f;

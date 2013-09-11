@@ -63,6 +63,9 @@ public:
     static void openFile( const QString &file );
     static Ops *instance();
     static QString prettySize(quint64 bytes);
+    static QImage reflection( const QImage &img = QImage() );
+    static QImage flowImg( const QImage &img = QImage() );
+    static QImage blurred( const QImage& image, const QRect& rect, int radius, bool alphaOnly = false );
 
     template<typename T> static inline T absWinFor( QWidget *w )
     {

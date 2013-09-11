@@ -46,10 +46,18 @@ Ops
 QString
 Ops::getMimeType(const QString &file)
 {
+    QFileInfo f(file);
+    if ( !f.exists() )
+        return QString();
+
+    if ( f.isSymLink())
+        return "inode/symlink";
+    if ( f.isDir() )
+        return "inode/directory";
 #ifdef Q_WS_X11
-    const magic_t &mgcMime = magic_open( MAGIC_MIME_TYPE );
-    magic_load( mgcMime, NULL );
-    return QString( magic_file( mgcMime, file.toStdString().c_str() ) );
+    magic_t magic = magic_open( MAGIC_MIME_TYPE );
+    magic_load( magic, NULL );
+    return QString( magic_file( magic, file.toLatin1() ) );
 #else
     return QString();
 #endif
@@ -59,6 +67,8 @@ QString
 Ops::getFileType(const QString &file)
 {
 #ifdef Q_WS_X11
+    if ( !QFileInfo(file).exists() )
+        return QString();
     magic_t mgcMime = magic_open( MAGIC_CONTINUE ); //print anything we can get
     magic_load( mgcMime, NULL );
     return QString( magic_file( mgcMime, file.toStdString().c_str() ) );
@@ -159,5 +169,120 @@ Ops::prettySize(quint64 bytes)
      return QString::number( (bytes>>10) + ((bytes) & (0x3ff)) / 1024.0, 'f', 2 ) + " KiB";
   else
      return QString::number( bytes, 'f', 0 ) + "Bytes";
+}
+
+/* blurring function below from:
+ * http://stackoverflow.com/questions/3903223/qt4-how-to-blur-qpixmap-image
+ * unclear to me who wrote it.
+ */
+QImage
+Ops::blurred(const QImage& image, const QRect& rect, int radius, bool alphaOnly)
+{
+   int tab[] = { 14, 10, 8, 6, 5, 5, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2 };
+   int alpha = (radius < 1)  ? 16 : (radius > 17) ? 1 : tab[radius-1];
+
+   QImage result = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+   int r1 = rect.top();
+   int r2 = rect.bottom();
+   int c1 = rect.left();
+   int c2 = rect.right();
+
+   int bpl = result.bytesPerLine();
+   int rgba[4];
+   unsigned char* p;
+
+   int i1 = 0;
+   int i2 = 3;
+
+   if (alphaOnly)
+       i1 = i2 = (QSysInfo::ByteOrder == QSysInfo::BigEndian ? 0 : 3);
+
+   for (int col = c1; col <= c2; col++) {
+       p = result.scanLine(r1) + col * 4;
+       for (int i = i1; i <= i2; i++)
+           rgba[i] = p[i] << 4;
+
+       p += bpl;
+       for (int j = r1; j < r2; j++, p += bpl)
+           for (int i = i1; i <= i2; i++)
+               p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+   }
+
+   for (int row = r1; row <= r2; row++) {
+       p = result.scanLine(row) + c1 * 4;
+       for (int i = i1; i <= i2; i++)
+           rgba[i] = p[i] << 4;
+
+       p += 4;
+       for (int j = c1; j < c2; j++, p += 4)
+           for (int i = i1; i <= i2; i++)
+               p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+   }
+
+   for (int col = c1; col <= c2; col++) {
+       p = result.scanLine(r2) + col * 4;
+       for (int i = i1; i <= i2; i++)
+           rgba[i] = p[i] << 4;
+
+       p -= bpl;
+       for (int j = r1; j < r2; j++, p -= bpl)
+           for (int i = i1; i <= i2; i++)
+               p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+   }
+
+   for (int row = r1; row <= r2; row++) {
+       p = result.scanLine(row) + c2 * 4;
+       for (int i = i1; i <= i2; i++)
+           rgba[i] = p[i] << 4;
+
+       p -= 4;
+       for (int j = c1; j < c2; j++, p -= 4)
+           for (int i = i1; i <= i2; i++)
+               p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+   }
+
+   return result;
+}
+
+QImage
+Ops::flowImg( const QImage &image )
+{
+   QImage p(SIZE, SIZE, QImage::Format_ARGB32);
+   p.fill(Qt::transparent);
+   QPainter pt(&p);
+   QRect r = image.rect();
+   r.moveCenter(p.rect().center());
+   r.moveBottom(p.rect().bottom()-1);
+   pt.setBrushOrigin(r.topLeft());
+   pt.fillRect(r, image);
+   pt.end();
+   return p;
+}
+
+QImage
+Ops::reflection( const QImage &img )
+{
+   QImage refl(SIZE, SIZE, QImage::Format_ARGB32);
+   refl.fill( Qt::transparent);
+   QRect r = img.rect();
+   r.moveCenter(refl.rect().center());
+   r.moveTop(refl.rect().top());
+   QPainter p(&refl);
+   p.setBrushOrigin(r.topLeft());
+   if ( !img.isNull() )
+       p.fillRect(r, img.mirrored());
+   p.end();
+   int size = refl.width() * refl.height();
+   QRgb *pixel = reinterpret_cast<QRgb *>(refl.bits());
+   QColor bg = DFM::Ops::colorMid(qApp->palette().color(QPalette::Highlight), Qt::black);
+   bg.setHsv(bg.hue(), qMin(64, bg.saturation()), bg.value(), bg.alpha());
+   for ( int i = 0; i < size; ++i )
+       if ( qAlpha(pixel[i]) )
+       {
+           QColor c = QColor(pixel[i]);
+           c = DFM::Ops::colorMid(c, bg, 1, 4);
+           pixel[i] = qRgba(c.red(), c.green(), c.blue(), qAlpha(pixel[i]));
+       }
+   return Ops::blurred( refl, refl.rect(), 5 );
 }
 

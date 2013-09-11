@@ -224,13 +224,13 @@ PreViewWidget::PreViewWidget(QWidget *parent, const QStringList &files)
     const QString &file = files.first();
     DFM::FileSystemModel *fsModel = DFM::MainWindow::currentContainer()->model();
     const QModelIndex &index = fsModel->index(file);
-    if ( index.isValid() )
+    if ( index.isValid() && fsModel->hasThumb(file) )
     {
-        const QImage &img = qvariant_cast<QImage>(fsModel->data(index, DFM::FileSystemModel::Thumbnail));
-        if ( !img.isNull() )
+        const QPixmap &pix = qvariant_cast<QPixmap>(fsModel->data(index, Qt::DecorationRole));
+        if ( !pix.isNull() )
         {
-            label->setPixmap(QPixmap::fromImage(img));
-            label->setFixedSize(img.size());
+            label->setPixmap(pix);
+            label->setFixedSize(pix.size());
             return;
         }
     }

@@ -35,43 +35,57 @@
 #include <QFileSystemWatcher>
 #include "filesystemmodel.h"
 
+namespace DFM
+{
+
+class FileSystemModel;
 class ThumbsLoader : public QThread
 {
     Q_OBJECT
 public:
+    explicit ThumbsLoader(QObject *parent = 0);
     enum Type { Thumb = 0, FlowPic, Reflection, FallBackRefl };
-    static ThumbsLoader *instance();
-    static QImage thumb( const QString &filePath, const Type &t = Thumb ) { return instance()->pic(filePath, t); }
+    void queueFile(const QString &file);
+    bool hasThumb(const QString &file);
+    QImage thumb(const QString &file);
     
 signals:
-    void dataChanged( const QModelIndex &topLeft, const QModelIndex &bottomRight );
-    
-public slots:
-    void setCurrentView( QAbstractItemView *view );
-    void loadThumbs();
-    void fileChanged( const QString &file );
-    void loadReflections();
-    void dirChanged();
+    void thumbFor(const QString &file);
 
 protected:
-    explicit ThumbsLoader(QObject *parent = 0);
     virtual void run();
-    bool eventFilter(QObject *o, QEvent *e);
     void loadThumb( const QString &path );
-    void genReflection( const QPair<QImage, QModelIndex> &imgStr );
-    void connectView();
-    void disconnectView();
-    QImage pic( const QString &filePath, const Type &t = Thumb );
 
 private:
-    static QStringList m_thumbQueue;
-    static QList<QPair<QImage, QModelIndex> > m_refQueue;
-    static QHash<QString, QImage> m_loadedThumbs[4];
-    static QFileSystemWatcher *m_fsWatcher;
-    static DFM::FileSystemModel *m_fsModel;
-    static QTimer *m_timer;
+    QStringList m_queue;
+    FileSystemModel *m_fsModel;
     int m_extent;
-    QAbstractItemView *m_currentView;
 };
+
+class ImagesThread : public QThread
+{
+    Q_OBJECT
+public:
+    explicit ImagesThread(QObject *parent = 0);
+    void queueFile( const QString &file );
+    QImage flowData( const QString &file, const bool refl = false );
+    bool hasData( const QString &file );
+    void removeData( const QString &file );
+
+signals:
+    void imagesReady( const QString &file );
+
+protected:
+    void genImagesFor( const QString &file );
+    void run();
+
+private:
+    QStringList m_pixQueue;
+    QMap<QString, QImage> m_sourceImgs;
+    QMap<QString, QImage > m_result[2];
+    FileSystemModel *m_fsModel;
+};
+
+}
 
 #endif // THUMBSLOADER_H

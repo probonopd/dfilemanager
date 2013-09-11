@@ -80,23 +80,25 @@ public:
  * ITEM
  */
 
-class PixmapItem : public QGraphicsPixmapItem
+class PixmapItem : public QObject, public QGraphicsPixmapItem
 {
 public:
-    inline explicit PixmapItem( GraphicsScene *scene = 0, QGraphicsItem *parent = 0 ) :
-        QGraphicsPixmapItem(parent),
-        m_scene(scene){ updatePixmaps(); }
+    PixmapItem( GraphicsScene *scene = 0, QGraphicsItem *parent = 0 );
     void rotate( const float &angle, const Qt::Axis &axis );
     inline QRectF boundingRect() { return RECT; }
     inline void saveX() { m_savedX = pos().x(); }
     inline float savedX() { return m_savedX; }
     void updatePixmaps();
+
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+
 private:
     QPixmap m_pix[2];
     GraphicsScene *m_scene;
+    PreView *m_preView;
     float m_rotate, m_savedX;
+    bool m_isUpdateingPixmaps;
 };
 
 /* THE
@@ -114,7 +116,7 @@ public:
     void showCenterIndex( const QModelIndex &index );
     inline void animateCenterIndex( const QModelIndex &index ) { m_scrollBar->setValue(index.row()); }
     inline FileSystemModel *fsModel() { return m_fsModel; }
-    inline QModelIndex indexOfItem(PixmapItem *item) { return m_fsModel->index(m_items.indexOf(item), 0, m_rootIndex); }
+    QModelIndex indexOfItem(PixmapItem *item);
     inline bool isAnimating() { return bool(m_timeLine->state() == QTimeLine::Running); }
     
 signals:
@@ -125,10 +127,12 @@ public slots:
 
 protected:
     void resizeEvent(QResizeEvent *event);
+    void showEvent(QShowEvent *event);
     void wheelEvent(QWheelEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
+    void enterEvent(QEvent *e);
     void populate(const int &start, const int &end);
     void prepareAnimation();
     bool isValidRow( const int &row ) { return bool(row > -1 && row < m_items.count()); }
