@@ -71,6 +71,7 @@ public:
     QImage flowData( const QString &file, const bool refl = false );
     bool hasData( const QString &file );
     void removeData( const QString &file );
+    inline bool hasFileInQueue( const QString &file ) { return m_pixQueue.contains(file); }
 
 signals:
     void imagesReady( const QString &file );

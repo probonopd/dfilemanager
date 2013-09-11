@@ -93,8 +93,11 @@ FileSystemModel::thumbFor(const QString &file)
 {
     const QModelIndex &idx = index(file);
     emit dataChanged(idx, idx);
-    m_it->removeData(file);
-    m_it->queueFile(file);
+    if ( m_it->hasData(file) || m_it->hasFileInQueue(file ) )
+    {
+        m_it->removeData(file);
+        m_it->queueFile(file);
+    }
 }
 
 void

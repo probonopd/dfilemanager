@@ -401,7 +401,8 @@ PreView::showEvent(QShowEvent *event)
     const float &bottom = bMargin+m_scrollBar->height()+m_textItem->boundingRect().height();
     m_y = (rect().size().height()/2.0f-SIZE/2.0f)-bottom;
     m_x = rect().size().width()/2.0f;
-    m_items[m_row]->updatePixmaps();
+    if ( m_items.count() > m_row && m_row > -1 )
+        m_items[m_row]->updatePixmaps();
 }
 
 void
