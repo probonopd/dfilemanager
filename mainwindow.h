@@ -75,6 +75,7 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event);
     void keyPressEvent(QKeyEvent *ke);
     void windowActivationChange(bool wasActive);
+    void showEvent(QShowEvent *e);
     void updateIcons();
     void createActions();
     void createToolBars();
