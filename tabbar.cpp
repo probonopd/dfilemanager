@@ -198,6 +198,8 @@ FooBar::correctTabBarHeight()
     {
         fg = m_mainWin->palette().color(backgroundRole());
         bg = m_mainWin->palette().color(foregroundRole());
+        fg.setHsv(fg.hue(), fg.saturation(), qBound(80, fg.value(), 220));
+        bg.setHsv(bg.hue(), bg.saturation(), qBound(80, bg.value(), 220));
         QPalette tpal = m_toolBar->palette();
         tpal.setColor(m_toolBar->foregroundRole(), fg);
         tpal.setColor(m_toolBar->backgroundRole(), bg);
@@ -337,9 +339,9 @@ FooBar::paintEvent(QPaintEvent *e)
 
     QLinearGradient lg(0, 0, 0, height());
     lg.setColorAt(0.0f, bg/*Operations::colorMid(bg, fg, 8, 1)*/);
-    lg.setColorAt(1.0f, Ops::colorMid(bg, Qt::black, 10, 1));
+    lg.setColorAt(1.0f, Ops::colorMid(bg, Qt::black, 6, 1));
 
-    p.fillRect(rect(), lg);
+    p.fillRect(rect().adjusted(-1, 0, 0, 0), lg);
 
     p.setPen(low);
     p.drawLine(0, height()-2, width(), height()-2);
@@ -347,11 +349,11 @@ FooBar::paintEvent(QPaintEvent *e)
     p.drawLine(0, height()-1, width(), height()-1);
 
     QPainterPath path;
-    int r = 5;
+    int r = 5, w = width()-1;
     path.moveTo(0, r);
     path.quadTo(0, 0, r, 0);
-    path.lineTo(width()-r, 0);
-    path.quadTo(width(), 0, width(), r);
+    path.lineTo(w-r, 0);
+    path.quadTo(w, 0, w, r);
     path.moveTo(0, r);
     path.closeSubpath();
 
@@ -503,6 +505,7 @@ TabButton::paintEvent(QPaintEvent *e)
         hor.translate(0, -1);
     }
 
+    emb = y==1?high:low;
     p.setBrush(emb);
     p.setPen(emb);
     p.drawRect(vert.translated(0, y));

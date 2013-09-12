@@ -140,6 +140,7 @@ CopyDialog::CopyDialog(QWidget *parent)
     , m_inFile(new QLabel(this))
     , m_to(new QLabel(this))
     , m_cbHideFinished(new QCheckBox(this))
+    , m_speedLabel(new QLabel(this))
 {
     m_hideFinished = Store::settings()->value("hideCPDWhenFinished", 0).toBool();
     m_cbHideFinished->setChecked(m_hideFinished);
@@ -190,6 +191,13 @@ CopyDialog::CopyDialog(QWidget *parent)
     ov->setFont(boldFont);
     vBoxL->addWidget(ov);
     vBoxL->addWidget(m_progress);
+
+    QHBoxLayout *speedLayout = new QHBoxLayout();
+    speedLayout->addWidget(new QLabel(tr("Speed (Approximately):"), this));
+    speedLayout->addStretch();
+    speedLayout->addWidget(m_speedLabel);
+    vBoxL->addLayout(speedLayout);
+
     QHBoxLayout *hBoxL = new QHBoxLayout();
     hBoxL->addWidget(m_ok);
     hBoxL->addStretch();
@@ -202,20 +210,26 @@ CopyDialog::CopyDialog(QWidget *parent)
     vBoxL->addLayout(hBoxL);
 
     setLayout(vBoxL);
+//    vBoxL->setSizeConstraint(QLayout::SetFixedSize);
     setWindowFlags( ( ( windowFlags() | Qt::CustomizeWindowHint ) & ~Qt::WindowCloseButtonHint ) );
 }
+
+static QString elidedText( const QString &text ) { return qApp->fontMetrics().elidedText(text, Qt::ElideMiddle, 256); }
 
 void
 CopyDialog::setInfo(QString from, QString to, int completeProgress, int currentProgress)
 {
     m_progress->setValue(completeProgress);
     m_fileProgress->setValue(currentProgress);
-    m_inFile->setText(QFileInfo(from).fileName());
-    m_from->setText(from);
-    m_to->setText(to);
+    m_inFile->setText(elidedText(QFileInfo(from).fileName()));
+    m_from->setText(elidedText(from));
+    m_to->setText(elidedText(to));
     m_ok->setEnabled(m_progress->value() == 100);
-    m_cancel->setEnabled(m_progress->value() < 100);
-    m_pause->setEnabled(m_progress->value() < 100);
+    if ( m_progress->value() == 100 )
+    {
+        m_cancel->setEnabled(false);
+        m_pause->setEnabled(false);
+    }
 }
 
 void
@@ -276,11 +290,10 @@ void
 Job::getDirs(const QString &dir, quint64 *fileSize)
 {
     const QFileInfoList &entries = QDir(dir).entryInfoList(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden);
-    foreach(const QFileInfo &entry, entries)
+    foreach (const QFileInfo &entry, entries)
     {
-        QString file(entry.filePath());
         if (entry.isDir())
-            getDirs(file, fileSize);
+            getDirs(entry.filePath(), fileSize);
         else
             *fileSize += entry.size();
     }
@@ -336,8 +349,8 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut, bool
     connect(copyDialog, SIGNAL(rejected()), ioThread, SLOT(cancelCopy()));
     connect(ioThread, SIGNAL(copyProgress(QString, QString, int, int)), copyDialog, SLOT(setInfo(QString, QString, int, int)));
     connect(ioThread, SIGNAL(finished()), copyDialog, SLOT(finished()));
-    connect(ioThread, SIGNAL(fileExists(QStringList)), ioThread, SLOT(fileExistsSlot(QStringList)));
     connect(ioThread, SIGNAL(pauseToggled(bool,bool)), copyDialog, SLOT(pauseToggled(bool, bool)));
+    connect(ioThread, SIGNAL(speed(QString)), copyDialog, SLOT(setSpeed(QString)));
     ioThread->start(); //start copying....
 }
 
@@ -355,18 +368,62 @@ Job::cp(const QList<QUrl> &copyFiles, const QString &destination, bool cut, bool
 IOThread::IOThread(const QStringList &inf, const QString &dest, const bool &cut, const qint64 &totalSize, QObject *parent)
     : QThread(parent)
     , m_canceled(false)
-    , m_overWriteAll(false)
-    , m_skipAll(false)
     , m_inFiles(inf)
     , m_destDir(dest)
     , m_cut(cut)
     , m_total(totalSize)
     , m_allProgress(0)
-    , m_fileProgress(0)
+    , m_inProgress(0)
     , m_pause(false)
     , m_newFile(QString())
     , m_type(Copy)
-{ connect(this, SIGNAL(finished()), this, SLOT(deleteLater())); }
+    , m_outFile(QString())
+    , m_fileProgress(0)
+    , m_diffCheck(0)
+    , m_timer(new QTimer(this))
+    , m_speedTimer(new QTimer(this))
+{
+    connect(this, SIGNAL(finished()), this, SLOT(finishedSlot()));
+    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
+    connect(this, SIGNAL(fileExists(QStringList)), this, SLOT(fileExistsSlot(QStringList)));
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(emitProgress()));
+    connect(this, SIGNAL(finished()), m_timer, SLOT(stop()));
+    connect(this, SIGNAL(errorSignal()), this, SLOT(errorSlot()));
+    connect(m_speedTimer, SIGNAL(timeout()), this, SLOT(checkSpeed()));
+    m_timer->start(100);
+    m_speedTimer->start(1000);
+}
+
+IOThread::IOThread(const QStringList &paths, QObject *parent)
+    : QThread(parent)
+    , m_type(Remove)
+    , m_rmPaths(paths)
+{
+    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
+}
+
+void
+IOThread::errorSlot()
+{
+    const QString &title = tr("Something went wrong...");
+    const QString &text = QString("There was an error while copying <br><br>%1 <br><br>to<br><br>%2 <br><br>Are you sure you have write permissions in %3 ? <br><br>I will now exit.").arg(m_inFile, m_outFile, m_destDir);
+    QMessageBox::critical(MainWindow::currentWindow(), title, text);
+    cancelCopy();
+}
+
+void
+IOThread::checkSpeed()
+{
+    const quint64 diff = m_allProgress-m_diffCheck;
+    m_diffCheck = m_allProgress;
+    emit speed(QString("%1 /s").arg(Ops::prettySize(diff)));
+}
+
+void
+IOThread::emitProgress()
+{
+    emit copyProgress(m_inFile, m_outFile, currentProgress(), m_fileProgress);
+}
 
 void
 IOThread::run()
@@ -376,23 +433,23 @@ IOThread::run()
     case Copy:
     {
         bool done = false;
-        const quint64 &destId = Ops::getDriveInfo<Ops::Id>( m_destDir );
-        while (!m_canceled && !done)
+        const quint64 destId = Ops::getDriveInfo<Ops::Id>( m_destDir );
+        if ( !m_destDir.endsWith(QDir::separator()) )
+            m_destDir.append(QDir::separator());
+        while (!m_canceled && !done && !m_inFiles.isEmpty())
         {
-            foreach (QString inFile, m_inFiles)
-            {
-                m_inFile = inFile;
-                const bool &sameDisk = destId != 0 && ( (quint64)Ops::getDriveInfo<Ops::Id>( inFile ) ==  destId );
-                copyRecursive( inFile, m_destDir+QDir::separator()+QFileInfo(inFile).fileName(), m_cut, sameDisk );
-            }
+            m_inFile = m_inFiles.takeFirst();
+            const bool sameDisk = destId != 0 && ( (quint64)Ops::getDriveInfo<Ops::Id>( m_inFile ) ==  destId );
+            const QString &outFile = QString("%1%2").arg(m_destDir, QFileInfo(m_inFile).fileName());
+            copyRecursive( m_inFile, outFile, m_cut, sameDisk );
             done = true;
         }
         break;
     }
     case Remove:
     {
-        foreach ( const QString &path, m_rmPaths )
-            remove(path);
+        while ( !m_rmPaths.isEmpty() )
+            remove(m_rmPaths.takeFirst());
         break;
     }
     }
@@ -409,91 +466,103 @@ IOThread::setPaused(bool pause)
         m_pauseCond.wakeAll();
 }
 
-bool
+void
+IOThread::setMode(QPair<Mode, QString> mode)
+{
+    m_mode = mode.first;
+    m_newFile = m_mode == NewName ? mode.second : QString();
+    if ( m_mode == Cancel || m_mode == SkipAll )
+        cancelCopy();
+    else
+        setPaused(false);
+}
+
+#define PAUSE m_mutex.lock(); \
+    if (m_pause) \
+        m_pauseCond.wait(&m_mutex); \
+    m_mutex.unlock() \
+
+void
 IOThread::copyRecursive(const QString &inFile, const QString &outFile, bool cut, bool sameDisk)
 {
     if ( m_canceled )
-        return false;
+        return;
 
-    bool error = false;
-
-    if (!m_overWriteAll && !m_skipAll)
+    if ( m_mode != OverwriteAll )
         if (QFileInfo(outFile).exists())
         {
             emit fileExists(QStringList() << inFile << outFile);
             setPaused(true);
         }
 
-    m_mutex.lock();
-    if (m_pause)
-        m_pauseCond.wait(&m_mutex);
-    m_mutex.unlock();
+    PAUSE;
+
+    if ( m_mode == Overwrite || m_mode == OverwriteAll )
+    {
+        remove(outFile);
+        if ( m_mode == Overwrite )
+            m_mode = Continue;
+    }
+    else if (m_mode == Skip)
+    {
+        m_mode = Continue;
+        return;
+    }
+
+    if (m_mode == NewName && !m_newFile.isEmpty())
+    {
+        m_mode = Continue;
+        copyRecursive(inFile, m_newFile, cut, sameDisk);
+        m_newFile = QString();
+        return;
+    }
 
     if (cut && sameDisk && !m_canceled)
-        if (QFile::rename(inFile, outFile)) //if we move inside the same disk we just rename, very fast
-        {
-            qDebug() << "renamed with QFile::rename()";
-            return true;
-        }
-
-    QString of = outFile;
-    const bool &isDir = QFileInfo(of).isDir();
-
-    if ((m_mode == Overwrite || m_overWriteAll) && !isDir)  //just remove the file and continue
-        remove(of);
-
-    if (m_mode == OverwriteAll && !isDir)
     {
-        m_overWriteAll = true;
-        remove(of);
-    }
-
-    if ((m_mode == Skip || m_skipAll) && !isDir)  //well, we don't want to do anything do we?
-        return error;
-
-    if (m_mode == SkipAll && !isDir)
-    {
-        m_skipAll = true;
-        return error;
-    }
-
-    if (!m_newFile.isEmpty() && m_mode == NewName)
-    {
-        of = m_newFile;
-        m_newFile.clear();
+        QFile::rename(inFile, outFile); //if we move inside the same disk we just rename, very fast
+        return;
     }
 
     if (QFileInfo(inFile).isDir())
     {
-        if (!QFileInfo(of).exists())
-            error |= QDir().mkdir(of);
-        const QFileInfoList &entries = QDir(inFile).entryInfoList(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden);
-        foreach(const QFileInfo &entry, entries)
-            error |= copyRecursive( entry.filePath() , of + QDir::separator() + entry.fileName(), cut, sameDisk );
-        if (cut && error && QFileInfo(of).exists())
+        if (!QFileInfo(outFile).exists())
+            if (!QDir().mkpath(outFile))
+            {
+                m_inFile = inFile;
+                m_outFile = outFile;
+                emit errorSignal();
+                setPaused(true);
+                PAUSE;
+            }
+        QFileInfoList entries = QDir(inFile).entryInfoList(QDir::AllDirs|QDir::Files|QDir::NoDotAndDotDot|QDir::Hidden, QDir::Name|QDir::DirsFirst);
+        while (!entries.isEmpty())
+        {
+            const QFileInfo &in = entries.takeFirst();
+            copyRecursive( in.filePath() , QString("%1%2%3").arg(outFile, QDir::separator(), in.fileName()), cut, sameDisk );
+        }
+        if (cut && QFileInfo(outFile).exists())
             remove(inFile);
-        return error;
+        return;
     }
 
-    emit copyProgress(inFile, of, currentProgress(), 0);
-    error |= clone(inFile, of);
-    m_fileProgress = 0;
-    if ( !error || m_canceled )
-        return false;
+    if ( !clone(inFile, outFile) )
+    {
+        emit errorSignal();
+        setPaused(true);
+        PAUSE;
+    }
 
-    m_allProgress += QFileInfo(inFile).size();
-
-    if (cut && error && QFileInfo(of).exists())
+    if (cut && QFileInfo(outFile).exists())
         remove(inFile);
-
-    return error;
 }
 
 bool
 IOThread::clone(const QString &in, const QString &out)
 {
+    m_inFile = in;
+    m_outFile = out;
     if (m_canceled)
-        return false;
+        return true;
     if (QFileInfo(out).exists())
         return false;
     if (!QFileInfo(QFileInfo(out).absoluteDir().path()).isWritable())
@@ -508,36 +577,34 @@ IOThread::clone(const QString &in, const QString &out)
     QDataStream inData(&fileIn);
     QDataStream outData(&fileOut);
 
-    qint64 inBytes = 0, outBytes = 0, totalInBytes = 0, totalSize = fileIn.size();
-    m_fileProgress = 0;
-    char block[1048576]; //read/write 1 megabyte at a time and emit progress
-
-    int inProgress = 0;
+    quint64 inBytes = 0, totalInBytes = 0, totalSize = fileIn.size();
+    m_fileProgress = m_inProgress = 0;
+    char block[1048576]; //read/write 1 megabyte at a time
 
     while (!fileIn.atEnd())
     {
-        m_mutex.lock();
-        if (m_pause)
-            m_pauseCond.wait(&m_mutex);
-        m_mutex.unlock();
+        PAUSE;
         if (m_canceled)
-            return false;
-
+        {
+            fileIn.close();
+            fileOut.close();
+            QFile::remove(out);
+            return true;
+        }
         inBytes = inData.readRawData(block, sizeof block);
-        outBytes += outData.writeRawData(block, inBytes);
+        m_inProgress += outData.writeRawData(block, inBytes);
+        m_allProgress += inBytes;
         totalInBytes += inBytes;
-        m_fileProgress = outBytes;
-        inProgress = int(((float)totalInBytes/totalSize)*100);
-        emit copyProgress(in, out, currentProgress(), inProgress);
+        m_fileProgress = totalInBytes*100/totalSize;
     }
-
-    if (outBytes != totalInBytes)
-        return false;
 
     fileIn.close();
     fileOut.close();
-    return true;
+
+    return m_inProgress == totalInBytes;
 }
+
+#undef PAUSE
 
 bool
 IOThread::remove(const QString &path) const

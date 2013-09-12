@@ -168,7 +168,7 @@ Ops::prettySize(quint64 bytes)
   else if (bytes & (0x3ff<<10))
      return QString::number( (bytes>>10) + ((bytes) & (0x3ff)) / 1024.0, 'f', 2 ) + " KiB";
   else
-     return QString::number( bytes, 'f', 0 ) + "Bytes";
+     return QString::number( bytes, 'f', 0 ) + " Bytes";
 }
 
 /* blurring function below from:
