@@ -466,7 +466,7 @@ TabButton::paintEvent(QPaintEvent *e)
     p.setRenderHint(QPainter::Antialiasing);
 
     int y = bg.value()>fg.value()?1:-1;
-    QColor emb(y==1?high:low);
+    QColor emb(Ops::colorMid(bg, /*y==1 ? */Qt::white /*: Qt::black*/, 2, 1));
 
     if ( Store::config.behaviour.tabShape == FooBar::Chrome )
     {
@@ -482,14 +482,14 @@ TabButton::paintEvent(QPaintEvent *e)
         path.closeSubpath();
 
         p.setPen(emb);
-        p.drawPath(path.translated(0,y));
+        p.drawPath(path.translated(0,1));
 
         QLinearGradient it(pr.topLeft(), pr.bottomLeft());
         it.setColorAt(0.0f, QColor(255,255,255,underMouse()?127:63));
         it.setColorAt(1.0f, Qt::transparent);
 
         p.setBrush(it);
-        p.setPen(fg);
+        p.setPen(low);
         p.drawPath(path);
     }
 
