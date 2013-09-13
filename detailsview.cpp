@@ -29,6 +29,17 @@ using namespace DFM;
 class DetailsDelegate : public QStyledItemDelegate
 {
 protected:
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+    {
+        painter->save();
+        const bool isHovered = option.state & QStyle::State_MouseOver;
+        const bool isSelected = option.state & QStyle::State_Selected;
+        if ( index.column() > 0 &&  !isHovered && !isSelected )
+            painter->setOpacity(0.66);
+        QStyledItemDelegate::paint(painter, option, index);
+        painter->restore();
+    }
+
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
         return QStyledItemDelegate::sizeHint(option, index) + QSize(0, Store::config.views.detailsView.rowPadding*2);

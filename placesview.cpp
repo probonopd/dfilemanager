@@ -165,13 +165,29 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
             painter->setOpacity(0.5f);
 #endif
 
-    QApplication::style()->drawItemText(painter, textRect, textFlags, pal, true, TEXT, selected ? QPalette::HighlightedText : QPalette::Text);
+    fg=!selected?PAL.color(QPalette::Text):PAL.color(QPalette::HighlightedText);
+    const QColor &bg = selected?PAL.color(QPalette::Highlight):PAL.color(QPalette::Base);
+    int y = bg.value()>fg.value()?1:-1;
+    const QColor &emb = Ops::colorMid(bg, y==1?Qt::white:Qt::black);
+    QLinearGradient lgf(textRect.topLeft(), textRect.topRight());
+    lgf.setColorAt(0.0f, fg);
+    lgf.setColorAt(0.8f, fg);
+    lgf.setColorAt(1.0f, Qt::transparent);
+    QLinearGradient lgb(textRect.topLeft(), textRect.topRight());
+    lgb.setColorAt(0.0f, emb);
+    lgb.setColorAt(0.8f, emb);
+    lgb.setColorAt(1.0f, Qt::transparent);
+    painter->setPen(QPen(lgb, 1.0f));
+    painter->drawText(textRect.translated(0, y), textFlags, TEXT);
+    painter->setPen(QPen(lgf, 1.0f));
+    painter->drawText(textRect, textFlags, TEXT);
+
     if ( painter->opacity() < 1.0f )
         painter->setOpacity(1.0f);
     if ( isHeader( index ) )
     {
-        QRect arrowRect( 0, 0, 8, 8 );
-        arrowRect.moveCenter( QPoint( RECT.x()+4, RECT.center().y() ) );
+        QRect arrowRect( 0, 0, 10, 10 );
+        arrowRect.moveCenter( QPoint( RECT.x()+8, RECT.center().y()-1 ) );
         renderArrow( arrowRect, painter, selected ? PAL.color(QPalette::HighlightedText) : fg, bool( option.state & QStyle::State_Open ) );
     }
     QRect iconRect( QPoint( RECT.x()+( indent/2 ), RECT.y() + ( RECT.height() - DECOSIZE.height() )/2 ), DECOSIZE );
@@ -202,7 +218,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 void
 PlacesViewDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
-    const QString &newName = editor->metaObject()->userProperty().read(editor).toString();
+    const QString &newName = editor->metaObject()->userProperty().read(editor).toString().toUpper();
     if ( !newName.isEmpty() )
         if ( Place *p = m_placesView->itemFromIndex<Place *>(index) )
             p->setName(newName);
@@ -346,22 +362,6 @@ static inline float realSize(const float size, int *t)
     return s;
 }
 
-static inline QString prettySize(quint64 bytes)
-{
-  if (bytes & (0x3fff<<50))
-     return QString::number( (bytes>>50) + ((bytes>>40) & (0x3ff)) / 1024.0, 'f', 2 ) + " PiB";
-  else if (bytes & (0x3ff<<40))
-     return QString::number( (bytes>>40) + ((bytes>>30) & (0x3ff)) / 1024.0, 'f', 2 ) + " TiB";
-  else if (bytes & (0x3ff<<30))
-     return QString::number( (bytes>>30) + ((bytes>>20) & (0x3ff)) / 1024.0, 'f', 2 ) + " GiB";
-  else if (bytes & (0x3ff<<20))
-     return QString::number( (bytes>>20) + ((bytes>>10) & (0x3ff)) / 1024.0, 'f', 2 ) + " MiB";
-  else if (bytes & (0x3ff<<10))
-     return QString::number( (bytes>>10) + ((bytes) & (0x3ff)) / 1024.0, 'f', 2 ) + " KiB";
-  else
-     return QString::number( bytes, 'f', 0 ) + "Bytes";
-}
-
 void
 DeviceItem::updateSpace()
 {
@@ -371,7 +371,7 @@ DeviceItem::updateSpace()
             m_view->update( index() );
 //        int t = 0;
 //        QString free(QString::number(realSize((float)freeBytes(), &t)));
-        setToolTip(prettySize(freeBytes()) + " Free");
+        setToolTip(Ops::prettySize(freeBytes()) + " Free");
     }
 }
 
@@ -379,7 +379,7 @@ void
 DeviceItem::changeState()
 {
     if (isMounted())
-        setToolTip(prettySize(freeBytes()) + " Free");
+        setToolTip(Ops::prettySize(freeBytes()) + " Free");
     else
         setToolTip(QString());
     m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole())));
@@ -387,7 +387,7 @@ DeviceItem::changeState()
 }
 
 DeviceManager::DeviceManager(const QStringList &texts, QObject *parent)
-    : Container(QString("Devices"))
+    : Container(QString("DEVICES"))
     , QObject(parent)
     , m_view(static_cast<PlacesView *>(parent))
 {
@@ -462,11 +462,16 @@ QVariant
 PlacesModel::data(const QModelIndex &index, int role) const
 {
     if ( role == Qt::DisplayRole || role == Qt::DecorationRole )
+    {
+        if ( Container *c = m_places->itemFromIndex<Container *>(index) )
+            if ( role == Qt::DisplayRole )
+                return c->name().toUpper();
         if ( Place *p = m_places->itemFromIndex<Place *>(index) )
             if ( role == Qt::DisplayRole )
                 return p->name();
             else if ( role == Qt::DecorationRole )
                 return QIcon::fromTheme( p->iconName() );
+    }
     return QStandardItemModel::data(index, role);
 }
 
@@ -500,6 +505,7 @@ PlacesView::PlacesView( QWidget *parent )
     setMouseTracking( true );
     setExpandsOnDoubleClick( false );
     setAnimated( true );
+    setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 
     //base color... slight hihglight tint
     QPalette pal = palette();

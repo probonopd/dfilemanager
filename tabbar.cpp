@@ -569,7 +569,7 @@ TabBar::correctAddButtonPos()
 void
 TabBar::dragEnterEvent(QDragEnterEvent *e)
 {
-    if ( e->mimeData()->property("tab").isValid() )
+    if ( e->source() == this && e->mimeData()->property("tab").isValid() )
         m_dropIndicator->show();
     m_hasPress = false;
     if ( e->mimeData()->hasUrls() )
@@ -579,7 +579,7 @@ TabBar::dragEnterEvent(QDragEnterEvent *e)
 void
 TabBar::dragMoveEvent(QDragMoveEvent *e)
 {
-    if ( e->mimeData()->property("tab").isValid() && tabAt(e->pos()) != -1 )
+    if ( e->source() == this && e->mimeData()->property("tab").isValid() && tabAt(e->pos()) != -1 )
     {
         QRect r = tabRect(tabAt(e->pos()));
         m_dropIndicator->setVisible(true);
@@ -600,7 +600,7 @@ TabBar::dropEvent(QDropEvent *e)
     m_hasPress = false;
     MainWindow *w = MainWindow::window(this);
     int tab = tabAt(e->pos());
-    if ( e->mimeData()->property("tab").isValid() ) //dragging a tab inside tabbar
+    if ( e->source() == this && e->mimeData()->property("tab").isValid() ) //dragging a tab inside tabbar
         if ( tab != -1 )
         {
             QRect r = tabRect(tab);
