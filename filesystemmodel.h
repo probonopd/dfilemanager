@@ -37,6 +37,7 @@
 #include <QDebug>
 #include <QMap>
 #include "thumbsloader.h"
+#include "viewcontainer.h"
 
 namespace DFM
 {
@@ -70,6 +71,7 @@ private:
 };
 class ThumbsLoader;
 class ImagesThread;
+class ViewContainer;
 class FileSystemModel : public QFileSystemModel
 {
     Q_OBJECT
@@ -83,6 +85,7 @@ public:
         FlowRefl = Qt::UserRole +5
     };
     explicit FileSystemModel(QObject *parent = 0);
+    virtual ~FileSystemModel();
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
     bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
     static QPixmap iconPix(const QFileInfo &info,const int &extent);
@@ -113,6 +116,7 @@ private:
     FileIconProvider *m_iconProvider;
     ThumbsLoader *m_thumbsLoader;
     ImagesThread *m_it;
+    ViewContainer *m_container;
 };
 
 }

@@ -84,6 +84,8 @@ ThumbsLoader::loadThumb( const QString &path )
     }
 }
 
+void ThumbsLoader::clearQueue() { m_queue.clear(); }
+
 void
 ThumbsLoader::run()
 {
@@ -97,6 +99,8 @@ ImagesThread::ImagesThread(QObject *parent)
     :QThread(parent)
     ,m_fsModel(static_cast<FileSystemModel *>(parent))
 {}
+
+void ImagesThread::clearQueue() { m_pixQueue.clear(); }
 
 void
 ImagesThread::removeData(const QString &file)

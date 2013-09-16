@@ -102,12 +102,14 @@ public:
         return 0;
 #endif
     }
+
 public slots:
     void openWith();
     void customActionTriggered();
     void setRootPath();
+
 protected:
-    Ops(QObject *parent = 0) : QObject(parent) {}
+    explicit Ops(QObject *parent = 0):QObject(parent){}
 };
 
 }

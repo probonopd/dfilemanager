@@ -48,6 +48,7 @@ public:
     void queueFile(const QString &file);
     bool hasThumb(const QString &file);
     QImage thumb(const QString &file);
+    void clearQueue();
     
 signals:
     void thumbFor(const QString &file);
@@ -72,6 +73,7 @@ public:
     bool hasData( const QString &file );
     void removeData( const QString &file );
     inline bool hasFileInQueue( const QString &file ) { return m_pixQueue.contains(file); }
+    void clearQueue();
 
 signals:
     void imagesReady( const QString &file );

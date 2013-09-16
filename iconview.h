@@ -53,7 +53,7 @@ protected:
     }
 };
 #endif
-
+class FileSystemModel;
 class IconView : public QListView
 {
     Q_OBJECT

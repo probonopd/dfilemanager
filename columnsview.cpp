@@ -28,12 +28,33 @@
 
 using namespace DFM;
 
+class ColumnsDelegate : public QStyledItemDelegate
+{
+public:
+    explicit ColumnsDelegate(QWidget *parent = 0)
+        : QStyledItemDelegate(parent)
+        , m_view(static_cast<ColumnsView *>(parent)){}
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+    {
+        QStyledItemDelegate::paint(painter, option, index);
+    }
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+    {
+        int w = option.fontMetrics.width(index.data().toString());
+        int h = 16;
+        return QSize(w, h);
+    }
+
+private:
+    ColumnsView *m_view;
+};
+
 ColumnsView::ColumnsView(QWidget *parent) : QListView(parent), m_parent(static_cast<ColumnsWidget *>(parent))
 {
+//    setItemDelegate(new ColumnsDelegate(this));
     setViewMode(QListView::ListMode);
     setResizeMode(QListView::Adjust);
     setIconSize(QSize(16, 16));
-    setGridSize(QSize(256, 16));
     setUniformItemSizes(true);
     setDragDropMode(QAbstractItemView::DragDrop);
     setDropIndicatorShown(true);
@@ -46,6 +67,7 @@ ColumnsView::ColumnsView(QWidget *parent) : QListView(parent), m_parent(static_c
     setMouseTracking(true);
     setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setTextElideMode(Qt::ElideNone);
 }
 
 void
@@ -123,4 +145,34 @@ ColumnsView::paintEvent(QPaintEvent *e)
         p.drawRect(viewport()->rect().adjusted(0,0,-1,-1));
         p.end();
     }
+}
+
+void
+ColumnsView::setModel(QAbstractItemModel *model)
+{
+    QListView::setModel(model);
+    m_fsModel = static_cast<FileSystemModel *>(model);
+}
+
+void
+ColumnsView::showEvent(QShowEvent *e)
+{
+    QListView::showEvent(e);
+    updateWidth();
+}
+
+void
+ColumnsView::updateWidth()
+{
+    QStringList list = QDir(m_fsModel->filePath(rootIndex())).entryList(QDir::AllEntries|QDir::AllDirs|QDir::NoDotAndDotDot|QDir::System);
+    int w = 0;
+    while ( !list.isEmpty() )
+    {
+        const int W = fontMetrics().boundingRect(list.takeFirst()).width();
+        if ( W > w )
+            w = W;
+    }
+    w+=22; //icon
+    w+=style()->pixelMetric(QStyle::PM_ScrollBarExtent, 0, this);
+    setFixedWidth(qMax(64, w));
 }

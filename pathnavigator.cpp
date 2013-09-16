@@ -52,6 +52,14 @@ PathSeparator::paintEvent(QPaintEvent *)
 }
 
 void
+PathSeparator::setPath()
+{
+    QAction *action = static_cast<QAction *>(sender());
+    const QString &path = action->data().toString();
+    m_fsModel->setRootPath(path);
+}
+
+void
 Menu::mousePressEvent(QMouseEvent *e)
 {
     if ( e->button() == Qt::LeftButton )
@@ -273,6 +281,8 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel) : QStackedWi
     connect ( m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()) );
     setCurrentWidget(m_pathNav);
 }
+
+void BreadCrumbs::setRootPath( const QString &rootPath ) { m_fsModel->setRootPath( rootPath ); setEditable(false); }
 
 void
 BreadCrumbs::pathChanged(const QString &path)

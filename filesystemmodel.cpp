@@ -71,8 +71,9 @@ FileIconProvider::loadThemedFolders(const QString &path)
     }
 }
 
-FileSystemModel::FileSystemModel(QObject *parent) :
-    QFileSystemModel(parent)
+FileSystemModel::FileSystemModel(QObject *parent)
+    : QFileSystemModel(parent)
+    , m_container(static_cast<ViewContainer *>(parent))
 {
     setResolveSymlinks(false);
     setIconProvider(m_iconProvider = new FileIconProvider(this));
@@ -86,6 +87,16 @@ FileSystemModel::FileSystemModel(QObject *parent) :
     connect ( m_thumbsLoader, SIGNAL(thumbFor(QString)), this, SLOT(thumbFor(QString)) );
     m_it = new ImagesThread(this);
     connect ( m_it, SIGNAL(imagesReady(QString)), this, SLOT(flowDataAvailable(QString)) );
+}
+
+FileSystemModel::~FileSystemModel()
+{
+    m_thumbsLoader->clearQueue();
+    m_it->clearQueue();
+    while ( m_thumbsLoader->isRunning() )
+        m_thumbsLoader->wait();
+    while ( m_it->isRunning() )
+        m_it->wait();
 }
 
 void
@@ -153,12 +164,12 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         if (fileInfo(index).isDir())
             return QString::number(QDir(filePath(index)).entryList(QDir::NoDotAndDotDot | QDir::AllEntries).count()) + " Entrie(s)";
 
-//    if ( role == Qt::FontRole && s_currentView )
-//    {
-//        QFont font = s_currentView->font();
-//        font.setBold(s_currentView->selectionModel()->selectedIndexes().contains(index));
-//        return font;
-//    }
+    if ( role == Qt::FontRole /*&& s_currentView*/ )
+    {
+        QFont font = m_container->font();
+        font.setBold(m_container->selectionModel()->selectedIndexes().contains(index));
+        return font;
+    }
 
     if ( index.column() == 4 && role == Qt::DisplayRole )
     {

@@ -94,8 +94,6 @@ ColumnsView
     view->setModel(m_fsModel);
     view->setSelectionModel(m_slctModel);
     view->setRootIndex(index);
-//    view->setFixedWidth(256);
-//    view->setMinimumWidth(32);
     m_views.insert(index, view);
     m_viewLay->addWidget(view);
     view->setVisible(true);
@@ -141,13 +139,6 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
 
     if ( !alreadyExists )
     {
-        foreach ( const QModelIndex &dirIdx, idxList )
-        {
-            if ( m_views.contains(dirIdx) )
-                continue;
-            else
-                m_views.insert(dirIdx, newView(dirIdx));
-        }
         foreach ( const QModelIndex &asdf, m_views.keys() )
             if ( idxList.contains(asdf) )
                 continue;
@@ -158,6 +149,13 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
                 delete item->widget();
                 delete item;
             }
+        foreach ( const QModelIndex &dirIdx, idxList )
+        {
+            if ( m_views.contains(dirIdx) )
+                continue;
+            else
+                m_views.insert(dirIdx, newView(dirIdx));
+        }
     }
     setCurrentView(m_views.value(index));
 }
@@ -181,7 +179,7 @@ ColumnsWidget::setCurrentView(ColumnsView *view)
         view->setFocus();
     if ( m_fsModel->index(m_fsModel->rootPath()) != view->rootIndex() )
         m_fsModel->setRootPath(m_fsModel->filePath(view->rootIndex()));
-    ensureWidgetVisible(view);
+    ensureWidgetVisible(view, view->width());
 }
 
 void

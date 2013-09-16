@@ -108,12 +108,7 @@ protected:
     virtual void paintEvent(QPaintEvent *);
 
 private slots:
-    inline void setPath()
-    {
-        QAction *action = static_cast<QAction *>(sender());
-        const QString &path = action->data().toString();
-        m_fsModel->setRootPath(path);
-    }
+    void setPath();
 
 private:
     QString m_path;
@@ -174,7 +169,7 @@ public:
     inline bool isEditable() { return currentWidget() == static_cast<QWidget *>(m_pathBox); }
 public slots:
     inline void setPath( const QString &path ) { m_pathNav->setPath(path); }
-    inline void setRootPath( const QString &rootPath ) { m_fsModel->setRootPath( rootPath ); setEditable(false); }
+    void setRootPath( const QString &rootPath );
     inline void toggleEditable() { currentWidget() == m_pathNav ? setEditable(true) : setEditable(false); }
     void complete( const QString &path);
 private slots:

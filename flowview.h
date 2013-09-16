@@ -38,7 +38,7 @@
 
 namespace DFM
 {
-
+class PreView;
 class FlowView : public QWidget
 {
     Q_OBJECT
@@ -47,16 +47,16 @@ public:
     void setModel(FileSystemModel *model);
     inline QModelIndex rootIndex() { return m_dView->rootIndex(); }
     inline QModelIndex currentIndex() { return m_dView->currentIndex(); }
-
     inline void addActions(QList<QAction *> actions) { m_dView->addActions(actions); }
-
     inline DetailsView *detailsView() { return m_dView; }
-    inline FileSystemModel *model() { return static_cast<FileSystemModel*>(m_dView->model()); }
+    FileSystemModel *model();
     inline void setFilter(QString filter) { m_dView->setFilter(filter); }
     inline QSplitter *splitter() { return m_splitter; }
     void setSelectionModel(QItemSelectionModel *selectionModel);
+
 public slots:
     void setRootIndex(const QModelIndex &rootIndex);
+
 private slots:
     inline void flowCurrentIndexChanged(const QModelIndex &index) { m_dView->setCurrentIndex(index); }
     void treeCurrentIndexChanged(QItemSelection, QItemSelection);
@@ -67,7 +67,6 @@ private:
     QSplitter *m_splitter;
     PreView *m_preView;
 };
-
 }
 
 #endif // FLOWVIEW_H

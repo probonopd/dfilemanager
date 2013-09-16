@@ -402,6 +402,8 @@ MainWindow::updateStatusBar(QString index)
 void
 MainWindow::closeEvent(QCloseEvent *event)
 {
+    for ( int i = 0; i < m_stackedWidget->count(); ++i )
+        static_cast<ViewContainer *>(m_stackedWidget->widget(i))->deleteLater();
     writeSettings();
     s_openWindows.removeOne(this);
     event->accept();

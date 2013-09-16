@@ -43,6 +43,11 @@ public:
     void mousePressEvent(QMouseEvent *event) { QListView::mousePressEvent(event); emit focusRequest(this); }
     void focusInEvent(QFocusEvent *event) { QListView::focusInEvent(event); emit focusRequest(this); }
     void paintEvent(QPaintEvent *e);
+    void setModel(QAbstractItemModel *model);
+    void showEvent(QShowEvent *e);
+
+private slots:
+    void updateWidth();
     
 signals:
     void newTabRequest(QModelIndex path);
@@ -50,6 +55,7 @@ signals:
 
 private:
     ColumnsWidget *m_parent;
+    FileSystemModel *m_fsModel;
 };
 
 }

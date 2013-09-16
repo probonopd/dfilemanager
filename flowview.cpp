@@ -58,6 +58,12 @@ FlowView::saveSplitter()
     Store::config.views.flowSize = m_splitter->saveState();
 }
 
+FileSystemModel
+*FlowView::model()
+{
+    return static_cast<FileSystemModel*>(m_dView->model());
+}
+
 void
 FlowView::setModel(FileSystemModel *model)
 {

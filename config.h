@@ -27,6 +27,7 @@
 #include <QSettings>
 #include <QByteArray>
 #include <QMenu>
+#include <QObject>
 
 namespace DFM
 {
@@ -81,7 +82,7 @@ public:
     static Config config;
 
 protected:
-    Store( QObject *parent = 0 );
+    explicit Store( QObject *parent = 0 );
     void readConfiguration();
     void writeConfiguration();
     inline QList<QAction *> ca() const { return m_customActions; }

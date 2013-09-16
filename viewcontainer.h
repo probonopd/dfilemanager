@@ -36,6 +36,9 @@ namespace DFM
 {
 
 class ColumnsWidget;
+class IconView;
+class FlowView;
+class BreadCrumbs;
 class ViewContainer : public QFrame
 {
     Q_OBJECT
