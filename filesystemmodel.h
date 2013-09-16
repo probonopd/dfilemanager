@@ -41,6 +41,17 @@
 namespace DFM
 {
 class FileSystemModel;
+
+class History : public QObject
+{
+public:
+    explicit History(QObject *parent = 0) : QObject(parent) {}
+    bool canGoBack() { return m_historyList.count(); }
+
+private:
+    QStringList m_historyList;
+};
+
 class FileIconProvider : public QObject, public QFileIconProvider
 {
     Q_OBJECT

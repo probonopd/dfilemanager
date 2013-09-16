@@ -545,7 +545,7 @@ PlacesView::dropEvent( QDropEvent *event )
 
         Container *places = 0L;
         foreach ( Container *c, containers() )
-            if ( c->name() == "Places" )
+            if ( c->name() == "PLACES" )
                 places = c;
         if ( !places )
         {
@@ -740,6 +740,7 @@ PlacesView::renPlace()
 {
     if ( Place *place = dynamic_cast<Place *>(currentItem()) )
     {
+        m_model->setData(place->index(), place->name());
         edit(place->index());
         emit changed();
     }

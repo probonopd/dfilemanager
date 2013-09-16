@@ -24,10 +24,11 @@
 #include "mainwindow.h"
 #include "filesystemmodel.h"
 #include "operations.h"
+#include <QPainter>
 
 using namespace DFM;
 
-ColumnsView::ColumnsView(QWidget *parent) : QListView(parent)
+ColumnsView::ColumnsView(QWidget *parent) : QListView(parent), m_parent(static_cast<ColumnsWidget *>(parent))
 {
     setViewMode(QListView::ListMode);
     setResizeMode(QListView::Adjust);
@@ -42,9 +43,9 @@ ColumnsView::ColumnsView(QWidget *parent) : QListView(parent)
     setEditTriggers(QAbstractItemView::SelectedClicked|QAbstractItemView::EditKeyPressed);
     setSelectionMode(QAbstractItemView::ExtendedSelection);
     setSelectionRectVisible(true);
-    setWrapping(true);
-    setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setMouseTracking(true);
+    setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 }
 
 void
@@ -57,15 +58,6 @@ ColumnsView::setFilter(QString filter)
         else
             setRowHidden(i, true);
     }
-}
-
-void
-ColumnsView::wheelEvent(QWheelEvent * event)
-{
-    //we want scrolling to scroll horizontally here right?
-    int numDegrees = event->delta() / 6;
-    horizontalScrollBar()->setValue(horizontalScrollBar()->value()-(numDegrees));
-    event->accept();
 }
 
 void
@@ -91,7 +83,7 @@ ColumnsView::contextMenuEvent(QContextMenuEvent *event)
     QMenu popupMenu;
     if ( Store::customActions().count() )
         popupMenu.addMenu(Store::customActionsMenu());
-    popupMenu.addActions( actions() );
+    popupMenu.addActions( ViewContainer::rightClickActions() );
     const QString &file = static_cast<FileSystemModel *>( model() )->filePath( indexAt( event->pos() ) );
     QMenu openWith( tr( "Open With" ), this );
     openWith.addActions( Store::openWithActions( file ) );
@@ -111,7 +103,24 @@ ColumnsView::mouseReleaseEvent(QMouseEvent *e)
 {
     if(e->button() == Qt::MiddleButton)
         if(indexAt(e->pos()).isValid())
+        {
             emit newTabRequest(indexAt(e->pos()));
+            e->accept();
+            return;
+        }
 
     QListView::mouseReleaseEvent(e);
+}
+
+void
+ColumnsView::paintEvent(QPaintEvent *e)
+{
+    QListView::paintEvent(e);
+    if ( m_parent->currentView() && m_parent->currentView() == this )
+    {
+        QPainter p(viewport());
+        p.setPen(QPen(palette().color(QPalette::Highlight), 3.0f));
+        p.drawRect(viewport()->rect().adjusted(0,0,-1,-1));
+        p.end();
+    }
 }

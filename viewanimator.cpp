@@ -46,7 +46,7 @@ ViewAnimator::indexHovered(const QModelIndex &index)
     }
     m_hoveredIndex = index;
     if (!m_animTimer->isActive())
-        m_animTimer->start(50);
+        m_animTimer->start(30);
 }
 
 void

@@ -26,23 +26,30 @@
 #include <QMenu>
 #include <QWheelEvent>
 #include <QScrollBar>
+#include <columnswidget.h>
 
 namespace DFM
 {
-
+class ColumnsWidget;
 class ColumnsView : public QListView
 {
     Q_OBJECT
 public:
     explicit ColumnsView(QWidget *parent = 0);
     void setFilter(QString filter);
-    void wheelEvent(QWheelEvent * event);
     void contextMenuEvent(QContextMenuEvent *event);
     void mouseReleaseEvent(QMouseEvent *e);
     void keyPressEvent(QKeyEvent *);
+    void mousePressEvent(QMouseEvent *event) { QListView::mousePressEvent(event); emit focusRequest(this); }
+    void focusInEvent(QFocusEvent *event) { QListView::focusInEvent(event); emit focusRequest(this); }
+    void paintEvent(QPaintEvent *e);
     
 signals:
-    void newTabRequest(QModelIndex path);   
+    void newTabRequest(QModelIndex path);
+    void focusRequest(ColumnsView *view);
+
+private:
+    ColumnsWidget *m_parent;
 };
 
 }

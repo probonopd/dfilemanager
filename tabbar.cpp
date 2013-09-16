@@ -655,9 +655,12 @@ void
 TabBar::mousePressEvent(QMouseEvent *e)
 {
     e->accept();
-    m_hasPress = true;
-    if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
-        QCoreApplication::sendEvent(bar, e);
+    if ( e->button() == Qt::LeftButton )
+    {
+        m_hasPress = true;
+        if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
+            QCoreApplication::sendEvent(bar, e);
+    }
 }
 
 void
@@ -680,14 +683,20 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
         data->setUrls(QList<QUrl>() << QUrl(MainWindow::window(this)->containerForTab(tabAt(e->pos()))->model()->rootPath()));
         data->setProperty("tab", tabAt(e->pos()));
         drag->setMimeData(data);
-        drag->setPixmap(tabIcon(tabAt(e->pos())).pixmap(16));
+        QWidget *w = MainWindow::currentWindow()->containerForTab(tabAt(e->pos()));
+        if ( tabAt(e->pos()) != currentIndex() )
+            w->resize(MainWindow::currentWindow()->containerForTab(currentIndex())->size());
+        QPixmap pix(w->size());
+        w->render(&pix);
+        pix = pix.scaledToHeight(128);
+        drag->setPixmap(pix);
         drag->exec();
         connect(drag, SIGNAL(destroyed()), m_dropIndicator, SLOT(hide()));
     }
-    if ( m_hasPress )
-        m_hasPress = false;
     if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
         QCoreApplication::sendEvent(bar, e);
+    if ( m_hasPress )
+        m_hasPress = false;
     if ( m_dropIndicator->isVisible() )
         m_dropIndicator->setVisible(false);
 }
@@ -712,7 +721,7 @@ TabBar::mouseReleaseEvent(QMouseEvent *e)
     if ( m_hasPress && tabAt(e->pos()) != -1 )
         setCurrentIndex(tabAt(e->pos()));
     m_hasPress = false;
-    if (e->button() == Qt::MiddleButton && tabAt(e->pos()) > -1)
+    if (e->button() == Qt::MiddleButton && tabAt(e->pos()) > -1 && count() > 1)
         emit tabCloseRequested(tabAt(e->pos()));
 }
 
@@ -721,7 +730,8 @@ TabBar::tabCloseRequest()
 {
     TabCloser *tc = static_cast<TabCloser *>(sender());
     int index = tabAt(tc->geometry().center());
-    emit tabCloseRequested(index);
+    if ( count() > 1 )
+        emit tabCloseRequested(index);
 }
 
 void
@@ -734,7 +744,6 @@ TabBar::drawTab(QPainter *p, int index)
 
     FooBar::TabShape tabShape = (FooBar::TabShape)Store::config.behaviour.tabShape;
     int rndNess = Store::config.behaviour.tabRoundness;
-
     int overlap = Store::config.behaviour.tabOverlap;
     QRect shape(r.adjusted(-overlap, 1, overlap, 0));
 

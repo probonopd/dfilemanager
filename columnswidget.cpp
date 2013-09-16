@@ -1,0 +1,203 @@
+/**************************************************************************
+*   Copyright (C) 2013 by Robert Metsaranta                               *
+*   therealestrob@gmail.com                                               *
+*                                                                         *
+*   This program is free software; you can redistribute it and/or modify  *
+*   it under the terms of the GNU General Public License as published by  *
+*   the Free Software Foundation; either version 2 of the License, or     *
+*   (at your option) any later version.                                   *
+*                                                                         *
+*   This program is distributed in the hope that it will be useful,       *
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+*   GNU General Public License for more details.                          *
+*                                                                         *
+*   You should have received a copy of the GNU General Public License     *
+*   along with this program; if not, write to the                         *
+*   Free Software Foundation, Inc.,                                       *
+*   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+***************************************************************************/
+
+#include "columnswidget.h"
+#include "operations.h"
+
+using namespace DFM;
+
+ColumnsWidget::ColumnsWidget(QWidget *parent) :
+    QScrollArea(parent)
+  , m_fsModel(0)
+  , m_slctModel(0)
+  , m_viewport(new QWidget(this))
+  , m_viewLay(new QHBoxLayout(m_viewport))
+  , m_container(static_cast<ViewContainer *>(parent))
+  , m_currentView(0)
+  , m_rootIndex(QModelIndex())
+{
+    setWidget(m_viewport);
+//    setViewport(m_viewport);
+    m_viewLay->setContentsMargins(0, 0, 0, 0);
+    m_viewLay->setSpacing(0);
+    m_viewLay->setSizeConstraint(QLayout::SetFixedSize);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setWidgetResizable(true);
+    setFrameStyle(0);
+}
+
+void
+ColumnsWidget::setModel(FileSystemModel *model)
+{
+    m_fsModel = model;
+    connect(m_fsModel, SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)));
+}
+
+QModelIndex ColumnsWidget::currentIndex() { return m_currentView->currentIndex(); }
+ColumnsView *ColumnsWidget::currentView() { return m_currentView; }
+void ColumnsWidget::setFilter( const QString &filter ) { if ( m_currentView ) m_currentView->setFilter(filter); }
+void ColumnsWidget::scrollTo(const QModelIndex &index) { if ( m_currentView ) m_currentView->scrollTo(index); }
+void ColumnsWidget::edit(const QModelIndex &index) { m_currentView->edit(index); }
+
+void
+ColumnsWidget::connectView(ColumnsView *view)
+{
+    connect(view, SIGNAL(activated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
+    connect(view, SIGNAL(entered(QModelIndex)), m_container, SIGNAL(entered(QModelIndex)));
+    connect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
+    connect(view, SIGNAL(viewportEntered()), m_container, SIGNAL(viewportEntered()));
+}
+
+void
+ColumnsWidget::disconnectView(ColumnsView *view)
+{
+    disconnect(view, SIGNAL(activated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
+    disconnect(view, SIGNAL(entered(QModelIndex)), m_container, SIGNAL(entered(QModelIndex)));
+    disconnect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
+    disconnect(view, SIGNAL(viewportEntered()), m_container, SIGNAL(viewportEntered()));
+}
+
+void
+ColumnsWidget::clear()
+{
+    m_views.clear();
+    while (QLayoutItem *item = m_viewLay->takeAt(0))
+    {
+        delete item->widget();
+        delete item;
+    }
+}
+
+ColumnsView
+*ColumnsWidget::newView(const QModelIndex &index)
+{
+    ColumnsView *view = new ColumnsView(this);
+    connect(view, SIGNAL(focusRequest(ColumnsView*)), this, SLOT(setCurrentView(ColumnsView*)));
+    connectView(view);
+    view->setModel(m_fsModel);
+    view->setSelectionModel(m_slctModel);
+    view->setRootIndex(index);
+//    view->setFixedWidth(256);
+//    view->setMinimumWidth(32);
+    m_views.insert(index, view);
+    m_viewLay->addWidget(view);
+    view->setVisible(true);
+    return view;
+}
+
+QModelIndexList
+ColumnsWidget::fromRoot()
+{
+    QModelIndexList idxList;
+    QModelIndex idx = m_rootIndex;
+    while ( idx.isValid() )
+    {
+        idxList.prepend(idx);
+        idx = idx.parent();
+    }
+    return idxList;
+}
+
+QModelIndexList
+ColumnsWidget::fromLast()
+{
+    QModelIndexList idxList;
+    if ( m_viewLay->isEmpty() )
+        return idxList;
+    QModelIndex idx = static_cast<ColumnsView *>(m_viewLay->itemAt(m_viewLay->count()-1)->widget())->rootIndex();
+    while ( idx.isValid() )
+    {
+        idxList.prepend(idx);
+        idx = idx.parent();
+    }
+    return idxList;
+}
+
+void
+ColumnsWidget::setRootIndex(const QModelIndex &index)
+{
+    const bool alreadyExists = fromLast().contains(index);
+    m_rootIndex = index;
+    if ( m_views.contains(index) )
+        m_currentView = m_views.value(index);
+    QModelIndexList idxList = fromRoot();
+
+    if ( !alreadyExists )
+    {
+        foreach ( const QModelIndex &dirIdx, idxList )
+        {
+            if ( m_views.contains(dirIdx) )
+                continue;
+            else
+                m_views.insert(dirIdx, newView(dirIdx));
+        }
+        foreach ( const QModelIndex &asdf, m_views.keys() )
+            if ( idxList.contains(asdf) )
+                continue;
+            else
+            {
+                ColumnsView *view = m_views.take(asdf);
+                QLayoutItem *item = m_viewLay->takeAt(m_viewLay->indexOf(view));
+                delete item->widget();
+                delete item;
+            }
+    }
+    setCurrentView(m_views.value(index));
+}
+
+void
+ColumnsWidget::rootPathChanged(const QString &rootPath)
+{
+    m_rootPath = rootPath;
+}
+
+void
+ColumnsWidget::setCurrentView(ColumnsView *view)
+{
+    if ( !m_views.values().contains(view) )
+        return;
+    if ( m_currentView && m_currentView == view && m_currentView->hasFocus() )
+        return;
+    m_currentView = view;
+    emit currentViewChagned(view);
+    if ( !view->hasFocus() )
+        view->setFocus();
+    if ( m_fsModel->index(m_fsModel->rootPath()) != view->rootIndex() )
+        m_fsModel->setRootPath(m_fsModel->filePath(view->rootIndex()));
+    ensureWidgetVisible(view);
+}
+
+void
+ColumnsWidget::resizeEvent(QResizeEvent *e)
+{
+    QScrollArea::resizeEvent(e);
+    int h = size().height();
+    if ( horizontalScrollBar()->isVisible() )
+        h -= horizontalScrollBar()->height();
+    foreach ( ColumnsView *view, m_views.values() )
+        view->setFixedHeight(h);
+}
+
+void
+ColumnsWidget::showEvent(QShowEvent *e)
+{
+    QScrollArea::showEvent(e);
+    ensureWidgetVisible(m_views.value(m_rootIndex));
+}

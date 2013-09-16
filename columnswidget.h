@@ -18,58 +18,62 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#ifndef COLUMNSWIDGET_H
+#define COLUMNSWIDGET_H
 
-#ifndef APPLICATION_H
-#define APPLICATION_H
+#include <QScrollArea>
+#include <QHBoxLayout>
+#include "filesystemmodel.h"
+#include "columnsview.h"
+#include "viewcontainer.h"
 
-#include <QApplication>
-#if 0
-#include <QMainWindow>
-#include "dockwidget.h"
-#include "placesview.h"
-#include "config.h"
-#endif
-
-#ifdef Q_WS_X11
-#include <QX11Info>
-#endif
-
-//#include <GL/glut.h>
-
-#define APP static_cast<Application*>(QApplication::instance())
-#define MAINWINDOW static_cast<DFM::MainWindow*>(APP->mainWindow())
-#define DPY QX11Info::display()
-
-class Application : public QApplication
+namespace DFM
+{
+class ViewContainer;
+class ColumnsView;
+class ColumnsWidget : public QScrollArea
 {
     Q_OBJECT
 public:
-    explicit Application(int &argc, char *argv[], const QString &key = "dfm"); /*: QApplication(argc, argv) {}*/
-    inline bool isRunning() { return m_isRunning; }
+    explicit ColumnsWidget(QWidget *parent = 0);
+    void setModel( FileSystemModel *model );
+    inline void setSelectionModel( QItemSelectionModel *model ) { m_slctModel = model; }
+    QModelIndex currentIndex();
+    ColumnsView *currentView();
+    void clear();
+    void setFilter( const QString &filter );
+    void scrollTo(const QModelIndex &index);
+    
 signals:
-    void message( const QStringList &msg );
+    void currentViewChagned( ColumnsView *view );
+    
+public slots:
+    void rootPathChanged( const QString &rootPath );
+    void edit(const QModelIndex &index);
+    void setRootIndex( const QModelIndex &index );
+    void setCurrentView( ColumnsView *view );
 
-#if 0
-    inline void manageDock( DFM::Docks::DockWidget *dock ) { m_docks << dock; }
-    inline void setMainWindow( QMainWindow *mainWin ) { m_mainWindow = mainWin; }
-    inline QMainWindow *mainWindow() { return m_mainWindow; }
-    inline void setPlacesView( DFM::PlacesView *places ) { m_places = places; }
-    inline DFM::PlacesView *placesView() { return m_places; }
-#endif
-#ifdef Q_WS_X11
-#if 0
 protected:
-    bool x11EventFilter(XEvent *xe);
-#endif
-#endif
+    void connectView(ColumnsView *view);
+    void disconnectView(ColumnsView *view);
+    void resizeEvent(QResizeEvent *e);
+    void showEvent(QShowEvent *e);
+    ColumnsView *newView(const QModelIndex &index);
+    QModelIndexList fromRoot();
+    QModelIndexList fromLast();
 
 private:
-    bool m_isRunning;
-#if 0
-    QList<DFM::Docks::DockWidget *> m_docks;
-    QMainWindow *m_mainWindow;
-    DFM::PlacesView *m_places;
-#endif
+    FileSystemModel *m_fsModel;
+    QItemSelectionModel *m_slctModel;
+    QWidget *m_viewport;
+    QHBoxLayout *m_viewLay;
+    QMap<QModelIndex, ColumnsView *> m_views;
+    ViewContainer *m_container;
+    ColumnsView *m_currentView;
+    QModelIndex m_rootIndex;
+    QString m_rootPath;
 };
 
-#endif // APPLICATION_H
+}
+
+#endif // COLUMNSWIDGET_H

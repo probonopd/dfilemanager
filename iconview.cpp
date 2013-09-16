@@ -96,18 +96,22 @@ public:
         painter->drawTiledPixmap( QRect( QPoint( x+m_size, b-m_size ), QSize( w-( m_size*2+1 ), m_shadowData[Bottom].height() ) ), m_shadowData[Bottom] );
         painter->drawTiledPixmap( QRect( QPoint( r-m_size, b-m_size ), m_shadowData[BottomRight].size() ), m_shadowData[BottomRight] );
     }
-    inline virtual void paint( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const
+//    int itemHeight()
+//    {
+//        int h = DECOSIZE.height() +
+//    }
+
+    void paint( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
         if ( !m_fsModel )
             return;
 
         painter->save();
         painter->setRenderHint( QPainter::Antialiasing );
-
         painter->setFont(qvariant_cast<QFont>(m_fsModel->data(index, Qt::FontRole)));
 
-        const bool &selected = option.state & QStyle::State_Selected;
-        const int &step = selected ? 8 : ViewAnimator::hoverLevel(m_iv, index);
+        const bool selected = option.state & QStyle::State_Selected;
+        const int step = selected ? 8 : ViewAnimator::hoverLevel(m_iv, index);
 
         const QStyleOptionViewItem &copy = option;
         QRect saved = RECT, tr;
@@ -152,10 +156,9 @@ public:
     }
     inline void setModel( FileSystemModel *fsModel ) { m_fsModel = fsModel; }
 protected:
-    inline QSize sizeHint( const QStyleOptionViewItem &option, const QModelIndex &index ) const
+    QSize sizeHint( const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
-        int ds = DECOSIZE.height();
-        int h;
+        int ds = DECOSIZE.height(), h = 0;
         elidedText(option, index, &h);
         return QSize(ds+(Store::config.views.iconView.textWidth*2), ds+h);
     }
@@ -165,14 +168,14 @@ protected:
         QFontMetrics fm( font );
 
         QTextLayout textLayout(TEXT, font);
-        int widthUsed = 0, lineCount = 0, leading = fm.leading();
+        int widthUsed = 0, lineCount = -1, leading = fm.leading();
         textLayout.beginLayout();
         QTextOption opt;
         opt.setWrapMode(QTextOption::WrapAnywhere);
         textLayout.setTextOption(opt);
 
         float height = 0;
-        while (++lineCount <= lines) {
+        while (++lineCount < lines) {
             QTextLine line = textLayout.createLine();
             if (!line.isValid())
                 break;
@@ -186,7 +189,7 @@ protected:
         if ( h )
             *h = qRound(height);
 
-        QString elidedText = lineCount > 3 ? fm.elidedText(TEXT, Qt::ElideRight, widthUsed) : TEXT;
+        QString elidedText = lineCount > 2 ? fm.elidedText(TEXT, Qt::ElideRight, widthUsed) : TEXT;
 
         if ( r )
             *r = QApplication::style()->itemTextRect(fm, RECT, textFlags(), true, elidedText);
@@ -200,12 +203,19 @@ private:
     FileSystemModel *m_fsModel;
 };
 
-IconView::IconView( QWidget *parent ) : QListView( parent ), m_scrollTimer( new QTimer(this) ), m_delta(0), m_newSize(0), m_sizeTimer(0)
+IconView::IconView( QWidget *parent )
+    : QListView( parent )
+    , m_scrollTimer( new QTimer(this) )
+    , m_delta(0)
+    , m_newSize(0)
+    , m_sizeTimer(0)
+    , m_gridHeight(0)
 {
     setItemDelegate( new IconDelegate( this ) );
     ViewAnimator::manage(this);
     setMovement( QListView::Snap );
     const int &iSize = Store::config.views.iconView.iconSize*16;
+    setGridHeight(iSize);
     setSelectionMode( QAbstractItemView::ExtendedSelection );
     setResizeMode( QListView::Adjust );
     setIconSize( QSize( iSize, iSize ) );
@@ -225,6 +235,7 @@ IconView::IconView( QWidget *parent ) : QListView( parent ), m_scrollTimer( new 
     setMouseTracking( true );
     setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     connect( m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollEvent()) );
+    connect( this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)) );
 
     m_slide = false;
     m_startSlide = false;
@@ -398,6 +409,12 @@ IconView::paintEvent( QPaintEvent *e )
 }
 
 void
+IconView::setGridHeight(int gh)
+{
+    m_gridHeight = gh + 4 + fontMetrics().height()*lines;
+}
+
+void
 IconView::updateLayout()
 {
     int horMargin = style()->pixelMetric( QStyle::PM_ScrollBarExtent, 0, horizontalScrollBar() ) + qMax( 1, style()->pixelMetric( QStyle::PM_DefaultFrameWidth )*3 );
@@ -411,7 +428,8 @@ IconView::updateLayout()
     if ( rootIndex().isValid() && model()->rowCount( rootIndex() ) < horItemCount && model()->rowCount( rootIndex() ) > 1 )
         horItemCount = model()->rowCount( rootIndex() );
 
-    setGridSize( QSize( contentsWidth/horItemCount, gridSize().height() ) );
+
+    setGridSize( QSize( contentsWidth/horItemCount, m_gridHeight ) );
 }
 
 void

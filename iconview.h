@@ -75,6 +75,7 @@ protected:
     void keyPressEvent(QKeyEvent *e);
     void setIconWidth(const int width);
     inline int iconWidth() const { return iconSize().width(); }
+    inline int gridHeight() const;
 
 public slots:
     void updateLayout();
@@ -86,6 +87,7 @@ signals:
 private slots:
     void rootPathChanged(QString path);
     void scrollEvent();
+    void setGridHeight(int gh);
 
 private:
     QPoint m_startPos;
@@ -93,7 +95,7 @@ private:
     bool m_slide, m_startSlide;
     FileSystemModel *m_fsModel;
     QTimer *m_scrollTimer;
-    int m_delta, m_newSize, m_sizeTimer;
+    int m_delta, m_newSize, m_sizeTimer, m_gridHeight;
 };
 
 }

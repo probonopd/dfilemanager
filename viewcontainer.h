@@ -27,7 +27,7 @@
 
 #include "iconview.h"
 #include "detailsview.h"
-#include "columnsview.h"
+#include "columnswidget.h"
 #include "flowview.h"
 #include "filesystemmodel.h"
 #include "pathnavigator.h"
@@ -35,24 +35,20 @@
 namespace DFM
 {
 
-#define VIEWS(RUN)\
-    m_iconView->RUN;\
-    m_detailsView->RUN;\
-    m_columnsView->RUN;\
-    m_flowView->RUN
-
+class ColumnsWidget;
 class ViewContainer : public QFrame
 {
     Q_OBJECT
 public:
     enum View { Icon = 0, Details = 1, Columns = 2, Flow = 3 };
     ViewContainer(QWidget *parent = 0, QString rootPath = QDir::homePath());
+    static QList<QAction *> rightClickActions();
     FileSystemModel *model() const;
     void setView(View view);
-    inline QAbstractItemView *currentView() const { if ( m_myView != Flow ) return static_cast<QAbstractItemView*>(m_viewStack->currentWidget()); return static_cast<QAbstractItemView*>(m_flowView->detailsView()); }
+    QAbstractItemView *currentView() const;
     View currentViewType() const { return m_myView; }
     void setPathEditable(bool editable);
-    inline void setRootIndex(const QModelIndex &index) { VIEWS(setRootIndex(index)); }
+    void setRootIndex(const QModelIndex &index);
     void createDirectory();
     void setFilter(QString filter);
     void deleteCurrentSelection();
@@ -111,7 +107,7 @@ private:
     View m_myView;
     IconView *m_iconView;
     DetailsView *m_detailsView;
-    ColumnsView *m_columnsView;
+    ColumnsWidget *m_columnsWidget;
     FlowView *m_flowView;
     FileSystemModel *m_fsModel;
     QStackedWidget *m_viewStack;

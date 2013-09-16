@@ -347,23 +347,23 @@ MainWindow::createToolBars()
     m_toolBar->setMovable(false);
     m_toolBar->addAction(m_goBackAct);
     m_toolBar->addAction(m_goForwardAct);
+    m_toolBar->addSeparator();
     m_toolBar->addWidget(m_toolBarSpacer);
     m_toolBar->addAction(m_iconViewAct);
     m_toolBar->addAction(m_listViewAct);
     m_toolBar->addAction(m_colViewAct);
     m_toolBar->addAction(m_flowAct);
+    m_toolBar->addSeparator();
 
-//    filterBox->setPlaceholderText("Type to filter...");
     QWidget *spacerMax = new QWidget(m_toolBar);
     spacerMax->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-    QWidget *spacerMin = new QWidget(m_toolBar);
-    spacerMin->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-    spacerMin->setMaximumWidth(64);
-    m_toolBar->addWidget(spacerMin);
+    QWidget *spacerMax2 = new QWidget(m_toolBar);
+    spacerMax2->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
+    m_toolBar->addWidget(spacerMax);
     m_toolBar->addAction(m_configureAct);
     m_toolBar->addSeparator();
     m_toolBar->addAction(m_homeAct);
-    m_toolBar->addWidget(spacerMax);
+    m_toolBar->addWidget(spacerMax2);
     m_toolBar->addWidget(m_filterBox);
 }
 

@@ -153,12 +153,12 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         if (fileInfo(index).isDir())
             return QString::number(QDir(filePath(index)).entryList(QDir::NoDotAndDotDot | QDir::AllEntries).count()) + " Entrie(s)";
 
-    if ( role == Qt::FontRole && s_currentView )
-    {
-        QFont font = s_currentView->font();
-        font.setBold(s_currentView->selectionModel()->selectedIndexes().contains(index));
-        return font;
-    }
+//    if ( role == Qt::FontRole && s_currentView )
+//    {
+//        QFont font = s_currentView->font();
+//        font.setBold(s_currentView->selectionModel()->selectedIndexes().contains(index));
+//        return font;
+//    }
 
     if ( index.column() == 4 && role == Qt::DisplayRole )
     {

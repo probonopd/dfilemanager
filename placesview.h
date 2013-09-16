@@ -75,11 +75,12 @@ class Container : public Place
 {
 public:
     typedef QList<Place *> Places;
-    Container( const QString &name ) : Place(QStringList() << name) {}
-    Container( Container *c ) : Place( c )
+    inline Container( const QString &name ) : Place(QStringList() << name) { setSelectable(false); }
+    inline Container( Container *c ) : Place( c )
     {
         foreach ( Place *p, c->places() )
             appendRow( new Place(p) );
+        setSelectable(false);
     }
     inline Place *place( const int &i ) { return static_cast<Place *>(child(i)); }
     inline Places places()

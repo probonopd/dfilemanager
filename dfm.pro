@@ -26,7 +26,8 @@ HEADERS = mainwindow.h \
     recentfoldersview.h \
     iojob.h \
     thumbsloader.h \
-    preview.h
+    preview.h \
+    columnswidget.h
 SOURCES = main.cpp \
     mainwindow.cpp \
     iconview.cpp \
@@ -56,7 +57,8 @@ SOURCES = main.cpp \
     iojob.cpp \
     thumbsloader.cpp \
     preview.cpp \
-    config.cpp
+    config.cpp \
+    columnswidget.cpp
 #RESOURCES = resources.qrc
 TARGET = dfm
 

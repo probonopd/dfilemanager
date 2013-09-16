@@ -403,6 +403,7 @@ PreView::showEvent(QShowEvent *event)
     m_x = rect().size().width()/2.0f;
     if ( m_items.count() > m_row && m_row > -1 )
         m_items[m_row]->updatePixmaps();
+    updateItemsPos();
 }
 
 void

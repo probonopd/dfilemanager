@@ -441,6 +441,7 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
         int w = m_placesView->viewport()->width();
         w -= m_toolBar->widgetForAction(m_goBackAct)->width();
         w -= m_toolBar->widgetForAction(m_goForwardAct)->width();
+        w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
         if (m_toolBarSpacer->width() != w )
         {
             const int &width = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
@@ -661,7 +662,13 @@ MainWindow::tabClosed(int tab)
 void
 MainWindow::openTab()
 {
-    addTab(m_fsModel->filePath(m_activeContainer->selectionModel()->selectedIndexes().first()));
+    if ( m_activeContainer->selectionModel()->hasSelection() )
+        foreach ( const QModelIndex &index, m_activeContainer->selectionModel()->selectedIndexes() )
+        {
+            if ( index.column() > 0 )
+                continue;
+            addTab(m_fsModel->filePath(index));
+        }
 }
 
 void
@@ -737,6 +744,7 @@ MainWindow::showEvent(QShowEvent *e)
     int w = m_placesView->viewport()->width();
     w -= m_toolBar->widgetForAction(m_goBackAct)->width();
     w -= m_toolBar->widgetForAction(m_goForwardAct)->width();
+    w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
     if (m_toolBarSpacer->width() != w )
     {
         const int &width = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);

@@ -98,8 +98,13 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     QFileInfo f(file);
 
     DFM::FileSystemModel *fsModel = DFM::MainWindow::currentContainer()->model();
-    const QString &location = many ? fsModel->rootPath() : f.path();
+    QString location = many ? fsModel->rootPath() : f.path();
     DFM::DeviceItem *di = DFM::MainWindow::places()->deviceManager()->deviceItemForFile(location);
+    if ( f.isSymLink() )
+    {
+        location.append(QString("\n(points to: %1)").arg(f.symLinkTarget()));
+        di = DFM::MainWindow::places()->deviceManager()->deviceItemForFile(f.symLinkTarget());
+    }
 
     if ( many )
     {
@@ -294,14 +299,19 @@ PropertiesDialog::accept()
     {
         QFile::Permissions permissions = file.permissions();
         if (m_r->box(Rights::UserRead)->isChecked()) permissions |= QFile::ReadUser; else permissions &= ~QFile::ReadUser;
-        if (m_r->box(Rights::UserWrite)->isChecked()) permissions |= QFile::WriteUser; else permissions &= ~QFile::WriteUser;
-        if (m_r->box(Rights::UserExe)->isChecked()) permissions |= QFile::ExeUser; else permissions &= ~QFile::ExeUser;
         if (m_r->box(Rights::GroupRead)->isChecked()) permissions |= QFile::ReadGroup; else permissions &= ~QFile::ReadGroup;
-        if (m_r->box(Rights::GroupWrite)->isChecked()) permissions |= QFile::WriteGroup; else permissions &= ~QFile::WriteGroup;
-        if (m_r->box(Rights::GroupExe)->isChecked()) permissions |= QFile::ExeGroup; else permissions &= ~QFile::ExeGroup;
         if (m_r->box(Rights::OthersRead)->isChecked()) permissions |= QFile::ReadOther; else permissions &= ~QFile::ReadOther;
+
+        if (m_r->box(Rights::UserWrite)->isChecked()) permissions |= QFile::WriteUser; else permissions &= ~QFile::WriteUser;
+        if (m_r->box(Rights::GroupWrite)->isChecked()) permissions |= QFile::WriteGroup; else permissions &= ~QFile::WriteGroup;
         if (m_r->box(Rights::OthersWrite)->isChecked()) permissions |= QFile::WriteOther; else permissions &= ~QFile::WriteOther;
-        if (m_r->box(Rights::OthersExe)->isChecked()) permissions |= QFile::ExeOther; else permissions &= ~QFile::ExeOther;
+
+        if ( !fileInfo.isDir() )
+        {
+            if (m_r->box(Rights::UserExe)->isChecked()) permissions |= QFile::ExeUser; else permissions &= ~QFile::ExeUser;
+            if (m_r->box(Rights::GroupExe)->isChecked()) permissions |= QFile::ExeGroup; else permissions &= ~QFile::ExeGroup;
+            if (m_r->box(Rights::OthersExe)->isChecked()) permissions |= QFile::ExeOther; else permissions &= ~QFile::ExeOther;
+        }
         file.setPermissions(permissions);
         const QString &newFile = QString("%1%2%3").arg(fileInfo.path(), QDir::separator(), m_g->newName());
         if ( newFile != m_files.first() )
