@@ -478,9 +478,9 @@ PreView::populate(const int &start, const int &end)
         pixItem->setAcceptHoverEvents(true);
         m_items.insert(i, pixItem);
     }
-    if ( m_centerIndex.isValid() && m_centerIndex.parent().isValid() && m_fsModel->hasIndex(m_centerIndex.row(), 0, m_centerIndex.parent()) )
-        setCenterIndex(m_centerIndex);
-    else
+//    if ( m_centerIndex.isValid() && m_centerIndex.parent().isValid() && m_fsModel->hasIndex(m_centerIndex.row(), 0, m_centerIndex.parent()) )
+//        setCenterIndex(m_centerIndex);
+//    else
         setCenterIndex(m_fsModel->index(0, 0, m_rootIndex));
     updateItemsPos();
     update();
