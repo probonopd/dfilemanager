@@ -74,6 +74,7 @@ FileIconProvider::loadThemedFolders(const QString &path)
 FileSystemModel::FileSystemModel(QObject *parent)
     : QFileSystemModel(parent)
     , m_container(static_cast<ViewContainer *>(parent))
+    , m_history(new History(this))
 {
     setResolveSymlinks(false);
     setIconProvider(m_iconProvider = new FileIconProvider(this));
@@ -87,6 +88,7 @@ FileSystemModel::FileSystemModel(QObject *parent)
     connect ( m_thumbsLoader, SIGNAL(thumbFor(QString)), this, SLOT(thumbFor(QString)) );
     m_it = new ImagesThread(this);
     connect ( m_it, SIGNAL(imagesReady(QString)), this, SLOT(flowDataAvailable(QString)) );
+    connect ( this, SIGNAL(rootPathChanged(QString)), m_history, SLOT(addPath(QString)) );
 }
 
 FileSystemModel::~FileSystemModel()
@@ -271,6 +273,13 @@ FileSystemModel::supportedThumbs( const bool &filter )
         else
             sf << ar;
     return sf;
+}
+
+void
+FileSystemModel::sort(int column, Qt::SortOrder order)
+{
+//    qDebug() << "sorting for" << rootPath();
+    QFileSystemModel::sort(column, order);
 }
 
 

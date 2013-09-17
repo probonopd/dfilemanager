@@ -533,22 +533,22 @@ ViewContainer::settingsChanged()
     {
         disconnect( m_iconView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
         disconnect( m_detailsView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
-        disconnect( m_columnsWidget, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+//        disconnect( m_columnsWidget, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
         disconnect( m_flowView->detailsView(), SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
         connect( m_iconView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)) );
         connect( m_detailsView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
-        connect( m_columnsWidget, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+//        connect( m_columnsWidget, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
         connect( m_flowView->detailsView(), SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
     }
     else
     {
         disconnect( m_iconView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)) );
         disconnect( m_detailsView, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
-        disconnect( m_columnsWidget, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+//        disconnect( m_columnsWidget, SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
         disconnect( m_flowView->detailsView(), SIGNAL(clicked(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
         connect( m_iconView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
         connect( m_detailsView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
-        connect( m_columnsWidget, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+//        connect( m_columnsWidget, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
         connect( m_flowView->detailsView(), SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
     }
 }

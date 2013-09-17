@@ -213,6 +213,7 @@ PreView::PreView(QWidget *parent)
     dse->setOffset(0);
     dse->setColor(Qt::black);
     m_textItem->setGraphicsEffect(dse);
+    setCursor(Qt::ArrowCursor);
 }
 
 QModelIndex
@@ -452,7 +453,7 @@ PreView::rowsRemoved(const QModelIndex &parent, int start, int end)
 void
 PreView::rowsInserted(const QModelIndex &parent, int start, int end)
 {
-    if ( m_rootIndex != parent )
+    if ( !parent.isValid() || m_rootIndex != parent )
         return;
 
     populate(start, end);

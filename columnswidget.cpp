@@ -20,6 +20,8 @@
 
 #include "columnswidget.h"
 #include "operations.h"
+#include "config.h"
+#include "mainwindow.h"
 
 using namespace DFM;
 
@@ -32,6 +34,7 @@ ColumnsWidget::ColumnsWidget(QWidget *parent) :
   , m_container(static_cast<ViewContainer *>(parent))
   , m_currentView(0)
   , m_rootIndex(QModelIndex())
+  , m_visited(QModelIndexList())
 {
     setWidget(m_viewport);
 //    setViewport(m_viewport);
@@ -40,7 +43,12 @@ ColumnsWidget::ColumnsWidget(QWidget *parent) :
     m_viewLay->setSizeConstraint(QLayout::SetFixedSize);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setWidgetResizable(true);
-    setFrameStyle(0);
+    setFrameStyle(QFrame::StyledPanel|QFrame::Sunken);
+    setAutoFillBackground(true);
+    setBackgroundRole(QPalette::Dark);
+    setForegroundRole(QPalette::Light);
+    connect( MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(reconnectViews()) );
+    setCursor(Qt::ArrowCursor);
 }
 
 void
@@ -54,12 +62,15 @@ QModelIndex ColumnsWidget::currentIndex() { return m_currentView->currentIndex()
 ColumnsView *ColumnsWidget::currentView() { return m_currentView; }
 void ColumnsWidget::setFilter( const QString &filter ) { if ( m_currentView ) m_currentView->setFilter(filter); }
 void ColumnsWidget::scrollTo(const QModelIndex &index) { if ( m_currentView ) m_currentView->scrollTo(index); }
-void ColumnsWidget::edit(const QModelIndex &index) { m_currentView->edit(index); }
+void ColumnsWidget::edit(const QModelIndex &index) { if ( m_currentView ) m_currentView->edit(index); }
 
 void
 ColumnsWidget::connectView(ColumnsView *view)
 {
-    connect(view, SIGNAL(activated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
+    if ( Store::config.views.singleClick )
+        connect(view, SIGNAL(clicked(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
+    else
+        connect(view, SIGNAL(activated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
     connect(view, SIGNAL(entered(QModelIndex)), m_container, SIGNAL(entered(QModelIndex)));
     connect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
     connect(view, SIGNAL(viewportEntered()), m_container, SIGNAL(viewportEntered()));
@@ -68,10 +79,21 @@ ColumnsWidget::connectView(ColumnsView *view)
 void
 ColumnsWidget::disconnectView(ColumnsView *view)
 {
+    disconnect(view, SIGNAL(clicked(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
     disconnect(view, SIGNAL(activated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
     disconnect(view, SIGNAL(entered(QModelIndex)), m_container, SIGNAL(entered(QModelIndex)));
     disconnect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
     disconnect(view, SIGNAL(viewportEntered()), m_container, SIGNAL(viewportEntered()));
+}
+
+void
+ColumnsWidget::reconnectViews()
+{
+    foreach ( ColumnsView *view, m_views.values() )
+    {
+        connectView(view);
+        disconnectView(view);
+    }
 }
 
 void
@@ -88,15 +110,13 @@ ColumnsWidget::clear()
 ColumnsView
 *ColumnsWidget::newView(const QModelIndex &index)
 {
-    ColumnsView *view = new ColumnsView(this);
+    ColumnsView *view = new ColumnsView(this, m_fsModel, index);
     connect(view, SIGNAL(focusRequest(ColumnsView*)), this, SLOT(setCurrentView(ColumnsView*)));
+    connect(view, SIGNAL(showed(ColumnsView*)), this, SLOT(correctHeightForView(ColumnsView*)));
     connectView(view);
-    view->setModel(m_fsModel);
     view->setSelectionModel(m_slctModel);
-    view->setRootIndex(index);
     m_views.insert(index, view);
     m_viewLay->addWidget(view);
-    view->setVisible(true);
     return view;
 }
 
@@ -131,6 +151,7 @@ ColumnsWidget::fromLast()
 void
 ColumnsWidget::setRootIndex(const QModelIndex &index)
 {
+    m_visited << index;
     const bool alreadyExists = fromLast().contains(index);
     m_rootIndex = index;
     if ( m_views.contains(index) )
@@ -157,7 +178,24 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
                 m_views.insert(dirIdx, newView(dirIdx));
         }
     }
-    setCurrentView(m_views.value(index));
+    bool parIsVis = false;
+    idxList = alreadyExists ? fromLast() : fromRoot();
+    foreach ( const QModelIndex &dirIdx, idxList )
+    {
+        parIsVis = parIsVis||m_visited.contains(dirIdx);
+        if ( m_views.contains(dirIdx) )
+            m_views.value(dirIdx)->setVisible(parIsVis);
+    }
+
+    while ( !idxList.isEmpty() )
+    {
+        const QModelIndex &idx = idxList.takeLast();
+        const QModelIndex &parent = idx.parent();
+        if ( parent.isValid() && m_views.contains(parent) )
+            m_views.value(parent)->setActiveFileName(m_fsModel->fileName(idx));
+    }
+
+    setCurrentView(m_views.value(index), !alreadyExists);
 }
 
 void
@@ -167,7 +205,7 @@ ColumnsWidget::rootPathChanged(const QString &rootPath)
 }
 
 void
-ColumnsWidget::setCurrentView(ColumnsView *view)
+ColumnsWidget::setCurrentView( ColumnsView *view, bool setVisibility )
 {
     if ( !m_views.values().contains(view) )
         return;
@@ -179,18 +217,28 @@ ColumnsWidget::setCurrentView(ColumnsView *view)
         view->setFocus();
     if ( m_fsModel->index(m_fsModel->rootPath()) != view->rootIndex() )
         m_fsModel->setRootPath(m_fsModel->filePath(view->rootIndex()));
-    ensureWidgetVisible(view, view->width());
+    if ( setVisibility )
+        ensureWidgetVisible(view, view->width());
+}
+
+void
+ColumnsWidget::correctHeightForView(ColumnsView *view)
+{
+    int h = size().height();
+    if ( horizontalScrollBar()->isVisible() )
+        h -= horizontalScrollBar()->height();
+    view->setFixedHeight(h);
 }
 
 void
 ColumnsWidget::resizeEvent(QResizeEvent *e)
 {
     QScrollArea::resizeEvent(e);
-    int h = size().height();
-    if ( horizontalScrollBar()->isVisible() )
-        h -= horizontalScrollBar()->height();
-    foreach ( ColumnsView *view, m_views.values() )
-        view->setFixedHeight(h);
+
+    if ( e->size().height() != e->oldSize().height() )
+        foreach ( ColumnsView *view, m_views.values() )
+            if ( view->isVisible() )
+                correctHeightForView(view);
 }
 
 void

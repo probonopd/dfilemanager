@@ -36,6 +36,12 @@ public:
         , m_view(static_cast<ColumnsView *>(parent)){}
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
+        if ( index.data().toString() == m_view->activeFileName() )
+        {
+            QColor h = m_view->palette().color(QPalette::Highlight);
+            h.setAlpha(64);
+            painter->fillRect(option.rect, h);
+        }
         QStyledItemDelegate::paint(painter, option, index);
     }
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
@@ -49,9 +55,14 @@ private:
     ColumnsView *m_view;
 };
 
-ColumnsView::ColumnsView(QWidget *parent) : QListView(parent), m_parent(static_cast<ColumnsWidget *>(parent))
+ColumnsView::ColumnsView(QWidget *parent, FileSystemModel *fsModel, const QModelIndex &rootIndex)
+    : QListView(parent)
+    , m_parent(static_cast<ColumnsWidget *>(parent))
+    , m_pressPos(QPoint())
+    , m_activeFile(QString())
+    , m_fsModel(0)
 {
-//    setItemDelegate(new ColumnsDelegate(this));
+    setItemDelegate(new ColumnsDelegate(this));
     setViewMode(QListView::ListMode);
     setResizeMode(QListView::Adjust);
     setIconSize(QSize(16, 16));
@@ -67,7 +78,15 @@ ColumnsView::ColumnsView(QWidget *parent) : QListView(parent), m_parent(static_c
     setMouseTracking(true);
     setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setTextElideMode(Qt::ElideNone);
+    if ( fsModel )
+    {
+        setModel(fsModel);
+        if ( rootIndex.isValid() )
+            setRootIndex(rootIndex);
+    }
+    updateWidth();
 }
 
 void
@@ -75,7 +94,8 @@ ColumnsView::setFilter(QString filter)
 {
     for (int i = 0; i < model()->rowCount(rootIndex()); i++)
     {
-        if(model()->index(i,0,rootIndex()).data().toString().toLower().contains(filter.toLower()))
+        const QModelIndex &index = model()->index(i,0,rootIndex());
+        if (index.data().toString().contains(filter, Qt::CaseInsensitive))
             setRowHidden(i, false);
         else
             setRowHidden(i, true);
@@ -87,11 +107,9 @@ ColumnsView::keyPressEvent(QKeyEvent *event)
 {
     if ( event->key() == Qt::Key_Return && event->modifiers() == Qt::NoModifier && state() != QAbstractItemView::EditingState )
     {
-            if ( selectionModel()->selectedRows().count() )
-                foreach ( const QModelIndex &index, selectionModel()->selectedRows() )
-                    emit activated(index);
-            else if ( selectionModel()->selectedIndexes().count() )
-                foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
+        if ( selectionModel()->selectedIndexes().count() )
+            foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
+                if ( index.column() == 0 )
                     emit activated(index);
         event->accept();
         return;
@@ -123,10 +141,19 @@ ColumnsView::contextMenuEvent(QContextMenuEvent *event)
 void
 ColumnsView::mouseReleaseEvent(QMouseEvent *e)
 {
-    if(e->button() == Qt::MiddleButton)
-        if(indexAt(e->pos()).isValid())
+    const QModelIndex &index = indexAt(e->pos());
+    if ( !Store::config.views.singleClick && e->button() == Qt::LeftButton && e->pos() == m_pressPos )
+        if (index.isValid())
         {
-            emit newTabRequest(indexAt(e->pos()));
+            if ( m_fsModel->fileInfo(index).isDir() )
+            emit activated(index);
+            e->accept();
+            return;
+        }
+    if (e->button() == Qt::MiddleButton)
+        if (index.isValid())
+        {
+            emit newTabRequest(index);
             e->accept();
             return;
         }
@@ -155,13 +182,6 @@ ColumnsView::setModel(QAbstractItemModel *model)
 }
 
 void
-ColumnsView::showEvent(QShowEvent *e)
-{
-    QListView::showEvent(e);
-    updateWidth();
-}
-
-void
 ColumnsView::updateWidth()
 {
     QStringList list = QDir(m_fsModel->filePath(rootIndex())).entryList(QDir::AllEntries|QDir::AllDirs|QDir::NoDotAndDotDot|QDir::System);
@@ -175,4 +195,5 @@ ColumnsView::updateWidth()
     w+=22; //icon
     w+=style()->pixelMetric(QStyle::PM_ScrollBarExtent, 0, this);
     setFixedWidth(qMax(64, w));
+    setFixedHeight(m_parent->height()-(style()->pixelMetric(QStyle::PM_ScrollBarExtent)*m_parent->verticalScrollBar()->isVisible()));
 }

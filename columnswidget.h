@@ -36,6 +36,7 @@ class ColumnsWidget : public QScrollArea
     Q_OBJECT
 public:
     explicit ColumnsWidget(QWidget *parent = 0);
+    virtual ~ColumnsWidget(){}
     void setModel( FileSystemModel *model );
     inline void setSelectionModel( QItemSelectionModel *model ) { m_slctModel = model; }
     QModelIndex currentIndex();
@@ -51,7 +52,9 @@ public slots:
     void rootPathChanged( const QString &rootPath );
     void edit(const QModelIndex &index);
     void setRootIndex( const QModelIndex &index );
-    void setCurrentView( ColumnsView *view );
+    void setCurrentView( ColumnsView *view, bool setVisibity = false );
+    void reconnectViews();
+    void correctHeightForView(ColumnsView *view);
 
 protected:
     void connectView(ColumnsView *view);
@@ -72,6 +75,7 @@ private:
     ColumnsView *m_currentView;
     QModelIndex m_rootIndex;
     QString m_rootPath;
+    QModelIndexList m_visited;
 };
 
 }

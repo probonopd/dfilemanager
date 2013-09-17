@@ -45,6 +45,7 @@ class ViewContainer : public QFrame
 public:
     enum View { Icon = 0, Details = 1, Columns = 2, Flow = 3 };
     ViewContainer(QWidget *parent = 0, QString rootPath = QDir::homePath());
+    virtual ~ViewContainer(){}
     static QList<QAction *> rightClickActions();
     FileSystemModel *model() const;
     void setView(View view);
@@ -72,6 +73,7 @@ public:
     void animateIconSize(int start, int stop);
     BreadCrumbs *breadCrumbs();
     QString currentFilter();
+    QStringList visited() { return m_backList; }
 
 protected:
     inline virtual void leaveEvent(QEvent *) { emit leftView(); }

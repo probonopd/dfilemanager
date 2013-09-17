@@ -45,9 +45,15 @@ class FileSystemModel;
 
 class History : public QObject
 {
+    Q_OBJECT
 public:
     explicit History(QObject *parent = 0) : QObject(parent) {}
     bool canGoBack() { return m_historyList.count(); }
+    QString lastVisited() { return m_historyList.last(); }
+    QStringList all() { return m_historyList; }
+
+public slots:
+    void addPath( const QString &path ) { m_historyList << path; m_historyList.removeDuplicates(); }
 
 private:
     QStringList m_historyList;
@@ -93,6 +99,8 @@ public:
     inline void refresh() { const QString &path = rootPath(); setRootPath(""); setRootPath(path); }
     bool hasThumb( const QString &file );
     bool hasFlowData( const QString &file );
+    void sort(int column, Qt::SortOrder order = Qt::AscendingOrder);
+    History *history() { return m_history; }
 
 public slots:
     void setPath(const QString &path) { setRootPath(path); }
@@ -117,6 +125,7 @@ private:
     ThumbsLoader *m_thumbsLoader;
     ImagesThread *m_it;
     ViewContainer *m_container;
+    History *m_history;
 };
 
 }

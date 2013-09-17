@@ -35,16 +35,18 @@ class ColumnsView : public QListView
 {
     Q_OBJECT
 public:
-    explicit ColumnsView(QWidget *parent = 0);
+    explicit ColumnsView(QWidget *parent = 0, FileSystemModel *fsModel = 0, const QModelIndex &rootIndex = QModelIndex());
     void setFilter(QString filter);
     void contextMenuEvent(QContextMenuEvent *event);
     void mouseReleaseEvent(QMouseEvent *e);
     void keyPressEvent(QKeyEvent *);
-    void mousePressEvent(QMouseEvent *event) { QListView::mousePressEvent(event); emit focusRequest(this); }
+    void mousePressEvent(QMouseEvent *event) { QListView::mousePressEvent(event); m_pressPos = event->pos(); emit focusRequest(this); }
     void focusInEvent(QFocusEvent *event) { QListView::focusInEvent(event); emit focusRequest(this); }
     void paintEvent(QPaintEvent *e);
     void setModel(QAbstractItemModel *model);
-    void showEvent(QShowEvent *e);
+    void showEvent(QShowEvent *e) { QListView::showEvent(e); emit showed(this); }
+    inline void setActiveFileName( const QString &fileName ) { m_activeFile = fileName; update(); }
+    inline QString activeFileName() { return m_activeFile; }
 
 private slots:
     void updateWidth();
@@ -52,10 +54,13 @@ private slots:
 signals:
     void newTabRequest(QModelIndex path);
     void focusRequest(ColumnsView *view);
+    void showed(ColumnsView *view);
 
 private:
     ColumnsWidget *m_parent;
     FileSystemModel *m_fsModel;
+    QPoint m_pressPos;
+    QString m_activeFile;
 };
 
 }
