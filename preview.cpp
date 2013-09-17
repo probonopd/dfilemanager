@@ -456,12 +456,17 @@ PreView::rowsInserted(const QModelIndex &parent, int start, int end)
     if ( !parent.isValid() || m_rootIndex != parent )
         return;
 
+    if ( !m_fsModel->hasIndex(start, 0, parent) || !m_fsModel->hasIndex(end, 0, parent) )
+        return;
+
     populate(start, end);
 }
 
 void
 PreView::populate(const int &start, const int &end)
 {
+    if ( !m_rootIndex.isValid() )
+        return;
     for ( int i = start; i <= end; i++ )
     {
         QModelIndex index = m_fsModel->index(i, 0, m_rootIndex);
