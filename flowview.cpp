@@ -84,10 +84,11 @@ FlowView::setRootIndex(const QModelIndex &rootIndex)
 void
 FlowView::treeCurrentIndexChanged(QItemSelection,QItemSelection)
 {
-    if (m_dView->selectionModel()->currentIndex().isValid())
+    const QModelIndex &index = m_dView->selectionModel()->currentIndex();
+    if (index.isValid())
     {
-        m_preView->animateCenterIndex(m_dView->selectionModel()->currentIndex());
-        m_dView->scrollTo(m_dView->selectionModel()->currentIndex(), QAbstractItemView::PositionAtCenter);
+        m_preView->animateCenterIndex(index);
+        m_dView->scrollTo(index, QAbstractItemView::PositionAtCenter);
     }
 }
 
@@ -95,5 +96,6 @@ void
 FlowView::setSelectionModel(QItemSelectionModel *selectionModel)
 {
     m_dView->setSelectionModel(selectionModel);
+    m_preView->setSelectionModel(selectionModel);
     connect( m_dView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),this,SLOT(treeCurrentIndexChanged(QItemSelection,QItemSelection)));
 }

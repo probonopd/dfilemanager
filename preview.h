@@ -112,6 +112,7 @@ public:
     enum Pos { Prev = 0, New = 1 };
     explicit PreView(QWidget *parent = 0);
     void setModel( FileSystemModel *fsModel );
+    inline void setSelectionModel( QItemSelectionModel *model ) { m_selectionModel = model; }
     void setCenterIndex( const QModelIndex &index );
     void showCenterIndex( const QModelIndex &index );
     inline void animateCenterIndex( const QModelIndex &index ) { m_scrollBar->setValue(index.row()); }
@@ -133,12 +134,14 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void enterEvent(QEvent *e);
-    void populate(const int &start, const int &end);
+    void populate(const int start, const int end, const bool newData = false);
     void prepareAnimation();
     bool isValidRow( const int &row ) { return bool(row > -1 && row < m_items.count()); }
     void correctItemsPos(const int &leftStart, const int &rightStart);
     void showPrevious();
     void showNext();
+
+    template<typename T>T itemAtAs(const QPoint &pos){return dynamic_cast<T>(itemAt(pos));}
 
 private slots:
     void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
@@ -155,7 +158,7 @@ private:
     GraphicsScene *m_scene;
     FileSystemModel *m_fsModel;
     QModelIndex m_centerIndex, m_prevCenter, m_rootIndex;
-    int m_row, m_nextRow, m_newRow;
+    int m_row, m_nextRow, m_newRow, m_savedRow;
     float m_y, m_x, m_perception;
     bool m_wantsDrag;
     QList<PixmapItem *> m_items;
@@ -167,6 +170,7 @@ private:
     QGraphicsProxyWidget *m_gfxProxy;
     ScrollBar *m_scrollBar;
     QPointF m_pressPos;
+    QItemSelectionModel *m_selectionModel;
 };
 
 }

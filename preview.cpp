@@ -154,6 +154,7 @@ PreView::PreView(QWidget *parent)
     , m_row(-1)
     , m_nextRow(-1)
     , m_newRow(-1)
+    , m_savedRow(-1)
     , m_pressed(0)
     , m_y(0.0f)
     , m_x(0.0f)
@@ -370,9 +371,11 @@ PreView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 void
 PreView::setCenterIndex(const QModelIndex &index)
 {
-    if ( !index.isValid() )
+    if ( !index.isValid() || m_centerIndex == index )
         return;
 
+    if ( index.row() )
+        m_savedRow = index.row();
     m_prevCenter = m_centerIndex;
     m_centerIndex = index;
     m_nextRow = m_row;
@@ -390,8 +393,8 @@ PreView::reset()
     if ( m_fsModel && m_fsModel->rowCount(m_rootIndex) )
     {
         populate(0, m_fsModel->rowCount(m_rootIndex)-1);
-        m_scrollBar->setValue(0);
         m_scrollBar->setRange(0, m_fsModel->rowCount(m_rootIndex)-1);
+        m_scrollBar->setValue(qBound(0, m_savedRow, m_items.count()));
     }
 }
 
@@ -423,10 +426,8 @@ PreView::resizeEvent(QResizeEvent *event)
     m_textItem->setPos(m_x-m_textItem->boundingRect().width()/2.0f, rect().bottom()-(bMargin+m_scrollBar->height()+m_textItem->boundingRect().height()));
     m_textItem->setZValue(m_items.count()+2);
     m_gfxProxy->setPos(m_x-m_gfxProxy->boundingRect().width()/2.0f, rect().bottom()-(bMargin+m_scrollBar->height()));
-
     m_rootItem->setTransformOriginPoint(rect().center());
     m_rootItem->setTransform(QTransform().translate(rect().width()/2.0f, y).rotate(m_perception, Qt::XAxis).translate(-rect().width()/2.0f, -y));
-
     m_rootItem->setScale(scale);
 }
 
@@ -459,17 +460,18 @@ PreView::rowsInserted(const QModelIndex &parent, int start, int end)
     if ( !m_fsModel->hasIndex(start, 0, parent) || !m_fsModel->hasIndex(end, 0, parent) )
         return;
 
-    populate(start, end);
+    populate(start, end, true);
 }
 
 void
-PreView::populate(const int &start, const int &end)
+PreView::populate(const int start, const int end, const bool newData)
 {
     if ( !m_rootIndex.isValid() )
         return;
+
     for ( int i = start; i <= end; i++ )
     {
-        QModelIndex index = m_fsModel->index(i, 0, m_rootIndex);
+        const QModelIndex &index = m_fsModel->index(i, 0, m_rootIndex);
         if ( !index.isValid() )
             continue;
         PixmapItem *pixItem = new PixmapItem(m_scene, m_rootItem);
@@ -478,10 +480,8 @@ PreView::populate(const int &start, const int &end)
         pixItem->setAcceptHoverEvents(true);
         m_items.insert(i, pixItem);
     }
-    if ( m_fsModel->hasIndex(m_row, 0, m_rootIndex) )
-        setCenterIndex(m_fsModel->index(m_row, 0, m_rootIndex));
-    else
-        setCenterIndex(m_fsModel->index(0, 0, m_rootIndex));
+
+    setCenterIndex(m_fsModel->index(qBound(0, m_savedRow, m_items.count()), 0, m_rootIndex));
     updateItemsPos();
     update();
 }
