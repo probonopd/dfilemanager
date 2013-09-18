@@ -151,12 +151,14 @@ ColumnsView::mouseReleaseEvent(QMouseEvent *e)
          && index.isValid()
          && m_fsModel->fileInfo(index).isDir() )
     {
+        e->accept();
         if ( e->button() == Qt::LeftButton )
             emit activated(index);
         else if ( e->button() == Qt::MiddleButton )
+        {
             emit newTabRequest(index);
-        e->accept();
-        return;
+            return;
+        }
     }
     QListView::mouseReleaseEvent(e);
 }
