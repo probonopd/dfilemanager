@@ -124,7 +124,7 @@ signals:
     void centerIndexChanged( const QModelIndex &centerIndex );
     
 public slots:
-    inline void setRootIndex( const QModelIndex &rootIndex ) { clear(); m_rootIndex = rootIndex; m_savedRow = 0; m_savedCenter = QModelIndex(); }
+    inline void setRootIndex( const QModelIndex &rootIndex ) { clear(); m_rootIndex = rootIndex; m_savedRow = 0; m_savedCenter = QModelIndex(); m_centerFile = QString(); }
 
 protected:
     void resizeEvent(QResizeEvent *event);
@@ -171,6 +171,7 @@ private:
     ScrollBar *m_scrollBar;
     QPointF m_pressPos;
     QItemSelectionModel *m_selectionModel;
+    QString m_centerFile;
 };
 
 }

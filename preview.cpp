@@ -164,6 +164,7 @@ PreView::PreView(QWidget *parent)
     , m_wantsDrag(false)
     , m_perception(0.0f)
     , m_pressPos(QPointF())
+    , m_centerFile(QString())
 {
     QGLFormat glf = QGLFormat::defaultFormat();
     glf.setSampleBuffers(true);
@@ -378,6 +379,7 @@ PreView::setCenterIndex(const QModelIndex &index)
     {
         m_savedRow = index.row();
         m_savedCenter = index;
+        m_centerFile = m_fsModel->filePath(index);
     }
     m_prevCenter = m_centerIndex;
     m_centerIndex = index;
@@ -484,7 +486,7 @@ PreView::populate(const int start, const int end)
         m_items.insert(i, pixItem);
     }
 
-    QModelIndex index = m_savedCenter;
+    QModelIndex index = m_fsModel->index(m_centerFile);
     if ( !index.isValid() )
         index = m_fsModel->index(qBound(0, m_savedRow, m_items.count()), 0, m_rootIndex);
     setCenterIndex(index);
