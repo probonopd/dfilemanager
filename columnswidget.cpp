@@ -71,6 +71,7 @@ ColumnsWidget::connectView(ColumnsView *view)
         connect(view, SIGNAL(clicked(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
     else
         connect(view, SIGNAL(activated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
+    connect(view, SIGNAL(dirActivated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
     connect(view, SIGNAL(entered(QModelIndex)), m_container, SIGNAL(entered(QModelIndex)));
     connect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
     connect(view, SIGNAL(viewportEntered()), m_container, SIGNAL(viewportEntered()));
@@ -80,6 +81,7 @@ ColumnsWidget::connectView(ColumnsView *view)
 void
 ColumnsWidget::disconnectView(ColumnsView *view)
 {
+    disconnect(view, SIGNAL(dirActivated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
     disconnect(view, SIGNAL(clicked(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
     disconnect(view, SIGNAL(activated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
     disconnect(view, SIGNAL(entered(QModelIndex)), m_container, SIGNAL(entered(QModelIndex)));

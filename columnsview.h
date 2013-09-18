@@ -52,10 +52,11 @@ private slots:
     void updateWidth();
     
 signals:
-    void newTabRequest(QModelIndex path);
+    void newTabRequest(const QModelIndex &path);
     void focusRequest(ColumnsView *view);
     void showed(ColumnsView *view);
     void pathDeleted(ColumnsView *view);
+    void dirActivated(const QModelIndex &dir);
 
 private:
     ColumnsWidget *m_parent;

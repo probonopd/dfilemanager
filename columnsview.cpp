@@ -144,20 +144,16 @@ ColumnsView::contextMenuEvent(QContextMenuEvent *event)
 void
 ColumnsView::mouseReleaseEvent(QMouseEvent *e)
 {
-    const QModelIndex &index = indexAt(e->pos());
-    if ( e->pos() == m_pressPos
-         && e->modifiers() == Qt::NoModifier
-         && index.isValid()
-         && m_fsModel->fileInfo(index).isDir() )
+    if ( indexAt( e->pos() ).isValid() && e->pos() == m_pressPos )
     {
-//        if ( !Store::config.views.singleClick && e->button() == Qt::LeftButton )
-//            emit activated(index);
+        e->accept();
         if ( e->button() == Qt::MiddleButton )
         {
-            e->accept();
-            emit newTabRequest(index);
+            emit newTabRequest( indexAt( e->pos() ) );
             return;
         }
+        else if ( !Store::config.views.singleClick && e->button() == Qt::LeftButton )
+            emit dirActivated( indexAt( e->pos() ) );
     }
     QListView::mouseReleaseEvent(e);
 }
