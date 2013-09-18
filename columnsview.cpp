@@ -88,6 +88,7 @@ ColumnsView::ColumnsView(QWidget *parent, FileSystemModel *fsModel, const QModel
         m_rootPath = fsModel->filePath(rootIndex);
         connect(fsModel, SIGNAL(rowsInserted(const QModelIndex & , int , int)), this, SLOT(updateWidth()));
         connect(fsModel, SIGNAL(rowsRemoved(const QModelIndex & , int , int)), this, SLOT(updateWidth()));
+        connect(fsModel, SIGNAL(fileRenamed(QString,QString,QString)), this, SLOT(updateWidth()));
     }
     updateWidth();
 }
@@ -130,7 +131,7 @@ ColumnsView::contextMenuEvent(QContextMenuEvent *event)
     const QString &file = static_cast<FileSystemModel *>( model() )->filePath( indexAt( event->pos() ) );
     QMenu openWith( tr( "Open With" ), this );
     openWith.addActions( Store::openWithActions( file ) );
-    foreach( QAction *action, actions() )
+    foreach ( QAction *action, actions() )
     {
         popupMenu.addAction( action );
         if ( action->objectName() == "actionDelete" )
@@ -144,26 +145,18 @@ ColumnsView::contextMenuEvent(QContextMenuEvent *event)
 void
 ColumnsView::mouseReleaseEvent(QMouseEvent *e)
 {
-//    if ( indexAt( e->pos() ).isValid() && e->pos() == m_pressPos )
-//    {
-//        e->accept();
-//        if ( e->button() == Qt::MiddleButton )
-//        {
-//            emit newTabRequest( indexAt( e->pos() ) );
-//            return;
-//        }
-//        else if ( !Store::config.views.singleClick && e->button() == Qt::LeftButton )
-//            if ( m_fsModel->fileInfo(indexAt( e->pos() )).isDir() )
-//                emit dirActivated( indexAt( e->pos() ) );
-//    }
-    if (e->button() == Qt::MiddleButton)
-        if (indexAt(e->pos()).isValid())
-        {
-            e->accept();
-            emit newTabRequest(indexAt(e->pos()));
-            return;
-        }
-    QListView::mouseReleaseEvent(e);
+    const QModelIndex &index = indexAt(e->pos());
+    if ( !Store::config.views.singleClick
+         && e->button() == Qt::LeftButton
+         && m_pressPos == e->pos()
+         && m_fsModel->fileInfo(index).isDir() )
+        emit dirActivated(index);
+    else if ( e->button() == Qt::MiddleButton
+              && indexAt(e->pos()).isValid()
+              && m_pressPos == e->pos() )
+        emit newTabRequest(index);
+    else
+        QListView::mouseReleaseEvent(e);
 }
 
 void

@@ -58,7 +58,6 @@ public slots:
 
 protected:
     void connectView(ColumnsView *view);
-    void disconnectView(ColumnsView *view);
     void resizeEvent(QResizeEvent *e);
     void showEvent(QShowEvent *e);
     ColumnsView *newView(const QModelIndex &index);

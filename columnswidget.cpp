@@ -67,6 +67,7 @@ void ColumnsWidget::edit(const QModelIndex &index) { if ( m_currentView ) m_curr
 void
 ColumnsWidget::connectView(ColumnsView *view)
 {
+    view->disconnect();
     if ( Store::config.views.singleClick )
         connect(view, SIGNAL(clicked(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
     else
@@ -76,28 +77,15 @@ ColumnsWidget::connectView(ColumnsView *view)
     connect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
     connect(view, SIGNAL(viewportEntered()), m_container, SIGNAL(viewportEntered()));
     connect(view, SIGNAL(pathDeleted(ColumnsView*)), this, SLOT(deleteView(ColumnsView*)));
-}
-
-void
-ColumnsWidget::disconnectView(ColumnsView *view)
-{
-    disconnect(view, SIGNAL(dirActivated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
-    disconnect(view, SIGNAL(clicked(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
-    disconnect(view, SIGNAL(activated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
-    disconnect(view, SIGNAL(entered(QModelIndex)), m_container, SIGNAL(entered(QModelIndex)));
-    disconnect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
-    disconnect(view, SIGNAL(viewportEntered()), m_container, SIGNAL(viewportEntered()));
-    disconnect(view, SIGNAL(pathDeleted(ColumnsView*)), this, SLOT(deleteView(ColumnsView*)));
+    connect(view, SIGNAL(focusRequest(ColumnsView*)), this, SLOT(setCurrentView(ColumnsView*)));
+    connect(view, SIGNAL(showed(ColumnsView*)), this, SLOT(correctHeightForView(ColumnsView*)));
 }
 
 void
 ColumnsWidget::reconnectViews()
 {
     foreach ( ColumnsView *view, m_views.values() )
-    {
-        disconnectView(view);
         connectView(view);
-    }
 }
 
 void
@@ -125,8 +113,6 @@ ColumnsView
 *ColumnsWidget::newView(const QModelIndex &index)
 {
     ColumnsView *view = new ColumnsView(this, m_fsModel, index);
-    connect(view, SIGNAL(focusRequest(ColumnsView*)), this, SLOT(setCurrentView(ColumnsView*)));
-    connect(view, SIGNAL(showed(ColumnsView*)), this, SLOT(correctHeightForView(ColumnsView*)));
     connectView(view);
     view->setSelectionModel(m_slctModel);
     m_views.insert(index, view);
