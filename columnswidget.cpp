@@ -95,8 +95,8 @@ ColumnsWidget::reconnectViews()
 {
     foreach ( ColumnsView *view, m_views.values() )
     {
-        connectView(view);
         disconnectView(view);
+        connectView(view);
     }
 }
 
