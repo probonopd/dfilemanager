@@ -127,7 +127,11 @@ DetailsView::mouseReleaseEvent(QMouseEvent *e)
 {
     if (e->button() == Qt::MiddleButton)
         if (indexAt(e->pos()).isValid())
+        {
+            e->accept();
             emit newTabRequest(indexAt(e->pos()));
+            return;
+        }
     setDragEnabled(true);
     QTreeView::mouseReleaseEvent(e);
 }
@@ -135,7 +139,7 @@ DetailsView::mouseReleaseEvent(QMouseEvent *e)
 void
 DetailsView::mousePressEvent(QMouseEvent *event)
 {
-    if(event->modifiers() == Qt::MetaModifier)
+    if (event->modifiers() == Qt::MetaModifier)
         setDragEnabled(false);
     QTreeView::mousePressEvent(event);
 }
