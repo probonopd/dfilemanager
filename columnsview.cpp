@@ -145,17 +145,16 @@ void
 ColumnsView::mouseReleaseEvent(QMouseEvent *e)
 {
     const QModelIndex &index = indexAt(e->pos());
-    if ( !Store::config.views.singleClick
-         && e->pos() == m_pressPos
+    if ( e->pos() == m_pressPos
          && e->modifiers() == Qt::NoModifier
          && index.isValid()
          && m_fsModel->fileInfo(index).isDir() )
     {
-        e->accept();
-        if ( e->button() == Qt::LeftButton )
+        if ( !Store::config.views.singleClick && e->button() == Qt::LeftButton )
             emit activated(index);
         else if ( e->button() == Qt::MiddleButton )
         {
+            e->accept();
             emit newTabRequest(index);
             return;
         }
