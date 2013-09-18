@@ -85,6 +85,9 @@ ColumnsView::ColumnsView(QWidget *parent, FileSystemModel *fsModel, const QModel
         setModel(fsModel);
         if ( rootIndex.isValid() )
             setRootIndex(rootIndex);
+        m_rootPath = fsModel->filePath(rootIndex);
+        connect(fsModel, SIGNAL(rowsInserted(const QModelIndex & , int , int)), this, SLOT(updateWidth()));
+        connect(fsModel, SIGNAL(rowsRemoved(const QModelIndex & , int , int)), this, SLOT(updateWidth()));
     }
     updateWidth();
 }
@@ -184,6 +187,11 @@ ColumnsView::setModel(QAbstractItemModel *model)
 void
 ColumnsView::updateWidth()
 {
+    if ( !QFileInfo(m_rootPath).exists() )
+    {
+        emit pathDeleted(this);
+        return;
+    }
     QStringList list = QDir(m_fsModel->filePath(rootIndex())).entryList(QDir::AllEntries|QDir::AllDirs|QDir::NoDotAndDotDot|QDir::System);
     int w = 0;
     while ( !list.isEmpty() )

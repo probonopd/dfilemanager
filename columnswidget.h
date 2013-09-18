@@ -65,6 +65,9 @@ protected:
     QModelIndexList fromRoot();
     QModelIndexList fromLast();
 
+private slots:
+    void deleteView(ColumnsView *view);
+
 private:
     FileSystemModel *m_fsModel;
     QItemSelectionModel *m_slctModel;

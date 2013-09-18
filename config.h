@@ -83,6 +83,7 @@ public:
 
 protected:
     explicit Store( QObject *parent = 0 );
+    virtual ~Store(){}
     void readConfiguration();
     void writeConfiguration();
     inline QList<QAction *> ca() const { return m_customActions; }

@@ -124,7 +124,7 @@ signals:
     void centerIndexChanged( const QModelIndex &centerIndex );
     
 public slots:
-    inline void setRootIndex( const QModelIndex &rootIndex ) { clear(); m_rootIndex = rootIndex; }
+    inline void setRootIndex( const QModelIndex &rootIndex ) { clear(); m_rootIndex = rootIndex; m_savedRow = 0; m_savedCenter = QModelIndex(); }
 
 protected:
     void resizeEvent(QResizeEvent *event);
@@ -134,7 +134,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void enterEvent(QEvent *e);
-    void populate(const int start, const int end, const bool newData = false);
+    void populate(const int start, const int end);
     void prepareAnimation();
     bool isValidRow( const int &row ) { return bool(row > -1 && row < m_items.count()); }
     void correctItemsPos(const int &leftStart, const int &rightStart);
@@ -157,7 +157,7 @@ private slots:
 private:
     GraphicsScene *m_scene;
     FileSystemModel *m_fsModel;
-    QModelIndex m_centerIndex, m_prevCenter, m_rootIndex;
+    QModelIndex m_centerIndex, m_prevCenter, m_rootIndex, m_savedCenter;
     int m_row, m_nextRow, m_newRow, m_savedRow;
     float m_y, m_x, m_perception;
     bool m_wantsDrag;

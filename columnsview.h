@@ -55,12 +55,13 @@ signals:
     void newTabRequest(QModelIndex path);
     void focusRequest(ColumnsView *view);
     void showed(ColumnsView *view);
+    void pathDeleted(ColumnsView *view);
 
 private:
     ColumnsWidget *m_parent;
     FileSystemModel *m_fsModel;
     QPoint m_pressPos;
-    QString m_activeFile;
+    QString m_activeFile, m_rootPath;
 };
 
 }

@@ -375,7 +375,10 @@ PreView::setCenterIndex(const QModelIndex &index)
         return;
 
     if ( index.row() )
+    {
         m_savedRow = index.row();
+        m_savedCenter = index;
+    }
     m_prevCenter = m_centerIndex;
     m_centerIndex = index;
     m_nextRow = m_row;
@@ -460,11 +463,11 @@ PreView::rowsInserted(const QModelIndex &parent, int start, int end)
     if ( !m_fsModel->hasIndex(start, 0, parent) || !m_fsModel->hasIndex(end, 0, parent) )
         return;
 
-    populate(start, end, true);
+    populate(start, end);
 }
 
 void
-PreView::populate(const int start, const int end, const bool newData)
+PreView::populate(const int start, const int end)
 {
     if ( !m_rootIndex.isValid() )
         return;
@@ -481,7 +484,10 @@ PreView::populate(const int start, const int end, const bool newData)
         m_items.insert(i, pixItem);
     }
 
-    setCenterIndex(m_fsModel->index(qBound(0, m_savedRow, m_items.count()), 0, m_rootIndex));
+    QModelIndex index = m_savedCenter;
+    if ( !index.isValid() )
+        index = m_fsModel->index(qBound(0, m_savedRow, m_items.count()), 0, m_rootIndex);
+    setCenterIndex(index);
     updateItemsPos();
     update();
 }

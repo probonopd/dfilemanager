@@ -74,6 +74,7 @@ ColumnsWidget::connectView(ColumnsView *view)
     connect(view, SIGNAL(entered(QModelIndex)), m_container, SIGNAL(entered(QModelIndex)));
     connect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
     connect(view, SIGNAL(viewportEntered()), m_container, SIGNAL(viewportEntered()));
+    connect(view, SIGNAL(pathDeleted(ColumnsView*)), this, SLOT(deleteView(ColumnsView*)));
 }
 
 void
@@ -84,6 +85,7 @@ ColumnsWidget::disconnectView(ColumnsView *view)
     disconnect(view, SIGNAL(entered(QModelIndex)), m_container, SIGNAL(entered(QModelIndex)));
     disconnect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
     disconnect(view, SIGNAL(viewportEntered()), m_container, SIGNAL(viewportEntered()));
+    disconnect(view, SIGNAL(pathDeleted(ColumnsView*)), this, SLOT(deleteView(ColumnsView*)));
 }
 
 void
@@ -105,6 +107,16 @@ ColumnsWidget::clear()
         delete item->widget();
         delete item;
     }
+}
+
+void
+ColumnsWidget::deleteView(ColumnsView *view)
+{
+    if ( m_views.contains(m_views.key(view)) )
+        m_views.remove(view->rootIndex());
+    QLayoutItem *item = m_viewLay->takeAt(m_viewLay->indexOf(view));
+    delete item->widget();
+    delete item;
 }
 
 ColumnsView
