@@ -292,7 +292,7 @@ MainWindow::pasteSelection()
     if (!mimeData->hasUrls())
         return;
 
-    IO::Job::copy(mimeData->urls(), m_fsModel->rootPath(), m_cut, m_cut);
+    IO::Job::copy(mimeData->urls(), m_fsModel->filePath(m_activeContainer->currentView()->rootIndex()), m_cut, m_cut);
 
     QApplication::clipboard()->clear();
 

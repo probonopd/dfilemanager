@@ -419,7 +419,7 @@ IconView::updateLayout()
 {
     int horMargin = style()->pixelMetric( QStyle::PM_ScrollBarExtent, 0, horizontalScrollBar() ) + qMax( 1, style()->pixelMetric( QStyle::PM_DefaultFrameWidth )*3 );
     int contentsWidth = viewport()->width() - horMargin;
-    int horItemCount = contentsWidth/( iconSize().width() + 60 );
+    int horItemCount = contentsWidth/( iconSize().width() + Store::config.views.iconView.textWidth*2 );
     if ( horItemCount == 0 || contentsWidth == 0 )
     {
         QTimer::singleShot( 200, this, SLOT( updateLayout() ) );  //try again later

@@ -35,21 +35,18 @@ class ColumnsView : public QListView
 {
     Q_OBJECT
 public:
-    explicit ColumnsView(QWidget *parent = 0, FileSystemModel *fsModel = 0, const QModelIndex &rootIndex = QModelIndex());
+    ColumnsView(QWidget *parent = 0, FileSystemModel *fsModel = 0, const QModelIndex &rootIndex = QModelIndex());
+    ~ColumnsView(){}
     void setFilter(QString filter);
-    void contextMenuEvent(QContextMenuEvent *event);
-    void mouseReleaseEvent(QMouseEvent *e);
-    void keyPressEvent(QKeyEvent *);
-    void mousePressEvent(QMouseEvent *event) { QListView::mousePressEvent(event); m_pressPos = event->pos(); emit focusRequest(this); }
-    void focusInEvent(QFocusEvent *event) { QListView::focusInEvent(event); emit focusRequest(this); }
-    void paintEvent(QPaintEvent *e);
     void setModel(QAbstractItemModel *model);
-    void showEvent(QShowEvent *e) { QListView::showEvent(e); emit showed(this); }
+    void setRootIndex(const QModelIndex &index);
     inline void setActiveFileName( const QString &fileName ) { m_activeFile = fileName; update(); }
     inline QString activeFileName() { return m_activeFile; }
 
-private slots:
+public slots:
     void updateWidth();
+    void dirLoaded(const QString &dir);
+    void fileRenamed( const QString &path, const QString &oldName, const QString &newName );
     
 signals:
     void newTabRequest(const QModelIndex &path);
@@ -58,11 +55,24 @@ signals:
     void pathDeleted(ColumnsView *view);
     void dirActivated(const QModelIndex &dir);
 
+protected:
+    void rowsInserted(const QModelIndex &parent, int start, int end);
+    void contextMenuEvent(QContextMenuEvent *event);
+    void mouseReleaseEvent(QMouseEvent *e);
+    void keyPressEvent(QKeyEvent *);
+    void mousePressEvent(QMouseEvent *event) { QListView::mousePressEvent(event); m_pressPos = event->pos(); emit focusRequest(this); }
+    void focusInEvent(QFocusEvent *event) { QListView::focusInEvent(event); emit focusRequest(this); /*viewport()->update();*/ }
+//    void focusOutEvent(QFocusEvent *event) { QListView::focusOutEvent(event); viewport()->update(); }
+    void paintEvent(QPaintEvent *e);
+    void wheelEvent(QWheelEvent *e);
+
 private:
     ColumnsWidget *m_parent;
     FileSystemModel *m_fsModel;
     QPoint m_pressPos;
     QString m_activeFile, m_rootPath;
+    int m_width;
+    bool m_isSorted;
 };
 
 }

@@ -267,7 +267,7 @@ QStringList
 FileSystemModel::supportedThumbs( const bool &filter )
 {
     QStringList sf;
-    foreach(QByteArray ar, QImageReader::supportedImageFormats())
+    foreach (QByteArray ar, QImageReader::supportedImageFormats())
         if ( filter )
             sf << QString( "*" + ar + "*" );
         else

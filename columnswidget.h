@@ -36,7 +36,7 @@ class ColumnsWidget : public QScrollArea
     Q_OBJECT
 public:
     explicit ColumnsWidget(QWidget *parent = 0);
-    virtual ~ColumnsWidget(){}
+    ~ColumnsWidget(){}
     void setModel( FileSystemModel *model );
     inline void setSelectionModel( QItemSelectionModel *model ) { m_slctModel = model; }
     QModelIndex currentIndex();
@@ -52,32 +52,35 @@ public slots:
     void rootPathChanged( const QString &rootPath );
     void edit(const QModelIndex &index);
     void setRootIndex( const QModelIndex &index );
-    void setCurrentView( ColumnsView *view, bool setVisibity = false );
+    void setCurrentView( ColumnsView *view );
     void reconnectViews();
-    void correctHeightForView(ColumnsView *view);
+    void showCurrent();
 
 protected:
     void connectView(ColumnsView *view);
-    void resizeEvent(QResizeEvent *e);
     void showEvent(QShowEvent *e);
-    ColumnsView *newView(const QModelIndex &index);
+    void wheelEvent(QWheelEvent *e);
+    bool insideRoot(const QModelIndex &index);
+    int at(const QModelIndex &index) { return m_rootIndexList.indexOf(index); }
+    inline bool isValid(const QModelIndex &index) { return !m_columns.isEmpty()&&at(index)<m_columns.count(); }
+    inline bool isValid(const int i) { return !m_columns.isEmpty()&&i<m_columns.count(); }
+    inline ColumnsView *column(const int i) { return isValid(i) ? m_columns.at(i): 0; }
+    inline ColumnsView *column(const QModelIndex &index) { return isValid(index) ? column(at(index)) : 0; }
+    inline int count() { return m_columns.count(); }
+    ColumnsView *viewFor(const QModelIndex &index);
     QModelIndexList fromRoot();
-    QModelIndexList fromLast();
-
-private slots:
-    void deleteView(ColumnsView *view);
 
 private:
     FileSystemModel *m_fsModel;
     QItemSelectionModel *m_slctModel;
-    QWidget *m_viewport;
+    QFrame *m_viewport;
     QHBoxLayout *m_viewLay;
-    QMap<QModelIndex, ColumnsView *> m_views;
+    QList<ColumnsView *> m_columns;
     ViewContainer *m_container;
     ColumnsView *m_currentView;
     QModelIndex m_rootIndex;
     QString m_rootPath;
-    QModelIndexList m_visited;
+    QModelIndexList m_visited, m_rootIndexList;
 };
 
 }

@@ -29,25 +29,29 @@ ColumnsWidget::ColumnsWidget(QWidget *parent) :
     QScrollArea(parent)
   , m_fsModel(0)
   , m_slctModel(0)
-  , m_viewport(new QWidget(this))
+  , m_viewport(new QFrame(this))
   , m_viewLay(new QHBoxLayout(m_viewport))
   , m_container(static_cast<ViewContainer *>(parent))
   , m_currentView(0)
   , m_rootIndex(QModelIndex())
   , m_visited(QModelIndexList())
+  , m_rootIndexList(QModelIndexList())
 {
     setWidget(m_viewport);
-//    setViewport(m_viewport);
     m_viewLay->setContentsMargins(0, 0, 0, 0);
     m_viewLay->setSpacing(0);
-    m_viewLay->setSizeConstraint(QLayout::SetFixedSize);
-    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_viewLay->setSizeConstraint(QLayout::SetMinimumSize);
+    m_viewLay->addStretch();
     setWidgetResizable(true);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    m_viewport->setAutoFillBackground(true);
+    m_viewport->setBackgroundRole(QPalette::Base);
+    m_viewport->setForegroundRole(QPalette::Text);
+    m_viewport->setFrameStyle(0/*QFrame::StyledPanel|QFrame::Sunken*/);
     setFrameStyle(QFrame::StyledPanel|QFrame::Sunken);
-    setAutoFillBackground(true);
-    setBackgroundRole(QPalette::Dark);
-    setForegroundRole(QPalette::Light);
     connect( MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(reconnectViews()) );
+    connect( horizontalScrollBar(), SIGNAL(rangeChanged(int,int)), this, SLOT(showCurrent()) );
     setCursor(Qt::ArrowCursor);
 }
 
@@ -76,22 +80,20 @@ ColumnsWidget::connectView(ColumnsView *view)
     connect(view, SIGNAL(entered(QModelIndex)), m_container, SIGNAL(entered(QModelIndex)));
     connect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
     connect(view, SIGNAL(viewportEntered()), m_container, SIGNAL(viewportEntered()));
-    connect(view, SIGNAL(pathDeleted(ColumnsView*)), this, SLOT(deleteView(ColumnsView*)));
     connect(view, SIGNAL(focusRequest(ColumnsView*)), this, SLOT(setCurrentView(ColumnsView*)));
-    connect(view, SIGNAL(showed(ColumnsView*)), this, SLOT(correctHeightForView(ColumnsView*)));
 }
 
 void
 ColumnsWidget::reconnectViews()
 {
-    foreach ( ColumnsView *view, m_views.values() )
+    foreach ( ColumnsView *view, m_columns )
         connectView(view);
 }
 
 void
 ColumnsWidget::clear()
 {
-    m_views.clear();
+    m_columns.clear();
     while (QLayoutItem *item = m_viewLay->takeAt(0))
     {
         delete item->widget();
@@ -99,25 +101,18 @@ ColumnsWidget::clear()
     }
 }
 
-void
-ColumnsWidget::deleteView(ColumnsView *view)
+bool
+ColumnsWidget::insideRoot(const QModelIndex &index)
 {
-    if ( m_views.contains(m_views.key(view)) )
-        m_views.remove(view->rootIndex());
-    QLayoutItem *item = m_viewLay->takeAt(m_viewLay->indexOf(view));
-    delete item->widget();
-    delete item;
-}
-
-ColumnsView
-*ColumnsWidget::newView(const QModelIndex &index)
-{
-    ColumnsView *view = new ColumnsView(this, m_fsModel, index);
-    connectView(view);
-    view->setSelectionModel(m_slctModel);
-    m_views.insert(index, view);
-    m_viewLay->addWidget(view);
-    return view;
+    QModelIndex idx = index;
+    while (idx.isValid())
+    {
+        if ( idx == m_rootIndex )
+            return true;
+        else
+            idx = idx.parent();
+    }
+    return false;
 }
 
 QModelIndexList
@@ -125,77 +120,73 @@ ColumnsWidget::fromRoot()
 {
     QModelIndexList idxList;
     QModelIndex idx = m_rootIndex;
+    QStringList list;
     while ( idx.isValid() )
     {
+        list.prepend(m_fsModel->filePath(idx));
         idxList.prepend(idx);
         idx = idx.parent();
     }
     return idxList;
 }
 
-QModelIndexList
-ColumnsWidget::fromLast()
+ColumnsView
+*ColumnsWidget::viewFor(const QModelIndex &index)
 {
-    QModelIndexList idxList;
-    if ( m_viewLay->isEmpty() )
-        return idxList;
-    QModelIndex idx = static_cast<ColumnsView *>(m_viewLay->itemAt(m_viewLay->count()-1)->widget())->rootIndex();
-    while ( idx.isValid() )
+    ColumnsView *view = 0;
+    int i = at(index);
+    if ( isValid(i) )
     {
-        idxList.prepend(idx);
-        idx = idx.parent();
+        view = column(i);
+        if ( view->rootIndex() != index )
+        {
+            view->setRootIndex(index);
+            view->setActiveFileName(QString());
+        }
     }
-    return idxList;
+    else
+    {
+        view = new ColumnsView(this, m_fsModel, index);
+        connectView(view);
+        view->setSelectionModel(m_slctModel);
+        view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+        m_columns.insert(i, view);
+        m_viewLay->insertWidget(i, view);
+    }
+    return view;
 }
 
 void
 ColumnsWidget::setRootIndex(const QModelIndex &index)
 {
     m_visited << index;
-    const bool alreadyExists = fromLast().contains(index);
     m_rootIndex = index;
-    if ( m_views.contains(index) )
-        m_currentView = m_views.value(index);
-    QModelIndexList idxList = fromRoot();
 
-    if ( !alreadyExists )
-    {
-        foreach ( const QModelIndex &asdf, m_views.keys() )
-            if ( idxList.contains(asdf) )
-                continue;
-            else
-            {
-                ColumnsView *view = m_views.take(asdf);
-                QLayoutItem *item = m_viewLay->takeAt(m_viewLay->indexOf(view));
-                delete item->widget();
-                delete item;
-            }
-        foreach ( const QModelIndex &dirIdx, idxList )
-        {
-            if ( m_views.contains(dirIdx) )
-                continue;
-            else
-                m_views.insert(dirIdx, newView(dirIdx));
-        }
-    }
+    QModelIndexList idxList = m_rootIndexList = fromRoot();
+
     bool parIsVis = false;
-    idxList = alreadyExists ? fromLast() : fromRoot();
+
     foreach ( const QModelIndex &dirIdx, idxList )
     {
-        parIsVis = parIsVis||m_visited.contains(dirIdx);
-        if ( m_views.contains(dirIdx) )
-            m_views.value(dirIdx)->setVisible(parIsVis);
+        if ( dirIdx.parent().isValid() && isValid(dirIdx.parent()) )
+            column(dirIdx.parent())->setActiveFileName(dirIdx.data().toString());
+        ColumnsView *view = viewFor(dirIdx);
+        parIsVis = (parIsVis||m_visited.contains(dirIdx));
+        view->setVisible(parIsVis);
     }
 
-    while ( !idxList.isEmpty() )
+    int i = idxList.count()-1;
+    QModelIndex parentIndex = index;
+    while ( isValid(++i) )
     {
-        const QModelIndex &idx = idxList.takeLast();
-        const QModelIndex &parent = idx.parent();
-        if ( parent.isValid() && m_views.contains(parent) )
-            m_views.value(parent)->setActiveFileName(m_fsModel->fileName(idx));
+        if ( column(i)->rootIndex().parent() == parentIndex && column(i)->isVisible() )
+            parentIndex = column(i)->rootIndex();
+        else
+            column(i)->hide();
     }
 
-    setCurrentView(m_views.value(index), !alreadyExists);
+    if ( isValid(index) )
+        setCurrentView(column(index));
 }
 
 void
@@ -204,46 +195,32 @@ ColumnsWidget::rootPathChanged(const QString &rootPath)
     m_rootPath = rootPath;
 }
 
+void ColumnsWidget::showCurrent() { ensureWidgetVisible(currentView()); }
+
 void
-ColumnsWidget::setCurrentView( ColumnsView *view, bool setVisibility )
+ColumnsWidget::setCurrentView( ColumnsView *view )
 {
-    if ( !m_views.values().contains(view) )
-        return;
-    if ( m_currentView && m_currentView == view && m_currentView->hasFocus() )
+    if ( !m_columns.contains(view) )
         return;
     m_currentView = view;
     emit currentViewChagned(view);
     if ( !view->hasFocus() )
         view->setFocus();
-    if ( m_fsModel->index(m_fsModel->rootPath()) != view->rootIndex() )
-        m_fsModel->setRootPath(m_fsModel->filePath(view->rootIndex()));
-    if ( setVisibility )
-        ensureWidgetVisible(view, view->width());
-}
-
-void
-ColumnsWidget::correctHeightForView(ColumnsView *view)
-{
-    int h = size().height();
-    if ( horizontalScrollBar()->isVisible() )
-        h -= horizontalScrollBar()->height();
-    view->setFixedHeight(h);
-}
-
-void
-ColumnsWidget::resizeEvent(QResizeEvent *e)
-{
-    QScrollArea::resizeEvent(e);
-
-    if ( e->size().height() != e->oldSize().height() )
-        foreach ( ColumnsView *view, m_views.values() )
-            if ( view->isVisible() )
-                correctHeightForView(view);
+//    if ( m_fsModel->index(m_fsModel->rootPath()) != view->rootIndex() )
+//        m_fsModel->setRootPath(m_fsModel->filePath(view->rootIndex()));
 }
 
 void
 ColumnsWidget::showEvent(QShowEvent *e)
 {
     QScrollArea::showEvent(e);
-    ensureWidgetVisible(m_views.value(m_rootIndex));
+    if ( isValid(m_rootIndex) )
+        ensureWidgetVisible(column(m_rootIndex));
+}
+
+void
+ColumnsWidget::wheelEvent(QWheelEvent *e)
+{
+    if ( e->orientation() == Qt::Vertical && e->modifiers() == Qt::ControlModifier )
+        horizontalScrollBar()->setValue(horizontalScrollBar()->value()+(-e->delta()/6/*>0?-1:1*/));
 }
