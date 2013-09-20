@@ -144,11 +144,11 @@ InfoWidget::hovered(const QModelIndex &index)
         m_perm[0]->setText("Permissions:");
     }
     const FileSystemModel *fsModel = static_cast<const FileSystemModel*>(index.model());
-    QIcon icon = qvariant_cast<QIcon>(fsModel->data(index, Qt::DecorationRole));
-    if ( icon.isNull() && fsModel->fileInfo(index).isDir() )
-        icon = fsModel->iconPix(fsModel->fileInfo(fsModel->index(index.row(), 0, index.parent())), 64);
-    if ( icon.isNull() )
-        icon = qvariant_cast<QIcon>(fsModel->data(fsModel->index(index.row(), 0, index.parent()), Qt::DecorationRole));
+    QIcon icon = fsModel->fileIcon(index);
+//    if ( icon.isNull() && fsModel->fileInfo(index).isDir() )
+//        icon = fsModel->iconPix(fsModel->fileInfo(fsModel->index(index.row(), 0, index.parent())), 64);
+//    if ( icon.isNull() )
+//        icon = qvariant_cast<QIcon>(fsModel->data(fsModel->index(index.row(), 0, index.parent()), Qt::DecorationRole));
     QPixmap pix = icon.pixmap(64);
     const bool dir = fsModel->fileInfo(index).isDir();
     m_tw->setPixmap(pix);

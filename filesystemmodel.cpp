@@ -48,9 +48,9 @@ FileIconProvider::icon(const QFileInfo &info) const
 #endif
     if ( info.isDir() && s_themedDirs.contains(info.filePath()) )
         return s_themedDirs.value(info.filePath());
-//    QIcon icn = QFileIconProvider::icon(info);
-//    if ( icn.name() == "application-octet-stream" )
-//        icn = QIcon::fromTheme("application-octet-stream");
+    QIcon icn = QFileIconProvider::icon(info);
+    if ( QIcon::hasThemeIcon(icn.name()) )
+        return QIcon::fromTheme(icn.name());
     return QFileIconProvider::icon(info);
 }
 
@@ -127,23 +127,6 @@ FileSystemModel::setCurrentView(QAbstractItemView *view)
 }
 
 bool FileSystemModel::hasThumb(const QString &file) { return m_thumbsLoader->hasThumb(file); }
-
-QPixmap
-FileSystemModel::iconPix(const QFileInfo &info, const int &extent)
-{
-    const QSettings settings(QString("%1%2.directory").arg(info.filePath(), QDir::separator()), QSettings::IniFormat);
-    QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString());
-    if ( icon.isNull() )
-        icon = QIcon::fromTheme("inode-directory");
-    if ( icon.isNull() )
-        return QPixmap();
-
-    int actSize = extent;
-    while ( !icon.availableSizes().contains(QSize(actSize, actSize)) && actSize != 256 )
-        ++actSize;
-
-    return icon.pixmap(actSize);
-}
 
 QVariant
 FileSystemModel::data(const QModelIndex &index, int role) const

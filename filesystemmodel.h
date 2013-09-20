@@ -94,7 +94,6 @@ public:
     virtual ~FileSystemModel();
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
     bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
-    static QPixmap iconPix(const QFileInfo &info,const int &extent);
     static QStringList supportedThumbs( const bool &filter = false );
     inline void refresh() { const QString &path = rootPath(); setRootPath(""); setRootPath(path); }
     bool hasThumb( const QString &file );

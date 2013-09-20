@@ -432,17 +432,15 @@ IOThread::run()
     {
     case Copy:
     {
-        bool done = false;
         const quint64 destId = Ops::getDriveInfo<Ops::Id>( m_destDir );
         if ( !m_destDir.endsWith(QDir::separator()) )
             m_destDir.append(QDir::separator());
-        while (!m_canceled && !done && !m_inFiles.isEmpty())
+        while (!m_canceled && !m_inFiles.isEmpty())
         {
             m_inFile = m_inFiles.takeFirst();
             const bool sameDisk = destId != 0 && ( (quint64)Ops::getDriveInfo<Ops::Id>( m_inFile ) ==  destId );
             const QString &outFile = QString("%1%2").arg(m_destDir, QFileInfo(m_inFile).fileName());
             copyRecursive( m_inFile, outFile, m_cut, sameDisk );
-            done = true;
         }
         break;
     }
@@ -499,7 +497,8 @@ IOThread::copyRecursive(const QString &inFile, const QString &outFile, bool cut,
 
     if ( m_mode == Overwrite || m_mode == OverwriteAll )
     {
-        remove(outFile);
+        if ( !QFileInfo(outFile).isDir() )
+            remove(outFile);
         if ( m_mode == Overwrite )
             m_mode = Continue;
     }

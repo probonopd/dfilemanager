@@ -130,19 +130,34 @@ public:
 
         QApplication::style()->drawItemText(painter, tr, textFlags(), PAL, option.state & QStyle::State_Enabled, et, selected ? QPalette::HighlightedText : QPalette::Text);
 
-        QIcon icon;
+        QIcon icon = m_fsModel->fileIcon(index);
         if ( Store::config.icons.customIcons.contains(m_fsModel->filePath(index)) )
             icon = Store::config.icons.customIcons.value(m_fsModel->filePath(index));
-        else if ( m_fsModel->fileInfo(index).isDir() )
-            icon = m_fsModel->iconPix( m_fsModel->fileInfo( index ), DECOSIZE.width() );
-        if ( icon.isNull() )
-            icon = qvariant_cast<QIcon>( index.data( Qt::DecorationRole ) );
 
-        const bool &isThumb = m_fsModel->hasThumb(m_fsModel->filePath(index));
-        QSize s(icon.pixmap(DECOSIZE.width()).size());
-        QPixmap pixmap = icon.pixmap( isThumb && s.width() > s.height()+16 ? DECOSIZE.height()+16 : DECOSIZE.height() );
+        const bool isThumb = icon.name().isEmpty();
+
+        int newSize = icon.actualSize(DECOSIZE).height();
+        if ( !isThumb && icon.actualSize(DECOSIZE).height() < DECOSIZE.height() )
+        {
+            QList<int> il;
+            for ( int i = 0; i < icon.availableSizes().count(); ++i )
+                il << icon.availableSizes().at(i).height();
+
+            qSort(il);
+
+            int i = -1;
+
+            while ( newSize < DECOSIZE.height() && ++i<il.count() )
+                newSize = il.at(i);
+        }
+
+        QPixmap pixmap = icon.pixmap(newSize);
+        if ( pixmap.height() > DECOSIZE.height() && !isThumb )
+            pixmap = pixmap.scaledToHeight(DECOSIZE.height(), Qt::SmoothTransformation);
+        else if ( isThumb )
+            pixmap = icon.pixmap( pixmap.width()*0.66 >= pixmap.height() ? qMin<int>(RECT.width(), DECOSIZE.height()*1.44): DECOSIZE.height() );
         QRect theRect = pixmap.rect();
-        theRect.moveCenter( QPoint( RECT.center().rx(), RECT.y()+( DECOSIZE.height()/2 ) ) );
+        theRect.moveCenter( QPoint( RECT.center().x(), RECT.y()+( DECOSIZE.height()/2 ) ) );
         if ( isThumb )
         {
             const int d = ( m_shadowData[TopLeft].width()/2 )+1;

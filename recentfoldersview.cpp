@@ -59,9 +59,7 @@ RecentFoldersView::folderEntered(const QString &folder)
     const FileSystemModel *fsModel = static_cast<const FileSystemModel*>(vc->model());
     if (!fsModel)
         return;
-    QIcon icon(fsModel->iconPix(QFileInfo(folder), 32));
-    if (icon.isNull())
-        icon = qvariant_cast<QIcon>(fsModel->data(fsModel->index(folder), Qt::DecorationRole));
+    QIcon icon(fsModel->fileIcon(fsModel->index(folder)));
     QStandardItem *item = new QStandardItem(icon, QFileInfo(folder).fileName());
     item->setData(folder);
     item->setToolTip(folder);

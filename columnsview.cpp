@@ -259,6 +259,9 @@ ColumnsView::updateWidth()
     if ( !QFileInfo(m_rootPath).exists() )
     {
         emit pathDeleted(this);
+        hide();
+        if ( m_fsModel && m_fsModel->rootPath() == m_rootPath )
+            m_fsModel->setRootPath(QFileInfo(m_rootPath).path());
         return;
     }
     QStringList list = QDir(m_fsModel->filePath(rootIndex())).entryList(QDir::AllEntries|QDir::AllDirs|QDir::NoDotAndDotDot|QDir::System);
