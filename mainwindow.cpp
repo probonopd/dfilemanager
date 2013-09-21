@@ -38,12 +38,10 @@ static QList<MainWindow *> s_openWindows;
 MainWindow::MainWindow(QStringList arguments)
 { 
     addActions(Store::customActions());
-//    APP->setMainWindow(this);
-//    connect ( this, SIGNAL(viewChanged(QAbstractItemView*)), ThumbsLoader::instance(), SLOT(setCurrentView(QAbstractItemView*)) );
     s_currentWindow = this;
     s_openWindows << this;
     QFrame *center = new QFrame(this);
-    center->setFrameStyle(QFrame::StyledPanel|QFrame::Sunken);
+    center->setFrameStyle(0/*QFrame::StyledPanel|QFrame::Sunken*/);
     m_tabWin = new QMainWindow(this);
     m_toolBar = new QToolBar(tr("Show ToolBar"), this);
     m_statusBar = statusBar();
