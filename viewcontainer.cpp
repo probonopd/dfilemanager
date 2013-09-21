@@ -55,7 +55,8 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
     static_cast<FileIconProvider *>(m_fsModel->iconProvider())->loadThemedFolders(parentPath);
 
     m_viewStack->layout()->setSpacing(0);
-//    setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    setFrameStyle(0/*QFrame::StyledPanel | QFrame::Sunken*/);
+    setAutoFillBackground(false);
 
     setModel(m_fsModel);
     setSelectionModel(new QItemSelectionModel(m_fsModel));

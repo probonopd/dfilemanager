@@ -49,7 +49,6 @@ signals:
     void currentViewChagned( ColumnsView *view );
     
 public slots:
-    void rootPathChanged( const QString &rootPath );
     void edit(const QModelIndex &index);
     void setRootIndex( const QModelIndex &index );
     void setCurrentView( ColumnsView *view );
@@ -79,8 +78,8 @@ private:
     ViewContainer *m_container;
     ColumnsView *m_currentView;
     QModelIndex m_rootIndex;
-    QString m_rootPath;
-    QModelIndexList m_visited, m_rootIndexList;
+    QModelIndexList m_rootIndexList;
+    QStringList m_visited;
 };
 
 }

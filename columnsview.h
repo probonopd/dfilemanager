@@ -47,6 +47,9 @@ public slots:
     void updateWidth();
     void dirLoaded(const QString &dir);
     void fileRenamed( const QString &path, const QString &oldName, const QString &newName );
+
+private slots:
+    void rowsRemoved(const QModelIndex &parent, int start, int end);
     
 signals:
     void newTabRequest(const QModelIndex &path);

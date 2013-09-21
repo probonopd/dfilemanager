@@ -395,7 +395,10 @@ void
 PreView::reset()
 {
     clear();
-    if ( m_fsModel && m_fsModel->rowCount(m_rootIndex) )
+    if ( !QFileInfo(m_rootPath).exists() )
+        return;
+
+    if ( m_rootIndex.isValid() && m_fsModel && m_fsModel->rowCount(m_rootIndex) )
     {
         populate(0, m_fsModel->rowCount(m_rootIndex)-1);
         m_scrollBar->setRange(0, m_fsModel->rowCount(m_rootIndex)-1);
@@ -439,6 +442,11 @@ PreView::resizeEvent(QResizeEvent *event)
 void
 PreView::rowsRemoved(const QModelIndex &parent, int start, int end)
 {
+    if ( !QFileInfo(m_rootPath).exists() )
+    {
+        clear();
+        return;
+    }
     if ( m_rootIndex != parent || m_items.isEmpty() )
         return;
 
@@ -454,6 +462,19 @@ PreView::rowsRemoved(const QModelIndex &parent, int start, int end)
     m_scrollBar->blockSignals(false);
     setCenterIndex(m_fsModel->index(qBound(0, start-1, m_items.count()), 0, m_rootIndex));
     updateItemsPos();
+}
+
+void
+PreView::setRootIndex(const QModelIndex &rootIndex)
+{
+    clear();
+    if ( !rootIndex.isValid() )
+        return;
+    m_rootIndex = rootIndex;
+    m_rootPath = m_fsModel->filePath(rootIndex);
+    m_savedRow = 0;
+    m_savedCenter = QModelIndex();
+    m_centerFile = QString();
 }
 
 void

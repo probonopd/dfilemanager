@@ -42,7 +42,8 @@ MainWindow::MainWindow(QStringList arguments)
 //    connect ( this, SIGNAL(viewChanged(QAbstractItemView*)), ThumbsLoader::instance(), SLOT(setCurrentView(QAbstractItemView*)) );
     s_currentWindow = this;
     s_openWindows << this;
-    QWidget *center = new QWidget(this);
+    QFrame *center = new QFrame(this);
+    center->setFrameStyle(QFrame::StyledPanel|QFrame::Sunken);
     m_tabWin = new QMainWindow(this);
     m_toolBar = new QToolBar(tr("Show ToolBar"), this);
     m_statusBar = statusBar();

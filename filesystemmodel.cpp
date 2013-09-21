@@ -258,11 +258,4 @@ FileSystemModel::supportedThumbs( const bool &filter )
     return sf;
 }
 
-void
-FileSystemModel::sort(int column, Qt::SortOrder order)
-{
-//    qDebug() << "sorting for" << rootPath();
-    QFileSystemModel::sort(column, order);
-}
-
 

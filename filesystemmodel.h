@@ -98,7 +98,6 @@ public:
     inline void refresh() { const QString &path = rootPath(); setRootPath(""); setRootPath(path); }
     bool hasThumb( const QString &file );
     bool hasFlowData( const QString &file );
-    void sort(int column, Qt::SortOrder order = Qt::AscendingOrder);
     History *history() { return m_history; }
 
 public slots:

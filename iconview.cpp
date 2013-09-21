@@ -131,8 +131,6 @@ public:
         QApplication::style()->drawItemText(painter, tr, textFlags(), PAL, option.state & QStyle::State_Enabled, et, selected ? QPalette::HighlightedText : QPalette::Text);
 
         QIcon icon = m_fsModel->fileIcon(index);
-        if ( Store::config.icons.customIcons.contains(m_fsModel->filePath(index)) )
-            icon = Store::config.icons.customIcons.value(m_fsModel->filePath(index));
 
         const bool isThumb = icon.name().isEmpty();
 

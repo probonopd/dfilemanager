@@ -86,7 +86,7 @@ ColumnsView::ColumnsView(QWidget *parent, FileSystemModel *fsModel, const QModel
 //    connect( m_parent, SIGNAL(currentViewChagned(ColumnsView*)), viewport(), SLOT(update()) );
     if ( fsModel )
     {
-        connect(fsModel, SIGNAL(rowsRemoved(const QModelIndex & , int , int)), this, SLOT(updateWidth()));
+        connect(fsModel, SIGNAL(rowsRemoved(QModelIndex,int ,int)), this, SLOT(rowsRemoved(QModelIndex,int,int)));
         connect(fsModel, SIGNAL(fileRenamed(QString,QString,QString)), this, SLOT(fileRenamed(QString,QString,QString)));
         connect(fsModel, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)));
         setModel(fsModel);
@@ -217,6 +217,18 @@ ColumnsView::rowsInserted(const QModelIndex &parent, int start, int end)
         w+=style()->pixelMetric(QStyle::PM_ScrollBarExtent, 0, this);
         setFixedWidth(w);
     }
+}
+
+void
+ColumnsView::rowsRemoved(const QModelIndex &parent, int start, int end)
+{
+    if ( !rootIndex().isValid() )
+    {
+        emit pathDeleted(this);
+        hide();
+    }
+    if ( parent == rootIndex() )
+        updateWidth();
 }
 
 void
