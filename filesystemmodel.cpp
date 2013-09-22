@@ -199,6 +199,9 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         if ( !m_thumbsLoader->hasThumb(file) )
             m_thumbsLoader->queueFile(file);
 
+        if ( m_thumbsLoader->hasThumb(file) && !m_it->hasData(file) )
+            m_it->queueFile(file, m_thumbsLoader->thumb(file));
+
         if ( m_it->hasNameData(icon.name()) )
             return QPixmap::fromImage(m_it->flowNameData(icon.name(), role == FlowRefl));
         else

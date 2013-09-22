@@ -182,7 +182,6 @@ ImagesThread::queueFile(const QString &file, const QImage &source )
 {
     if ( m_pixQueue.contains(file) || m_images[0].contains(file) )
         return;
-    qDebug() << "queueing" << file;
     m_pixQueue << file;
     m_sourceImgs.insert(file, source);
     start();
