@@ -28,7 +28,6 @@
 
 using namespace DFM;
 
-static QAbstractItemView *s_currentView = 0;
 static QMap<QString, QIcon> s_themedDirs;
 
 FileIconProvider::FileIconProvider(FileSystemModel *model)
@@ -81,7 +80,6 @@ FileSystemModel::FileSystemModel(QObject *parent)
     setFilter(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::System);
     setNameFilterDisables(false);
     setReadOnly(false);
-    connect ( MainWindow::currentWindow(), SIGNAL(viewChanged(QAbstractItemView*)), this, SLOT(setCurrentView(QAbstractItemView*)) );
     m_nameThumbs = supportedThumbs();
     connect ( this, SIGNAL(rootPathChanged(QString)), this, SLOT(emitRootIndex(QString)) );
     m_thumbsLoader = new ThumbsLoader(this);
@@ -89,6 +87,7 @@ FileSystemModel::FileSystemModel(QObject *parent)
     m_it = new ImagesThread(this);
     connect ( m_it, SIGNAL(imagesReady(QString)), this, SLOT(flowDataAvailable(QString)) );
     connect ( this, SIGNAL(rootPathChanged(QString)), m_history, SLOT(addPath(QString)) );
+    connect ( this, SIGNAL(rootPathChanged(QString)), m_it, SLOT(clearData()) );
 }
 
 FileSystemModel::~FileSystemModel()
@@ -106,11 +105,7 @@ FileSystemModel::thumbFor(const QString &file)
 {
     const QModelIndex &idx = index(file);
     emit dataChanged(idx, idx);
-    if ( m_it->hasData(file) || m_it->hasFileInQueue(file ) )
-    {
-        m_it->removeData(file);
-        m_it->queueFile(file);
-    }
+    m_it->queueFile(file, m_thumbsLoader->thumb(file));
 }
 
 void
@@ -118,12 +113,6 @@ FileSystemModel::flowDataAvailable(const QString &file)
 {
     const QModelIndex &idx = index(file);
     emit flowDataChanged(idx, idx);
-}
-
-void
-FileSystemModel::setCurrentView(QAbstractItemView *view)
-{
-    s_currentView = view;
 }
 
 bool FileSystemModel::hasThumb(const QString &file) { return m_thumbsLoader->hasThumb(file); }
@@ -176,7 +165,8 @@ FileSystemModel::data(const QModelIndex &index, int role) const
             return int(Qt::AlignVCenter | Qt::AlignLeft);
     }
 
-    const QString &file = filePath(index);
+    const QFileInfo &fi = fileInfo(index);
+    const QString &file = fi.filePath();
 
     const bool customIcon = Store::config.icons.customIcons.contains(file);
 
@@ -185,7 +175,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
     if ( role < FlowImg )
         if (index.column() > 0
-                || !supportedThumbs().contains(fileInfo(index).suffix(), Qt::CaseInsensitive)
+                || !supportedThumbs().contains(fi.suffix(), Qt::CaseInsensitive)
                 || !Store::config.views.showThumbs)
             return QFileSystemModel::data(index, role);
 
@@ -202,15 +192,22 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
     if ( role >= FlowImg )
     {
+        const QIcon &icon = customIcon ? QIcon(Store::config.icons.customIcons.value(file)) : iconProvider()->icon(fi);
+
         if ( m_it->hasData(file) )
             return QPixmap::fromImage(m_it->flowData(file, role == FlowRefl));
+        if ( !m_thumbsLoader->hasThumb(file) )
+            m_thumbsLoader->queueFile(file);
+
+        if ( m_it->hasNameData(icon.name()) )
+            return QPixmap::fromImage(m_it->flowNameData(icon.name(), role == FlowRefl));
         else
-        {
-            m_it->queueFile(file);
-            if ( role == FlowRefl )
-                return QPixmap();
-            return iconProvider()->icon(QFileInfo(file)).pixmap(SIZE);
-        }
+            m_it->queueName(icon);
+
+        if ( role == FlowRefl )
+            return QPixmap();
+
+        return icon.pixmap(SIZE);
     }
     return QFileSystemModel::data(index, role);
 }
@@ -246,16 +243,18 @@ FileSystemModel::columnCount(const QModelIndex &parent) const
     return QFileSystemModel::columnCount(parent) + 1;
 }
 
+static QStringList s_st[2];
+
 QStringList
 FileSystemModel::supportedThumbs( const bool &filter )
 {
-    QStringList sf;
+    if ( s_st[filter].isEmpty() )
     foreach (QByteArray ar, QImageReader::supportedImageFormats())
         if ( filter )
-            sf << QString( "*" + ar + "*" );
+            s_st[filter] << QString( "*" + ar + "*" );
         else
-            sf << ar;
-    return sf;
+            s_st[filter] << ar;
+    return s_st[filter];
 }
 
 

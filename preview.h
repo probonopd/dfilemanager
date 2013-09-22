@@ -51,7 +51,7 @@ class ScrollBar : public QScrollBar
 {
     Q_OBJECT
 public:
-    inline explicit ScrollBar( const Qt::Orientation &o, QWidget *parent = 0 ) : QScrollBar(o, parent) {}
+    inline explicit ScrollBar( const Qt::Orientation o, QWidget *parent = 0 ) : QScrollBar(o, parent) {}
 protected:
     void paintEvent(QPaintEvent *);
 };
@@ -73,7 +73,7 @@ class RootItem : public QGraphicsPixmapItem
 {
 public:
     inline explicit RootItem(QGraphicsScene *scene = 0) : QGraphicsPixmapItem() { scene->addItem(this); }
-    inline QRectF boundingRect() { return scene()->sceneRect(); }
+    QRectF boundingRect() { return scene()->sceneRect(); }
 };
 
 /* PIXMAP
@@ -84,8 +84,8 @@ class PixmapItem : public QObject, public QGraphicsPixmapItem
 {
 public:
     PixmapItem( GraphicsScene *scene = 0, QGraphicsItem *parent = 0 );
-    void rotate( const float &angle, const Qt::Axis &axis );
-    inline QRectF boundingRect() { return RECT; }
+    void rotate( const float angle, const Qt::Axis axis );
+    QRectF boundingRect() { return RECT; }
     inline void saveX() { m_savedX = pos().x(); }
     inline float savedX() { return m_savedX; }
     void updatePixmaps();
@@ -136,8 +136,8 @@ protected:
     void enterEvent(QEvent *e);
     void populate(const int start, const int end);
     void prepareAnimation();
-    bool isValidRow( const int &row ) { return bool(row > -1 && row < m_items.count()); }
-    void correctItemsPos(const int &leftStart, const int &rightStart);
+    inline bool isValidRow( const int row ) { return bool(row > -1 && row < m_items.count()); }
+    void correctItemsPos(const int leftStart, const int rightStart);
     void showPrevious();
     void showNext();
 
@@ -149,9 +149,9 @@ private slots:
     void rowsRemoved(const QModelIndex &parent, int start, int end);
     void reset();
     void clear();
-    void animStep( const qreal &value );
+    void animStep( const qreal value );
     void updateItemsPos();
-    void scrollBarMoved( const int &value );
+    void scrollBarMoved( const int value );
     void continueIf();
 
 private:
@@ -160,7 +160,7 @@ private:
     QModelIndex m_centerIndex, m_prevCenter, m_rootIndex, m_savedCenter;
     int m_row, m_nextRow, m_newRow, m_savedRow;
     float m_y, m_x, m_perception;
-    bool m_wantsDrag;
+    bool m_wantsDrag, m_hasZUpdate;
     QList<PixmapItem *> m_items;
     QGraphicsItemAnimation *m_anim[2];
     QTimeLine *m_timeLine;

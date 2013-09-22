@@ -93,8 +93,6 @@ ThumbsLoader::run()
         loadThumb(m_queue.takeFirst());
 }
 
-QHash<QString, QImage> s_images[2];
-
 ImagesThread::ImagesThread(QObject *parent)
     :QThread(parent)
     ,m_fsModel(static_cast<FileSystemModel *>(parent))
@@ -106,7 +104,7 @@ void
 ImagesThread::removeData(const QString &file)
 {
     for ( int i = 0; i < 2; ++i )
-        s_images[i].remove(file);
+        m_images[i].remove(file);
     m_pixQueue.removeOne(file);
 }
 
@@ -114,13 +112,28 @@ void
 ImagesThread::genImagesFor(const QString &file)
 {
     const QImage &source = m_sourceImgs.take(file);
-    s_images[0].insert(file, Ops::flowImg(source));
-    s_images[1].insert(file, Ops::reflection(source));
+    if ( source.isNull() )
+        return;
+    m_images[0].insert(file, Ops::flowImg(source));
+    m_images[1].insert(file, Ops::reflection(source));
     emit imagesReady(file);
+}
+
+void
+ImagesThread::genNameIconsFor(const QString &name)
+{
+    const QImage &source = m_themeSource.take(name);
+    if ( source.isNull() )
+        return;
+    m_themeIcons[0].insert(name, Ops::flowImg(source));
+    m_themeIcons[1].insert(name, Ops::reflection(source));
+//    emit imagesReady(source.first);
 }
 
 void ImagesThread::run()
 {
+    while ( !m_nameQueue.isEmpty() )
+        genNameIconsFor(m_nameQueue.takeFirst());
     while ( !m_pixQueue.isEmpty() )
         genImagesFor(m_pixQueue.takeFirst());
 }
@@ -129,24 +142,48 @@ QImage
 ImagesThread::flowData(const QString &file, const bool refl)
 {
     if ( hasData(file) )
-        return s_images[refl].value(file);
+        return m_images[refl].value(file);
+    return QImage();
+}
+
+QImage
+ImagesThread::flowNameData(const QString &name, const bool refl)
+{
+    if ( hasNameData(name) )
+        return m_themeIcons[refl].value(name);
     return QImage();
 }
 
 bool
 ImagesThread::hasData(const QString &file)
 {
-    return s_images[0].contains(file);
+    return m_images[0].contains(file);
+}
+
+bool
+ImagesThread::hasNameData(const QString &name)
+{
+    return m_themeIcons[0].contains(name);
 }
 
 void
-ImagesThread::queueFile(const QString &file )
+ImagesThread::queueName(const QIcon &icon)
 {
-    if ( m_pixQueue.contains(file) || s_images[0].contains(file) )
+    if ( m_nameQueue.contains(icon.name()) || m_themeIcons[0].contains(icon.name()) )
         return;
-    m_pixQueue << file;
-    const QIcon &icon = qvariant_cast<QIcon>(m_fsModel->data(m_fsModel->index(file), Qt::DecorationRole));
+    m_nameQueue << icon.name();
     const QImage &source = icon.pixmap(SIZE).toImage();
+    m_themeSource.insert(icon.name(), source);
+    start();
+}
+
+void
+ImagesThread::queueFile(const QString &file, const QImage &source )
+{
+    if ( m_pixQueue.contains(file) || m_images[0].contains(file) )
+        return;
+    qDebug() << "queueing" << file;
+    m_pixQueue << file;
     m_sourceImgs.insert(file, source);
     start();
 }

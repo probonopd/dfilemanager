@@ -123,7 +123,7 @@ PixmapItem::updatePixmaps()
 void
 PixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    if ( m_pix[0].isNull() )
+    if ( m_pix[1].isNull() )
         updatePixmaps();
     if (option->state & QStyle::State_MouseOver) //just to have some hover effect...
     {
@@ -137,7 +137,7 @@ PixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWi
 }
 
 void
-PixmapItem::rotate(const float &angle, const Qt::Axis &axis)
+PixmapItem::rotate(const float angle, const Qt::Axis axis)
 {
     QTransform t;
     t.translate(SIZE/2.0f, SIZE*PERSPECTIVE);
@@ -165,6 +165,7 @@ PreView::PreView(QWidget *parent)
     , m_perception(0.0f)
     , m_pressPos(QPointF())
     , m_centerFile(QString())
+    , m_hasZUpdate(false)
 {
     QGLFormat glf = QGLFormat::defaultFormat();
     glf.setSampleBuffers(true);
@@ -240,8 +241,6 @@ PreView::showPrevious()
     prepareAnimation();
 }
 
-static bool hasZUpdate = false;
-
 void
 PreView::prepareAnimation()
 {
@@ -250,52 +249,52 @@ PreView::prepareAnimation()
 
     int i = m_items.count();
     while ( --i > -1 )
-        m_items[i]->saveX();
+        m_items.at(i)->saveX();
 #define CENTER QPoint(m_x-SIZE/2.0f, m_y)
 #define LEFT QPointF((m_x-SIZE)-space, m_y)
 #define RIGHT QPointF(m_x+space, m_y)
-    m_anim[New]->setItem(m_items[m_nextRow]);
+    m_anim[New]->setItem(m_items.at(m_nextRow));
     m_anim[New]->setPosAt(1, CENTER);
 
-    m_anim[Prev]->setItem(m_items[m_row]);
+    m_anim[Prev]->setItem(m_items.at(m_row));
     m_anim[Prev]->setPosAt(1, m_nextRow > m_row ? LEFT : RIGHT);
 #undef CENTER
 #undef RIGHT
 #undef LEFT
 
-    hasZUpdate = false;
+    m_hasZUpdate = false;
 
     m_timeLine->setDuration(qMax(1.0f,250.0f/qAbs(m_row-m_newRow)));
     m_timeLine->start();
 }
 
 void
-PreView::animStep(const qreal &value)
+PreView::animStep(const qreal value)
 {
     if ( m_items.isEmpty() )
         return;
 
-    const float &f = SCALE+(value*(1.0f-SCALE)), &s = space*value;
-    const bool &goingUp = m_nextRow > m_row;
+    const float f = SCALE+(value*(1.0f-SCALE)), s = space*value;
+    const bool goingUp = m_nextRow > m_row;
 
-    m_items[m_row]->setScale(SCALE/f);
+    m_items.at(m_row)->setScale(SCALE/f);
     float rotate = ANGLE * value;
-    m_items[m_row]->rotate(goingUp ? -rotate : rotate, Qt::YAxis);
+    m_items.at(m_row)->rotate(goingUp ? -rotate : rotate, Qt::YAxis);
 
-    m_items[m_nextRow]->setScale(f);
+    m_items.at(m_nextRow)->setScale(f);
     rotate = ANGLE-rotate;
-    m_items[m_nextRow]->rotate(goingUp ? rotate : -rotate, Qt::YAxis);
+    m_items.at(m_nextRow)->rotate(goingUp ? rotate : -rotate, Qt::YAxis);
 
     int i = m_items.count();
     while ( --i > -1 )
     {
         if ( i != m_row && i != m_nextRow )
-            m_items[i]->setX( goingUp ? m_items[i]->savedX()-s : m_items[i]->savedX()+s );
-        if ( !hasZUpdate )
-            m_items[i]->setZValue( i>=m_nextRow ? m_items[qMin(m_items.count()-1, i+1)]->zValue()+1 : m_items[qMax(0, i-1)]->zValue()-1 );
+            m_items.at(i)->setX( goingUp ? m_items.at(i)->savedX()-s : m_items.at(i)->savedX()+s );
+        if ( !m_hasZUpdate )
+            m_items.at(i)->setZValue( i>=m_nextRow ? m_items.at(qMin(m_items.count()-1, i+1))->zValue()+1 : m_items.at(qMax(0, i-1))->zValue()-1 );
     }
 
-    hasZUpdate = true;
+    m_hasZUpdate = true;
 
     if ( value == 1 )
     {
@@ -359,14 +358,11 @@ PreView::setModel(FileSystemModel *fsModel)
 void
 PreView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
-    if (topLeft.parent() != m_rootIndex || bottomRight.parent() != m_rootIndex || m_items.isEmpty())
-        return;
-
-    const int &start = topLeft.row(), &end = bottomRight.row();
+    const int start = topLeft.row(), end = bottomRight.row();
 
     if ( m_items.count() > end )
     for ( int i = start; i <= end; ++i )
-        m_items[i]->updatePixmaps();
+        m_items.at(i)->updatePixmaps();
 }
 
 void
@@ -410,11 +406,11 @@ void
 PreView::showEvent(QShowEvent *event)
 {
     QGraphicsView::showEvent(event);
-    const float &bottom = bMargin+m_scrollBar->height()+m_textItem->boundingRect().height();
+    const float bottom = bMargin+m_scrollBar->height()+m_textItem->boundingRect().height();
     m_y = (rect().size().height()/2.0f-SIZE/2.0f)-bottom;
     m_x = rect().size().width()/2.0f;
     if ( m_items.count() > m_row && m_row > -1 )
-        m_items[m_row]->updatePixmaps();
+        m_items.at(m_row)->updatePixmaps();
     updateItemsPos();
 }
 
@@ -423,14 +419,14 @@ PreView::resizeEvent(QResizeEvent *event)
 {
     QGraphicsView::resizeEvent(event);
     m_scene->setSceneRect(QRect(QPoint(0, 0), event->size()));
-    const float &bottom = bMargin+m_scrollBar->height()+m_textItem->boundingRect().height();
+    const float bottom = bMargin+m_scrollBar->height()+m_textItem->boundingRect().height();
     m_y = (event->size().height()/2.0f-SIZE/2.0f)-bottom;
     m_x = event->size().width()/2.0f;
     m_rootItem->update();
     updateItemsPos();
     m_scrollBar->resize(event->size().width()*0.66f, m_scrollBar->height());
-    const float &y = m_y+SIZE;
-    const float &scale = qMin<float>(1.0f, ((float)rect().height()/SIZE)*0.8);
+    const float y = m_y+SIZE;
+    const float scale = qMin<float>(1.0f, ((float)rect().height()/SIZE)*0.8);
     m_textItem->setPos(m_x-m_textItem->boundingRect().width()/2.0f, rect().bottom()-(bMargin+m_scrollBar->height()+m_textItem->boundingRect().height()));
     m_textItem->setZValue(m_items.count()+2);
     m_gfxProxy->setPos(m_x-m_gfxProxy->boundingRect().width()/2.0f, rect().bottom()-(bMargin+m_scrollBar->height()));
@@ -522,7 +518,7 @@ PreView::updateItemsPos()
         return;
 
     m_timeLine->stop();
-    PixmapItem *center = m_items[m_row];
+    PixmapItem *center = m_items.at(m_row);
     center->setZValue(m_items.count());
     center->setPos(m_x-SIZE/2.0f, m_y);
     center->setScale(1);
@@ -537,7 +533,7 @@ PreView::updateItemsPos()
 static float xpos = 0.0f;
 
 void
-PreView::correctItemsPos(const int &leftStart, const int &rightStart)
+PreView::correctItemsPos(const int leftStart, const int rightStart)
 {
     int z = m_items.count()-1;
     PixmapItem *p = 0;
@@ -644,7 +640,7 @@ PreView::mouseMoveEvent(QMouseEvent *event)
 void
 PreView::showCenterIndex(const QModelIndex &index)
 {
-    if ( !index.isValid() || index.parent() != m_rootIndex )
+    if ( !index.isValid() )
         return;
     if ( !isVisible() ) //not visible... we silently update the index w/o animations
     {
@@ -692,7 +688,7 @@ PreView::clear()
 }
 
 void
-PreView::scrollBarMoved(const int &value)
+PreView::scrollBarMoved(const int value)
 {
     if ( m_items.count() )
         showCenterIndex(m_fsModel->index(qBound(0, value, m_items.count()), 0, m_rootIndex));

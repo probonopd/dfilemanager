@@ -105,7 +105,6 @@ public slots:
 
 private slots:
     void emitRootIndex( const QString &path ) { emit rootPathAsIndex(index(path)); }
-    void setCurrentView(QAbstractItemView *view);
     void thumbFor( const QString &file );
     void flowDataAvailable( const QString &file );
 
@@ -114,7 +113,7 @@ signals:
     void flowDataChanged( const QModelIndex &start, const QModelIndex &end );
 
 protected:
-    virtual int columnCount(const QModelIndex &parent) const;
+    int columnCount(const QModelIndex &parent) const;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
 private:

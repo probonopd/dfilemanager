@@ -68,24 +68,34 @@ class ImagesThread : public QThread
     Q_OBJECT
 public:
     explicit ImagesThread(QObject *parent = 0);
-    void queueFile( const QString &file );
+    void queueFile( const QString &file, const QImage &source );
+    void queueName( const QIcon &icon );
     QImage flowData( const QString &file, const bool refl = false );
+    QImage flowNameData( const QString &name, const bool refl = false );
     bool hasData( const QString &file );
+    bool hasNameData( const QString &name );
     void removeData( const QString &file );
     inline bool hasFileInQueue( const QString &file ) { return m_pixQueue.contains(file); }
     void clearQueue();
+
+public slots:
+    inline void clearData() { for (int i=0; i<2; ++i) m_images[i].clear(); }
 
 signals:
     void imagesReady( const QString &file );
 
 protected:
     void genImagesFor( const QString &file );
+    void genNameIconsFor( const QString &name );
     void run();
 
 private:
-    QStringList m_pixQueue;
+    QStringList m_pixQueue, m_nameQueue;
     QMap<QString, QImage> m_sourceImgs;
-    QMap<QString, QImage > m_result[2];
+    QMap<QString, QImage> m_result[2];
+    QHash<QString, QImage> m_images[2];
+    QHash<QString, QImage> m_themeIcons[2];
+    QHash<QString, QImage> m_themeSource;
     FileSystemModel *m_fsModel;
 };
 
