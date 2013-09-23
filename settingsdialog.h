@@ -35,6 +35,8 @@
 #include <QSlider>
 #include <QSpinBox>
 #include <QComboBox>
+#include <QGroupBox>
+#include <QWidget>
 
 namespace DFM
 {
@@ -62,6 +64,7 @@ private slots:
     void getStartPath();
 
 private:
+    friend class SettingsDialog;
     int m_lock;
     QLineEdit *m_startPath;
     QCheckBox *m_left, *m_right, *m_bottom;
@@ -72,7 +75,13 @@ class BehaviourWidget : public QWidget
     Q_OBJECT
 public:
     explicit BehaviourWidget(QWidget *parent = 0);
-    QCheckBox *m_hideTabBar, *m_useCustomIcons, *m_drawDevUsage;
+
+private:
+    friend class SettingsDialog;
+    QGroupBox *m_tabsBox;
+    QComboBox *m_tabShape, *m_layOrder;
+    QSpinBox *m_tabRndns, *m_tabHeight, *m_tabWidth, *m_overlap;
+    QCheckBox *m_hideTabBar, *m_useCustomIcons, *m_drawDevUsage, *m_newTabButton;
 };
 
 class ViewsWidget : public QWidget
@@ -80,15 +89,19 @@ class ViewsWidget : public QWidget
     Q_OBJECT
 public:
     explicit ViewsWidget(QWidget *parent = 0);
+
+private slots:
+    inline void sliderChanged(const int &value) { m_width->setText( QString::number(value*2) + " px"); }
+    inline void sizeChanged(const int &value) { m_size->setText( QString::number(value*16) + " px"); }
+
+private:
+    friend class SettingsDialog;
     QCheckBox *m_smoothScroll, *m_showThumbs, *m_singleClick;
     QSlider *m_iconWidth, *m_iconSlider;
     QString m_iconWidthStr;
     QLabel *m_width, *m_size;
     QSpinBox *m_rowPadding;
     QComboBox *m_viewBox;
-private slots:
-    inline void sliderChanged(const int &value) { m_width->setText( QString::number(value*2) + " px"); }
-    inline void sizeChanged(const int &value) { m_size->setText( QString::number(value*16) + " px"); }
 };
 
 class SettingsDialog : public QDialog

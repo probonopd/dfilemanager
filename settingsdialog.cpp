@@ -27,21 +27,87 @@
 
 using namespace DFM;
 
-BehaviourWidget::BehaviourWidget(QWidget *parent) : QWidget(parent)
+BehaviourWidget::BehaviourWidget(QWidget *parent)
+    : QWidget(parent)
+    , m_hideTabBar(new QCheckBox(tr("Hide tab bar when only one tab"), this))
+    , m_useCustomIcons(new QCheckBox(tr("Use system icons for actions (Unix only)"),this))
+    , m_drawDevUsage(new QCheckBox(tr("Draw usage info on mounted devices"), this))
+    , m_tabsBox(new QGroupBox(tr("Tabs On Top"), this))
+    , m_tabShape(new QComboBox(m_tabsBox))
+    , m_tabRndns(new QSpinBox(m_tabsBox))
+    , m_tabHeight(new QSpinBox(m_tabsBox))
+    , m_tabWidth(new QSpinBox(m_tabsBox))
+    , m_newTabButton(new QCheckBox(tr("A 'newtab' button next to last tab"), m_tabsBox))
+    , m_overlap(new QSpinBox(m_tabsBox))
+    , m_layOrder(new QComboBox(m_tabsBox))
 {
-    m_hideTabBar = new QCheckBox(tr("Hide tab bar when only one tab"), this);
     m_hideTabBar->setChecked(Store::config.behaviour.hideTabBarWhenOnlyOneTab);
-
-    m_useCustomIcons = new QCheckBox(tr("Use system icons for actions (Unix only)"),this);
     m_useCustomIcons->setChecked(Store::config.behaviour.systemIcons);
-
-    m_drawDevUsage = new QCheckBox(tr("Draw usage info on mounted devices"), this);
     m_drawDevUsage->setChecked(Store::config.behaviour.devUsage);
+
+    m_tabsBox->setCheckable(true);
+    m_tabsBox->setChecked(Store::config.behaviour.gayWindow);
+    const QString &toolTip = tr("A custom titlebar that shows window control buttons "
+                                "(min|max|close), tabs and a menubutton on top of the window. "
+                                "This shapes the corners of the window to be slightly rounded "
+                                "and removes any window decoration that usually shows these controls. "
+                                "Changes here will <b>only take effect</b> after restarting dfm. "
+                                "It is recommended to restart dfm after changing anything here. ");
+
+    m_tabsBox->setToolTip(toolTip);
+
+//    config.behaviour.frame = settings()->value("behaviour.gayWindow.frame", false).toBool();
+
+//    config.behaviour.invertedColors = settings()->value("behaviour.gayWindow.invertedColors", false).toBool();
+
+    const Qt::Alignment left = Qt::AlignLeft|Qt::AlignVCenter,
+            right = Qt::AlignRight|Qt::AlignVCenter;
+
+#define LABEL(_TEXT_) new QLabel(tr(_TEXT_), m_tabsBox)
+    QGridLayout *tabsLay = new QGridLayout(m_tabsBox);
+    m_tabShape->addItems(QStringList() << "Standard" << "Chrome");
+    m_tabShape->setCurrentIndex(Store::config.behaviour.tabShape);
+    int row = -1;
+    tabsLay->addWidget(LABEL("Shape of tabs:"), ++row, 0, right);
+    tabsLay->addWidget(m_tabShape, row, 1, left);
+
+    tabsLay->addWidget(LABEL("TabRoundness:"), ++row, 0, right);
+    m_tabRndns->setRange(0, 12);
+    m_tabRndns->setValue(qBound(0, Store::config.behaviour.tabRoundness, 12));
+    tabsLay->addWidget(m_tabRndns, row, 1, left);
+
+    tabsLay->addWidget(LABEL("TabHeight:"), ++row, 0, right);
+    m_tabHeight->setRange(0, 36);
+    m_tabHeight->setValue(qBound(0, Store::config.behaviour.tabHeight, 36));
+    tabsLay->addWidget(m_tabHeight, row, 1, left);
+
+    tabsLay->addWidget(LABEL("TabWidth:"), ++row, 0, right);
+    m_tabWidth->setRange(50, 300);
+    m_tabWidth->setValue(qBound(50, Store::config.behaviour.tabWidth, 300));
+    tabsLay->addWidget(m_tabWidth, row, 1, left);
+
+    m_newTabButton->setCheckable(true);
+    m_newTabButton->setChecked(Store::config.behaviour.newTabButton);
+    tabsLay->addWidget(m_newTabButton, ++row, 0, 1, 2, Qt::AlignCenter);
+
+    tabsLay->addWidget(LABEL("Visual Overlapping for tabs:"), ++row, 0, right);
+    m_overlap->setRange(6, 12);
+    m_overlap->setValue(qBound(6, Store::config.behaviour.tabOverlap, 12));
+    tabsLay->addWidget(m_overlap, row, 1, left);
+
+    tabsLay->addWidget(LABEL("Layout order:"), ++row, 0, right);
+    m_layOrder->addItems(QStringList() << "MacLike" << "WindowsLike");
+    m_layOrder->setCurrentIndex(Store::config.behaviour.windowsStyle);
+    tabsLay->addWidget(m_layOrder, row, 1, left);
+
+
+#undef LABEL
 
     QVBoxLayout *vl = new QVBoxLayout(this);
     vl->addWidget(m_hideTabBar);
     vl->addWidget(m_useCustomIcons);
     vl->addWidget(m_drawDevUsage);
+    vl->addWidget(m_tabsBox);
     vl->addStretch();
     setLayout(vl);
 }
@@ -269,6 +335,17 @@ SettingsDialog::accept()
     Store::config.behaviour.view = m_viewWidget->m_viewBox->currentIndex();
     Store::config.views.iconView.iconSize = m_viewWidget->m_iconSlider->value();
     Store::config.views.singleClick = m_viewWidget->m_singleClick->isChecked();
+
+    Store::settings()->setValue("behaviour.gayWindow", m_behWidget->m_tabsBox->isChecked());
+    Store::settings()->setValue("behaviour.gayWindow.tabShape", m_behWidget->m_tabShape->currentIndex());
+    Store::settings()->setValue("behaviour.gayWindow.tabRoundness", m_behWidget->m_tabRndns->value());
+    Store::settings()->setValue("behaviour.gayWindow.tabHeight", m_behWidget->m_tabHeight->value());
+    Store::settings()->setValue("behaviour.gayWindow.tabWidth", m_behWidget->m_tabWidth->value());
+//    Store::settings()->setValue("behaviour.gayWindow.frame", ???);
+    Store::settings()->setValue("behaviour.gayWindow.newTabButton", m_behWidget->m_newTabButton->isChecked());
+    Store::settings()->setValue("behaviour.gayWindow.tabOverlap", m_behWidget->m_overlap->value());
+    Store::settings()->setValue("behaviour.gayWindow.windowsStyle", (bool)m_behWidget->m_layOrder->currentIndex());
+//    Store::settings()->setValue("behaviour.gayWindow.invertedColors", ???);
 
     MainWindow::currentWindow()->updateConfig();
 

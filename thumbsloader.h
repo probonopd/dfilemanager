@@ -94,7 +94,6 @@ private:
     QMap<QString, QImage> m_sourceImgs;
     QMap<QString, QImage> m_result[2];
     QHash<QString, QImage> m_images[2];
-    QHash<QString, QImage> m_themeIcons[2];
     QHash<QString, QImage> m_themeSource;
     FileSystemModel *m_fsModel;
 };
