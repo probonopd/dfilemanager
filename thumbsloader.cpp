@@ -26,6 +26,7 @@
 #include "operations.h"
 #include "config.h"
 #include "viewcontainer.h"
+#include <QBitmap>
 
 using namespace DFM;
 
@@ -94,8 +95,8 @@ ThumbsLoader::run()
 }
 
 ImagesThread::ImagesThread(QObject *parent)
-    :QThread(parent)
-    ,m_fsModel(static_cast<FileSystemModel *>(parent))
+    : QThread(parent)
+    , m_fsModel(static_cast<FileSystemModel *>(parent))
 {}
 
 void ImagesThread::clearQueue() { m_pixQueue.clear(); }
@@ -114,6 +115,7 @@ ImagesThread::genImagesFor(const QString &file)
     const QImage &source = m_sourceImgs.take(file);
     if ( source.isNull() )
         return;
+
     m_images[0].insert(file, Ops::flowImg(source));
     m_images[1].insert(file, Ops::reflection(source));
     emit imagesReady(file);

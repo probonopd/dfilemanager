@@ -88,7 +88,8 @@ public:
         FileNameRole = Qt::UserRole + 2,
         FilePermissions = Qt::UserRole + 3,
         FlowImg = Qt::UserRole + 4,
-        FlowRefl = Qt::UserRole +5
+        FlowRefl = Qt::UserRole +5,
+        FlowShape = Qt::UserRole +6
     };
     explicit FileSystemModel(QObject *parent = 0);
     virtual ~FileSystemModel();
@@ -126,5 +127,7 @@ private:
 };
 
 }
+
+Q_DECLARE_METATYPE(QPainterPath)
 
 #endif // FILESYSTEMMODEL_H

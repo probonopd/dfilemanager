@@ -31,6 +31,8 @@
 #include <QApplication>
 #include "operations.h"
 #include <qmath.h>
+#include <QTransform>
+#include <QRegion>
 
 using namespace DFM;
 
@@ -81,33 +83,35 @@ ScrollBar::paintEvent(QPaintEvent *)
     p.end();
 }
 
+static QColor bg;
+
 void
 GraphicsScene::drawBackground(QPainter *painter, const QRectF &rect)
 {
-    QGraphicsScene::drawBackground(painter, rect);
-    QColor c = Ops::colorMid(palette().color(QPalette::Highlight), Qt::black);
-    c.setHsv(c.hue(), qMin(64, c.saturation()), c.value(), c.alpha());
-    painter->fillRect(rect, c);
+    //    QGraphicsScene::drawBackground(painter, rect);
+    if ( !bg.isValid() )
+    {
+        bg = Ops::colorMid(palette().color(QPalette::Highlight), Qt::black);
+        bg.setHsv(bg.hue(), qMin(64, bg.saturation()), bg.value(), bg.alpha());
+    }
+    painter->fillRect(rect, bg);
 }
 
 void
 GraphicsScene::drawForeground(QPainter *painter, const QRectF &rect)
 {
-    QGraphicsScene::drawForeground(painter, rect);
-    QRadialGradient rg(QPoint(rect.width()/2.0f, rect.bottom()*0.75f), rect.width()/2.0f);
-    rg.setColorAt(0, Qt::transparent);
-    rg.setColorAt(0.5, Qt::transparent);
-    rg.setColorAt(0.75, QColor(0,0,0,64));
-    rg.setColorAt(1, QColor(0,0,0,192));
-    painter->fillRect(rect, rg);
+//    QGraphicsScene::drawForeground(painter, rect);
+    painter->fillRect(rect, m_fgBrush);
 }
 
 PixmapItem::PixmapItem(GraphicsScene *scene, QGraphicsItem *parent)
-    : QGraphicsPixmapItem(parent)
+    : QGraphicsItem(parent)
     , m_scene(scene)
     , m_isUpdateingPixmaps(false)
 {
     m_preView = m_scene->preView();
+    setY(m_preView->m_y);
+    setTransformOriginPoint(boundingRect().center());
 }
 
 void
@@ -117,7 +121,10 @@ PixmapItem::updatePixmaps()
     const QModelIndex &index = m_preView->fsModel()->index(file);
     m_pix[0] = qvariant_cast<QPixmap>(m_preView->fsModel()->data(index, FileSystemModel::FlowImg));
     m_pix[1] = qvariant_cast<QPixmap>(m_preView->fsModel()->data(index, FileSystemModel::FlowRefl));
-    setPixmap(m_pix[0]);
+    m_shape = QVariant::fromValue(m_preView->fsModel()->data(index, FileSystemModel::FlowShape)).value<QPainterPath>();
+//    qDebug() << m_shape.isEmpty() << file;
+    updateShape();
+    m_preView->viewport()->update();
 }
 
 void
@@ -125,15 +132,28 @@ PixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWi
 {
     if ( m_pix[1].isNull() )
         updatePixmaps();
+#if 0
     if (option->state & QStyle::State_MouseOver) //just to have some hover effect...
     {
         painter->translate(SIZE/2.0f, SIZE/2.0f);
         painter->scale(1.1, 1.1);
         painter->translate(-SIZE/2.0f, -SIZE/2.0f);
     }
-    painter->setRenderHints(QPainter::SmoothPixmapTransform);
-    painter->drawTiledPixmap(QRect(QPoint(0, SIZE)+offset().toPoint(), QSize(SIZE, SIZE)), m_pix[1]);
-    painter->drawTiledPixmap(QRectF(QPointF(0, 1)+offset(), QSizeF(SIZE, SIZE)), m_pix[0]);
+#endif
+    painter->drawTiledPixmap(QRect(0, SIZE, SIZE, SIZE), m_pix[1]);
+    if ( painter->transform().isScaling() )
+        painter->setRenderHints(QPainter::SmoothPixmapTransform);
+    painter->drawTiledPixmap(QRect(0, 1, SIZE, SIZE), m_pix[0]);
+    painter->setRenderHints(QPainter::SmoothPixmapTransform, false);
+}
+
+void
+PixmapItem::updateShape()
+{
+    QRegion r = m_pix[0].mask();
+    QPainterPath p;
+    p.addRegion(r);
+    m_shape = p;
 }
 
 void
@@ -168,8 +188,10 @@ PreView::PreView(QWidget *parent)
     , m_hasZUpdate(false)
 {
     QGLFormat glf = QGLFormat::defaultFormat();
-    glf.setSampleBuffers(true);
-    glf.setSamples(16);
+    glf.setSampleBuffers(false);
+    glf.setSwapInterval(0);
+    glf.setStencil(true);
+    glf.setAccum(false);
     glf.setDirectRendering(true);
     glf.setDoubleBuffer(true);
     QGLFormat::setDefaultFormat(glf);
@@ -178,6 +200,9 @@ PreView::PreView(QWidget *parent)
     connect( qApp, SIGNAL(aboutToQuit()), glWidget, SLOT(deleteLater()) );
     setViewport(glWidget);
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+    setOptimizationFlag(QGraphicsView::DontSavePainterState);
+    setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
+    setCacheMode(QGraphicsView::CacheBackground);
     m_scene->setItemIndexMethod(QGraphicsScene::NoIndex);
     setScene(m_scene);
     m_textItem = new QGraphicsSimpleTextItem();
@@ -187,11 +212,6 @@ PreView::PreView(QWidget *parent)
     m_gfxProxy = m_scene->addWidget(scrollBar);
     m_scrollBar = static_cast<ScrollBar *>(m_gfxProxy->widget());
     connect( m_scrollBar, SIGNAL(valueChanged(int)), this, SLOT(scrollBarMoved(int)) );
-    QGraphicsDropShadowEffect *sse = new QGraphicsDropShadowEffect(this);
-    sse->setBlurRadius(4);
-    sse->setOffset(0);
-    sse->setColor(Qt::white);
-    m_gfxProxy->setGraphicsEffect(sse);
     setFocusPolicy(Qt::NoFocus);
     setFrameStyle(QFrame::NoFrame);
     for ( int i = 0; i < 2; ++i )
@@ -216,6 +236,8 @@ PreView::PreView(QWidget *parent)
     dse->setOffset(0);
     dse->setColor(Qt::black);
     m_textItem->setGraphicsEffect(dse);
+    setMouseTracking(false);
+    setAttribute(Qt::WA_Hover, false);
     setCursor(Qt::ArrowCursor);
 }
 
@@ -433,6 +455,13 @@ PreView::resizeEvent(QResizeEvent *event)
     m_rootItem->setTransformOriginPoint(rect().center());
     m_rootItem->setTransform(QTransform().translate(rect().width()/2.0f, y).rotate(m_perception, Qt::XAxis).translate(-rect().width()/2.0f, -y));
     m_rootItem->setScale(scale);
+
+    QRadialGradient rg(QPoint(rect().width()/2.0f, rect().bottom()*0.75f), rect().width()/2.0f);
+    rg.setColorAt(0, Qt::transparent);
+    rg.setColorAt(0.5, Qt::transparent);
+    rg.setColorAt(0.75, QColor(0,0,0,64));
+    rg.setColorAt(1, QColor(0,0,0,192));
+    m_scene->setForegroundBrush(rg);
 }
 
 void
@@ -496,11 +525,7 @@ PreView::populate(const int start, const int end)
         const QModelIndex &index = m_fsModel->index(i, 0, m_rootIndex);
         if ( !index.isValid() )
             continue;
-        PixmapItem *pixItem = new PixmapItem(m_scene, m_rootItem);
-        pixItem->setTransformOriginPoint(pixItem->boundingRect().center());
-        pixItem->setY(m_y);
-        pixItem->setAcceptHoverEvents(true);
-        m_items.insert(i, pixItem);
+        m_items.insert(i, new PixmapItem(m_scene, m_rootItem));
     }
 
     QModelIndex index = m_fsModel->index(m_centerFile);
@@ -523,11 +548,8 @@ PreView::updateItemsPos()
     center->setPos(m_x-SIZE/2.0f, m_y);
     center->setScale(1);
     center->resetTransform();
-    center->setOffset(0, 0);
 
     correctItemsPos(m_row-1, m_row+1 );
-    if ( center->pixmap().isNull() ) //not sure why this sometimes happens...
-        center->updatePixmaps();
 }
 
 static float xpos = 0.0f;

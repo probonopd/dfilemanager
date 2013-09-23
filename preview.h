@@ -62,11 +62,13 @@ class GraphicsScene : public QGraphicsScene
 public:
     inline explicit GraphicsScene( const QRectF &rect = QRectF(), QWidget *parent = 0) : QGraphicsScene(rect, parent), m_preview(qobject_cast<PreView *>(parent)) {}
     inline PreView *preView() { return m_preview; }
+    inline void setForegroundBrush( const QBrush &brush ) { m_fgBrush = brush; }
 
 protected:
     void drawBackground(QPainter *painter, const QRectF &rect);
     void drawForeground(QPainter *painter, const QRectF &rect);
     PreView *m_preview;
+    QBrush m_fgBrush;
 };
 
 class RootItem : public QGraphicsPixmapItem
@@ -80,18 +82,20 @@ public:
  * ITEM
  */
 
-class PixmapItem : public QObject, public QGraphicsPixmapItem
+class PixmapItem : public QGraphicsItem
 {
 public:
     PixmapItem( GraphicsScene *scene = 0, QGraphicsItem *parent = 0 );
     void rotate( const float angle, const Qt::Axis axis );
-    QRectF boundingRect() { return RECT; }
+    QRectF boundingRect() const { return RECT; }
     inline void saveX() { m_savedX = pos().x(); }
     inline float savedX() { return m_savedX; }
     void updatePixmaps();
+    QPainterPath shape() const { return m_shape; }
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
 
 protected:
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+    void updateShape();
 
 private:
     QPixmap m_pix[2];
@@ -99,6 +103,7 @@ private:
     PreView *m_preView;
     float m_rotate, m_savedX;
     bool m_isUpdateingPixmaps;
+    QPainterPath m_shape;
 };
 
 /* THE
@@ -155,6 +160,7 @@ private slots:
     void continueIf();
 
 private:
+    friend class PixmapItem;
     GraphicsScene *m_scene;
     FileSystemModel *m_fsModel;
     QModelIndex m_centerIndex, m_prevCenter, m_rootIndex, m_savedCenter;
