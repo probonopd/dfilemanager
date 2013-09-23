@@ -60,13 +60,15 @@ Store::readConfiguration()
     config.behaviour.devUsage = settings()->value("drawDevUsage", false).toBool();
     config.behaviour.view = settings()->value("start.view", 0).toInt();   
 
-    config.views.iconView.iconSize = settings()->value("iconView.iconSize", 3).toInt();
-    config.views.flowSize = settings()->value("flowSize", QByteArray()).toByteArray();
-    config.views.iconView.textWidth = settings()->value("textWidth", 16).toInt();
-    config.views.detailsView.rowPadding = settings()->value("detailsView.rowPadding", 0).toInt();
-    config.views.iconView.smoothScroll = settings()->value("smoothScroll", false).toBool();
+
     config.views.showThumbs = settings()->value("showThumbs", false).toBool();
     config.views.singleClick = settings()->value("views.singleClick", false).toBool();
+    config.views.flowSize = settings()->value("flowSize", QByteArray()).toByteArray();
+    config.views.detailsView.rowPadding = settings()->value("detailsView.rowPadding", 0).toInt();
+    config.views.iconView.smoothScroll = settings()->value("smoothScroll", false).toBool();
+    config.views.iconView.textWidth = settings()->value("textWidth", 16).toInt();
+    config.views.iconView.iconSize = settings()->value("iconView.iconSize", 3).toInt();
+    config.views.iconView.lineCount = settings()->value("iconView.lineCount", 3).toInt();
 
     config.behaviour.gayWindow = settings()->value("behaviour.gayWindow", false).toBool();
     config.behaviour.tabShape = settings()->value("behaviour.gayWindow.tabShape", 0).toInt();
@@ -142,7 +144,9 @@ Store::writeConfiguration()
     settings()->setValue("detailsView.rowPadding", config.views.detailsView.rowPadding);
     settings()->setValue("start.view", config.behaviour.view);
     settings()->setValue("iconView.iconSize", config.views.iconView.iconSize);
+    settings()->setValue("iconView.lineCount", config.views.iconView.lineCount);
     settings()->setValue("flowSize", config.views.flowSize);
+
     if ( !config.behaviour.gayWindow )
         settings()->setValue("hideTabBarWhenOnlyOne", config.behaviour.hideTabBarWhenOnlyOneTab);
     settings()->setValue("styleSheet", config.styleSheet);

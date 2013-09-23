@@ -100,7 +100,7 @@ private:
     QSlider *m_iconWidth, *m_iconSlider;
     QString m_iconWidthStr;
     QLabel *m_width, *m_size;
-    QSpinBox *m_rowPadding;
+    QSpinBox *m_rowPadding, *m_lineCount;
     QComboBox *m_viewBox;
 };
 

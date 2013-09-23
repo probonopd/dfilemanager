@@ -72,6 +72,7 @@ protected:
 private:
     ColumnsWidget *m_parent;
     FileSystemModel *m_fsModel;
+    QFileSystemWatcher *m_fsWatcher;
     QPoint m_pressPos;
     QString m_activeFile, m_rootPath;
     int m_width;

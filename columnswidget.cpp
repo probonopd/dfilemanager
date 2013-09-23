@@ -138,7 +138,8 @@ ColumnsView
         view = column(i);
         if ( view->rootIndex() != index )
             view->setRootIndex(index);
-        view->setActiveFileName(QString());
+        if ( !view->activeFileName().isEmpty() )
+            view->setActiveFileName(QString());
     }
     else
     {

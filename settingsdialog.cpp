@@ -195,7 +195,8 @@ StartupWidget::getStartPath()
 /////////////////////////////////////////////////////////////////
 
 ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
-  , m_iconWidth( new QSlider( Qt::Horizontal, this ) ), m_width( new QLabel(this) )
+  , m_iconWidth( new QSlider( Qt::Horizontal, this ) )
+  , m_width( new QLabel(this) )
   , m_showThumbs( new QCheckBox(tr("Show thumbnails of supported pictures"), this) )
   , m_smoothScroll( new QCheckBox(tr("Smooth scrolling"), this) )
   , m_rowPadding( new QSpinBox(this) )
@@ -203,51 +204,65 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
   , m_size( new QLabel(QString::number(Store::config.views.iconView.iconSize*16) + " px", this) )
   , m_viewBox(new QComboBox(this))
   , m_singleClick(new QCheckBox(tr("Open folders and files with one click"), this))
+  , m_lineCount(new QSpinBox(this))
 {
     m_smoothScroll->setChecked(Store::config.views.iconView.smoothScroll);
     m_showThumbs->setChecked(Store::config.views.showThumbs);
     m_singleClick->setChecked(Store::config.views.singleClick);
-    QGroupBox *gBox = new QGroupBox(tr("IconView"), this);
-    QVBoxLayout *gvLayout = new QVBoxLayout();
-    gvLayout->addWidget(m_smoothScroll);
-    QHBoxLayout *ghLayout = new QHBoxLayout();
-    ghLayout->addWidget( new QLabel(tr("Extra width added to text:"), this) );
-    ghLayout->addStretch();
-    ghLayout->addWidget( m_iconWidth );
+
+    //IconView
+    m_iconSlider->setRange(1, 16);
+    m_iconSlider->setSingleStep(1);
+    m_iconSlider->setPageStep(1);
+    m_iconSlider->setValue(Store::config.views.iconView.iconSize);
+    connect( m_iconSlider, SIGNAL(valueChanged(int)), this, SLOT(sizeChanged(int)) );
+
     m_iconWidth->setRange(1, 32);
     m_iconWidth->setSingleStep(1);
     m_iconWidth->setPageStep(1);
     m_iconWidth->setValue(Store::config.views.iconView.textWidth);
     m_width->setText(QString::number(Store::config.views.iconView.textWidth*2) + " px");
-    ghLayout->addWidget(m_width);
     connect ( m_iconWidth, SIGNAL(valueChanged(int)), this, SLOT(sliderChanged(int)) );
 
-    gvLayout->addLayout(ghLayout);
+    m_lineCount->setRange(1, 8);
+    m_lineCount->setValue(qBound(1, Store::config.views.iconView.lineCount, 8));
 
-    QHBoxLayout *hIconSize = new QHBoxLayout();
-    hIconSize->addWidget(new QLabel(tr("Default size for icons:"), this));
-    m_iconSlider->setRange(1, 16);
-    m_iconSlider->setSingleStep(1);
-    m_iconSlider->setPageStep(1);
-    m_iconSlider->setValue(Store::config.views.iconView.iconSize);
-    hIconSize->addStretch();
-    hIconSize->addWidget(m_iconSlider);
-    hIconSize->addWidget(m_size);
-    connect( m_iconSlider, SIGNAL(valueChanged(int)), this, SLOT(sizeChanged(int)) );
+    QGroupBox *gBox = new QGroupBox(tr("IconView"), this);
+    QGridLayout *iconLay = new QGridLayout(gBox);
 
-    gvLayout->addLayout(hIconSize);
+    int row = -1;
+    const Qt::Alignment left = Qt::AlignLeft|Qt::AlignVCenter,
+            right = Qt::AlignRight|Qt::AlignVCenter;
 
-    gBox->setLayout(gvLayout);
+    iconLay->setColumnStretch(0, 50);
+    iconLay->setColumnStretch(1, 50);
+//    iconLay->setColumnStretch(2, 50);
 
-    QGroupBox *detailsBox = new QGroupBox(tr("DetailsView"), this);
-    QHBoxLayout *detailsLayout = new QHBoxLayout(detailsBox);
-    detailsLayout->addWidget(new QLabel(tr("Padding added to rowheight:")));
-    detailsLayout->addStretch();
-    detailsLayout->addWidget(m_rowPadding);
-    detailsBox->setLayout(detailsLayout);
+    iconLay->addWidget(m_smoothScroll, ++row, 0, 1, 3, left);
+
+    iconLay->addWidget(new QLabel(tr("Default size for icons:"), this), ++row, 0, right);
+    iconLay->addWidget(m_iconSlider, row, 1, right);
+    iconLay->addWidget(m_size, row, 2, right);
+
+
+    iconLay->addWidget(new QLabel(tr("Extra width added to text:"), this), ++row, 0, right);
+    iconLay->addWidget(m_iconWidth, row, 1, right);
+    iconLay->addWidget(m_width, row, 2, right);
+
+    iconLay->addWidget(new QLabel(tr("Text lines:"), gBox), ++row, 0, right);
+    iconLay->addWidget(m_lineCount, row, 1, 1, 2, right);
+
+
+    //DetailsView
     m_rowPadding->setMinimum(0);
     m_rowPadding->setMaximum(5);
     m_rowPadding->setValue(Store::config.views.detailsView.rowPadding);
+
+    QGroupBox *detailsBox = new QGroupBox(tr("DetailsView"), this);
+    QGridLayout *detailLay = new QGridLayout(detailsBox);
+    row = -1;
+    detailLay->addWidget(new QLabel(tr("Padding added to rowheight:"), detailsBox), ++row, 0, right);
+    detailLay->addWidget(m_rowPadding, row, 1, right);
 
     m_viewBox->insertItems(0, QStringList() << "Icons" << "Details" << "Columns" << "Flow");
     m_viewBox->setCurrentIndex(Store::config.behaviour.view);
@@ -335,6 +350,7 @@ SettingsDialog::accept()
     Store::config.behaviour.view = m_viewWidget->m_viewBox->currentIndex();
     Store::config.views.iconView.iconSize = m_viewWidget->m_iconSlider->value();
     Store::config.views.singleClick = m_viewWidget->m_singleClick->isChecked();
+    Store::config.views.iconView.lineCount = m_viewWidget->m_lineCount->value();
 
     Store::settings()->setValue("behaviour.gayWindow", m_behWidget->m_tabsBox->isChecked());
     Store::settings()->setValue("behaviour.gayWindow.tabShape", m_behWidget->m_tabShape->currentIndex());

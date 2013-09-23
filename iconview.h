@@ -75,10 +75,10 @@ protected:
     void keyPressEvent(QKeyEvent *e);
     void setIconWidth(const int width);
     inline int iconWidth() const { return iconSize().width(); }
-    inline int gridHeight() const;
 
 public slots:
     void updateLayout();
+    void correctLayout();
 
 signals:
     void iconSizeChanged(int size);

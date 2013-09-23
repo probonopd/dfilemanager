@@ -38,8 +38,6 @@
 
 using namespace DFM;
 
-static int lines = 4;
-
 inline static QPixmap shadowPix( int size, int intens, QColor c )
 {
     QPixmap pix( size, size );
@@ -188,7 +186,7 @@ protected:
         textLayout.setTextOption(opt);
 
         float height = 0;
-        while (++lineCount < lines) {
+        while (++lineCount < Store::config.views.iconView.lineCount) {
             QTextLine line = textLayout.createLine();
             if (!line.isValid())
                 break;
@@ -232,7 +230,6 @@ IconView::IconView( QWidget *parent )
     setSelectionMode( QAbstractItemView::ExtendedSelection );
     setResizeMode( QListView::Adjust );
     setIconSize( QSize( iSize, iSize ) );
-    setGridSize( QSize( -1, iSize+60 ) );
     updateLayout();
     setWrapping( true );
     setEditTriggers( QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed );
@@ -249,6 +246,7 @@ IconView::IconView( QWidget *parent )
     setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     connect( m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollEvent()) );
     connect( this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)) );
+    connect( MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(correctLayout()) );
 
     m_slide = false;
     m_startSlide = false;
@@ -424,7 +422,14 @@ IconView::paintEvent( QPaintEvent *e )
 void
 IconView::setGridHeight(int gh)
 {
-    m_gridHeight = gh + 4 + fontMetrics().height()*lines;
+    m_gridHeight = gh + 4 + fontMetrics().height()*Store::config.views.iconView.lineCount;
+}
+
+void
+IconView::correctLayout()
+{
+    m_gridHeight = iconSize().height() + 4 + fontMetrics().height()*Store::config.views.iconView.lineCount;
+    updateLayout();
 }
 
 void

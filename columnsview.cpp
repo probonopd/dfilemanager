@@ -64,6 +64,7 @@ ColumnsView::ColumnsView(QWidget *parent, FileSystemModel *fsModel, const QModel
     , m_fsModel(0)
     , m_width(0)
     , m_isSorted(false)
+    , m_fsWatcher(new QFileSystemWatcher(this))
 {
     setItemDelegate(new ColumnsDelegate(this));
     setViewMode(QListView::ListMode);
@@ -93,15 +94,19 @@ ColumnsView::ColumnsView(QWidget *parent, FileSystemModel *fsModel, const QModel
         if ( rootIndex.isValid() )
             setRootIndex(rootIndex);
     }
+    connect(m_fsWatcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirLoaded(QString)));
 }
 
 void
 ColumnsView::setRootIndex(const QModelIndex &index)
 {
+    if (!m_rootPath.isEmpty() && m_fsWatcher->files().contains(m_rootPath))
+        m_fsWatcher->removePath(m_rootPath);
     if ( m_fsModel )
     {
         m_isSorted = index == m_fsModel->index(m_fsModel->rootPath());
         m_rootPath = m_fsModel->filePath(index);
+        m_fsWatcher->addPath(m_rootPath);
     }
     QListView::setRootIndex(index);
     updateWidth();
@@ -234,7 +239,7 @@ ColumnsView::rowsRemoved(const QModelIndex &parent, int start, int end)
 void
 ColumnsView::dirLoaded(const QString &dir)
 {
-    if ( dir != m_rootPath || m_isSorted )
+    if ( (dir != m_rootPath || m_isSorted) && sender()!=m_fsWatcher )
         return;
 
     m_isSorted = true;

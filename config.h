@@ -49,7 +49,7 @@ typedef struct Config
         struct iconView
         {
             bool smoothScroll;
-            int textWidth, iconSize;
+            int textWidth, iconSize, lineCount;
         } iconView;
         struct detailsView
         {
