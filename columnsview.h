@@ -35,13 +35,15 @@ class ColumnsView : public QListView
 {
     Q_OBJECT
 public:
-    ColumnsView(QWidget *parent = 0, FileSystemModel *fsModel = 0, const QModelIndex &rootIndex = QModelIndex());
+    ColumnsView(QWidget *parent = 0, FileSystemModel *fsModel = 0, const QString &rootPath = QString());
     ~ColumnsView(){}
     void setFilter(QString filter);
     void setModel(QAbstractItemModel *model);
     void setRootIndex(const QModelIndex &index);
-    inline void setActiveFileName( const QString &fileName ) { m_activeFile = fileName; update(); }
+    inline void setActiveFileName( const QString &fileName ) { QFileInfo f(fileName); m_activeFile = f.exists()?f.fileName():fileName; update(); }
     inline QString activeFileName() { return m_activeFile; }
+    inline QString rootPath() { return m_rootPath; }
+    void setRootPath( const QString &path );
 
 public slots:
     void updateWidth();
@@ -68,6 +70,7 @@ protected:
 //    void focusOutEvent(QFocusEvent *event) { QListView::focusOutEvent(event); viewport()->update(); }
     void paintEvent(QPaintEvent *e);
     void wheelEvent(QWheelEvent *e);
+    bool sanityCheckForDir();
 
 private:
     ColumnsWidget *m_parent;

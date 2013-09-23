@@ -55,7 +55,7 @@ private:
     ColumnsView *m_view;
 };
 
-ColumnsView::ColumnsView(QWidget *parent, FileSystemModel *fsModel, const QModelIndex &rootIndex)
+ColumnsView::ColumnsView(QWidget *parent, FileSystemModel *fsModel, const QString &rootPath)
     : QListView(parent)
     , m_parent(static_cast<ColumnsWidget *>(parent))
     , m_pressPos(QPoint())
@@ -91,10 +91,16 @@ ColumnsView::ColumnsView(QWidget *parent, FileSystemModel *fsModel, const QModel
         connect(fsModel, SIGNAL(fileRenamed(QString,QString,QString)), this, SLOT(fileRenamed(QString,QString,QString)));
         connect(fsModel, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)));
         setModel(fsModel);
-        if ( rootIndex.isValid() )
-            setRootIndex(rootIndex);
+        if ( QFileInfo(rootPath).exists() )
+            setRootIndex(fsModel->index(rootPath));
     }
     connect(m_fsWatcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirLoaded(QString)));
+}
+
+void
+ColumnsView::setRootPath(const QString &path)
+{
+    setRootIndex(m_fsModel->index(path));
 }
 
 void
@@ -106,6 +112,8 @@ ColumnsView::setRootIndex(const QModelIndex &index)
     {
         m_isSorted = index == m_fsModel->index(m_fsModel->rootPath());
         m_rootPath = m_fsModel->filePath(index);
+        if ( !sanityCheckForDir() )
+            return;
         m_fsWatcher->addPath(m_rootPath);
     }
     QListView::setRootIndex(index);
@@ -239,6 +247,8 @@ ColumnsView::rowsRemoved(const QModelIndex &parent, int start, int end)
 void
 ColumnsView::dirLoaded(const QString &dir)
 {
+    if ( !sanityCheckForDir() )
+        return;
     if ( (dir != m_rootPath || m_isSorted) && sender()!=m_fsWatcher )
         return;
 
@@ -273,14 +283,10 @@ ColumnsView::fileRenamed(const QString &path, const QString &oldName, const QStr
 void
 ColumnsView::updateWidth()
 {
-    if ( !QFileInfo(m_rootPath).exists() )
-    {
-        emit pathDeleted(this);
-        hide();
-        if ( m_fsModel && m_fsModel->rootPath() == m_rootPath )
-            m_fsModel->setRootPath(QFileInfo(m_rootPath).path());
+    if ( !sanityCheckForDir() )
         return;
-    }
+    if ( !m_fsModel )
+        return;
     QStringList list = QDir(m_fsModel->filePath(rootIndex())).entryList(QDir::AllEntries|QDir::AllDirs|QDir::NoDotAndDotDot|QDir::System);
     int w = 0;
     while ( !list.isEmpty() )
@@ -292,6 +298,27 @@ ColumnsView::updateWidth()
     w+=22; //icon
     w+=style()->pixelMetric(QStyle::PM_ScrollBarExtent, 0, this);
     setFixedWidth(qMax(64, w));
+}
+
+bool
+ColumnsView::sanityCheckForDir()
+{
+    if ( !m_rootPath.isEmpty() && !QFileInfo(m_rootPath).exists() )
+    {
+        emit pathDeleted(this);
+        hide();
+        if ( m_fsModel )
+        {
+            QString dir = m_rootPath;
+            while ( !QFileInfo(dir).exists() )
+                dir = QFileInfo(dir).path();
+            if ( m_fsModel->rootPath() != dir )
+                m_fsModel->setRootPath(dir);
+            return false;
+        }
+        return false;
+    }
+    return true;
 }
 
 void

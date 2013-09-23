@@ -20,7 +20,6 @@ HEADERS = mainwindow.h \
     dockwidget.h \
     titlewidget.h \
     infowidget.h \
-    Proxystyle/proxystyle.h \
     application.h \
     operations.h \
     recentfoldersview.h \
@@ -49,7 +48,6 @@ SOURCES = main.cpp \
     viewanimator.cpp \
     iconprovider.cpp \
     dockwidget.cpp \
-    Proxystyle/proxystyle.cpp \
     application.cpp \
     operations.cpp \
     infowidget.cpp \

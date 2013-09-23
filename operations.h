@@ -26,7 +26,6 @@
 #include <QColor>
 #include <QFileInfo>
 #include <QWidget>
-#include "Proxystyle/proxystyle.h"
 
 #ifdef Q_WS_X11
 #include <magic.h>
@@ -38,20 +37,6 @@
 
 namespace DFM
 {
-
-class MyStyle : public ProxyStyle
-{
-public:
-   inline explicit MyStyle(const QString& baseStyle) : ProxyStyle(baseStyle) {}
-   inline virtual int pixelMetric(PixelMetric metric, const QStyleOption* option = 0, const QWidget* widget = 0) const
-   {
-       if (metric == PM_DockWidgetFrameWidth)
-           return 4;
-       else if (metric == PM_ToolBarFrameWidth)
-           return 0;
-       return ProxyStyle::pixelMetric(metric, option, widget);
-   }
-};
 
 class Ops : public QObject
 {

@@ -200,7 +200,7 @@ protected:
         if ( h )
             *h = qRound(height);
 
-        QString elidedText = lineCount > 2 ? fm.elidedText(TEXT, Qt::ElideRight, widthUsed) : TEXT;
+        QString elidedText = lineCount > Store::config.views.iconView.lineCount-1 ? fm.elidedText(TEXT, Qt::ElideRight, widthUsed) : TEXT;
 
         if ( r )
             *r = QApplication::style()->itemTextRect(fm, RECT, textFlags(), true, elidedText);

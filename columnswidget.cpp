@@ -35,7 +35,7 @@ ColumnsWidget::ColumnsWidget(QWidget *parent) :
   , m_currentView(0)
   , m_rootIndex(QModelIndex())
   , m_visited(QStringList())
-  , m_rootIndexList(QModelIndexList())
+  , m_rootList(QStringList())
 {
     setWidget(m_viewport);
     m_viewLay->setContentsMargins(0, 0, 0, 0);
@@ -113,7 +113,7 @@ ColumnsWidget::insideRoot(const QModelIndex &index)
     return false;
 }
 
-QModelIndexList
+QStringList
 ColumnsWidget::fromRoot()
 {
     QModelIndexList idxList;
@@ -125,25 +125,26 @@ ColumnsWidget::fromRoot()
         idxList.prepend(idx);
         idx = idx.parent();
     }
-    return idxList;
+    return list;
 }
 
 ColumnsView
-*ColumnsWidget::viewFor(const QModelIndex &index)
+*ColumnsWidget::viewFor(const QString &path)
 {
     ColumnsView *view = 0;
-    int i = at(index);
+    int i = at(path);
+
     if ( isValid(i) )
     {
         view = column(i);
-        if ( view->rootIndex() != index )
-            view->setRootIndex(index);
+        if ( view->rootPath() != path )
+            view->setRootPath(path);
         if ( !view->activeFileName().isEmpty() )
             view->setActiveFileName(QString());
     }
     else
     {
-        view = new ColumnsView(this, m_fsModel, index);
+        view = new ColumnsView(this, m_fsModel, path);
         connectView(view);
         view->setSelectionModel(m_slctModel);
         view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
@@ -156,34 +157,38 @@ ColumnsView
 void
 ColumnsWidget::setRootIndex(const QModelIndex &index)
 {
-    m_visited << m_fsModel->filePath(index);
+    const QString &rootPath = m_fsModel->filePath(index);
+    if ( rootPath.isEmpty() )
+        return;
+    m_visited << rootPath;
     m_rootIndex = index;
-
-    QModelIndexList idxList = m_rootIndexList = fromRoot();
+    m_rootList = fromRoot();
 
     bool parIsVis = false;
 
-    foreach ( const QModelIndex &dirIdx, idxList )
+    QString prev;
+    foreach ( const QString &path, m_rootList )
     {
-        if ( dirIdx.parent().isValid() && isValid(dirIdx.parent()) )
-            column(dirIdx.parent())->setActiveFileName(dirIdx.data().toString());
-        ColumnsView *view = viewFor(dirIdx);
-        parIsVis |= bool(m_visited.contains(m_fsModel->filePath(dirIdx)));
+        ColumnsView *view = viewFor(path);
+        if ( !prev.isEmpty() && isValid(prev) )
+            column(prev)->setActiveFileName(path);
+        prev = path;
+        parIsVis |= bool(m_visited.contains(path));
         view->setVisible(parIsVis);
     }
 
-    int i = idxList.count()-1;
-    QModelIndex parentIndex = index;
+    int i = m_rootList.count()-1;
+    QString parentPath = rootPath;
     while ( isValid(++i) )
     {
-        if ( column(i)->rootIndex().parent() == parentIndex && column(i)->isVisible() )
-            parentIndex = column(i)->rootIndex();
+        if ( QFileInfo(column(i)->rootPath()).path() == parentPath && column(i)->isVisible() )
+            parentPath = column(i)->rootPath();
         else
             column(i)->hide();
     }
 
-    if ( isValid(index) )
-        setCurrentView(column(index));
+    if ( isValid(rootPath) )
+        setCurrentView(column(rootPath));
 }
 
 void ColumnsWidget::showCurrent() { ensureWidgetVisible(currentView()); }
@@ -205,8 +210,8 @@ void
 ColumnsWidget::showEvent(QShowEvent *e)
 {
     QScrollArea::showEvent(e);
-    if ( isValid(m_rootIndex) )
-        ensureWidgetVisible(column(m_rootIndex));
+    if ( isValid(m_fsModel->filePath(m_rootIndex)) )
+        ensureWidgetVisible(column(m_fsModel->filePath(m_rootIndex)));
 }
 
 void

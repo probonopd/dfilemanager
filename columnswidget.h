@@ -60,14 +60,14 @@ protected:
     void showEvent(QShowEvent *e);
     void wheelEvent(QWheelEvent *e);
     bool insideRoot(const QModelIndex &index);
-    int at(const QModelIndex &index) { return m_rootIndexList.indexOf(index); }
-    inline bool isValid(const QModelIndex &index) { return !m_columns.isEmpty()&&at(index)<m_columns.count(); }
-    inline bool isValid(const int i) { return !m_columns.isEmpty()&&i<m_columns.count(); }
+    int at(const QString &path) { return m_rootList.indexOf(path); }
+    inline bool isValid(const QString &path) { return !path.isEmpty()&&!m_columns.isEmpty()&&at(path)<m_columns.count(); }
+    inline bool isValid(const int i) { return i>-1&&!m_columns.isEmpty()&&i<m_columns.count(); }
     inline ColumnsView *column(const int i) { return isValid(i) ? m_columns.at(i): 0; }
-    inline ColumnsView *column(const QModelIndex &index) { return isValid(index) ? column(at(index)) : 0; }
+    inline ColumnsView *column(const QString &path) { return isValid(path) ? column(at(path)) : 0; }
     inline int count() { return m_columns.count(); }
-    ColumnsView *viewFor(const QModelIndex &index);
-    QModelIndexList fromRoot();
+    ColumnsView *viewFor(const QString &path);
+    QStringList fromRoot();
 
 private:
     FileSystemModel *m_fsModel;
@@ -78,7 +78,7 @@ private:
     ViewContainer *m_container;
     ColumnsView *m_currentView;
     QModelIndex m_rootIndex;
-    QModelIndexList m_rootIndexList;
+    QStringList m_rootList;
     QStringList m_visited;
 };
 

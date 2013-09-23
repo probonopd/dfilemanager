@@ -35,7 +35,6 @@
 #include <QBoxLayout>
 
 #include "filesystemmodel.h"
-#include "Proxystyle/proxystyle.h"
 #include "operations.h"
 
 namespace DFM
