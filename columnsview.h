@@ -70,6 +70,7 @@ protected:
 //    void focusOutEvent(QFocusEvent *event) { QListView::focusOutEvent(event); viewport()->update(); }
     void paintEvent(QPaintEvent *e);
     void wheelEvent(QWheelEvent *e);
+    bool eventFilter(QObject *o, QEvent *e);
     bool sanityCheckForDir();
 
 private:

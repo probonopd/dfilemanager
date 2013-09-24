@@ -81,6 +81,8 @@ Store::readConfiguration()
     config.behaviour.windowsStyle = settings()->value("behaviour.gayWindow.windowsStyle", false).toBool();
     config.behaviour.invertedColors = settings()->value("behaviour.gayWindow.invertedColors", false).toBool();
 
+    config.behaviour.capsContainers = settings()->value("behaviour.capsContainers", false).toBool();
+
     settings()->beginGroup("CustomIcons");
 
     int extent = 256;
@@ -146,6 +148,7 @@ Store::writeConfiguration()
     settings()->setValue("iconView.iconSize", config.views.iconView.iconSize);
     settings()->setValue("iconView.lineCount", config.views.iconView.lineCount);
     settings()->setValue("flowSize", config.views.flowSize);
+    settings()->setValue("behaviour.capsContainers", config.behaviour.capsContainers);
 
     if ( !config.behaviour.gayWindow )
         settings()->setValue("hideTabBarWhenOnlyOne", config.behaviour.hideTabBarWhenOnlyOneTab);

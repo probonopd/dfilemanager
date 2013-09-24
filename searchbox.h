@@ -24,6 +24,7 @@
 
 #include <QLineEdit>
 #include <QPixmap>
+#include <QDebug>
 
 namespace DFM
 {
@@ -41,6 +42,8 @@ signals:
 protected:
     void mouseReleaseEvent(QMouseEvent *) { emit clicked(); }
     void paintEvent(QPaintEvent *);
+    void enterEvent(QEvent *) { setOpacity( 1.0 ); }
+    void leaveEvent(QEvent *) { setOpacity( 0.5 ); }
 
 private:
     QPixmap m_pix[2];
@@ -53,9 +56,9 @@ class SearchBox : public QLineEdit
     Q_OBJECT
 public:
     explicit SearchBox(QWidget *parent = 0);
+
+protected:
     void resizeEvent(QResizeEvent *);
-    void enterEvent(QEvent *) { m_iconWidget->setOpacity( 1.0 ); }
-    void leaveEvent(QEvent *) { m_iconWidget->setOpacity( 0.5 ); }
 
 private slots:
     void setClearButtonEnabled(QString filter) { m_iconWidget->setPix(!filter.isEmpty()); }

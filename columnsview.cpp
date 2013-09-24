@@ -94,7 +94,27 @@ ColumnsView::ColumnsView(QWidget *parent, FileSystemModel *fsModel, const QStrin
         if ( QFileInfo(rootPath).exists() )
             setRootIndex(fsModel->index(rootPath));
     }
+    //as we are not using the filesystemmodel rootpath we will not get notified...
     connect(m_fsWatcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirLoaded(QString)));
+    verticalScrollBar()->installEventFilter(this);
+}
+
+bool
+ColumnsView::eventFilter(QObject *o, QEvent *e)
+{
+    // grrrrr, preventing wheel events when control pressed
+    // is not enough... the scrollbar still gets them.
+    if ( o == verticalScrollBar() && e->type() == QEvent::Wheel )
+    {
+        QWheelEvent *we = static_cast<QWheelEvent *>(e);
+        if ( we->modifiers() == Qt::ControlModifier )
+        {
+            QCoreApplication::sendEvent(m_parent, we);
+            return true;
+        }
+    }
+    else
+        return QListView::eventFilter(o, e);
 }
 
 void

@@ -40,10 +40,12 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     , m_newTabButton(new QCheckBox(tr("A 'newtab' button next to last tab"), m_tabsBox))
     , m_overlap(new QSpinBox(m_tabsBox))
     , m_layOrder(new QComboBox(m_tabsBox))
+    , m_capsConts(new QCheckBox(tr("Use CAPITAL LETTERS on containers in bookmarks")))
 {
     m_hideTabBar->setChecked(Store::config.behaviour.hideTabBarWhenOnlyOneTab);
     m_useCustomIcons->setChecked(Store::config.behaviour.systemIcons);
     m_drawDevUsage->setChecked(Store::config.behaviour.devUsage);
+    m_capsConts->setChecked(Store::config.behaviour.capsContainers);
 
     m_tabsBox->setCheckable(true);
     m_tabsBox->setChecked(Store::config.behaviour.gayWindow);
@@ -107,6 +109,7 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     vl->addWidget(m_hideTabBar);
     vl->addWidget(m_useCustomIcons);
     vl->addWidget(m_drawDevUsage);
+    vl->addWidget(m_capsConts);
     vl->addWidget(m_tabsBox);
     vl->addStretch();
     setLayout(vl);
@@ -351,6 +354,7 @@ SettingsDialog::accept()
     Store::config.views.iconView.iconSize = m_viewWidget->m_iconSlider->value();
     Store::config.views.singleClick = m_viewWidget->m_singleClick->isChecked();
     Store::config.views.iconView.lineCount = m_viewWidget->m_lineCount->value();
+    Store::config.behaviour.capsContainers = m_behWidget->m_capsConts->isChecked();
 
     Store::settings()->setValue("behaviour.gayWindow", m_behWidget->m_tabsBox->isChecked());
     Store::settings()->setValue("behaviour.gayWindow.tabShape", m_behWidget->m_tabShape->currentIndex());

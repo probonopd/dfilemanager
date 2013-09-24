@@ -355,16 +355,27 @@ MainWindow::createToolBars()
     m_toolBar->addAction(m_flowAct);
     m_toolBar->addSeparator();
 
-    QWidget *spacerMax = new QWidget(m_toolBar);
-    spacerMax->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-    QWidget *spacerMax2 = new QWidget(m_toolBar);
-    spacerMax2->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-    m_toolBar->addWidget(spacerMax);
+    QWidget *spacerFixed = new QWidget(m_toolBar);
+    spacerFixed->setFixedWidth(64);
+    m_toolBar->addWidget(spacerFixed);
     m_toolBar->addAction(m_configureAct);
     m_toolBar->addSeparator();
     m_toolBar->addAction(m_homeAct);
-    m_toolBar->addWidget(spacerMax2);
-    m_toolBar->addWidget(m_filterBox);
+
+    QWidget *searchWidget = new QWidget(m_toolBar);
+    searchWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    QGridLayout *gl = new QGridLayout(searchWidget);
+
+    QWidget *spacerMax = new QWidget(searchWidget);
+    spacerMax->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+    gl->setSpacing(0);
+    gl->setContentsMargins(0, 0, 0, 0);
+    gl->setColumnStretch(1, 1);
+    gl->addWidget(spacerMax, 0, 0);
+    gl->addWidget(m_filterBox, 0, 1);
+
+    m_toolBar->addWidget(searchWidget);
 }
 
 void

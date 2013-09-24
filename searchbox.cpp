@@ -27,10 +27,14 @@
 using namespace DFM;
 
 
-IconWidget::IconWidget(QWidget *parent) : QWidget(parent), m_opacity(0.5), m_type(false)
+IconWidget::IconWidget(QWidget *parent)
+    : QWidget(parent)
+    , m_opacity(0.5)
+    , m_type(false)
 {
     setFixedSize(16, 16);
     setCursor(Qt::PointingHandCursor);
+    setAttribute(Qt::WA_Hover);
     m_pix[0] = IconProvider::icon(IconProvider::Search, 16, palette().color(foregroundRole()), Store::config.behaviour.systemIcons).pixmap(16);
     m_pix[1] = IconProvider::icon(IconProvider::Clear, 16, palette().color(foregroundRole()), Store::config.behaviour.systemIcons).pixmap(16);
 }
@@ -44,12 +48,16 @@ IconWidget::paintEvent(QPaintEvent *)
     p.end();
 }
 
-SearchBox::SearchBox(QWidget *parent) : QLineEdit(parent), m_margin(4), m_iconWidget(new IconWidget(this))
+SearchBox::SearchBox(QWidget *parent)
+    : QLineEdit(parent)
+    , m_margin(4)
+    , m_iconWidget(new IconWidget(this))
 {
     setPlaceholderText("Filter By Name");
     setTextMargins(m_iconWidget->rect().width()+m_margin, 0, 0, 0);
     setSizePolicy( QSizePolicy::Expanding, QSizePolicy::Fixed );
-    setFixedWidth(222);
+    setMaximumWidth(222);
+    setMouseTracking(true);
 
     connect( this, SIGNAL(textChanged(QString)), this, SLOT(setClearButtonEnabled(QString)));
     connect( m_iconWidget, SIGNAL(clicked()), this, SLOT(clear()));
@@ -58,6 +66,6 @@ SearchBox::SearchBox(QWidget *parent) : QLineEdit(parent), m_margin(4), m_iconWi
 void
 SearchBox::resizeEvent(QResizeEvent *event)
 {
-    m_iconWidget->move(rect().left() + m_margin, (rect().bottom()-m_iconWidget->rect().bottom())/2);
     QLineEdit::resizeEvent(event);
+    m_iconWidget->move(rect().left() + m_margin, (rect().bottom()-m_iconWidget->rect().bottom())/2);
 }

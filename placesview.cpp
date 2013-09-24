@@ -218,7 +218,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 void
 PlacesViewDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
-    const QString &newName = editor->metaObject()->userProperty().read(editor).toString().toUpper();
+    const QString &newName = editor->metaObject()->userProperty().read(editor).toString();
     if ( !newName.isEmpty() )
         if ( Place *p = m_placesView->itemFromIndex<Place *>(index) )
             p->setName(newName);
@@ -387,7 +387,7 @@ DeviceItem::changeState()
 }
 
 DeviceManager::DeviceManager(const QStringList &texts, QObject *parent)
-    : Container(QString("DEVICES"))
+    : Container(QString("Devices"))
     , QObject(parent)
     , m_view(static_cast<PlacesView *>(parent))
 {
@@ -465,7 +465,7 @@ PlacesModel::data(const QModelIndex &index, int role) const
     {
         if ( Container *c = m_places->itemFromIndex<Container *>(index) )
             if ( role == Qt::DisplayRole )
-                return c->name().toUpper();
+                return Store::config.behaviour.capsContainers ? c->name().toUpper() : c->name();
         if ( Place *p = m_places->itemFromIndex<Place *>(index) )
             if ( role == Qt::DisplayRole )
                 return p->name();
@@ -517,6 +517,7 @@ PlacesView::PlacesView( QWidget *parent )
     connect ( this, SIGNAL(clicked(QModelIndex)), this, SLOT(emitPath(QModelIndex)) );
     connect ( this, SIGNAL(placeActivated(QString)), MainWindow::currentWindow(), SLOT(setRootPath(QString)) );
     connect ( m_timer, SIGNAL(timeout()), this, SLOT(updateAllWindows()) );
+    connect ( MainWindow::currentWindow(), SIGNAL(settingsChanged()), viewport(), SLOT(update()) );
 }
 
 #define RETURN \
@@ -545,7 +546,7 @@ PlacesView::dropEvent( QDropEvent *event )
 
         Container *places = 0L;
         foreach ( Container *c, containers() )
-            if ( c->name() == "PLACES" )
+            if ( c->name() == "Places" )
                 places = c;
         if ( !places )
         {
