@@ -150,8 +150,8 @@ public:
         QPixmap pixmap = icon.pixmap(newSize);
         if ( pixmap.height() > DECOSIZE.height() && !isThumb )
             pixmap = pixmap.scaledToHeight(DECOSIZE.height(), Qt::SmoothTransformation);
-        else if ( isThumb )
-            pixmap = icon.pixmap( pixmap.width()*0.66 >= pixmap.height() ? qMin<int>(RECT.width(), DECOSIZE.height()*1.44): DECOSIZE.height() );
+        else if ( isThumb && pixmap.width() > pixmap.height() )
+            pixmap = icon.pixmap( qMin<int>(RECT.width()-4, (float)DECOSIZE.height()*((float)pixmap.width()/(float)pixmap.height())));
         QRect theRect = pixmap.rect();
         theRect.moveCenter( QPoint( RECT.center().x(), RECT.y()+( DECOSIZE.height()/2 ) ) );
         if ( isThumb )
@@ -265,6 +265,7 @@ IconView::wheelEvent( QWheelEvent * event )
         if ( event->modifiers() & Qt::CTRL )
         {
             m_newSize = numDegrees > 0 ? qMin( iconWidth() + 16, 256 ) : qMax( iconWidth() - 16, 16 );
+            m_firstIndex = firstValidIndex();
             killTimer( m_sizeTimer );
             m_sizeTimer = startTimer( 50 );
         }
@@ -503,10 +504,29 @@ IconView::rootPathChanged( QString path )
     updateLayout();
 }
 
+QModelIndex
+IconView::firstValidIndex()
+{
+    int i = iconSize().width()/2;
+    QModelIndex index;
+    while ( !index.isValid() && ++i < qMin(width(), height()) )
+        index = indexAt(QPoint(i, i));
+    return index;
+}
+
 void
 IconView::setIconWidth( const int width )
 {
+//    float val = 0;
+//    if ( verticalScrollBar()->isVisible() )
+//        val = (float)verticalScrollBar()->value()/(float)verticalScrollBar()->maximum();
     QListView::setIconSize( QSize( width, width ) );
-    setGridSize( QSize( gridSize().width(), iconSize().height()+60 ) );
+    setGridHeight(width);
+    setGridSize( QSize( gridSize().width(), m_gridHeight ) );
+    if ( m_firstIndex.isValid() /*&& width == m_newSize */)
+        scrollTo(m_firstIndex, QAbstractItemView::PositionAtTop);
+//    if ( val && verticalScrollBar()->isVisible() )
+//        verticalScrollBar()->setValue(verticalScrollBar()->maximum()*val);
+
     updateLayout();
 }

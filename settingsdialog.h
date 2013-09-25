@@ -41,7 +41,7 @@
 namespace DFM
 {
 
-class StartupWidget : public QWidget
+class StartupWidget : public QGroupBox
 {
     Q_OBJECT
 public:
@@ -82,6 +82,7 @@ private:
     QComboBox *m_tabShape, *m_layOrder;
     QSpinBox *m_tabRndns, *m_tabHeight, *m_tabWidth, *m_overlap;
     QCheckBox *m_hideTabBar, *m_useCustomIcons, *m_drawDevUsage, *m_newTabButton, *m_capsConts;
+    StartupWidget *m_startUpWidget;
 };
 
 class ViewsWidget : public QWidget
@@ -115,7 +116,6 @@ public slots:
 
 private:
     QPushButton *m_ok,*m_cancel;
-    StartupWidget *m_startupWidget;
     BehaviourWidget *m_behWidget;
     ViewsWidget *m_viewWidget;
 };

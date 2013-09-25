@@ -41,11 +41,13 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     , m_overlap(new QSpinBox(m_tabsBox))
     , m_layOrder(new QComboBox(m_tabsBox))
     , m_capsConts(new QCheckBox(tr("Use CAPITAL LETTERS on containers in bookmarks")))
+    , m_startUpWidget(new StartupWidget(this))
 {
     m_hideTabBar->setChecked(Store::config.behaviour.hideTabBarWhenOnlyOneTab);
     m_useCustomIcons->setChecked(Store::config.behaviour.systemIcons);
     m_drawDevUsage->setChecked(Store::config.behaviour.devUsage);
     m_capsConts->setChecked(Store::config.behaviour.capsContainers);
+    m_startUpWidget->setStartupPath(Store::settings()->value("startPath").toString());
 
     m_tabsBox->setCheckable(true);
     m_tabsBox->setChecked(Store::config.behaviour.gayWindow);
@@ -106,6 +108,7 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
 #undef LABEL
 
     QVBoxLayout *vl = new QVBoxLayout(this);
+    vl->addWidget(m_startUpWidget);
     vl->addWidget(m_hideTabBar);
     vl->addWidget(m_useCustomIcons);
     vl->addWidget(m_drawDevUsage);
@@ -120,11 +123,12 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
 
 
 StartupWidget::StartupWidget(QWidget *parent)
-    : QWidget(parent)
+    : QGroupBox(parent)
     , m_lock(Store::config.docks.lock)
     , m_sheetEdit(new QLineEdit(Store::config.styleSheet, this))
     , m_startPath(new QLineEdit(this))
 {
+    setTitle(tr("Startup"));
     QGroupBox *gb = new QGroupBox("Lock Docks", this);
     QVBoxLayout *docks = new QVBoxLayout(gb);
     m_left = new QCheckBox(tr("Left"));
@@ -289,18 +293,14 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
 SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
 {
     QTabWidget *tabWidget = new QTabWidget(this);
-    m_startupWidget = new StartupWidget(tabWidget);
     m_behWidget = new BehaviourWidget(tabWidget);
     m_viewWidget = new ViewsWidget(tabWidget);
     m_ok = new QPushButton(this);
     m_cancel = new QPushButton(this);
 
-    setWindowTitle(tr("Configure"));
+    setWindowTitle(tr("Configure DFM"));
 
-    m_startupWidget->setStartupPath(Store::settings()->value("startPath").toString());
-
-    tabWidget->addTab(m_startupWidget, "Startup");
-    tabWidget->addTab(m_behWidget, "Behaviour");
+    tabWidget->addTab(m_behWidget, tr("Behaviour"));
     tabWidget->addTab(m_viewWidget, tr("Views"));
 
     QVBoxLayout *vLayout = new QVBoxLayout();
@@ -324,13 +324,13 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
 void
 SettingsDialog::accept()
 {
-    if (QFileInfo(m_startupWidget->startupPath()).isDir())
-        Store::config.startPath = m_startupWidget->startupPath();
-    if (QFileInfo(m_startupWidget->m_sheetEdit->text()).isReadable()
-            &&  ( QFileInfo(m_startupWidget->m_sheetEdit->text()).suffix() == "css"
-                  || QFileInfo(m_startupWidget->m_sheetEdit->text()).suffix() == "qss" ) )
+    if (QFileInfo(m_behWidget->m_startUpWidget->startupPath()).isDir())
+        Store::config.startPath = m_behWidget->m_startUpWidget->startupPath();
+    if (QFileInfo(m_behWidget->m_startUpWidget->m_sheetEdit->text()).isReadable()
+            &&  ( QFileInfo(m_behWidget->m_startUpWidget->m_sheetEdit->text()).suffix() == "css"
+                  || QFileInfo(m_behWidget->m_startUpWidget->m_sheetEdit->text()).suffix() == "qss" ) )
     {
-        Store::config.styleSheet = m_startupWidget->m_sheetEdit->text();
+        Store::config.styleSheet = m_behWidget->m_startUpWidget->m_sheetEdit->text();
         QFile file(DFM::Store::config.styleSheet);
         file.open(QFile::ReadOnly);
         qApp->setStyleSheet(file.readAll());
@@ -344,7 +344,7 @@ SettingsDialog::accept()
 
     Store::config.behaviour.hideTabBarWhenOnlyOneTab = m_behWidget->m_hideTabBar->isChecked();
     Store::config.behaviour.systemIcons = m_behWidget->m_useCustomIcons->isChecked();
-    Store::config.docks.lock = m_startupWidget->locked();
+    Store::config.docks.lock = m_behWidget->m_startUpWidget->locked();
     Store::config.views.iconView.smoothScroll = m_viewWidget->m_smoothScroll->isChecked();
     Store::config.views.showThumbs = m_viewWidget->m_showThumbs->isChecked();
     Store::config.behaviour.devUsage = m_behWidget->m_drawDevUsage->isChecked();

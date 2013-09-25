@@ -60,7 +60,7 @@ class IconView : public QListView
 public:
     explicit IconView(QWidget *parent = 0);
     void setFilter(QString filter);
-    inline void setNewSize( const int &size ) { m_newSize = size; killTimer( m_sizeTimer ); m_sizeTimer = startTimer( 50 ); }
+    inline void setNewSize( const int &size ) { m_newSize = size; m_firstIndex = firstValidIndex(); killTimer( m_sizeTimer ); m_sizeTimer = startTimer( 50 ); }
     void setModel(QAbstractItemModel *model);
 
 protected:
@@ -74,6 +74,7 @@ protected:
     void timerEvent(QTimerEvent *e);
     void keyPressEvent(QKeyEvent *e);
     void setIconWidth(const int width);
+    QModelIndex firstValidIndex();
     inline int iconWidth() const { return iconSize().width(); }
 
 public slots:
@@ -95,6 +96,7 @@ private:
     bool m_slide, m_startSlide;
     FileSystemModel *m_fsModel;
     QTimer *m_scrollTimer;
+    QModelIndex m_firstIndex;
     int m_delta, m_newSize, m_sizeTimer, m_gridHeight;
 };
 

@@ -99,3 +99,9 @@ FlowView::setSelectionModel(QItemSelectionModel *selectionModel)
     m_preView->setSelectionModel(selectionModel);
     connect( m_dView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),this,SLOT(treeCurrentIndexChanged(QItemSelection,QItemSelection)));
 }
+
+QModelIndex FlowView::rootIndex() { return m_dView->rootIndex(); }
+QModelIndex FlowView::currentIndex() { return m_dView->currentIndex(); }
+void FlowView::addActions(QList<QAction *> actions) { m_dView->addActions(actions); }
+void FlowView::setFilter(QString filter) { m_dView->setFilter(filter); }
+void FlowView::flowCurrentIndexChanged(const QModelIndex &index) { m_dView->setCurrentIndex(index); }

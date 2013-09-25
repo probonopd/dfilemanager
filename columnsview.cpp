@@ -126,8 +126,8 @@ ColumnsView::setRootPath(const QString &path)
 void
 ColumnsView::setRootIndex(const QModelIndex &index)
 {
-    if (!m_rootPath.isEmpty() && m_fsWatcher->files().contains(m_rootPath))
-        m_fsWatcher->removePath(m_rootPath);
+    if ( !m_fsWatcher->directories().isEmpty() )
+        m_fsWatcher->removePaths(m_fsWatcher->directories());
     if ( m_fsModel )
     {
         m_isSorted = index == m_fsModel->index(m_fsModel->rootPath());

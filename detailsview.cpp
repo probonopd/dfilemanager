@@ -46,8 +46,10 @@ protected:
     }
 };
 
-DetailsView::DetailsView(QWidget *parent) :
-    QTreeView(parent)
+DetailsView::DetailsView(QWidget *parent)
+    : QTreeView(parent)
+    , m_fsModel(0)
+    , m_userPlayed(false)
 {
     setItemDelegate(new DetailsDelegate());
     setUniformRowHeights(true);
@@ -67,11 +69,41 @@ DetailsView::DetailsView(QWidget *parent) :
 }
 
 void
+DetailsView::dirLoaded(const QString &path)
+{
+    if ( path != m_fsModel->rootPath() || path != m_fsModel->filePath(rootIndex()) )
+        return;
+    if ( !isVisible() || m_detailsWidth > 0 )
+        return;
+    int w = width()-(verticalScrollBar()->isVisible()*style()->pixelMetric(QStyle::PM_ScrollBarExtent));
+    setColumnWidth(0, w);
+
+    for ( int i = 1; i < m_fsModel->columnCount(rootIndex()); ++i )
+    {
+        resizeColumnToContents(i);
+        m_detailsWidth+=columnWidth(i);
+    }
+
+    w-=m_detailsWidth;
+    if ( m_detailsWidth < 1 || w > width()-16 )
+        qDebug() << "something went wrong when resizing columns in detailsview" << m_detailsWidth;
+    setColumnWidth(0, w);
+}
+
+void
+DetailsView::setModel(QAbstractItemModel *model)
+{
+    QTreeView::setModel(model);
+    m_fsModel = static_cast<FileSystemModel *>(model);
+    connect(m_fsModel, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)));
+}
+
+void
 DetailsView::resizeEvent(QResizeEvent *event)
 {
-    setColumnWidth(0,viewport()->width()-320);
-    setColumnWidth(3,120);
     QTreeView::resizeEvent(event);
+    if ( !m_userPlayed )
+        setColumnWidth(0, viewport()->width()-m_detailsWidth);
 }
 
 void
@@ -92,9 +124,9 @@ DetailsView::keyPressEvent(QKeyEvent *event)
 void
 DetailsView::setFilter(QString filter)
 {
-    for(int i = 0; i < model()->rowCount(rootIndex()); i++)
+    for (int i = 0; i < model()->rowCount(rootIndex()); i++)
     {
-        if(model()->index(i,0,rootIndex()).data().toString().toLower().contains(filter.toLower()))
+        if (model()->index(i,0,rootIndex()).data().toString().toLower().contains(filter.toLower()))
             setRowHidden(i,rootIndex(), false);
         else
             setRowHidden(i,rootIndex(),true);
@@ -142,6 +174,13 @@ DetailsView::mousePressEvent(QMouseEvent *event)
     if (event->modifiers() == Qt::MetaModifier)
         setDragEnabled(false);
     QTreeView::mousePressEvent(event);
+}
+
+void
+DetailsView::showEvent(QShowEvent *e)
+{
+    QTreeView::showEvent(e);
+    dirLoaded(m_fsModel->filePath(rootIndex()));
 }
 
 

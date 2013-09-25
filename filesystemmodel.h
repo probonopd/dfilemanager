@@ -100,6 +100,8 @@ public:
     bool hasThumb( const QString &file );
     bool hasFlowData( const QString &file );
     History *history() { return m_history; }
+    int columnCount(const QModelIndex &parent) const;
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
 public slots:
     void setPath(const QString &path) { setRootPath(path); }
@@ -112,10 +114,6 @@ private slots:
 signals:
     void rootPathAsIndex( const QModelIndex &index );
     void flowDataChanged( const QModelIndex &start, const QModelIndex &end );
-
-protected:
-    int columnCount(const QModelIndex &parent) const;
-    QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
 private:
     QStringList m_nameThumbs;

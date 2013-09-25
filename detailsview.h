@@ -27,6 +27,7 @@
 #include <QDragMoveEvent>
 #include <QDebug>
 #include <QHeaderView>
+#include "filesystemmodel.h"
 
 namespace DFM
 {
@@ -42,9 +43,20 @@ public:
     void mouseReleaseEvent(QMouseEvent *e);
     void mousePressEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *);
+    void showEvent(QShowEvent *);
+    void setModel(QAbstractItemModel *model);
+    void setRootIndex(const QModelIndex &index) { QTreeView::setRootIndex(index); m_detailsWidth = 0; }
 
 signals:
-    void newTabRequest(QModelIndex path);
+    void newTabRequest(const QModelIndex &path);
+
+private slots:
+    void dirLoaded(const QString &path);
+
+private:
+    FileSystemModel *m_fsModel;
+    bool m_userPlayed;
+    int m_detailsWidth;
 };
 
 }
