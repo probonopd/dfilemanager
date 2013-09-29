@@ -29,12 +29,16 @@
 #include <QProcess>
 #include <QStyledItemDelegate>
 #include <QTextLayout>
+#include <QRect>
+#include <qmath.h>
 
 #define TEXT index.data().toString()
 #define RECT option.rect
 #define FM option.fontMetrics
 #define PAL option.palette
 #define DECOSIZE option.decorationSize
+
+//Q_DECLARE_METATYPE(QPainterPath)
 
 using namespace DFM;
 
@@ -62,10 +66,12 @@ class IconDelegate : public QStyledItemDelegate
 {
 public:
     enum ShadowPart { TopLeft = 0, Top, TopRight, Left, Center, Right, BottomLeft, Bottom, BottomRight };
-    inline explicit IconDelegate( QWidget *parent ) : QStyledItemDelegate( parent )
+    enum Role { Text = 0, TextRect, Shape, Size };
+    inline explicit IconDelegate( QWidget *parent )
+        : QStyledItemDelegate( parent )
+        , m_size(4)
+        , m_iv(static_cast<IconView*>( parent ))
     {
-        m_size = 4;
-        m_iv = static_cast<IconView*>( parent );
         genShadowData();
     }
     inline void genShadowData()
@@ -94,11 +100,6 @@ public:
         painter->drawTiledPixmap( QRect( QPoint( x+m_size, b-m_size ), QSize( w-( m_size*2+1 ), m_shadowData[Bottom].height() ) ), m_shadowData[Bottom] );
         painter->drawTiledPixmap( QRect( QPoint( r-m_size, b-m_size ), m_shadowData[BottomRight].size() ), m_shadowData[BottomRight] );
     }
-//    int itemHeight()
-//    {
-//        int h = DECOSIZE.height() +
-//    }
-
     void paint( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
         if ( !m_fsModel )
@@ -112,21 +113,43 @@ public:
         const int step = selected ? 8 : ViewAnimator::hoverLevel(m_iv, index);
 
         const QStyleOptionViewItem &copy = option;
-        QRect saved = RECT, tr;
-        QString et = elidedText(option, index, 0, &tr);
-        tr.moveTop(RECT.y()+DECOSIZE.height());
-        const_cast<QStyleOptionViewItem *>(&copy)->rect = tr;
+        QRect decoRect = RECT;
+        QString et = textData(option, index, Text).value<QString>();
+        QRect tr = textData(option, index, TextRect).value<QRect>();
+        decoRect.setBottom(tr.top());
 
+
+//        const_cast<QStyleOptionViewItem *>(&copy)->rect = tr;
+
+//        if ( step )
+//        {
+//            const_cast<QStyleOptionViewItem *>(&copy)->state |= QStyle::State_MouseOver; //grrrrr, must trick styles....
+//            painter->setOpacity((1.0f/8.0f)*step);
+//            QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, painter, m_iv);
+//            painter->setOpacity(1);
+//        }
+//        const_cast<QStyleOptionViewItem *>(&copy)->rect = saved;
         if ( step )
         {
-            const_cast<QStyleOptionViewItem *>(&copy)->state |= QStyle::State_MouseOver; //grrrrr, must trick styles....
+            painter->save();
+            const int roundness = option.fontMetrics.height()/2;
+            painter->setPen(Qt::NoPen);
             painter->setOpacity((1.0f/8.0f)*step);
-            QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, painter, m_iv);
-            painter->setOpacity(1);
+            const QColor &h = selected?PAL.color(QPalette::Highlight):Ops::colorMid(PAL.color(QPalette::Highlight), PAL.color(QPalette::Base));
+            QColor frame = PAL.color(QPalette::Text);
+            frame.setAlpha(48);
+            painter->setBrush(frame);
+            painter->drawRoundedRect(decoRect, roundness, roundness);
+            painter->setBrush(h);
+            painter->drawRoundedRect(tr, roundness, roundness);
+            painter->restore();
         }
-        const_cast<QStyleOptionViewItem *>(&copy)->rect = saved;
-
-        QApplication::style()->drawItemText(painter, tr, textFlags(), PAL, option.state & QStyle::State_Enabled, et, selected ? QPalette::HighlightedText : QPalette::Text);
+        const QColor &high(selected ? PAL.color(QPalette::HighlightedText) : PAL.color(QPalette::Text));
+        QPen pen = painter->pen();
+        painter->setPen(high);
+        painter->drawText(tr, Qt::AlignCenter, et);
+        painter->setPen(pen);
+//        QApplication::style()->drawItemText(painter, tr.adjusted(-2, 0, 2, 0), Qt::AlignCenter, PAL, option.state & QStyle::State_Enabled, et, high);
 
         QIcon icon = m_fsModel->fileIcon(index);
 
@@ -169,44 +192,102 @@ public:
 protected:
     QSize sizeHint( const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
-        int ds = DECOSIZE.height(), h = 0;
-        elidedText(option, index, &h);
-        return QSize(ds+(Store::config.views.iconView.textWidth*2), ds+h);
+        static QHash<QPair<QString, int>, QSize> s_sizes[2];
+        const bool selected = option.state&QStyle::State_Selected;
+        const QString &path = m_fsModel->filePath(index);
+        const int size = option.decorationSize.height();
+        if ( s_sizes[selected].contains(QPair<QString, int>(path, size)) )
+            return s_sizes[selected].value(QPair<QString, int>(path, size));
+        s_sizes[selected].insert(QPair<QString, int>(path, size), textData(option, index, Size).toSize());
+        return s_sizes[selected].value(QPair<QString, int>(path, size));
     }
-    inline QString elidedText( const QStyleOptionViewItem &option, const QModelIndex &index, int *h = 0, QRect *r = 0 ) const
+    QVariant textData( const QStyleOptionViewItem &option, const QModelIndex &index, const Role role, QPainter *p = 0 ) const
     {
-        QFont font( qvariant_cast<QFont>(m_fsModel->data(index, Qt::FontRole)) );
+        QFont font( index.model()->data(index, Qt::FontRole).value<QFont>() );
         QFontMetrics fm( font );
 
-        QTextLayout textLayout(TEXT, font);
-        int widthUsed = 0, lineCount = -1, leading = fm.leading();
-        textLayout.beginLayout();
+        QString spaces(TEXT.replace(".", QString(" ")));
+        spaces = spaces.replace("_", QString(" "));
+        QString theText;
+
+        QTextLayout textLayout(spaces, font);
+        int lineCount = -1, leading = fm.leading();
         QTextOption opt;
-        opt.setWrapMode(QTextOption::WrapAnywhere);
+        opt.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
         textLayout.setTextOption(opt);
 
-        float height = 0;
-        while (++lineCount < Store::config.views.iconView.lineCount) {
+        const int w = DECOSIZE.height()+Store::config.views.iconView.textWidth*2;
+        const int top = RECT.top()+DECOSIZE.height();
+        int textW = 0;
+
+//        QPainterPath path;
+        qreal height = 0;
+        textLayout.beginLayout();
+        while (++lineCount < Store::config.views.iconView.lineCount)
+        {
             QTextLine line = textLayout.createLine();
             if (!line.isValid())
                 break;
 
-            line.setLineWidth(DECOSIZE.height()+Store::config.views.iconView.textWidth*2);
+            line.setLineWidth(w);
+            QString actualText;
+//            if ( role != Size )
+//            {
+                actualText = TEXT.mid(line.textStart(), qMin(line.textLength(), TEXT.count()));
+                if ( line.lineNumber() == Store::config.views.iconView.lineCount-1 )
+                    actualText = fm.elidedText(TEXT.mid(line.textStart(), TEXT.count()), Qt::ElideRight, w);
+
+                //this should only happen if there
+                //are actual dots or underscores...
+                //so width should always be > oldw
+                //we do this only cause QTextLayout
+                //doesnt think that dots or underscores
+                //are actual wordseparators
+                if ( fm.boundingRect(actualText).width() > w )
+                {
+                    int width = 0;
+                    if ( actualText.contains(".") )
+                        width += fm.boundingRect(".").width()*actualText.count(".");
+                    if ( actualText.contains("_") )
+                        width += fm.boundingRect("_").width()*actualText.count("_");
+
+                    int oldw = fm.boundingRect(" ").width()*actualText.count(" ");
+                    int diff = width - oldw;
+
+                    line.setLineWidth(w-diff);
+                    actualText = TEXT.mid(line.textStart(), qMin(line.textLength(), TEXT.count()));
+                    if ( line.lineNumber() == Store::config.views.iconView.lineCount-1 )
+                        actualText = fm.elidedText(TEXT.mid(line.textStart(), TEXT.count()), Qt::ElideRight, w);
+                }
+
+                theText.append(QString("%1\n").arg(actualText));
+//            }
+            textW = qMax(fm.boundingRect(actualText).width(), textW);
+//            if ( role == Shape || role == Rect )
+//            {
+//                QRect r(fm.boundingRect(actualText));
+//                r.moveTo(RECT.left()+(qRound((float)w/2.0f)-qRound((float)r.width()/2.0f)), top+height);
+//                QPainterPath rp; rp.addRect(r);
+//                path = rp.united(path);
+//                path.addText(r.left(), r.top()+r.height()*0.75, font, actualText);
+//            }
             height += leading;
             height += line.height();
-            widthUsed += line.naturalTextWidth();
         }
         textLayout.endLayout();
-        if ( h )
-            *h = qRound(height);
+        if ( textW < w+4 )
+            textW+=4;
 
-        QString elidedText = lineCount > Store::config.views.iconView.lineCount-1 ? fm.elidedText(TEXT, Qt::ElideRight, widthUsed) : TEXT;
-
-        if ( r )
-            *r = QApplication::style()->itemTextRect(fm, RECT, textFlags(), true, elidedText);
-        return elidedText;
+        switch ( role )
+        {
+        case Text: return theText; break;
+        case Size: return QSize(w/*qMax(DECOSIZE.width(), textW)*/, DECOSIZE.height()+qRound(height+4)); break;
+        case TextRect: return QRect(RECT.left()+((float)w/2.0f-(float)textW/2.0f), top+4, textW, height); break;
+//        case Shape: return QVariant::fromValue(path); break;
+        default: return QVariant();
+        }
     }
-    static inline int textFlags() { return Qt::AlignHCenter | Qt::AlignTop | Qt::TextWrapAnywhere | Qt::TextWordWrap; }
+    static inline int textFlags() { return Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap; }
 private:
     QPixmap m_shadowData[9];
     int m_size;
@@ -219,13 +300,13 @@ IconView::IconView( QWidget *parent )
     , m_scrollTimer( new QTimer(this) )
     , m_delta(0)
     , m_newSize(0)
-    , m_sizeTimer(0)
+    , m_sizeTimer(new QTimer(this))
     , m_gridHeight(0)
 {
     setItemDelegate( new IconDelegate( this ) );
     ViewAnimator::manage(this);
     setMovement( QListView::Snap );
-    const int &iSize = Store::config.views.iconView.iconSize*16;
+    const int iSize = Store::config.views.iconView.iconSize*16;
     setGridHeight(iSize);
     setSelectionMode( QAbstractItemView::ExtendedSelection );
     setResizeMode( QListView::Adjust );
@@ -248,6 +329,8 @@ IconView::IconView( QWidget *parent )
     connect( this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)) );
     connect( MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(correctLayout()) );
 
+    connect( m_sizeTimer, SIGNAL(timeout()), this, SLOT(updateIconSize()) );
+
     m_slide = false;
     m_startSlide = false;
 
@@ -256,18 +339,41 @@ IconView::IconView( QWidget *parent )
 }
 
 void
+IconView::setNewSize(const int size)
+{
+    m_newSize = size;
+    m_firstIndex = firstValidIndex();
+    if ( !m_sizeTimer->isActive() )
+        m_sizeTimer->start(25);
+}
+
+void
+IconView::updateIconSize()
+{
+    if ( iconWidth() > m_newSize ) //zoom out
+        setIconWidth( iconWidth()-qMax(1, ((iconWidth()-m_newSize)/2)) );
+    else if ( iconWidth() < m_newSize ) //zoom in
+        setIconWidth( iconWidth()+qMax(1, ((m_newSize-iconWidth())/2)) );
+    else
+    {
+        emit iconSizeChanged( m_newSize );
+        m_sizeTimer->stop();
+    }
+}
+
+void
 IconView::wheelEvent( QWheelEvent * event )
 {
     if ( event->orientation() == Qt::Vertical )
     {
-        const int &numDegrees = event->delta();
+        const int numDegrees = event->delta();
 
         if ( event->modifiers() & Qt::CTRL )
         {
             m_newSize = numDegrees > 0 ? qMin( iconWidth() + 16, 256 ) : qMax( iconWidth() - 16, 16 );
             m_firstIndex = firstValidIndex();
-            killTimer( m_sizeTimer );
-            m_sizeTimer = startTimer( 50 );
+            if ( !m_sizeTimer->isActive() )
+                m_sizeTimer->start(25);
         }
         else
         {
@@ -299,25 +405,6 @@ IconView::scrollEvent()
         m_delta += 30;
     else
         m_scrollTimer->stop();
-}
-
-void
-IconView::timerEvent(QTimerEvent *e)
-{
-    if ( e->timerId() == m_sizeTimer )
-    {
-        if ( iconWidth() > m_newSize ) //zoom out
-            setIconWidth( iconWidth()-qMax(1, ((iconWidth()-m_newSize)/2)) );
-        else if ( iconWidth() < m_newSize ) //zoom in
-            setIconWidth( iconWidth()+qMax(1, ((m_newSize-iconWidth())/2)) );
-        else
-        {
-            killTimer( m_sizeTimer );
-            emit iconSizeChanged( m_newSize );
-        }
-    }
-    else
-        QListView::timerEvent(e);
 }
 
 void

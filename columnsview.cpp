@@ -331,7 +331,11 @@ ColumnsView::sanityCheckForDir()
         {
             QString dir = m_rootPath;
             while ( !QFileInfo(dir).exists() )
+            {
+                if ( m_fsWatcher->directories().contains(dir) )
+                    m_fsWatcher->removePath(dir);
                 dir = QFileInfo(dir).path();
+            }
             if ( m_fsModel->rootPath() != dir )
                 m_fsModel->setRootPath(dir);
             return false;

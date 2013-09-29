@@ -188,17 +188,18 @@ static inline QString desktopInfo(const QString &desktop, bool name)
     while (!stream.atEnd())
     {
         QString line = stream.readLine();
-        if(line.startsWith("name=", Qt::CaseInsensitive))
+        if (line.startsWith("name=", Qt::CaseInsensitive))
         {
-            if(line.split("=").count() >= 2)
+            if (line.split("=").count() >= 2)
                 n = line.split("=").at(1);
         }
-        else if(line.startsWith("exec=", Qt::CaseInsensitive))
+        else if (line.startsWith("exec=", Qt::CaseInsensitive))
         {
-            if(line.split("=").count() >= 2)
+            if (line.split("=").count() >= 2)
                 e = line.split("=").at(1);
         }
-        else continue;
+        else
+            continue;
     }
     desktopFile.close();
     return name ? n : e;
@@ -213,7 +214,7 @@ Store::openWithActions(const QString &file)
     mimeTypes.close();
 
     QMap<QString, QString> mimeMap;
-    foreach(QString mimeType, mimeTypesList)
+    foreach (QString mimeType, mimeTypesList)
     {
         QStringList tmp = mimeType.split(":");
         if(tmp.count() >= 2)
@@ -232,7 +233,7 @@ Store::openWithActions(const QString &file)
 
     QMap<QString, QStringList> appsMap;
 
-    foreach(QString mimeString, mimeList)
+    foreach (QString mimeString, mimeList)
     {
         QStringList tmp = mimeString.split("=");
         if(tmp.count() >= 2)
@@ -250,7 +251,10 @@ Store::openWithActions(const QString &file)
     QList<QAction *> actionList;
     foreach(QString app, apps)
     {
-        QAction *action = new QAction(desktopInfo(app, true), instance() );
+        const QString &name = desktopInfo(app, true);
+        if ( name.isEmpty() )
+            continue;
+        QAction *action = new QAction(name, instance());
         action->setProperty("file", file);
         connect( action, SIGNAL( triggered() ), Ops::instance(), SLOT( openWith() ) );
         QVariant var;

@@ -34,7 +34,7 @@ PathSeparator::paintEvent(QPaintEvent *)
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
     p.setPen(Qt::NoPen);
-    QColor fg = palette().color(foregroundRole());
+    QColor fg = palette().color(underMouse()?QPalette::Highlight:foregroundRole());
     QColor bg = palette().color(backgroundRole());
 
     int y = bg.value()>fg.value()?1:-1;
@@ -44,6 +44,8 @@ PathSeparator::paintEvent(QPaintEvent *)
     triangle.moveTo(r.topLeft());
     triangle.lineTo(r.adjusted(0, r.height()/2, 0, 0).topRight());
     triangle.lineTo(r.bottomLeft());
+    if ( !underMouse() )
+        p.setOpacity(0.5f);
     p.setBrush(hl);
     p.drawPath(triangle.translated(0, y));
     p.setBrush(fg);
@@ -88,7 +90,7 @@ NavButton::NavButton(QWidget *parent, const QString &path)
         setMinimumWidth(23);
     setIconSize(QSize(16, 16));
     QFont f(qApp->font());
-    f.setPointSize(f.pointSize()-1);
+    f.setPointSize(f.pointSize()*0.8);
     setFont(f);
     setAcceptDrops(true);
 }
@@ -288,12 +290,12 @@ void
 BreadCrumbs::pathChanged(const QString &path)
 {
     bool exists = false;
-    for(int i = 0; i < m_pathBox->count();i++)
+    for (int i = 0; i < m_pathBox->count();i++)
     {
         if(m_pathBox->itemText(i) == path)
             exists = true;
     }
-    if(!exists && m_fsModel->index(path).isValid())
+    if (!exists && m_fsModel->index(path).isValid())
         m_pathBox->addItem(path);
 
     m_pathBox->setEditText(path);

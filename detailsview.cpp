@@ -56,10 +56,10 @@ DetailsView::DetailsView(QWidget *parent)
     setSelectionMode(QAbstractItemView::ExtendedSelection);
     setSortingEnabled(true);
     sortByColumn(0, Qt::AscendingOrder);
-    setRootIsDecorated(false);
+//    setRootIsDecorated(false);
     setEditTriggers(QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
     setExpandsOnDoubleClick(false);
-    setItemsExpandable(false);
+//    setItemsExpandable(false);
     setDragDropMode(QAbstractItemView::DragDrop);
     setDropIndicatorShown(true);
     setDefaultDropAction(Qt::MoveAction);
@@ -71,10 +71,12 @@ DetailsView::DetailsView(QWidget *parent)
 void
 DetailsView::dirLoaded(const QString &path)
 {
-    if ( path != m_fsModel->rootPath() || path != m_fsModel->filePath(rootIndex()) )
+    if ( path != m_fsModel->rootPath()
+         || path != m_fsModel->filePath(rootIndex())
+         || !isVisible()
+         || m_detailsWidth > 0 )
         return;
-    if ( !isVisible() || m_detailsWidth > 0 )
-        return;
+
     int w = width()-(verticalScrollBar()->isVisible()*style()->pixelMetric(QStyle::PM_ScrollBarExtent));
     setColumnWidth(0, w);
 

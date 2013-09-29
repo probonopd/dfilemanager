@@ -92,8 +92,8 @@ public:
     explicit ViewsWidget(QWidget *parent = 0);
 
 private slots:
-    inline void sliderChanged(const int &value) { m_width->setText( QString::number(value*2) + " px"); }
-    inline void sizeChanged(const int &value) { m_size->setText( QString::number(value*16) + " px"); }
+    inline void sliderChanged(const int value) { m_width->setText( QString::number(value*2) + " px"); }
+    inline void sizeChanged(const int value) { m_size->setText( QString::number(value*16) + " px"); }
 
 private:
     friend class SettingsDialog;

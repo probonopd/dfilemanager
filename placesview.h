@@ -82,7 +82,7 @@ public:
             appendRow( new Place(p) );
         setSelectable(false);
     }
-    inline Place *place( const int &i ) { return static_cast<Place *>(child(i)); }
+    inline Place *place( const int i ) { return static_cast<Place *>(child(i)); }
     inline Places places()
     {
         Places p;
@@ -124,7 +124,7 @@ class DeviceItem : public QObject, public Place //have to inherit QObject for si
 public:
     DeviceItem( DeviceManager *parentItem = 0, PlacesView *view = 0, Solid::Device solid = Solid::Device() );
     ~DeviceItem() { m_tb->deleteLater(); }
-    void setMounted( const bool &mount );
+    void setMounted( const bool mount );
     inline bool isMounted() const { return m_solid.isValid() && m_solid.as<Solid::StorageAccess>()->isAccessible(); }
     inline QString mountPath() const { return m_solid.isValid() ? m_solid.as<Solid::StorageAccess>()->filePath() : QString(); }
     inline QString devPath() const { return m_solid.isValid() ? m_solid.as<Solid::Block>()->device() : QString(); }
@@ -205,7 +205,7 @@ class PlacesView : public QTreeView
 public:
     typedef QList<Container *> Containers;
     PlacesView( QWidget *parent );
-    QMenu *containerAsMenu( const int &cont );
+    QMenu *containerAsMenu( const int cont );
     inline QStringList hiddenDevices() const { return m_hiddenDevices; }
     inline void addHiddenDevice( const QString &devPath ) { if ( !m_hiddenDevices.contains(devPath) ) m_hiddenDevices << devPath; }
     inline void removeHiddenDevice( const QString &devPath ) { m_hiddenDevices.removeOne(devPath); }
@@ -223,7 +223,7 @@ public:
     template<typename T>
     inline T currentItem() const { return itemFromIndex<T>(currentIndex()); }
 
-    inline Container *container( const int &i ) { return dynamic_cast<Container *>(m_model->item(i)); }
+    inline Container *container( const int i ) { return dynamic_cast<Container *>(m_model->item(i)); }
     inline void setCurrentItem(QStandardItem *item) { setCurrentIndex(indexFromItem(item)); }
     inline int containerCount() { return m_model->rowCount(); }
     inline Containers containers()
@@ -240,7 +240,7 @@ public:
 
 public slots:
     void renPlace();
-    void addPlace(QString name, QString path, QIcon icon, QStandardItem *parent = 0, const bool &storeSettings = true);
+    void addPlace(QString name, QString path, QIcon icon, QStandardItem *parent = 0, const bool storeSettings = true);
     void addPlaceCont();
     void setPlaceIcon();
     void removePlace();

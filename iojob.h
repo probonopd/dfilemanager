@@ -88,7 +88,7 @@ public slots:
     void setInfo( QString from, QString to, int completeProgress, int currentProgress );
     inline void setSpeed( const QString &speed ) { m_speedLabel->setText(speed); }
     void finished();
-    inline void pauseToggled( const bool &pause, const bool &cut ) { setWindowTitle(cut ? (pause ? "Moving... [paused]" : "Moving..." ) : (pause ? "Copying... [paused]" : "Copying... ")); }
+    inline void pauseToggled( const bool pause, const bool cut ) { setWindowTitle(cut ? (pause ? "Moving... [paused]" : "Moving..." ) : (pause ? "Copying... [paused]" : "Copying... ")); }
 
 private:
     QProgressBar *m_progress, *m_fileProgress;
@@ -109,7 +109,7 @@ class IOThread : public QThread
     Q_OBJECT
 public:
     enum Type { Copy = 0, Remove };
-    IOThread(const QStringList &inf, const QString &dest, const bool &cut, const qint64 &totalSize, QObject *parent = 0);
+    IOThread(const QStringList &inf, const QString &dest, const bool cut, const qint64 &totalSize, QObject *parent = 0);
     IOThread(const QStringList &paths = QStringList(), QObject *parent = 0);
     void run();
     bool paused() { return m_pause; }
@@ -120,9 +120,9 @@ public slots:
     void setPaused(bool pause);
 
 signals:
-    void copyProgress(const QString &inFile, const QString &outFile, const int &progress, const int &currentProgress);
+    void copyProgress(const QString &inFile, const QString &outFile, const int progress, const int currentProgress);
     void fileExists(const QStringList &files);
-    void pauseToggled( const bool &pause, const bool &cut );
+    void pauseToggled( const bool pause, const bool cut );
     void errorSignal();
     void speed( const QString &speed );
 

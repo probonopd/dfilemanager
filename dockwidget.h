@@ -47,11 +47,11 @@ protected:
     QRegion shape() const;
 
 public slots:
-    void floatationChanged(const bool &floating);
+    void floatationChanged(const bool floating);
     inline void setFloat() { /*m_mainWindow->raise(); m_timer->start(10);*/ if (isFloating()) m_dirIn = true; else setFloating(true); }
     inline void toggleVisibility() { setVisible(!isVisible()); }
     inline void toggleLock() { if ( m_isLocked ) setLocked(false); else setLocked(true); }
-    inline void setLocked( const bool &locked = false )
+    inline void setLocked( const bool locked = false )
     {
         if ( isFloating() )
             return;

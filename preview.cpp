@@ -58,9 +58,9 @@ ScrollBar::paintEvent(QPaintEvent *)
 
     QPixmap grvPix(groove.size());
     grvPix.fill(Qt::transparent);
-    const int &grvR = qCeil(grvPix.height()/2.0f);
+    const int grvR = qCeil(grvPix.height()/2.0f);
     QPainter grvPt(&grvPix);
-    const int &h = palette().color(QPalette::Highlight).hue();
+    const int h = palette().color(QPalette::Highlight).hue();
     QColor c; c.setHsv(h, 127, 32, 192);
     grvPt.setRenderHint(QPainter::Antialiasing);
     grvPt.setPen(QColor(0,0,0,128));
@@ -71,7 +71,7 @@ ScrollBar::paintEvent(QPaintEvent *)
 
     QPixmap sldrPix(slider.size());
     sldrPix.fill(Qt::transparent);
-    const int &sldrR = qCeil(sldrPix.height()/2.0f);
+    const int sldrR = qCeil(sldrPix.height()/2.0f);
     QPainter sldrPt(&sldrPix);
     sldrPt.setRenderHint(QPainter::Antialiasing);
     sldrPt.setPen(Qt::NoPen);

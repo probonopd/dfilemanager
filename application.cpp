@@ -102,7 +102,7 @@ inline static void dockOps(Window win)
         addState( win, states[i] );
 }
 
-inline static void moveDockToDesktop(const Window &win, const Atom &atom, const int &desktop)
+inline static void moveDockToDesktop(const Window &win, const Atom &atom, const int desktop)
 {
     XChangeProperty(DPY, win, atom, XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&desktop, 1);
 

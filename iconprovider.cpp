@@ -145,7 +145,7 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
 
         }
         p.resetTransform();
-        const int &outer = _4pt-_1pt;
+        const int outer = _4pt-_1pt;
         p.setPen(Qt::NoPen);
         p.drawEllipse( pix.rect().adjusted(outer, outer, -outer, -outer ) );
         p.setCompositionMode(QPainter::CompositionMode_DestinationOut);

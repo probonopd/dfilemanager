@@ -87,14 +87,14 @@ public:
         , m_fsModel(fsModel)
     {
         setAttribute(Qt::WA_Hover);
-        setFixedSize(7, 9);
+        setFixedSize(6, 7);
     }
 
 protected:
-    virtual void mousePressEvent(QMouseEvent *event)
+    void mousePressEvent(QMouseEvent *event)
     {
         Menu menu;
-        foreach( QFileInfo info, QDir( m_path ).entryInfoList( QDir::AllDirs | QDir::NoDotAndDotDot ) )
+        foreach ( const QFileInfo &info, QDir( m_path ).entryInfoList( QDir::AllDirs | QDir::NoDotAndDotDot ) )
         {
             QAction *action = new QAction( info.fileName(), this );
             action->setText( info.fileName() );
@@ -104,7 +104,8 @@ protected:
         }
         menu.exec(event->globalPos());
     }
-    virtual void paintEvent(QPaintEvent *);
+    void paintEvent(QPaintEvent *);
+    void leaveEvent(QEvent *e) {QWidget::leaveEvent(e); update(); }
 
 private slots:
     void setPath();
@@ -163,7 +164,7 @@ class BreadCrumbs : public QStackedWidget
     Q_OBJECT
 public:
     explicit BreadCrumbs( QWidget *parent = 0, FileSystemModel *fsModel = 0 );
-    inline void setEditable( const bool &editable ) { setCurrentWidget( editable ? static_cast<QWidget *>(m_pathBox) : static_cast<QWidget *>(m_pathNav) ); currentWidget()->setFocus(); }
+    inline void setEditable( const bool editable ) { setCurrentWidget( editable ? static_cast<QWidget *>(m_pathBox) : static_cast<QWidget *>(m_pathNav) ); currentWidget()->setFocus(); }
     inline QString currentPath() { return m_pathNav->path(); }
     inline bool isEditable() { return currentWidget() == static_cast<QWidget *>(m_pathBox); }
 public slots:

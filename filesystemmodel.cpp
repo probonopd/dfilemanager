@@ -123,46 +123,51 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     if (!index.isValid() || index.model() != this)
         return QVariant();
 
-    if (index.column() == 3 && role == Qt::DisplayRole)
+    switch ( role )
     {
-        QString lastMod;
-        const QDateTime lastDate = lastModified(index);
-        lastMod.append(QString::number(lastDate.date().day()) + "/");
-        lastMod.append(QString::number(lastDate.date().month()) + "/");
-        lastMod.append(QString::number(lastDate.date().year()) + " ");
-        lastMod.append(lastDate.time().toString());
-        return lastMod;
-    }
-
-    if (index.column() == 1 && role == Qt::DisplayRole)
-        if (fileInfo(index).isDir())
-            return QString::number(QDir(filePath(index)).entryList(QDir::NoDotAndDotDot | QDir::AllEntries).count()) + " Entrie(s)";
-
-    if ( role == Qt::FontRole /*&& s_currentView*/ )
-    {
-        QFont font = m_container->font();
-        font.setBold(m_container->selectionModel()->selectedIndexes().contains(index));
-        return font;
-    }
-
-    if ( index.column() == 4 && role == Qt::DisplayRole )
-    {
-        QString permission;
-        const QFileInfo file = fileInfo(index);
-        permission.append(file.permission(QFile::ReadUser) ? "r, " : "-, ");
-        permission.append(file.permission(QFile::WriteUser) ? "w, " : "-, ");
-        if (!file.isDir())
-            permission.append(file.isExecutable() && !fileInfo(index).isDir() ? "x, " : "-, ");
-        permission.append(file.owner());
-        return permission;
-    }
-
-    if ( role == Qt::TextAlignmentRole )
-    {
+    case Qt::DisplayRole:
+        if (index.column() == 3)
+        {
+            QString lastMod;
+            const QDateTime lastDate = lastModified(index);
+            lastMod.append(QString::number(lastDate.date().day()) + "/");
+            lastMod.append(QString::number(lastDate.date().month()) + "/");
+            lastMod.append(QString::number(lastDate.date().year()) + " ");
+            lastMod.append(lastDate.time().toString());
+            return lastMod;
+        }
+        else if ( index.column() == 4 )
+        {
+            QString permission;
+            const QFileInfo file = fileInfo(index);
+            permission.append(file.permission(QFile::ReadUser) ? "r, " : "-, ");
+            permission.append(file.permission(QFile::WriteUser) ? "w, " : "-, ");
+            if (!file.isDir())
+                permission.append(file.isExecutable() && !fileInfo(index).isDir() ? "x, " : "-, ");
+            permission.append(file.owner());
+            return permission;
+        }
+        else if (index.column() == 1 && fileInfo(index).isDir() )
+            return QString("%1 Entrie(s)").arg(QString::number(QDir(filePath(index)).entryList(QDir::NoDotAndDotDot|QDir::AllEntries).count()));
+        break;
+    case Qt::FontRole:
+        if ( m_container->selectionModel()->selectedIndexes().contains(index) && !index.column() )
+        {
+            QFont font = m_container->font();
+            font.setBold(true);
+            return font;
+        }
+        break;
+    case Qt::TextAlignmentRole:
         if (index.column() == 1)
             return int(Qt::AlignVCenter | Qt::AlignRight);
         if (index.column() == 3)
-            return int(Qt::AlignVCenter | Qt::AlignLeft);
+            return int(Qt::AlignCenter);
+        break;
+    default:
+        if ( role != Qt::DecorationRole && role < FlowImg )
+            return QFileSystemModel::data(index, role);
+        break;
     }
 
     const QFileInfo &fi = fileInfo(index);
@@ -249,7 +254,7 @@ FileSystemModel::columnCount(const QModelIndex &parent) const
 static QStringList s_st[2];
 
 QStringList
-FileSystemModel::supportedThumbs( const bool &filter )
+FileSystemModel::supportedThumbs( const bool filter )
 {
     if ( s_st[filter].isEmpty() )
     foreach (QByteArray ar, QImageReader::supportedImageFormats())

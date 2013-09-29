@@ -445,7 +445,7 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
         w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
         if (m_toolBarSpacer->width() != w )
         {
-            const int &width = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
+            const int width = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
             m_toolBarSpacer->setFixedWidth(width);
         }
     }
@@ -748,7 +748,7 @@ MainWindow::showEvent(QShowEvent *e)
     w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
     if (m_toolBarSpacer->width() != w )
     {
-        const int &width = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
+        const int width = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
         m_toolBarSpacer->setFixedWidth(width);
     }
 }

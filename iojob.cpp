@@ -365,7 +365,7 @@ Job::cp(const QList<QUrl> &copyFiles, const QString &destination, bool cut, bool
 
 //---------------------------------------------------------------------------------------------------------
 
-IOThread::IOThread(const QStringList &inf, const QString &dest, const bool &cut, const qint64 &totalSize, QObject *parent)
+IOThread::IOThread(const QStringList &inf, const QString &dest, const bool cut, const qint64 &totalSize, QObject *parent)
     : QThread(parent)
     , m_canceled(false)
     , m_inFiles(inf)

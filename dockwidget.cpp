@@ -63,7 +63,7 @@ DockWidget::locationChanged(const Qt::DockWidgetArea &area)
 }
 
 void
-DockWidget::floatationChanged(const bool &floating)
+DockWidget::floatationChanged(const bool floating)
 {
 #if 0
     m_timer->stop();

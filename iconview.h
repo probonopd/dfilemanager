@@ -60,7 +60,7 @@ class IconView : public QListView
 public:
     explicit IconView(QWidget *parent = 0);
     void setFilter(QString filter);
-    inline void setNewSize( const int &size ) { m_newSize = size; m_firstIndex = firstValidIndex(); killTimer( m_sizeTimer ); m_sizeTimer = startTimer( 50 ); }
+    void setNewSize( const int size );
     void setModel(QAbstractItemModel *model);
 
 protected:
@@ -71,7 +71,6 @@ protected:
     void mouseReleaseEvent(QMouseEvent *e);
     void mousePressEvent(QMouseEvent *event);
     void paintEvent(QPaintEvent *e);
-    void timerEvent(QTimerEvent *e);
     void keyPressEvent(QKeyEvent *e);
     void setIconWidth(const int width);
     QModelIndex firstValidIndex();
@@ -89,15 +88,16 @@ private slots:
     void rootPathChanged(QString path);
     void scrollEvent();
     void setGridHeight(int gh);
+    void updateIconSize();
 
 private:
     QPoint m_startPos;
     QList<int> m_allowedSizes;
     bool m_slide, m_startSlide;
     FileSystemModel *m_fsModel;
-    QTimer *m_scrollTimer;
+    QTimer *m_scrollTimer, *m_sizeTimer;
     QModelIndex m_firstIndex;
-    int m_delta, m_newSize, m_sizeTimer, m_gridHeight;
+    int m_delta, m_newSize, m_gridHeight;
 };
 
 }

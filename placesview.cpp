@@ -100,7 +100,7 @@ inline void renderFrame( QRect rect, QPainter *painter, QColor color, uint pos =
 #define PAL option.palette
 #define DECOSIZE option.decorationSize
 
-inline static void drawDeviceUsage( const int &usage, QPainter *painter, const QStyleOptionViewItem &option )
+inline static void drawDeviceUsage( const int usage, QPainter *painter, const QStyleOptionViewItem &option )
 {
     painter->save();
     QRect rect = RECT;
@@ -123,8 +123,8 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     painter->save(); //must save... have to restore at end
     painter->setRenderHint( QPainter::Antialiasing );
 
-    const bool &underMouse = option.state & QStyle::State_MouseOver,
-            &selected = option.state & QStyle::State_Selected;
+    const bool underMouse = option.state & QStyle::State_MouseOver,
+            selected = option.state & QStyle::State_Selected;
 
     QColor baseColor = m_placesView->palette().color( QPalette::Base );
     if ( underMouse )
@@ -143,7 +143,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     const QStyleOptionViewItem &copy(option);
     const_cast<QStyleOptionViewItem *>(&copy)->palette = pal;
 
-    QFont font( option.font );
+    QFont font( index.data(Qt::FontRole).value<QFont>() );
     font.setBold( selected || isHeader( index ) );
     painter->setFont( font );
 
@@ -178,7 +178,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     lgb.setColorAt(0.8f, emb);
     lgb.setColorAt(1.0f, Qt::transparent);
     painter->setPen(QPen(lgb, 1.0f));
-    painter->drawText(textRect.translated(0, y), textFlags, TEXT);
+    painter->drawText(textRect.translated(0, 1), textFlags, TEXT);
     painter->setPen(QPen(lgf, 1.0f));
     painter->drawText(textRect, textFlags, TEXT);
 
@@ -187,10 +187,10 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     if ( isHeader( index ) )
     {
         QRect arrowRect( 0, 0, 10, 10 );
-        arrowRect.moveCenter( QPoint( RECT.x()+8, RECT.center().y()-1 ) );
+        arrowRect.moveCenter( QPoint( RECT.x()+8, RECT.center().y() ) );
         renderArrow( arrowRect, painter, selected ? PAL.color(QPalette::HighlightedText) : fg, bool( option.state & QStyle::State_Open ) );
     }
-    QRect iconRect( QPoint( RECT.x()+( indent/2 ), RECT.y() + ( RECT.height() - DECOSIZE.height() )/2 ), DECOSIZE );
+    QRect iconRect( QPoint( RECT.x()+( indent*0.75f ), RECT.y() + ( RECT.height() - DECOSIZE.height() )/2 ), DECOSIZE );
     QPixmap iconPix = qvariant_cast<QIcon>( index.data( Qt::DecorationRole ) ).pixmap( DECOSIZE.height() );
 
     if ( selected )
@@ -286,8 +286,8 @@ DeviceItem::updateTb()
     QRect rect = m_view->visualRect(index());
     if ( isVisible() )
         m_tb->setVisible(m_view->isExpanded(m_manager->index()));
-    const int &add = (rect.height()/2.0f)-(m_tb->height()/2.0f);
-    const int &x = 8, &y = rect.y()+add;
+    const int add = (rect.height()/2.0f)-(m_tb->height()/2.0f);
+    const int x = 16*0.75, y = rect.y()+add;
     m_tb->move(x, y);
 }
 
@@ -336,7 +336,7 @@ DeviceItem::setHidden()
 bool DeviceItem::isHidden() const { return m_view->hiddenDevices().contains(devPath()); }
 
 void
-DeviceItem::setMounted( const bool &mount )
+DeviceItem::setMounted( const bool mount )
 {
     if ( !m_solid.isValid() )
         return;
@@ -461,11 +461,20 @@ DeviceItem
 QVariant
 PlacesModel::data(const QModelIndex &index, int role) const
 {
-    if ( role == Qt::DisplayRole || role == Qt::DecorationRole )
+    if ( role == Qt::DisplayRole || role == Qt::DecorationRole || role == Qt::FontRole )
     {
         if ( Container *c = m_places->itemFromIndex<Container *>(index) )
+        {
             if ( role == Qt::DisplayRole )
                 return Store::config.behaviour.capsContainers ? c->name().toUpper() : c->name();
+            if ( role == Qt::FontRole )
+            {
+                QFont font = m_places->font();
+                font.setPointSize(m_places->font().pointSize()*0.8);
+                return font;
+            }
+        }
+
         if ( Place *p = m_places->itemFromIndex<Place *>(index) )
             if ( role == Qt::DisplayRole )
                 return p->name();
@@ -580,7 +589,7 @@ PlacesView::dropEvent( QDropEvent *event )
     }
 #endif
 
-    const bool &below = bool(dropIndicatorPosition() == BelowItem);
+    const bool below = bool(dropIndicatorPosition() == BelowItem);
 
     if ( event->source() != this )
     {
@@ -748,7 +757,7 @@ PlacesView::renPlace()
 }
 
 void
-PlacesView::addPlace(QString name, QString path, QIcon icon, QStandardItem *parent, const bool &storeSettings)
+PlacesView::addPlace(QString name, QString path, QIcon icon, QStandardItem *parent, const bool storeSettings)
 {
     Container *cont = dynamic_cast<Container *>(parent);
     if ( !cont )
@@ -846,7 +855,7 @@ PlacesView::contextMenuEvent( QContextMenuEvent *event )
 }
 
 QMenu
-*PlacesView::containerAsMenu(const int &cont)
+*PlacesView::containerAsMenu(const int cont)
 {
     QMenu *menu = new QMenu(container(cont)->name());
     for ( int i = 0; i < container(cont)->rowCount(); ++i )

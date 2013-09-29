@@ -31,8 +31,8 @@
 using namespace DFM;
 
 static QHash<QString, QImage> s_thumbs;
+static QHash<QString, QString> s_dateCheck;
 static QImageReader ir;
-static QRect vr;
 
 ThumbsLoader::ThumbsLoader(QObject *parent) :
     QThread(parent),
@@ -40,13 +40,19 @@ ThumbsLoader::ThumbsLoader(QObject *parent) :
     m_fsModel(static_cast<DFM::FileSystemModel *>(parent))
 {}
 
-bool ThumbsLoader::hasThumb(const QString &file) { return s_thumbs.contains(file); }
+bool ThumbsLoader::hasThumb(const QString &file)
+{
+    return s_thumbs.contains(file) && s_dateCheck.value(file) == QFileInfo(file).lastModified().toString();
+}
 
 void
 ThumbsLoader::queueFile(const QString &file)
 {
-    if ( m_queue.contains(file) || s_thumbs.contains(file) )
+    if ( m_queue.contains(file) )
         return;
+    if ( s_thumbs.contains(file) && s_dateCheck.value(file) == QFileInfo(file).lastModified().toString() )
+        return;
+
     m_queue << file;
     start();
 }
@@ -80,6 +86,7 @@ ThumbsLoader::loadThumb( const QString &path )
 
     if ( !image.isNull() )
     {
+        s_dateCheck.insert(path, QFileInfo(path).lastModified().toString());
         s_thumbs.insert(path, image);
         emit thumbFor(path);
     }

@@ -48,7 +48,7 @@ void
 MainWindow::updateIcons()
 {
     const QColor &tbfgc(m_toolBar->palette().color(m_toolBar->foregroundRole()));
-    const int &tbis = m_toolBar->iconSize().height();
+    const int tbis = m_toolBar->iconSize().height();
     m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
     m_goBackAct->setIcon(IconProvider::icon(IconProvider::GoBack, tbis, tbfgc, Store::config.behaviour.systemIcons));
     m_goForwardAct->setIcon(IconProvider::icon(IconProvider::GoForward, tbis, tbfgc, Store::config.behaviour.systemIcons));
