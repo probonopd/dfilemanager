@@ -42,6 +42,9 @@ FlowView::FlowView(QWidget *parent) : QWidget(parent)
     layout->addWidget(m_splitter);
     setLayout(layout);
 
+    m_dView->setRootIsDecorated(false);
+    m_dView->setItemsExpandable(false);
+
     m_splitter->restoreState( Store::config.views.flowSize );
 
     connect( m_preView, SIGNAL(centerIndexChanged(QModelIndex)), this, SLOT(flowCurrentIndexChanged(QModelIndex)) );
