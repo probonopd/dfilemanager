@@ -264,6 +264,9 @@ ViewContainer::activate(const QModelIndex &index)
 void
 ViewContainer::rootPathChanged(const QString &path)
 {
+    if ( path.isEmpty() || (!m_backList.isEmpty() && path == m_backList.last()) )
+        return;
+
     const QModelIndex &rootIndex = m_model->index(path);
     emit currentPathChanged(path);
     m_selectModel->clearSelection();
@@ -274,15 +277,15 @@ ViewContainer::rootPathChanged(const QString &path)
     m_back = false;
     m_iconView->updateLayout();
 
-    QStringList compList;
-    QString separator = path == "/" ? 0L : "/";
+//    QStringList compList;
+//    QString separator = path == "/" ? 0L : "/";
 
-    foreach(QString cEntry, m_model->rootDirectory().entryList())
-    {
-        cEntry.prepend(path + separator);
-        if(QFileInfo(cEntry).isDir())
-            compList.append(cEntry);
-    }
+//    foreach (QString cEntry, m_model->rootDirectory().entryList())
+//    {
+//        cEntry.prepend(path + separator);
+//        if(QFileInfo(cEntry).isDir())
+//            compList.append(cEntry);
+//    }
 
 //    flowView->flowView()->setCurrentIndex(fsModel->index(0,0,fsModel->index(fsModel->rootPath())));
 }
