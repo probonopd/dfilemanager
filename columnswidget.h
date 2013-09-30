@@ -37,7 +37,7 @@ class ColumnsWidget : public QScrollArea
 public:
     explicit ColumnsWidget(QWidget *parent = 0);
     ~ColumnsWidget(){}
-    void setModel( FileSystemModel *model );
+    void setModel( QAbstractItemModel *model );
     inline void setSelectionModel( QItemSelectionModel *model ) { m_slctModel = model; }
     QModelIndex currentIndex();
     ColumnsView *currentView();
@@ -70,7 +70,7 @@ protected:
     QStringList fromRoot();
 
 private:
-    FileSystemModel *m_fsModel;
+    FileSystemModel *m_model;
     QItemSelectionModel *m_slctModel;
     QFrame *m_viewport;
     QHBoxLayout *m_viewLay;

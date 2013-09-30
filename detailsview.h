@@ -52,9 +52,10 @@ signals:
 
 private slots:
     void dirLoaded(const QString &path);
+    void sortingChanged(const int column, const Qt::SortOrder order);
 
 private:
-    FileSystemModel *m_fsModel;
+    FileSystemModel *m_model;
     bool m_userPlayed;
     int m_detailsWidth;
 };

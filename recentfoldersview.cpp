@@ -55,8 +55,8 @@ RecentFoldersView::folderEntered(const QString &folder)
                 return;
             }
 
-    const ViewContainer *vc = MainWindow::currentContainer();
-    const FileSystemModel *fsModel = static_cast<const FileSystemModel*>(vc->model());
+    ViewContainer *vc = MainWindow::currentContainer();
+    FileSystemModel *fsModel = vc->model();
     if (!fsModel)
         return;
     QIcon icon(fsModel->fileIcon(fsModel->index(folder)));

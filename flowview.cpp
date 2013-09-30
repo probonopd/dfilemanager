@@ -68,7 +68,7 @@ FileSystemModel
 }
 
 void
-FlowView::setModel(FileSystemModel *model)
+FlowView::setModel(QAbstractItemModel *model)
 {
     m_dView->setModel(model);
     m_preView->setModel(model);
@@ -77,7 +77,7 @@ FlowView::setModel(FileSystemModel *model)
 void
 FlowView::setRootIndex(const QModelIndex &rootIndex)
 {
-    if(rootIndex.isValid())
+    if (rootIndex.isValid())
     {
         m_dView->setRootIndex(rootIndex);
         m_preView->setRootIndex(rootIndex);

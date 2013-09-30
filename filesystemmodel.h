@@ -36,6 +36,7 @@
 #include <QLabel>
 #include <QDebug>
 #include <QMap>
+#include <QSortFilterProxyModel>
 #include "thumbsloader.h"
 #include "viewcontainer.h"
 
@@ -83,10 +84,10 @@ class FileSystemModel : public QFileSystemModel
     Q_OBJECT
 public:
     enum Roles {
-        FileIconRole = Qt::DecorationRole,
-        FilePathRole = Qt::UserRole + 1,
-        FileNameRole = Qt::UserRole + 2,
-        FilePermissions = Qt::UserRole + 3,
+//        FileIconRole = Qt::DecorationRole,
+//        FilePathRole = Qt::UserRole + 1,
+//        FileNameRole = Qt::UserRole + 2,
+//        FilePermissions = Qt::UserRole + 3,
         FlowImg = Qt::UserRole + 4,
         FlowRefl = Qt::UserRole +5,
         FlowShape = Qt::UserRole +6
@@ -102,6 +103,9 @@ public:
     History *history() { return m_history; }
     int columnCount(const QModelIndex &parent) const;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+    void sort(int column, Qt::SortOrder order = Qt::AscendingOrder);
+    inline int sortingColumn() const { return m_sortCol; }
+    inline Qt::SortOrder sortingOrder() const { return m_sortOrder; }
 
 public slots:
     void setPath(const QString &path) { setRootPath(path); }
@@ -114,6 +118,7 @@ private slots:
 signals:
     void rootPathAsIndex( const QModelIndex &index );
     void flowDataChanged( const QModelIndex &start, const QModelIndex &end );
+    void sortingChanged(const int column, const Qt::SortOrder order);
 
 private:
     QStringList m_nameThumbs;
@@ -122,6 +127,33 @@ private:
     ImagesThread *m_it;
     ViewContainer *m_container;
     History *m_history;
+    int m_sortCol;
+    Qt::SortOrder m_sortOrder;
+};
+
+class FileProxyModel : public QSortFilterProxyModel
+{
+    Q_OBJECT
+public:
+    explicit FileProxyModel(QObject *parent = 0);
+    FileSystemModel *fsModel() { return m_fsModel; }
+    QString filePath(const QModelIndex &index) { return m_fsModel->filePath(mapToSource(index)); }
+    QString fileName(const QModelIndex &index) { return m_fsModel->fileName(mapToSource(index)); }
+    QIcon fileIcon(const QModelIndex &index) { return m_fsModel->fileIcon(mapToSource(index)); }
+    FileIconProvider *iconProvider() { return static_cast<FileIconProvider *>(m_fsModel->iconProvider()); }
+    QString rootPath() { return m_fsModel->rootPath(); }
+    void setRootPath(const QString &rootPath) { m_fsModel->setRootPath(rootPath); }
+    QFileInfo fileInfo(const QModelIndex &index) { return m_fsModel->fileInfo(mapToSource(index)); }
+    bool isDir(const QModelIndex &index) { return m_fsModel->isDir(mapToSource(index)); }
+    QDir rootDirectory() { return m_fsModel->rootDirectory(); }
+    QModelIndex index(int row, int column, const QModelIndex &parent) const { return QSortFilterProxyModel::index(row, column, parent); }
+    QModelIndex index(const QString &file, int column = 0) { return mapFromSource(m_fsModel->index(file, column)); }
+    void mkdir(const QModelIndex &parent, const QString &name) { m_fsModel->mkdir(mapToSource(parent), name); }
+    void setFilter(const QDir::Filters filters) { m_fsModel->setFilter(filters); }
+    bool hasThumb(const QString &file) { return m_fsModel->hasThumb(file); }
+
+private:
+    FileSystemModel *m_fsModel;
 };
 
 }

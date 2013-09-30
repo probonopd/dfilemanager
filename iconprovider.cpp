@@ -201,6 +201,18 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
         p.drawLine(c.topRight(), c.bottomLeft());
         break;
     }
+    case Sort :
+    {
+        p.setBrush(color);
+        p.setPen(color);
+        int i = 0;
+        while ( i < 4 )
+        {
+            p.fillRect(0, i*4, size-i*4, 2, color);
+            ++i;
+        }
+        break;
+    }
     }
     p.end();
     return QIcon(pix);

@@ -26,54 +26,54 @@ using namespace DFM;
 
 DeleteDialog::DeleteDialog(const QModelIndexList &idxList, QWidget *parent) : QDialog(parent)
 {
-    fsm = MainWindow::currentWindow()->currentContainer()->model();
+    m_fsModel = MainWindow::currentWindow()->currentContainer()->model();
     setWindowTitle("Careful!");
-    vLayout = new QVBoxLayout;
-    hLayout = new QHBoxLayout;
-    hl = new QHBoxLayout;
-    ok = new QPushButton;
-    cancel = new QPushButton;
-    listView = new QListView;
-    model = new QStandardItemModel;
-    textLabel = new QLabel;
-    pixLabel = new QLabel;
+    m_vLayout = new QVBoxLayout;
+    m_hLayout = new QHBoxLayout;
+    m_hl = new QHBoxLayout;
+    m_ok = new QPushButton;
+    m_cancel = new QPushButton;
+    m_listView = new QListView;
+    m_model = new QStandardItemModel;
+    m_textLabel = new QLabel;
+    m_pixLabel = new QLabel;
 
-    ok->setText("OK");
-    cancel->setText("Cancel");
-    listView->setModel(model);
-    pixLabel->setPixmap(style()->standardIcon(QStyle::SP_MessageBoxWarning).pixmap(32));
-    pixLabel->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
+    m_ok->setText("OK");
+    m_cancel->setText("Cancel");
+    m_listView->setModel(m_model);
+    m_pixLabel->setPixmap(style()->standardIcon(QStyle::SP_MessageBoxWarning).pixmap(32));
+    m_pixLabel->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
 
-    hLayout->addStretch();
-    hLayout->addWidget(ok);
-    hLayout->addWidget(cancel);
-    hLayout->addStretch();
-    hl->addWidget(pixLabel);
-    hl->addWidget(textLabel);
-    vLayout->addLayout(hl);
-    vLayout->addWidget(listView);
-    vLayout->addLayout(hLayout);
+    m_hLayout->addStretch();
+    m_hLayout->addWidget(m_ok);
+    m_hLayout->addWidget(m_cancel);
+    m_hLayout->addStretch();
+    m_hl->addWidget(m_pixLabel);
+    m_hl->addWidget(m_textLabel);
+    m_vLayout->addLayout(m_hl);
+    m_vLayout->addWidget(m_listView);
+    m_vLayout->addLayout(m_hLayout);
 
-    setLayout(vLayout);
+    setLayout(m_vLayout);
 
-    connect( ok,SIGNAL(released()),this,
+    connect( m_ok,SIGNAL(released()),this,
              SLOT(accept()));
-    connect( cancel, SIGNAL(released()),this,
+    connect( m_cancel, SIGNAL(released()),this,
              SLOT(reject()));
 
-    model->clear();
-    textLabel->clear();
+    m_model->clear();
+    m_textLabel->clear();
     if(idxList.count() > 1)
-        textLabel->setText("Are you sure you want to delete these " + QString::number(idxList.count()) + " items?");
+        m_textLabel->setText("Are you sure you want to delete these " + QString::number(idxList.count()) + " items?");
     else
-        textLabel->setText("Are you sure you want to delete this item?");
+        m_textLabel->setText("Are you sure you want to delete this item?");
 
     foreach(QModelIndex index, idxList)
     {
-        QStandardItem *item = new QStandardItem(fsm->fileIcon(index), fsm->filePath(index));
+        QStandardItem *item = new QStandardItem(m_fsModel->fileIcon(index), m_fsModel->filePath(index));
         item->setEditable(false);
         item->setSelectable(false);
-        model->appendRow(item);
+        m_model->appendRow(item);
     }
     exec();
 }

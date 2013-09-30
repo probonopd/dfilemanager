@@ -38,28 +38,30 @@ using namespace DFM;
     m_columnsWidget->RUN;\
     m_flowView->RUN
 
-ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
+ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
+    : QFrame(parent)
+    , m_model(new FileSystemModel(this))
+    , m_viewStack(new QStackedWidget(this))
+    , m_iconView(new IconView(this))
+    , m_columnsWidget(new ColumnsWidget(this))
+    , m_detailsView(new DetailsView(this))
+    , m_flowView(new FlowView(this))
+    , m_breadCrumbs(new BreadCrumbs(this, m_model))
+
 {
-    m_viewStack = new QStackedWidget(this);
-    m_fsModel = new FileSystemModel(this);
-    m_iconView = new IconView(this);
-    m_detailsView = new DetailsView(this);
-    m_columnsWidget = new ColumnsWidget(this);
-    m_flowView = new FlowView(this);
-    m_breadCrumbs = new BreadCrumbs( this, m_fsModel );
     m_breadCrumbs->setVisible(Store::settings()->value("pathVisible", true).toBool());
     m_myView = Icon;
     m_back = false;
 
     QString parentPath = rootPath.mid(0, rootPath.lastIndexOf(QDir::separator()));
-    static_cast<FileIconProvider *>(m_fsModel->iconProvider())->loadThemedFolders(parentPath);
+    static_cast<FileIconProvider *>(m_model->iconProvider())->loadThemedFolders(parentPath);
 
     m_viewStack->layout()->setSpacing(0);
     setFrameStyle(0/*QFrame::StyledPanel | QFrame::Sunken*/);
     setAutoFillBackground(false);
 
-    setModel(m_fsModel);
-    setSelectionModel(new QItemSelectionModel(m_fsModel));
+    setModel(m_model);
+    setSelectionModel(new QItemSelectionModel(m_model));
 
     if ( Store::config.views.singleClick )
     {
@@ -75,8 +77,8 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
 //        connect( m_columnsView, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
         connect( m_flowView->detailsView(), SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
     }
-    connect( m_fsModel, SIGNAL(rootPathChanged(QString)),this, SLOT(rootPathChanged(QString)));
-    connect( m_fsModel, SIGNAL(directoryLoaded(QString)),this, SLOT(directoryLoaded(QString)));
+    connect( m_model, SIGNAL(rootPathChanged(QString)),this, SLOT(rootPathChanged(QString)));
+    connect( m_model, SIGNAL(directoryLoaded(QString)),this, SLOT(directoryLoaded(QString)));
     connect( m_iconView, SIGNAL(iconSizeChanged(int)),this, SIGNAL(iconSizeChanged(int)));
 
     connect( m_iconView, SIGNAL(newTabRequest(QModelIndex)),this, SLOT(genNewTabRequest(QModelIndex)));
@@ -93,19 +95,23 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
         v->setMouseTracking( true );
         connect( v, SIGNAL(entered(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
         connect( v, SIGNAL(viewportEntered()), this, SIGNAL(viewportEntered()));
-        connect ( m_fsModel, SIGNAL(rootPathAsIndex(QModelIndex)), v, SLOT(setRootIndex(QModelIndex)) );
+        connect( m_model, SIGNAL(rootPathAsIndex(QModelIndex)), v, SLOT(setRootIndex(QModelIndex)) );
     }
 
-    connect ( m_fsModel, SIGNAL(rootPathAsIndex(QModelIndex)), m_columnsWidget, SLOT(setRootIndex(QModelIndex)) );
-    connect( m_fsModel, SIGNAL(rootPathAsIndex(QModelIndex)), m_flowView, SLOT(setRootIndex(QModelIndex)) );
+    connect ( m_model, SIGNAL(rootPathAsIndex(QModelIndex)), m_columnsWidget, SLOT(setRootIndex(QModelIndex)) );
+    connect( m_model, SIGNAL(rootPathAsIndex(QModelIndex)), m_flowView, SLOT(setRootIndex(QModelIndex)) );
+
+//    connect
+
+
 
     m_viewStack->addWidget(m_iconView);
     m_viewStack->addWidget(m_detailsView);
     m_viewStack->addWidget(m_columnsWidget);
     m_viewStack->addWidget(m_flowView);
 
-    m_detailsView->setColumnHidden(2, true);
-    m_flowView->detailsView()->setColumnHidden(2, true);
+    m_detailsView->setColumnHidden(4, true);
+    m_flowView->detailsView()->setColumnHidden(4, true);
 
     QVBoxLayout *layout = new QVBoxLayout();
     layout->addWidget(m_viewStack);
@@ -114,13 +120,15 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath) : QFrame(parent)
     layout->setSpacing(0);
     setLayout(layout);
 
-    m_fsModel->setRootPath(rootPath);
+    m_model->setRootPath(rootPath);
     setView((View)Store::config.behaviour.view);
     emit iconSizeChanged(Store::config.views.iconView.iconSize*16);
+
+//    setRootIndex(m_proxyModel->index(rootPath));
 }
 
 void
-ViewContainer::setModel(FileSystemModel *model)
+ViewContainer::setModel(QAbstractItemModel *model)
 {
     VIEWS(setModel(model));
 }
@@ -133,13 +141,13 @@ ViewContainer::setSelectionModel(QItemSelectionModel *selectionModel)
 }
 
 FileSystemModel
-*ViewContainer::model() const
+*ViewContainer::model()
 {
-    return m_fsModel;
+    return m_model;
 }
 
 QItemSelectionModel
-*ViewContainer::selectionModel() const
+*ViewContainer::selectionModel()
 {
     return m_selectModel;
 }
@@ -193,14 +201,14 @@ ViewContainer::customActionTriggered()
     {
         if ( selectionModel()->selectedRows().count() )
             foreach ( const QModelIndex &index, selectionModel()->selectedRows() )
-                QProcess::startDetached(app, QStringList() << action << m_fsModel->filePath( index ));
+                QProcess::startDetached(app, QStringList() << action << m_model->filePath( index ));
         else if ( selectionModel()->selectedIndexes().count() )
             foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
-                QProcess::startDetached(app, QStringList() << action << m_fsModel->filePath( index ));
+                QProcess::startDetached(app, QStringList() << action << m_model->filePath( index ));
     }
     else
     {
-        QProcess::startDetached(app, QStringList() << action << m_fsModel->rootPath());
+        QProcess::startDetached(app, QStringList() << action << m_model->rootPath());
     }
 }
 
@@ -209,8 +217,8 @@ ViewContainer::scriptTriggered()
 {
     QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
     const QString &app = action.takeFirst();
-    qDebug() << "trying to launch" << app << "in" << m_fsModel->rootPath();
-    QProcess::startDetached(app, QStringList() << m_fsModel->rootPath());
+    qDebug() << "trying to launch" << app << "in" << m_model->rootPath();
+    QProcess::startDetached(app, QStringList() << m_model->rootPath());
 }
 
 void
@@ -219,22 +227,22 @@ ViewContainer::activate(const QModelIndex &index)
     if ( !index.isValid() )
         return;
 
-    if ( !m_fsModel->fileInfo(index).exists() )
+    if ( !m_model->fileInfo(index).exists() )
         return;
 
     QProcess process;
-    if (m_fsModel->isDir(index))
+    if (m_model->isDir(index))
     {
-        m_fsModel->setRootPath(m_fsModel->filePath(index));
+        m_model->setRootPath(m_model->filePath(index));
         m_forwardList.clear();
     }
-    else if(m_fsModel->fileInfo(index).isExecutable() && (m_fsModel->fileInfo(index).suffix().isEmpty() ||
-                                                         m_fsModel->fileInfo(index).suffix() == "sh" ||
-                                                         m_fsModel->fileInfo(index).suffix() == "exe")) // windows executable
+    else if(m_model->fileInfo(index).isExecutable() && (m_model->fileInfo(index).suffix().isEmpty() ||
+                                                         m_model->fileInfo(index).suffix() == "sh" ||
+                                                         m_model->fileInfo(index).suffix() == "exe")) // windows executable
     {
         QString file;
 #ifdef Q_WS_X11 //linux
-        file = m_fsModel->filePath(index);
+        file = m_model->filePath(index);
 #else
         file = m_fsModel->fileName(index);
 #endif
@@ -243,7 +251,7 @@ ViewContainer::activate(const QModelIndex &index)
     else
     {
         QStringList list;
-        list << m_fsModel->filePath(index);
+        list << m_model->filePath(index);
 
 #ifdef Q_WS_X11 //linux
         process.startDetached("xdg-open", list);
@@ -254,25 +262,24 @@ ViewContainer::activate(const QModelIndex &index)
 }
 
 void
-ViewContainer::rootPathChanged(QString index)
+ViewContainer::rootPathChanged(const QString &path)
 {
-    emit currentPathChanged(index);
+    const QModelIndex &rootIndex = m_model->index(path);
+    emit currentPathChanged(path);
     m_selectModel->clearSelection();
 
-    if(!m_back && m_fsModel->index(index).isValid())
-        m_backList.append(index);
+    if (!m_back && rootIndex.isValid())
+        m_backList.append(path);
 
     m_back = false;
-
-//    setRootIndex(m_fsModel->index(index));
     m_iconView->updateLayout();
 
     QStringList compList;
-    QString separator = index == "/" ? 0L : "/";
+    QString separator = path == "/" ? 0L : "/";
 
-    foreach(QString cEntry,m_fsModel->rootDirectory().entryList())
+    foreach(QString cEntry, m_model->rootDirectory().entryList())
     {
-        cEntry.prepend(index + separator);
+        cEntry.prepend(path + separator);
         if(QFileInfo(cEntry).isDir())
             compList.append(cEntry);
     }
@@ -295,7 +302,7 @@ ViewContainer::goBack()
     m_back = true;
     m_forwardList << m_backList.last();
     m_backList.removeLast();
-    m_fsModel->setRootPath(m_backList.last());
+    m_model->setRootPath(m_backList.last());
 }
 
 void
@@ -304,7 +311,7 @@ ViewContainer::goForward()
     if(m_forwardList.isEmpty())
         return;
 
-    m_fsModel->setRootPath(m_forwardList.last());
+    m_model->setRootPath(m_forwardList.last());
     m_forwardList.removeLast();
 }
 
@@ -313,24 +320,24 @@ ViewContainer::goUp()
 {
     if (m_breadCrumbs->currentPath() == "/")
         return false;
-    m_fsModel->setRootPath(QFileInfo(m_fsModel->rootPath()).dir().path());
+    m_model->setRootPath(QFileInfo(m_model->rootPath()).dir().path());
     return true;
 }
 
 void
 ViewContainer::goHome()
 {
-    m_fsModel->setRootPath(QDir::homePath());
+    m_model->setRootPath(QDir::homePath());
 }
 
 void
 ViewContainer::refresh()
 {
-    m_fsModel->blockSignals(true);
-    m_fsModel->setRootPath("");
-    m_fsModel->setRootPath(m_breadCrumbs->currentPath());
-    m_fsModel->blockSignals(false);
-    setRootIndex(m_fsModel->index(m_breadCrumbs->currentPath()));
+    m_model->blockSignals(true);
+    m_model->setRootPath("");
+    m_model->setRootPath(m_breadCrumbs->currentPath());
+    m_model->blockSignals(false);
+    setRootIndex(m_model->index(m_breadCrumbs->currentPath()));
 }
 
 void
@@ -369,7 +376,7 @@ ViewContainer::deleteCurrentSelection()
     QStringList delList;
     for (int i = 0; i < delUs.count(); ++i)
     {
-        QFileInfo file(m_fsModel->filePath(delUs.at(i)));
+        QFileInfo file(m_model->filePath(delUs.at(i)));
         if (file.isWritable())
             delList << file.filePath();
     }
@@ -414,13 +421,18 @@ ViewContainer::customCommand()
         return;
 
     QStringList args(text.split(" "));
-    args << (m_fsModel->filePath(idx).isNull() ? m_fsModel->rootPath() : m_fsModel->filePath(idx));
+    args << (m_model->filePath(idx).isNull() ? m_model->rootPath() : m_model->filePath(idx));
     QString program = args.takeFirst();
     QProcess process;
     process.startDetached(program,args);
 }
 
-void ViewContainer::setRootIndex(const QModelIndex &index) { VIEWS(setRootIndex(index)); }
+void
+ViewContainer::setRootIndex(const QModelIndex &index)
+{
+    qDebug() << "setRootIndex:" << index.model();
+    VIEWS(setRootIndex(index));
+}
 
 QSize
 ViewContainer::iconSize()
@@ -431,8 +443,8 @@ ViewContainer::iconSize()
 void
 ViewContainer::createDirectory()
 {
-    m_fsModel->mkdir(m_fsModel->index(m_fsModel->rootPath()),"new_directory");
-    QModelIndex newFolder = m_fsModel->index(m_fsModel->rootPath() + QDir::separator() + "new_directory");
+    m_model->mkdir(m_model->index(m_model->rootPath()),"new_directory");
+    QModelIndex newFolder = m_model->index(m_model->rootPath() + QDir::separator() + "new_directory");
 
     switch (m_myView)
     {
@@ -487,13 +499,13 @@ ViewContainer::canGoForward()
 void
 ViewContainer::genNewTabRequest(QModelIndex index)
 {
-    emit newTabRequest(m_fsModel->filePath(index));
+    emit newTabRequest(m_model->filePath(index));
 }
 
 void
-ViewContainer::setRootPath(QString rootPath)
+ViewContainer::setRootPath(const QString &rootPath)
 {
-    m_fsModel->setRootPath(rootPath);
+//    m_proxyModel->setRootPath(rootPath);
 }
 
 //void

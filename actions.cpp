@@ -270,6 +270,23 @@ MainWindow::createActions()
     m_newWindowAct->setObjectName("actionNewWindow");
     connect(m_newWindowAct, SIGNAL(triggered()), this, SLOT(newWindow()));
     addAction(m_newWindowAct);
+
+    m_sortAscAct = new QAction(tr("Ascending"), this);
+    m_sortAscAct->setCheckable(true);
+    connect ( m_sortAscAct, SIGNAL(triggered()), this, SLOT(setSorting()) );
+
+    m_sortActs = new QActionGroup(this);
+    m_sortNameAct = m_sortActs->addAction(tr("Name"));
+    m_sortDateAct = m_sortActs->addAction(tr("Date"));
+    m_sortSizeAct = m_sortActs->addAction(tr("Size"));
+    m_sortTypeAct = m_sortActs->addAction(tr("Type"));
+    foreach ( QAction *a, m_sortActs->actions() )
+    {
+        a->setCheckable(true);
+        connect ( a, SIGNAL(triggered()), this, SLOT(setSorting()) );
+    }
+    m_sortActs->setExclusive(true);
+    m_sortNameAct->setChecked(true);
 }
 
 void
@@ -361,6 +378,18 @@ MainWindow::createToolBars()
     m_toolBar->addAction(m_configureAct);
     m_toolBar->addSeparator();
     m_toolBar->addAction(m_homeAct);
+    m_toolBar->addSeparator();
+    QToolButton *tb = new QToolButton(this);
+    tb->setIcon(IconProvider::icon(IconProvider::Sort, 16, tb->palette().color(tb->foregroundRole()), false));
+    QMenu *sortMenu = new QMenu(tb);
+    sortMenu->setSeparatorsCollapsible(false);
+    sortMenu->addSeparator()->setText(tr("Sort By:"));
+    sortMenu->addActions(m_sortActs->actions());
+    sortMenu->addSeparator();
+    sortMenu->addAction(m_sortAscAct);
+    tb->setMenu(sortMenu);
+    tb->setPopupMode(QToolButton::InstantPopup);
+    m_toolBar->addWidget(tb);
 
     QWidget *searchWidget = new QWidget(m_toolBar);
     searchWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);

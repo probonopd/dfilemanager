@@ -116,12 +116,12 @@ class PreView : public QGraphicsView
 public:
     enum Pos { Prev = 0, New = 1 };
     explicit PreView(QWidget *parent = 0);
-    void setModel( FileSystemModel *fsModel );
+    void setModel( QAbstractItemModel *model );
     inline void setSelectionModel( QItemSelectionModel *model ) { m_selectionModel = model; }
     void setCenterIndex( const QModelIndex &index );
     void showCenterIndex( const QModelIndex &index );
     inline void animateCenterIndex( const QModelIndex &index ) { m_scrollBar->setValue(index.row()); }
-    inline FileSystemModel *fsModel() { return m_fsModel; }
+    inline FileSystemModel *model() { return m_model; }
     QModelIndex indexOfItem(PixmapItem *item);
     inline bool isAnimating() { return bool(m_timeLine->state() == QTimeLine::Running); }
     
@@ -162,10 +162,10 @@ private slots:
 private:
     friend class PixmapItem;
     GraphicsScene *m_scene;
-    FileSystemModel *m_fsModel;
+    FileSystemModel *m_model;
     QModelIndex m_centerIndex, m_prevCenter, m_rootIndex, m_savedCenter;
     int m_row, m_nextRow, m_newRow, m_savedRow;
-    float m_y, m_x, m_perception;
+    float m_y, m_x, m_perception, m_xpos;
     bool m_wantsDrag, m_hasZUpdate;
     QList<PixmapItem *> m_items;
     QGraphicsItemAnimation *m_anim[2];

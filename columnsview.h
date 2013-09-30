@@ -27,6 +27,7 @@
 #include <QWheelEvent>
 #include <QScrollBar>
 #include <columnswidget.h>
+#include <QSortFilterProxyModel>
 
 namespace DFM
 {
@@ -35,7 +36,7 @@ class ColumnsView : public QListView
 {
     Q_OBJECT
 public:
-    ColumnsView(QWidget *parent = 0, FileSystemModel *fsModel = 0, const QString &rootPath = QString());
+    ColumnsView(QWidget *parent = 0, QAbstractItemModel *model = 0, const QString &rootPath = QString());
     ~ColumnsView(){}
     void setFilter(QString filter);
     void setModel(QAbstractItemModel *model);
@@ -52,6 +53,7 @@ public slots:
 
 private slots:
     void rowsRemoved(const QModelIndex &parent, int start, int end);
+    void sortingChanged(const int column, const Qt::SortOrder order);
     
 signals:
     void newTabRequest(const QModelIndex &path);
@@ -75,7 +77,8 @@ protected:
 
 private:
     ColumnsWidget *m_parent;
-    FileSystemModel *m_fsModel;
+    FileSystemModel *m_model;
+    QSortFilterProxyModel *m_sortModel;
     QFileSystemWatcher *m_fsWatcher;
     QPoint m_pressPos;
     QString m_activeFile, m_rootPath;

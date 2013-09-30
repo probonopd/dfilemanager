@@ -43,14 +43,13 @@ public:
     DeleteDialog(const QModelIndexList &idxList, QWidget *parent = 0);
     
 private:
-    QStandardItemModel *model;
-    QListView *listView;
-    QPushButton *ok;
-    QPushButton *cancel;
-    QVBoxLayout *vLayout;
-    QHBoxLayout *hLayout,*hl;
-    QLabel *textLabel,*pixLabel;
-    FileSystemModel *fsm;
+    QStandardItemModel *m_model;
+    QListView *m_listView;
+    QPushButton *m_ok, *m_cancel;
+    QVBoxLayout *m_vLayout;
+    QHBoxLayout *m_hLayout, *m_hl;
+    QLabel *m_textLabel, *m_pixLabel;
+    FileSystemModel *m_fsModel;
 };
 
 }

@@ -93,6 +93,7 @@ NavButton::NavButton(QWidget *parent, const QString &path)
     f.setPointSize(f.pointSize()*0.8);
     setFont(f);
     setAcceptDrops(true);
+    setForegroundRole(QPalette::Text);
 }
 
 void

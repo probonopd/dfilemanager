@@ -25,17 +25,17 @@
 
 using namespace DFM;
 
-ColumnsWidget::ColumnsWidget(QWidget *parent) :
-    QScrollArea(parent)
-  , m_fsModel(0)
-  , m_slctModel(0)
-  , m_viewport(new QFrame(this))
-  , m_viewLay(new QHBoxLayout(m_viewport))
-  , m_container(static_cast<ViewContainer *>(parent))
-  , m_currentView(0)
-  , m_rootIndex(QModelIndex())
-  , m_visited(QStringList())
-  , m_rootList(QStringList())
+ColumnsWidget::ColumnsWidget(QWidget *parent)
+    : QScrollArea(parent)
+    , m_viewport(new QFrame(this))
+    , m_viewLay(new QHBoxLayout(m_viewport))
+    , m_container(static_cast<ViewContainer *>(parent))
+    , m_currentView(0)
+    , m_rootIndex(QModelIndex())
+    , m_visited(QStringList())
+    , m_rootList(QStringList())
+    , m_model(0)
+    , m_slctModel(0)
 {
     setWidget(m_viewport);
     m_viewLay->setContentsMargins(0, 0, 0, 0);
@@ -55,9 +55,10 @@ ColumnsWidget::ColumnsWidget(QWidget *parent) :
 }
 
 void
-ColumnsWidget::setModel(FileSystemModel *model)
+ColumnsWidget::setModel(QAbstractItemModel *model)
 {
-    m_fsModel = model;
+//    qDebug() << model << static_cast<FileProxyModel *>(model)->fsModel();
+    m_model = static_cast<FileSystemModel *>(model);
 }
 
 QModelIndex ColumnsWidget::currentIndex() { return m_currentView->currentIndex(); }
@@ -116,13 +117,11 @@ ColumnsWidget::insideRoot(const QModelIndex &index)
 QStringList
 ColumnsWidget::fromRoot()
 {
-    QModelIndexList idxList;
     QModelIndex idx = m_rootIndex;
     QStringList list;
-    while ( idx.isValid() )
+    while (idx.isValid())
     {
-        list.prepend(m_fsModel->filePath(idx));
-        idxList.prepend(idx);
+        list.prepend(m_model->filePath(idx));
         idx = idx.parent();
     }
     return list;
@@ -144,7 +143,7 @@ ColumnsView
     }
     else
     {
-        view = new ColumnsView(this, m_fsModel, path);
+        view = new ColumnsView(this, m_model, path);
         connectView(view);
         view->setSelectionModel(m_slctModel);
         view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
@@ -157,9 +156,10 @@ ColumnsView
 void
 ColumnsWidget::setRootIndex(const QModelIndex &index)
 {
-    const QString &rootPath = m_fsModel->filePath(index);
+    const QString &rootPath = m_model->filePath(index);
     if ( rootPath.isEmpty() )
         return;
+
     m_visited << rootPath;
     m_rootIndex = index;
     m_rootList = fromRoot();
@@ -210,8 +210,10 @@ void
 ColumnsWidget::showEvent(QShowEvent *e)
 {
     QScrollArea::showEvent(e);
-    if ( isValid(m_fsModel->filePath(m_rootIndex)) )
-        ensureWidgetVisible(column(m_fsModel->filePath(m_rootIndex)));
+//    qDebug() << m_proxyModel;
+//    qDebug() << m_proxyModel->filePath(m_rootIndex);
+//    if ( isValid(m_proxyModel->filePath(m_rootIndex)) )
+//        ensureWidgetVisible(column(m_proxyModel->filePath(m_rootIndex)));
 }
 
 void

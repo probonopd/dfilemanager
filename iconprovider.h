@@ -33,7 +33,18 @@ namespace IconProvider
 {
 const QPolygon triangle(bool back, int size);
 
-enum Type { IconView = 0, DetailsView, ColumnsView, FlowView, GoBack, GoForward, Configure, GoHome, Search, Clear };
+enum Type { IconView = 0,
+            DetailsView,
+            ColumnsView,
+            FlowView,
+            GoBack,
+            GoForward,
+            Configure,
+            GoHome,
+            Search,
+            Clear,
+            Sort
+          };
 
 const QIcon icon(Type type, int size, QColor color, bool themeIcon);
 }

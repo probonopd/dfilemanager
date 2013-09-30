@@ -74,6 +74,8 @@ FileSystemModel::FileSystemModel(QObject *parent)
     : QFileSystemModel(parent)
     , m_container(static_cast<ViewContainer *>(parent))
     , m_history(new History(this))
+    , m_sortCol(0)
+    , m_sortOrder((Qt::SortOrder)1)
 {
     setResolveSymlinks(false);
     setIconProvider(m_iconProvider = new FileIconProvider(this));
@@ -245,6 +247,15 @@ FileSystemModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int 
     return true;
 }
 
+void
+FileSystemModel::sort(int column, Qt::SortOrder order)
+{
+    m_sortCol = column;
+    m_sortOrder = order;
+    QFileSystemModel::sort(column, order);
+    emit sortingChanged(column, order);
+}
+
 int
 FileSystemModel::columnCount(const QModelIndex &parent) const
 {
@@ -263,6 +274,13 @@ FileSystemModel::supportedThumbs( const bool filter )
         else
             s_st[filter] << ar;
     return s_st[filter];
+}
+
+FileProxyModel::FileProxyModel(QObject *parent)
+    : QSortFilterProxyModel(parent)
+    , m_fsModel(new FileSystemModel(parent))
+{
+    setSourceModel(m_fsModel);
 }
 
 

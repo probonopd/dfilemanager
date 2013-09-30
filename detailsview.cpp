@@ -48,7 +48,7 @@ protected:
 
 DetailsView::DetailsView(QWidget *parent)
     : QTreeView(parent)
-    , m_fsModel(0)
+    , m_model(0)
     , m_userPlayed(false)
 {
     setItemDelegate(new DetailsDelegate());
@@ -71,8 +71,8 @@ DetailsView::DetailsView(QWidget *parent)
 void
 DetailsView::dirLoaded(const QString &path)
 {
-    if ( path != m_fsModel->rootPath()
-         || path != m_fsModel->filePath(rootIndex())
+    if ( path != m_model->rootPath()
+         || path != m_model->filePath(rootIndex())
          || !isVisible()
          || m_detailsWidth > 0 )
         return;
@@ -80,7 +80,7 @@ DetailsView::dirLoaded(const QString &path)
     int w = width()-(verticalScrollBar()->isVisible()*style()->pixelMetric(QStyle::PM_ScrollBarExtent));
     setColumnWidth(0, w);
 
-    for ( int i = 1; i < m_fsModel->columnCount(rootIndex()); ++i )
+    for ( int i = 1; i < m_model->columnCount(rootIndex()); ++i )
     {
         resizeColumnToContents(i);
         m_detailsWidth+=columnWidth(i);
@@ -93,11 +93,23 @@ DetailsView::dirLoaded(const QString &path)
 }
 
 void
+DetailsView::sortingChanged(const int column, const Qt::SortOrder order)
+{
+    if ( header() && model() == m_model && column>-1&&column<header()->count() )
+    {
+        header()->blockSignals(true);
+        header()->setSortIndicator(column, order);
+        header()->blockSignals(false);
+    }
+}
+
+void
 DetailsView::setModel(QAbstractItemModel *model)
 {
     QTreeView::setModel(model);
-    m_fsModel = static_cast<FileSystemModel *>(model);
-    connect(m_fsModel, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)));
+    m_model = qobject_cast<FileSystemModel *>(model);
+    connect(m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)));
+//    connect(m_proxyModel, SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
 }
 
 void
@@ -182,7 +194,7 @@ void
 DetailsView::showEvent(QShowEvent *e)
 {
     QTreeView::showEvent(e);
-    dirLoaded(m_fsModel->filePath(rootIndex()));
+    dirLoaded(m_model->filePath(rootIndex()));
 }
 
 

@@ -102,23 +102,20 @@ public:
     }
     void paint( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
-        if ( !m_fsModel )
+        if ( !m_model )
             return;
 
         painter->save();
         painter->setRenderHint( QPainter::Antialiasing );
-        painter->setFont(qvariant_cast<QFont>(m_fsModel->data(index, Qt::FontRole)));
+        painter->setFont(qvariant_cast<QFont>(m_model->data(index, Qt::FontRole)));
 
         const bool selected = option.state & QStyle::State_Selected;
         const int step = selected ? 8 : ViewAnimator::hoverLevel(m_iv, index);
 
-        const QStyleOptionViewItem &copy = option;
-        QRect decoRect = RECT;
         QString et = textData(option, index, Text).value<QString>();
         QRect tr = textData(option, index, TextRect).value<QRect>();
-        decoRect.setBottom(tr.top());
 
-
+//        const QStyleOptionViewItem &copy = option;
 //        const_cast<QStyleOptionViewItem *>(&copy)->rect = tr;
 
 //        if ( step )
@@ -132,6 +129,8 @@ public:
         if ( step )
         {
             painter->save();
+            QRect decoRect = RECT;
+            decoRect.setBottom(tr.top()-3);
             const int roundness = option.fontMetrics.height()/2;
             painter->setPen(Qt::NoPen);
             painter->setOpacity((1.0f/8.0f)*step);
@@ -139,7 +138,7 @@ public:
             QColor frame = PAL.color(QPalette::Text);
             frame.setAlpha(48);
             painter->setBrush(frame);
-            painter->drawRoundedRect(decoRect, roundness, roundness);
+            painter->drawRoundedRect(decoRect, 4, 4);
             painter->setBrush(h);
             painter->drawRoundedRect(tr, roundness, roundness);
             painter->restore();
@@ -151,7 +150,7 @@ public:
         painter->setPen(pen);
 //        QApplication::style()->drawItemText(painter, tr.adjusted(-2, 0, 2, 0), Qt::AlignCenter, PAL, option.state & QStyle::State_Enabled, et, high);
 
-        QIcon icon = m_fsModel->fileIcon(index);
+        QIcon icon = m_model->fileIcon(index);
 
         const bool isThumb = icon.name().isEmpty();
 
@@ -174,7 +173,7 @@ public:
         if ( pixmap.height() > DECOSIZE.height() && !isThumb )
             pixmap = pixmap.scaledToHeight(DECOSIZE.height(), Qt::SmoothTransformation);
         else if ( isThumb && pixmap.width() > pixmap.height() )
-            pixmap = icon.pixmap( qMin<int>(RECT.width()-4, (float)DECOSIZE.height()*((float)pixmap.width()/(float)pixmap.height())));
+            pixmap = icon.pixmap( qMin<int>(RECT.width()-4, ((float)DECOSIZE.height()*((float)pixmap.width()/(float)pixmap.height()))-4 ));
         QRect theRect = pixmap.rect();
         theRect.moveCenter( QPoint( RECT.center().x(), RECT.y()+( DECOSIZE.height()/2 ) ) );
         if ( isThumb )
@@ -188,13 +187,13 @@ public:
 
         painter->restore();
     }
-    inline void setModel( FileSystemModel *fsModel ) { m_fsModel = fsModel; }
+    inline void setModel( FileSystemModel *fsModel ) { m_model = fsModel; }
 protected:
     QSize sizeHint( const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
         static QHash<QPair<QString, int>, QSize> s_sizes[2];
         const bool selected = option.state&QStyle::State_Selected;
-        const QString &path = m_fsModel->filePath(index);
+        const QString &path = m_model->filePath(index);
         const int size = option.decorationSize.height();
         if ( s_sizes[selected].contains(QPair<QString, int>(path, size)) )
             return s_sizes[selected].value(QPair<QString, int>(path, size));
@@ -275,8 +274,7 @@ protected:
             height += line.height();
         }
         textLayout.endLayout();
-        if ( textW < w+4 )
-            textW+=4;
+        textW = qMin(textW+8, w);
 
         switch ( role )
         {
@@ -292,7 +290,7 @@ private:
     QPixmap m_shadowData[9];
     int m_size;
     IconView *m_iv;
-    FileSystemModel *m_fsModel;
+    FileSystemModel *m_model;
 };
 
 IconView::IconView( QWidget *parent )
@@ -575,13 +573,13 @@ void
 IconView::setModel( QAbstractItemModel *model )
 {
     QListView::setModel( model );
-    if ( m_fsModel = qobject_cast<FileSystemModel*>( model ) )
+    if ( m_model = qobject_cast<FileSystemModel *>( model ) )
     {
-        connect( m_fsModel, SIGNAL( rootPathChanged( QString ) ), this,
+        connect( m_model, SIGNAL( rootPathChanged( QString ) ), this,
                 SLOT( rootPathChanged( QString ) ) );
-        connect( m_fsModel, SIGNAL( directoryLoaded( QString ) ), this,
+        connect( m_model, SIGNAL( directoryLoaded( QString ) ), this,
                 SLOT( rootPathChanged( QString ) ) );
-        static_cast<IconDelegate*>( itemDelegate() )->setModel( m_fsModel );
+        static_cast<IconDelegate*>( itemDelegate() )->setModel( m_model );
     }
 }
 

@@ -67,7 +67,7 @@ public:
 
 public slots:
     void addTab(const QString &path = QDir::homePath());
-    inline void setRootPath( const QString &path ) { m_fsModel->setRootPath(path); }
+    inline void setRootPath( const QString &path ) { m_model->setRootPath(path); }
 
 protected:
     void closeEvent(QCloseEvent *event);
@@ -130,6 +130,8 @@ private slots:
     void readSettings();
     void activateRecentFolder(const QString &folder) { m_activeContainer->setRootPath(folder); }
     void addBookmarks();
+    void setSorting();
+    void sortingChanged(const int col, const Qt::SortOrder order);
 
 signals:
     void viewChanged( QAbstractItemView *view );
@@ -146,7 +148,7 @@ private:
     QLayout *m_statusLayout;
     InfoWidget *m_infoWidget;
     RecentFoldersView *m_recentFoldersView;
-    FileSystemModel *m_fsModel;
+    FileSystemModel *m_model;
     ViewContainer *m_activeContainer;
     PlacesView *m_placesView;
     QStackedWidget *m_stackedWidget;
@@ -163,7 +165,9 @@ private:
     , *m_placeAct, *m_renPlaceAct, *m_rmPlaceAct, *m_iconViewAct, *m_listViewAct, *m_colViewAct, *m_delCurrentSelectionAct
     , *m_showHiddenAct, *m_mkDirAct, *m_copyAct, *m_cutAct, *m_pasteAct, *m_renameAct, *m_placeContAct, *m_flowAct, *m_refreshAct
     , *m_placeIconAct, *m_cstCmdAct, *m_menuAct, *m_statAct, *m_pathVisibleAct, *m_addTabAct, *m_openInTabAct, *m_configureAct, *m_propertiesAct
-    , *m_pathEditAct, *m_newWindowAct;
+    , *m_pathEditAct, *m_newWindowAct, *m_sortNameAct, *m_sortSizeAct, *m_sortDateAct, *m_sortTypeAct, *m_sortAscAct;
+
+    QActionGroup *m_sortActs;
 
     bool m_cut;
 };

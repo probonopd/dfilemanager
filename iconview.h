@@ -94,7 +94,7 @@ private:
     QPoint m_startPos;
     QList<int> m_allowedSizes;
     bool m_slide, m_startSlide;
-    FileSystemModel *m_fsModel;
+    FileSystemModel *m_model;
     QTimer *m_scrollTimer, *m_sizeTimer;
     QModelIndex m_firstIndex;
     int m_delta, m_newSize, m_gridHeight;

@@ -68,7 +68,7 @@ MainWindow::MainWindow(QStringList arguments)
 
     m_stackedWidget = new QStackedWidget(this);
     m_activeContainer = 0;
-    m_fsModel = 0;
+    m_model = 0;
 
     int is = 16;
     QSize tbs(QSize(is, is));
@@ -225,7 +225,7 @@ MainWindow::mainSelectionChanged(QItemSelection selected,QItemSelection notselec
 
     QString selectedItem;
     if(selectedItems.count())
-        selectedItem = m_fsModel->fileName(selectedItems.at(0));
+        selectedItem = m_model->fileName(selectedItems.at(0));
 
     if(selectedItems.count() == 1)
     {
@@ -280,7 +280,7 @@ MainWindow::setClipBoard()
     else
         selectedItems = m_activeContainer->selectionModel()->selectedIndexes();
 
-    QApplication::clipboard()->setMimeData(m_fsModel->mimeData(selectedItems));
+    QApplication::clipboard()->setMimeData(m_model->mimeData(selectedItems));
 }
 
 void
@@ -291,7 +291,7 @@ MainWindow::pasteSelection()
     if (!mimeData->hasUrls())
         return;
 
-    IO::Job::copy(mimeData->urls(), m_fsModel->filePath(m_activeContainer->currentView()->rootIndex()), m_cut, m_cut);
+    IO::Job::copy(mimeData->urls(), m_model->filePath(m_activeContainer->currentView()->rootIndex()), m_cut, m_cut);
 
     QApplication::clipboard()->clear();
 
@@ -301,13 +301,13 @@ MainWindow::pasteSelection()
 void
 MainWindow::rootPathChanged(QString index)
 {
-    setWindowTitle(m_fsModel->rootDirectory().dirName());
+    setWindowTitle(m_model->rootDirectory().dirName());
     m_filterBox->clear();
     m_activeContainer->setFilter("");
     m_placesView->activateAppropriatePlace(index);
-    m_tabBar->setTabText(m_tabBar->currentIndex(),m_fsModel->rootDirectory().dirName());
+    m_tabBar->setTabText(m_tabBar->currentIndex(),m_model->rootDirectory().dirName());
     if ( Store::config.behaviour.gayWindow )
-        m_tabBar->setTabIcon(m_tabBar->currentIndex(), m_fsModel->iconProvider()->icon(QFileInfo(m_fsModel->rootPath())));
+        m_tabBar->setTabIcon(m_tabBar->currentIndex(), m_model->iconProvider()->icon(QFileInfo(m_model->rootPath())));
 }
 
 void
@@ -320,7 +320,7 @@ MainWindow::directoryLoaded(QString index)
 void
 MainWindow::updateStatusBar(QString index)
 {
-    QDir crnt = m_fsModel->rootDirectory();
+    QDir crnt = m_model->rootDirectory();
 
     crnt.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     int folders = crnt.count();
@@ -431,7 +431,7 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
     {
         QString newMessage = ( m_activeContainer->selectionModel()->selection().isEmpty() ||
                                m_activeContainer->selectionModel()->currentIndex().parent() !=
-                m_fsModel->index(m_fsModel->rootPath())) ? statusMessage : statusMessage + slctnMessage;
+                m_model->index(m_model->rootPath())) ? statusMessage : statusMessage + slctnMessage;
         if(m_statusBar->currentMessage() != newMessage)
             m_statusBar->showMessage(newMessage);
         return false;
@@ -463,7 +463,7 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
 void
 MainWindow::goHome()
 {  
-    m_fsModel->setRootPath(QDir::homePath());
+    m_model->setRootPath(QDir::homePath());
 }
 
 void
@@ -487,7 +487,7 @@ MainWindow::goForward()
 void
 MainWindow::genPlace()
 {
-    QFileInfo file(m_fsModel->rootPath());
+    QFileInfo file(m_model->rootPath());
     QString path = file.filePath();
     QString name = file.fileName();
     QIcon icon = QIcon::fromTheme("folder");
@@ -548,9 +548,9 @@ void
 MainWindow::toggleHidden()
 {
     if(m_showHiddenAct->isChecked())
-        m_fsModel->setFilter(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::System | QDir::Hidden);
+        m_model->setFilter(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::System | QDir::Hidden);
     else
-        m_fsModel->setFilter(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::System);
+        m_model->setFilter(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::System);
 }
 
 
@@ -597,6 +597,7 @@ MainWindow::addTab(const QString &path)
     connect( container, SIGNAL(newTabRequest(QString)), this, SLOT(addTab(QString)));
     connect( container, SIGNAL(entered(QModelIndex)), m_infoWidget, SLOT(hovered(QModelIndex)));
     connect( container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
+//    connect( container->model(), SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
 
     QList<QAction *> actList;
     actList << m_openInTabAct << m_mkDirAct << m_pasteAct << m_copyAct << m_cutAct
@@ -605,11 +606,11 @@ MainWindow::addTab(const QString &path)
 
     container->addActions(actList);
     m_stackedWidget->addWidget(container);
-    if (!m_fsModel)
-        m_fsModel = container->model();
-    static_cast<FileIconProvider *>(m_fsModel->iconProvider())->loadThemedFolders(m_fsModel->rootPath());
+    if (!m_model)
+        m_model = container->model();
+    static_cast<FileIconProvider *>(m_model->iconProvider())->loadThemedFolders(m_model->rootPath());
     if ( Store::config.behaviour.gayWindow )
-        m_tabBar->addTab(m_fsModel->iconProvider()->icon(QFileInfo(newPath)), QFileInfo(newPath).fileName());
+        m_tabBar->addTab(m_model->iconProvider()->icon(QFileInfo(newPath)), QFileInfo(newPath).fileName());
     else
         m_tabBar->addTab(QFileInfo(newPath).fileName());
 
@@ -624,15 +625,16 @@ MainWindow::tabChanged(int currentIndex)
         return;
     m_stackedWidget->setCurrentIndex(currentIndex);
     m_activeContainer = static_cast<ViewContainer*>(m_stackedWidget->currentWidget());
+    sortingChanged(m_activeContainer->model()->sortingColumn(), m_activeContainer->model()->sortingOrder());
     emit viewChanged( m_activeContainer->currentView() );
-    m_fsModel = m_activeContainer->model();
-    m_recentFoldersView->folderEntered(m_fsModel->rootPath());
+    m_model = m_activeContainer->model();
+    m_recentFoldersView->folderEntered(m_model->rootPath());
     setWindowTitle(m_tabBar->tabText(currentIndex));
     m_activeContainer->setPathEditable(m_pathEditAct->isChecked());
     m_iconSizeSlider->setValue(m_activeContainer->iconSize().width()/16);
     m_iconSizeSlider->setToolTip("Size: " + QString::number(m_activeContainer->iconSize().width()) + " px");
-    m_placesView->activateAppropriatePlace(m_fsModel->rootPath());
-    updateStatusBar(m_fsModel->rootPath());
+    m_placesView->activateAppropriatePlace(m_model->rootPath());
+    updateStatusBar(m_model->rootPath());
     m_filterBox->setText(m_activeContainer->currentFilter());
     setActions();
 }
@@ -668,7 +670,7 @@ MainWindow::openTab()
         {
             if ( index.column() > 0 )
                 continue;
-            addTab(m_fsModel->filePath(index));
+            addTab(m_model->filePath(index));
         }
 }
 
@@ -676,7 +678,7 @@ void
 MainWindow::newTab()
 {
     QString rootPath;
-    rootPath = m_fsModel->rootPath();
+    rootPath = m_model->rootPath();
     addTab(rootPath);
 }
 
@@ -692,14 +694,16 @@ MainWindow::setActions()
 void
 MainWindow::viewItemHovered( const QModelIndex &index )
 {
-    const QString &file = m_fsModel->filePath( m_fsModel->index( m_fsModel->filePath(index) ) );
+    const QString &file = m_model->filePath( m_model->index( m_model->filePath(index) ) );
     m_statusBar->showMessage( file );
 }
 
 void
 MainWindow::viewClearHover()
 {
-    QString newMessage = ( m_activeContainer->selectionModel()->selection().isEmpty() ||  m_activeContainer->selectionModel()->currentIndex().parent() != m_fsModel->index(m_fsModel->rootPath())) ? statusMessage : statusMessage + slctnMessage;
+    QString newMessage = ( m_activeContainer->selectionModel()->selection().isEmpty()
+                           ||  m_activeContainer->selectionModel()->currentIndex().parent() != m_model->index(m_model->rootPath()))
+            ? statusMessage : statusMessage + slctnMessage;
     if(m_statusBar->currentMessage() != newMessage)
         m_statusBar->showMessage(newMessage);
 }
@@ -718,7 +722,7 @@ MainWindow::fileProperties()
     {
         if ( index.column() != 0 )
             continue;
-        files << m_fsModel->filePath(index);
+        files << m_model->filePath(index);
     }
     PropertiesDialog::forFiles(files);
 }
@@ -729,6 +733,52 @@ MainWindow::hidePath()
     foreach ( BreadCrumbs *bc, findChildren<BreadCrumbs *>() )
         bc->setVisible(m_pathVisibleAct->isChecked());
     Store::settings()->setValue("pathVisible", m_pathVisibleAct->isChecked());
+}
+
+void
+MainWindow::sortingChanged(const int col, const Qt::SortOrder order)
+{
+    foreach ( QAction *a, m_sortActs->actions() )
+        a->blockSignals(true);
+    m_sortAscAct->blockSignals(true);
+    if ( col != m_activeContainer->model()->sortingColumn() )
+    {
+        m_sortNameAct->setChecked(col == 0);
+        m_sortSizeAct->setChecked(col == 1);
+        m_sortTypeAct->setChecked(col == 2);
+        m_sortDateAct->setChecked(col == 3);
+    }
+    Qt::SortOrder oldSort = (Qt::SortOrder)!m_sortAscAct->isChecked();
+    if ( oldSort != order )
+        m_sortAscAct->toggle();
+    foreach ( QAction *a, m_sortActs->actions() )
+        a->blockSignals(false);
+    m_sortAscAct->blockSignals(false);
+}
+
+void
+MainWindow::setSorting()
+{
+    const QString &rootPath = m_model->rootPath();
+    m_model->setRootPath("");
+    if ( sender() == m_sortAscAct )
+    {
+        m_model->sort(m_model->sortingColumn(), (Qt::SortOrder)!m_sortAscAct->isChecked());
+        return;
+    }
+
+    int i = -1;
+
+    if ( sender() == m_sortNameAct )
+        i = 0;
+    else if ( sender() == m_sortSizeAct )
+        i = 1;
+    else if ( sender() == m_sortTypeAct )
+        i = 2;
+    else if ( sender() == m_sortDateAct )
+        i = 3;
+    m_model->sort(i, (Qt::SortOrder)!m_sortAscAct->isChecked());
+    m_model->setRootPath(rootPath);
 }
 
 void

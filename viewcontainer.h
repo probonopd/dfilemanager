@@ -24,6 +24,7 @@
 
 #include <QStackedWidget>
 #include <QComboBox>
+#include <QSortFilterProxyModel>
 
 #include "iconview.h"
 #include "detailsview.h"
@@ -47,10 +48,11 @@ public:
     ViewContainer(QWidget *parent = 0, QString rootPath = QDir::homePath());
     virtual ~ViewContainer(){}
     static QList<QAction *> rightClickActions();
-    FileSystemModel *model() const;
+    FileSystemModel *model();
     void setView(View view);
     QAbstractItemView *currentView() const;
     View currentViewType() const { return m_myView; }
+    DetailsView *detailsView() { return m_detailsView; }
     void setPathEditable(bool editable);
     void setRootIndex(const QModelIndex &index);
     void createDirectory();
@@ -58,7 +60,7 @@ public:
     void deleteCurrentSelection();
     void customCommand();
     QSize iconSize();
-    QItemSelectionModel *selectionModel() const;
+    QItemSelectionModel *selectionModel();
     QModelIndex indexAt(const QPoint &p) const;
     bool canGoBack();
     bool canGoForward();
@@ -76,7 +78,10 @@ public:
     QStringList visited() { return m_backList; }
 
 protected:
-    inline virtual void leaveEvent(QEvent *) { emit leftView(); }
+    void leaveEvent(QEvent *) { emit leftView(); }
+    void setModel(QAbstractItemModel *model);
+    void setSelectionModel(QItemSelectionModel *selectionModel);
+    void scrollToSelection();
     
 signals:
     void viewChanged();
@@ -93,20 +98,17 @@ signals:
 public slots:
     void activate(const QModelIndex &index);
     bool setPathVisible(bool visible);
-    void setRootPath(QString rootPath);
+    void setRootPath(const QString &rootPath);
 
 private slots:
     void directoryLoaded(QString index);
-    void rootPathChanged(QString index);
+    void rootPathChanged(const QString &path);
     void genNewTabRequest(QModelIndex index);
     void customActionTriggered();
     void scriptTriggered();
     void settingsChanged();
 
 private:
-    void setModel(FileSystemModel *model);
-    void setSelectionModel(QItemSelectionModel *selectionModel);
-    void scrollToSelection();
     bool m_back;
     QString m_dirFilter;
     View m_myView;
@@ -114,7 +116,7 @@ private:
     DetailsView *m_detailsView;
     ColumnsWidget *m_columnsWidget;
     FlowView *m_flowView;
-    FileSystemModel *m_fsModel;
+    FileSystemModel *m_model;
     QStackedWidget *m_viewStack;
     QStringList m_backList;
     QStringList m_forwardList;

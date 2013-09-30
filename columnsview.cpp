@@ -55,16 +55,17 @@ private:
     ColumnsView *m_view;
 };
 
-ColumnsView::ColumnsView(QWidget *parent, FileSystemModel *fsModel, const QString &rootPath)
+ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QString &rootPath)
     : QListView(parent)
     , m_parent(static_cast<ColumnsWidget *>(parent))
     , m_pressPos(QPoint())
     , m_activeFile(QString())
     , m_rootPath(QString())
-    , m_fsModel(0)
+    , m_model(0)
     , m_width(0)
     , m_isSorted(false)
     , m_fsWatcher(new QFileSystemWatcher(this))
+    , m_sortModel(0)
 {
     setItemDelegate(new ColumnsDelegate(this));
     setViewMode(QListView::ListMode);
@@ -85,7 +86,7 @@ ColumnsView::ColumnsView(QWidget *parent, FileSystemModel *fsModel, const QStrin
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setTextElideMode(Qt::ElideNone);
 //    connect( m_parent, SIGNAL(currentViewChagned(ColumnsView*)), viewport(), SLOT(update()) );
-    if ( fsModel )
+    if ( FileSystemModel *fsModel = qobject_cast<FileSystemModel *>(model) )
     {
         connect(fsModel, SIGNAL(rowsRemoved(QModelIndex,int ,int)), this, SLOT(rowsRemoved(QModelIndex,int,int)));
         connect(fsModel, SIGNAL(fileRenamed(QString,QString,QString)), this, SLOT(fileRenamed(QString,QString,QString)));
@@ -120,7 +121,7 @@ ColumnsView::eventFilter(QObject *o, QEvent *e)
 void
 ColumnsView::setRootPath(const QString &path)
 {
-    setRootIndex(m_fsModel->index(path));
+    setRootIndex(m_model->index(path));
 }
 
 void
@@ -128,10 +129,10 @@ ColumnsView::setRootIndex(const QModelIndex &index)
 {
     if ( !m_fsWatcher->directories().isEmpty() )
         m_fsWatcher->removePaths(m_fsWatcher->directories());
-    if ( m_fsModel )
+    if ( m_model )
     {
-        m_isSorted = index == m_fsModel->index(m_fsModel->rootPath());
-        m_rootPath = m_fsModel->filePath(index);
+        m_isSorted = index == m_model->index(m_model->rootPath());
+        m_rootPath = m_model->filePath(index);
         if ( !sanityCheckForDir() )
             return;
         m_fsWatcher->addPath(m_rootPath);
@@ -175,7 +176,7 @@ ColumnsView::contextMenuEvent(QContextMenuEvent *event)
     if ( Store::customActions().count() )
         popupMenu.addMenu(Store::customActionsMenu());
     popupMenu.addActions( ViewContainer::rightClickActions() );
-    const QString &file = m_fsModel->filePath( indexAt( event->pos() ) );
+    const QString &file = m_model->filePath( indexAt( event->pos() ) );
     QMenu openWith( tr( "Open With" ), this );
     openWith.addActions( Store::openWithActions( file ) );
     foreach ( QAction *action, actions() )
@@ -197,7 +198,7 @@ ColumnsView::mouseReleaseEvent(QMouseEvent *e)
          && e->modifiers() == Qt::NoModifier
          && e->button() == Qt::LeftButton
          && m_pressPos == e->pos()
-         && m_fsModel->fileInfo(index).isDir() )
+         && m_model->fileInfo(index).isDir() )
         emit dirActivated(index);
     else if ( e->button() == Qt::MiddleButton
               && indexAt(e->pos()).isValid()
@@ -224,7 +225,8 @@ void
 ColumnsView::setModel(QAbstractItemModel *model)
 {
     QListView::setModel(model);
-    m_fsModel = static_cast<FileSystemModel *>(model);
+    m_model = qobject_cast<FileSystemModel *>(model);
+//    connect( m_proxyModel, SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)) );
 }
 
 void
@@ -236,7 +238,7 @@ ColumnsView::rowsInserted(const QModelIndex &parent, int start, int end)
     int wbefore = m_width;
     for ( int i = start; i<=end; ++i )
     {
-        const QModelIndex &index = m_fsModel->index(i, 0, parent);
+        const QModelIndex &index = m_model->index(i, 0, parent);
         if ( !index.isValid() )
             continue;
         const int W =  fontMetrics().boundingRect( index.data().toString() ).width();
@@ -265,6 +267,17 @@ ColumnsView::rowsRemoved(const QModelIndex &parent, int start, int end)
 }
 
 void
+ColumnsView::sortingChanged(const int column, const Qt::SortOrder order)
+{
+//    const QString &oldPath = m_fsModel->rootPath();
+//    m_fsModel->blockSignals(true);
+//    m_fsModel->setRootPath(m_rootPath);
+//    m_fsModel->sort(column, order);
+//    m_fsModel->setRootPath(oldPath);
+//    m_fsModel->blockSignals(false);
+}
+
+void
 ColumnsView::dirLoaded(const QString &dir)
 {
     if ( !sanityCheckForDir() )
@@ -273,12 +286,7 @@ ColumnsView::dirLoaded(const QString &dir)
         return;
 
     m_isSorted = true;
-    const QString &oldPath = m_fsModel->rootPath();
-    m_fsModel->blockSignals(true);
-    m_fsModel->setRootPath(m_rootPath);
-    m_fsModel->sort(0);
-    m_fsModel->setRootPath(oldPath);
-    m_fsModel->blockSignals(false);
+//    sortingChanged(m_proxyModel->sortingColumn(), m_proxyModel->sortingOrder());
     viewport()->update();
 }
 
@@ -305,9 +313,9 @@ ColumnsView::updateWidth()
 {
     if ( !sanityCheckForDir() )
         return;
-    if ( !m_fsModel )
+    if ( !m_model )
         return;
-    QStringList list = QDir(m_fsModel->filePath(rootIndex())).entryList(QDir::AllEntries|QDir::AllDirs|QDir::NoDotAndDotDot|QDir::System);
+    QStringList list = QDir(m_model->filePath(rootIndex())).entryList(QDir::AllEntries|QDir::AllDirs|QDir::NoDotAndDotDot|QDir::System);
     int w = 0;
     while ( !list.isEmpty() )
     {
@@ -327,7 +335,7 @@ ColumnsView::sanityCheckForDir()
     {
         emit pathDeleted(this);
         hide();
-        if ( m_fsModel )
+        if ( m_model )
         {
             QString dir = m_rootPath;
             while ( !QFileInfo(dir).exists() )
@@ -336,8 +344,8 @@ ColumnsView::sanityCheckForDir()
                     m_fsWatcher->removePath(dir);
                 dir = QFileInfo(dir).path();
             }
-            if ( m_fsModel->rootPath() != dir )
-                m_fsModel->setRootPath(dir);
+            if ( m_model->rootPath() != dir )
+                m_model->setRootPath(dir);
             return false;
         }
         return false;
