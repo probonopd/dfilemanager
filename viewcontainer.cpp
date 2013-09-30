@@ -264,14 +264,14 @@ ViewContainer::activate(const QModelIndex &index)
 void
 ViewContainer::rootPathChanged(const QString &path)
 {
-    if ( path.isEmpty() || (!m_backList.isEmpty() && path == m_backList.last()) )
+    if ( path.isEmpty() )
         return;
 
     const QModelIndex &rootIndex = m_model->index(path);
     emit currentPathChanged(path);
     m_selectModel->clearSelection();
 
-    if (!m_back && rootIndex.isValid())
+    if (!m_back && rootIndex.isValid() && (m_backList.isEmpty() || m_backList.count() &&  path != m_backList.last()))
         m_backList.append(path);
 
     m_back = false;
@@ -303,19 +303,17 @@ ViewContainer::goBack()
         return;
 
     m_back = true;
-    m_forwardList << m_backList.last();
-    m_backList.removeLast();
+    m_forwardList << m_backList.takeLast();
     m_model->setRootPath(m_backList.last());
 }
 
 void
 ViewContainer::goForward()
 {
-    if(m_forwardList.isEmpty())
+    if (m_forwardList.isEmpty())
         return;
 
-    m_model->setRootPath(m_forwardList.last());
-    m_forwardList.removeLast();
+    m_model->setRootPath(m_forwardList.takeLast());
 }
 
 bool
