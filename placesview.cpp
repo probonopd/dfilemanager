@@ -470,7 +470,7 @@ PlacesModel::data(const QModelIndex &index, int role) const
             if ( role == Qt::FontRole )
             {
                 QFont font = m_places->font();
-                font.setPointSize(m_places->font().pointSize()*0.8);
+                font.setPointSize(qMax<int>(8, m_places->font().pointSize()*0.8));
                 return font;
             }
         }

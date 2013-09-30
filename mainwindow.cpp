@@ -764,6 +764,7 @@ MainWindow::setSorting()
     if ( sender() == m_sortAscAct )
     {
         m_model->sort(m_model->sortingColumn(), (Qt::SortOrder)!m_sortAscAct->isChecked());
+        m_model->setRootPath(rootPath);
         return;
     }
 
