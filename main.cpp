@@ -45,6 +45,13 @@ int main(int argc, char *argv[])
 
         DFM::Store::readConfig();
 
+        if ( app.font().pointSize() < DFM::Store::config.behaviour.minFontSize )
+        {
+            QFont font = app.font();
+            font.setPointSize(DFM::Store::config.behaviour.minFontSize);
+            app.setFont(font);
+        }
+
         if ( !DFM::Store::config.styleSheet.isEmpty() )
         {
             QFile file(DFM::Store::config.styleSheet);
