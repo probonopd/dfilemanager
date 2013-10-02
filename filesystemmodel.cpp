@@ -70,7 +70,7 @@ FileIconProvider::loadThemedFolders(const QString &path)
         dirPath.append(".directory");
         const QSettings settings(dirPath, QSettings::IniFormat);
         const QString &iconName = settings.value("Desktop Entry/Icon").toString();
-        if ( !iconName.isNull() && !s_themedDirs.contains(file.filePath()) )
+        if ( QIcon::hasThemeIcon(iconName) && !s_themedDirs.contains(file.filePath()) )
         {
             s_themedDirs.insert(file.filePath(), iconName);
             const QModelIndex &index = m_fsModel->index(file.filePath());
