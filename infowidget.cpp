@@ -24,6 +24,7 @@
 #include "operations.h"
 #include "filesystemmodel.h"
 #include "thumbsloader.h"
+#include "config.h"
 
 using namespace DFM;
 
@@ -56,7 +57,7 @@ InfoWidget::InfoWidget(QWidget *parent)
     m_fileName->setBackgroundRole(QPalette::WindowText);
     m_fileName->setForegroundRole(QPalette::Window);
 
-    f.setPointSize(f.pointSize()-2);
+    f.setPointSize(qMax(Store::config.behaviour.minFontSize, f.pointSize()-2));
     for ( int i = 0; i < 2; ++i )
     {
         m_lastMod[i] = new QLabel(this);

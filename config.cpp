@@ -81,6 +81,8 @@ Store::readConfiguration()
     config.behaviour.windowsStyle = settings()->value("behaviour.gayWindow.windowsStyle", false).toBool();
     config.behaviour.invertedColors = settings()->value("behaviour.gayWindow.invertedColors", false).toBool();
 
+    config.behaviour.minFontSize = settings()->value("behaviour.minFontSize", 7).toInt();
+
     config.behaviour.sortingCol = settings()->value("behaviour.sortingCol", 0).toInt();
     config.behaviour.sortingOrd = (Qt::SortOrder)settings()->value("behaviour.sortingOrd", 0).toInt();
 

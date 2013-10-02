@@ -261,7 +261,7 @@ FooBar::correctTabBarHeight()
     }
 
     QFont font = m_tabBar->font();
-    font.setPointSize(8);
+    font.setPointSize(qMax(8, Store::config.behaviour.minFontSize));
     m_tabBar->setFont(font);
     m_tabBar->setAttribute(Qt::WA_Hover);
     m_tabBar->setMouseTracking(true);

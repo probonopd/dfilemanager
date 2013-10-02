@@ -66,6 +66,7 @@ private:
     QString m_path;
     PathNavigator *m_nav;
     bool m_hasData;
+    int m_margin;
 };
 
 class Menu : public QMenu

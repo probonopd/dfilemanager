@@ -40,7 +40,7 @@ typedef struct Config
         bool hideTabBarWhenOnlyOneTab, systemIcons, devUsage, gayWindow, frame, newTabButton, windowsStyle, invertedColors, capsContainers;
         int tabShape, tabRoundness, tabHeight, tabWidth, tabOverlap, sortingCol;
         Qt::SortOrder sortingOrd;
-        int view;
+        int view, minFontSize;
     } behaviour;
 
     struct views

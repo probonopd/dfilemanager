@@ -82,6 +82,7 @@ NavButton::NavButton(QWidget *parent, const QString &path, const QString &text)
     , m_path(path)
     , m_nav(static_cast<PathNavigator *>(parent))
     , m_hasData(false)
+    , m_margin(4)
 {
     setText(text);
     setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -97,7 +98,7 @@ NavButton::NavButton(QWidget *parent, const QString &path, const QString &text)
 QSize
 NavButton::sizeHint() const
 {
-    return QSize(18+fontMetrics().boundingRect(text()).width(), 23);
+    return QSize(18+fontMetrics().boundingRect(text()).width()+m_margin*2, 23);
 }
 
 void
@@ -142,10 +143,9 @@ NavButton::paintEvent(QPaintEvent *e)
 //    QToolButton::paintEvent(e);
     const QPixmap &pix = m_nav->model()->fileIcon(m_nav->model()->index(m_path)).pixmap(16);
     QPainter p(this);
-    p.drawTiledPixmap(0, 2, 16, 16, pix);
-//    p.drawText(18, 2, width()-18, height()-5, Qt::AlignLeft|Qt::AlignVCenter, text());
+    p.drawTiledPixmap(m_margin, 4, 16, 16, pix);
 
-    QRect textRect = QRect(18, 2, width()-18, height()-5);
+    QRect textRect = QRect(18+m_margin, 4, width()-(18+m_margin), height()-5);
     const QColor &fg=palette().color(foregroundRole());
     const QColor &bg=palette().color(backgroundRole());
     int y = bg.value()>fg.value()?1:-1;
@@ -153,18 +153,18 @@ NavButton::paintEvent(QPaintEvent *e)
 
     QLinearGradient lgf(textRect.topLeft(), textRect.topRight());
     lgf.setColorAt(0.0f, fg);
-    lgf.setColorAt(0.8f, fg);
+    lgf.setColorAt(0.6f, fg);
     lgf.setColorAt(1.0f, Qt::transparent);
     QLinearGradient lgb(textRect.topLeft(), textRect.topRight());
     lgb.setColorAt(0.0f, emb);
-    lgb.setColorAt(0.8f, emb);
+    lgb.setColorAt(0.6f, emb);
     lgb.setColorAt(1.0f, Qt::transparent);
-    if ( rect().width() < sizeHint().width() )
+    if ( rect().width() < sizeHint().width()-m_margin )
         p.setPen(QPen(lgb, 1.0f));
     else
         p.setPen(emb);
     p.drawText(textRect.translated(0, 1), Qt::AlignLeft|Qt::AlignVCenter, text());
-    if ( rect().width() < sizeHint().width() )
+    if ( rect().width() < sizeHint().width()-m_margin )
         p.setPen(QPen(lgf, 1.0f));
     else
         p.setPen(fg);
@@ -251,7 +251,7 @@ PathNavigator::genNavFromPath( const QString &path )
         NavButton *nb = new NavButton( this, newPath, buttonText );
 
         QFont f(font());
-        f.setPointSize(qMax<int>(8, f.pointSize()*0.8));
+        f.setPointSize(qMax<int>(Store::config.behaviour.minFontSize, f.pointSize()*0.8));
 
         if( newPath == path )
         {

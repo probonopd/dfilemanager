@@ -28,7 +28,7 @@
 
 using namespace DFM;
 
-static QMap<QString, QIcon> s_themedDirs;
+static QMap<QString, QString> s_themedDirs;
 
 FileIconProvider::FileIconProvider(FileSystemModel *model)
     : QFileIconProvider()
@@ -45,8 +45,14 @@ FileIconProvider::icon(const QFileInfo &info) const
     if ( Store::config.icons.customIcons.contains(info.filePath()) )
         return QIcon(Store::config.icons.customIcons.value(info.filePath()));
 #endif
+//    qDebug() << info.filePath() << QDir::rootPath();
+    if ( info.filePath() == QDir::rootPath() )
+        if ( QIcon::hasThemeIcon("folder-system") )
+            return QIcon::fromTheme("folder-system");
+        else if ( QIcon::hasThemeIcon("inode-directory") )
+            return QIcon::fromTheme("inode-directory");
     if ( info.isDir() && s_themedDirs.contains(info.filePath()) )
-        return s_themedDirs.value(info.filePath());
+        return QIcon::fromTheme(s_themedDirs.value(info.filePath()));
     QIcon icn = QFileIconProvider::icon(info);
     if ( QIcon::hasThemeIcon(icn.name()) )
         return QIcon::fromTheme(icn.name());
@@ -56,15 +62,18 @@ FileIconProvider::icon(const QFileInfo &info) const
 void
 FileIconProvider::loadThemedFolders(const QString &path)
 {
-    foreach ( const QString &file, QDir(path).entryList(QDir::NoDotAndDotDot|QDir::AllDirs) )
+    foreach ( const QFileInfo &file, QDir(path).entryInfoList(QDir::NoDotAndDotDot|QDir::AllDirs) )
     {
-        const QString &filePath = QString("%1%2%3").arg(path).arg(QDir::separator()).arg(file);
-        const QSettings settings(QString("%1%2.directory").arg(filePath).arg(QDir::separator()), QSettings::IniFormat);
-        QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString());
-        if ( !icon.isNull() && !s_themedDirs.contains(filePath) )
+        QString dirPath = file.filePath();
+        if ( !dirPath.endsWith(QDir::separator()) )
+            dirPath.append(QDir::separator());
+        dirPath.append(".directory");
+        const QSettings settings(dirPath, QSettings::IniFormat);
+        const QString &iconName = settings.value("Desktop Entry/Icon").toString();
+        if ( !iconName.isNull() && !s_themedDirs.contains(file.filePath()) )
         {
-            s_themedDirs.insert(filePath, icon);
-            const QModelIndex &index = m_fsModel->index(filePath);
+            s_themedDirs.insert(file.filePath(), iconName);
+            const QModelIndex &index = m_fsModel->index(file.filePath());
             emit dataChanged(index, index);
         }
     }
@@ -183,7 +192,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     if ( index.column() == 0 && role == Qt::DecorationRole && customIcon )
         return QIcon(Store::config.icons.customIcons.value(file));
 
-    if ( role < FlowImg )
+    if ( role < FlowImg && !fi.isDir() )
         if (index.column() > 0
                 || !supportedThumbs().contains(fi.suffix(), Qt::CaseInsensitive)
                 || !Store::config.views.showThumbs)
