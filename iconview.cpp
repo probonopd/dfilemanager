@@ -202,6 +202,8 @@ protected:
     }
     QVariant textData( const QStyleOptionViewItem &option, const QModelIndex &index, const Role role, QPainter *p = 0 ) const
     {
+        if ( !index.isValid() )
+            return QVariant();
         QFont font( index.model()->data(index, Qt::FontRole).value<QFont>() );
         QFontMetrics fm( font );
 

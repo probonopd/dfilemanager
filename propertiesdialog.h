@@ -69,6 +69,9 @@ public:
     GeneralInfo( QWidget *parent = 0, const QStringList &files = QStringList() );
     inline QString newName() const { return m_nameEdit->text(); }
 
+private slots:
+    void setIcon();
+
 private:
     QLineEdit *m_nameEdit;
 };

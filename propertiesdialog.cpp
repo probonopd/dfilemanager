@@ -23,6 +23,7 @@
 #include "operations.h"
 #include "placesview.h"
 #include "mainwindow.h"
+#include "icondialog.h"
 #include <QDateTime>
 #include <QGroupBox>
 #include <QProgressBar>
@@ -128,8 +129,11 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     else
     {
         window()->setWindowTitle(f.fileName());
-        QLabel *iconLabel = new QLabel(this);
-        iconLabel->setPixmap(qvariant_cast<QIcon>(fsModel->data(fsModel->index(f.filePath()), Qt::DecorationRole)).pixmap(32));
+        QToolButton *iconLabel = new QToolButton(this);
+        iconLabel->setIcon(fsModel->fileIcon(fsModel->index(f.filePath())));
+        iconLabel->setToolButtonStyle(Qt::ToolButtonIconOnly);
+        iconLabel->setProperty("file", f.filePath());
+        connect( iconLabel, SIGNAL(clicked()), this, SLOT(setIcon()) );
         l->addWidget(iconLabel, row, 0, right);
         l->addWidget(m_nameEdit = new QLineEdit(f.fileName()), row, 1, left);
         m_nameEdit->setMinimumWidth(128);
@@ -170,6 +174,22 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     pb->setMinimumWidth(128);
     l->addWidget(new QLabel(tr("Device Usage:"), this), ++row, 0, right);
     l->addWidget(pb, row, 1, left);
+}
+
+void
+GeneralInfo::setIcon()
+{
+    QToolButton *tb = qobject_cast<QToolButton *>(sender());
+    QIcon i = QIcon::fromTheme(DFM::IconDialog::icon());
+    if ( !i.isNull() )
+    {
+        QString file = tb->property("file").toString();
+        file.append(QDir::separator());
+        file.append(".directory");
+        QSettings settings(file, QSettings::IniFormat);
+        settings.setValue("Desktop Entry/Icon", i.name());
+        tb->setIcon(i);
+    }
 }
 
 

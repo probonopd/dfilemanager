@@ -192,10 +192,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     if ( index.column() == 0 && role == Qt::DecorationRole && customIcon )
         return QIcon(Store::config.icons.customIcons.value(file));
 
-    if ( role < FlowImg && !fi.isDir() )
-        if (index.column() > 0
-                || !supportedThumbs().contains(fi.suffix(), Qt::CaseInsensitive)
-                || !Store::config.views.showThumbs)
+    if ( (role != FileIconRole && role < FlowImg ) || index.column() > 0 )
             return QFileSystemModel::data(index, role);
 
     if ( role == Qt::DecorationRole )
@@ -204,7 +201,8 @@ FileSystemModel::data(const QModelIndex &index, int role) const
             return QIcon(QPixmap::fromImage(m_thumbsLoader->thumb(file)));
         else
         {
-            m_thumbsLoader->queueFile(file);
+            if ( QImageReader(file).canRead() && Store::config.views.showThumbs )
+                m_thumbsLoader->queueFile(file);
             return iconProvider()->icon(QFileInfo(file));
         }
     }
@@ -215,10 +213,10 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
         if ( m_it->hasData(file) )
             return QPixmap::fromImage(m_it->flowData(file, role == FlowRefl));
-        if ( !m_thumbsLoader->hasThumb(file) )
+        if ( !m_thumbsLoader->hasThumb(file) && Store::config.views.showThumbs )
             m_thumbsLoader->queueFile(file);
 
-        if ( m_thumbsLoader->hasThumb(file) && !m_it->hasData(file) )
+        if ( m_thumbsLoader->hasThumb(file) && !m_it->hasData(file) && Store::config.views.showThumbs )
             m_it->queueFile(file, m_thumbsLoader->thumb(file));
 
         if ( m_it->hasNameData(icon.name()) )
