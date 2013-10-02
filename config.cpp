@@ -81,6 +81,9 @@ Store::readConfiguration()
     config.behaviour.windowsStyle = settings()->value("behaviour.gayWindow.windowsStyle", false).toBool();
     config.behaviour.invertedColors = settings()->value("behaviour.gayWindow.invertedColors", false).toBool();
 
+    config.behaviour.sortingCol = settings()->value("behaviour.sortingCol", 0).toInt();
+    config.behaviour.sortingOrd = (Qt::SortOrder)settings()->value("behaviour.sortingOrd", 0).toInt();
+
     config.behaviour.capsContainers = settings()->value("behaviour.capsContainers", false).toBool();
 
     settings()->beginGroup("CustomIcons");
@@ -149,6 +152,9 @@ Store::writeConfiguration()
     settings()->setValue("iconView.lineCount", config.views.iconView.lineCount);
     settings()->setValue("flowSize", config.views.flowSize);
     settings()->setValue("behaviour.capsContainers", config.behaviour.capsContainers);
+
+    settings()->setValue("behaviour.sortingCol", qBound(0, config.behaviour.sortingCol, 4));
+    settings()->setValue("behaviour.sortingOrd", config.behaviour.sortingOrd);
 
     if ( !config.behaviour.gayWindow )
         settings()->setValue("hideTabBarWhenOnlyOne", config.behaviour.hideTabBarWhenOnlyOneTab);

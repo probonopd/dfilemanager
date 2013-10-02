@@ -106,6 +106,7 @@ public:
     void sort(int column, Qt::SortOrder order = Qt::AscendingOrder);
     inline int sortingColumn() const { return m_sortCol; }
     inline Qt::SortOrder sortingOrder() const { return m_sortOrder; }
+    void forceReSort();
 
 public slots:
     void setPath(const QString &path) { setRootPath(path); }
@@ -118,7 +119,6 @@ private slots:
 signals:
     void rootPathAsIndex( const QModelIndex &index );
     void flowDataChanged( const QModelIndex &start, const QModelIndex &end );
-    void sortingChanged(const int column, const Qt::SortOrder order);
 
 private:
     QStringList m_nameThumbs;
@@ -129,6 +129,7 @@ private:
     History *m_history;
     int m_sortCol;
     Qt::SortOrder m_sortOrder;
+    QString m_prevRp;
 };
 
 class FileProxyModel : public QSortFilterProxyModel

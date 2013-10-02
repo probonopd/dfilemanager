@@ -76,6 +76,7 @@ public:
     BreadCrumbs *breadCrumbs();
     QString currentFilter();
     QStringList visited() { return m_backList; }
+    void sort(const int column = 0, const Qt::SortOrder order = Qt::AscendingOrder, const QString &path = QString());
 
 protected:
     void leaveEvent(QEvent *) { emit leftView(); }
@@ -94,6 +95,7 @@ signals:
     void viewportEntered();
     void leftView();
     void filterChanged();
+    void sortingChanged(const int column, const Qt::SortOrder order);
     
 public slots:
     void activate(const QModelIndex &index);

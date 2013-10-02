@@ -44,7 +44,9 @@ class NavButton : public QToolButton
 {
     Q_OBJECT
 public:
-    NavButton(QWidget *parent = 0, const QString &path = QString());
+    NavButton(QWidget *parent = 0, const QString &path = QString(), const QString &text = QString());
+    QSize sizeHint() const;
+//    QSize minimumSizeHint() { return QSize(18+fontMetrics().boundingRect(text()).width(), 23); }
 
 signals:
     void navPath(const QString &path);
@@ -132,6 +134,7 @@ class PathNavigator : public QFrame
 public:
     explicit PathNavigator(QWidget *parent = 0, FileSystemModel *model = 0);
     inline QString path() const { return m_path; }
+    inline FileSystemModel *model() { return m_fsModel; }
     inline QList<NavButton *> navButtons() { return QList<NavButton *>(findChildren<NavButton *>()); }
     inline int count() { return navButtons().count(); }
     

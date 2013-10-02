@@ -189,6 +189,7 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
 
     if ( isValid(rootPath) )
         setCurrentView(column(rootPath));
+    showCurrent();
 }
 
 void ColumnsWidget::showCurrent() { ensureWidgetVisible(currentView()); }
@@ -210,10 +211,8 @@ void
 ColumnsWidget::showEvent(QShowEvent *e)
 {
     QScrollArea::showEvent(e);
-//    qDebug() << m_proxyModel;
-//    qDebug() << m_proxyModel->filePath(m_rootIndex);
-//    if ( isValid(m_proxyModel->filePath(m_rootIndex)) )
-//        ensureWidgetVisible(column(m_proxyModel->filePath(m_rootIndex)));
+    if ( isValid(m_model->filePath(m_rootIndex)) )
+        ensureWidgetVisible(column(m_model->filePath(m_rootIndex)));
 }
 
 void

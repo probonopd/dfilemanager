@@ -53,7 +53,6 @@ public slots:
 
 private slots:
     void rowsRemoved(const QModelIndex &parent, int start, int end);
-    void sortingChanged(const int column, const Qt::SortOrder order);
     
 signals:
     void newTabRequest(const QModelIndex &path);

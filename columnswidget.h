@@ -41,6 +41,7 @@ public:
     inline void setSelectionModel( QItemSelectionModel *model ) { m_slctModel = model; }
     QModelIndex currentIndex();
     ColumnsView *currentView();
+    ViewContainer *container() { return m_container; }
     void clear();
     void setFilter( const QString &filter );
     void scrollTo(const QModelIndex &index);

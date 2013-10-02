@@ -75,7 +75,7 @@ FileSystemModel::FileSystemModel(QObject *parent)
     , m_container(static_cast<ViewContainer *>(parent))
     , m_history(new History(this))
     , m_sortCol(0)
-    , m_sortOrder((Qt::SortOrder)1)
+    , m_sortOrder(Qt::AscendingOrder)
 {
     setResolveSymlinks(false);
     setIconProvider(m_iconProvider = new FileIconProvider(this));
@@ -166,6 +166,9 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         if (index.column() == 3)
             return int(Qt::AlignCenter);
         break;
+    case Qt::InitialSortOrderRole:
+        return Qt::AscendingOrder;
+        break;
     default:
         if ( role != Qt::DecorationRole && role < FlowImg )
             return QFileSystemModel::data(index, role);
@@ -225,15 +228,16 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 QVariant
 FileSystemModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    if(section == 4 && role == Qt::DisplayRole)
+    if (section == 4 && role == Qt::DisplayRole)
         return "Permissions";
-    if(section == 3 && role == Qt::DisplayRole)
+    if (section == 3 && role == Qt::DisplayRole)
         return "Last Modified";
     if ( role == Qt::SizeHintRole )
         return QSize(-1, QApplication::fontMetrics().height()+6);
     if ( role == Qt::DecorationRole )
         return QVariant();
-
+    if ( role == Qt::InitialSortOrderRole )
+        return Qt::AscendingOrder;
     return QFileSystemModel::headerData(section, orientation, role);
 }
 
@@ -248,12 +252,18 @@ FileSystemModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int 
 }
 
 void
+FileSystemModel::forceReSort()
+{
+//    sort(m_sortCol, m_sortOrder);
+}
+
+void
 FileSystemModel::sort(int column, Qt::SortOrder order)
 {
     m_sortCol = column;
     m_sortOrder = order;
     QFileSystemModel::sort(column, order);
-    emit sortingChanged(column, order);
+//    qDebug() << "sorted..." << rootPath() << column << order;
 }
 
 int

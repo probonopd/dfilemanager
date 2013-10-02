@@ -165,7 +165,7 @@ private:
     , *m_placeAct, *m_renPlaceAct, *m_rmPlaceAct, *m_iconViewAct, *m_listViewAct, *m_colViewAct, *m_delCurrentSelectionAct
     , *m_showHiddenAct, *m_mkDirAct, *m_copyAct, *m_cutAct, *m_pasteAct, *m_renameAct, *m_placeContAct, *m_flowAct, *m_refreshAct
     , *m_placeIconAct, *m_cstCmdAct, *m_menuAct, *m_statAct, *m_pathVisibleAct, *m_addTabAct, *m_openInTabAct, *m_configureAct, *m_propertiesAct
-    , *m_pathEditAct, *m_newWindowAct, *m_sortNameAct, *m_sortSizeAct, *m_sortDateAct, *m_sortTypeAct, *m_sortAscAct;
+    , *m_pathEditAct, *m_newWindowAct, *m_sortNameAct, *m_sortSizeAct, *m_sortDateAct, *m_sortTypeAct, *m_sortDescAct;
 
     QActionGroup *m_sortActs;
 

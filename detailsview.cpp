@@ -66,6 +66,20 @@ DetailsView::DetailsView(QWidget *parent)
     setAcceptDrops(true);
     setDragEnabled(true);
     setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    connect(header(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), container(), SIGNAL(sortingChanged(int,Qt::SortOrder)));
+    connect(container(), SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
+}
+
+ViewContainer
+*DetailsView::container()
+{
+    QWidget *w = this;
+    while ( w )
+    {
+        if ( ViewContainer *c = qobject_cast<ViewContainer *>(w) )
+            return c;
+        w = w->parentWidget();
+    }
 }
 
 void
@@ -109,7 +123,7 @@ DetailsView::setModel(QAbstractItemModel *model)
     QTreeView::setModel(model);
     m_model = qobject_cast<FileSystemModel *>(model);
     connect(m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)));
-//    connect(m_proxyModel, SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
+//    connect( m_model, SIGNAL(sortingChanged(int,Qt::SortOrder)), viewport(), SLOT(update()) );
 }
 
 void

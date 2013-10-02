@@ -300,6 +300,7 @@ IconView::IconView( QWidget *parent )
     , m_newSize(0)
     , m_sizeTimer(new QTimer(this))
     , m_gridHeight(0)
+    , m_container(static_cast<ViewContainer *>(parent))
 {
     setItemDelegate( new IconDelegate( this ) );
     ViewAnimator::manage(this);
@@ -579,6 +580,7 @@ IconView::setModel( QAbstractItemModel *model )
                 SLOT( rootPathChanged( QString ) ) );
         connect( m_model, SIGNAL( directoryLoaded( QString ) ), this,
                 SLOT( rootPathChanged( QString ) ) );
+//        connect( m_container, SIGNAL(sortingChanged(int,Qt::SortOrder)), viewport(), SLOT(update()) );
         static_cast<IconDelegate*>( itemDelegate() )->setModel( m_model );
     }
 }

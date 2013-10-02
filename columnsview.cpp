@@ -226,7 +226,6 @@ ColumnsView::setModel(QAbstractItemModel *model)
 {
     QListView::setModel(model);
     m_model = qobject_cast<FileSystemModel *>(model);
-//    connect( m_proxyModel, SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)) );
 }
 
 void
@@ -267,17 +266,6 @@ ColumnsView::rowsRemoved(const QModelIndex &parent, int start, int end)
 }
 
 void
-ColumnsView::sortingChanged(const int column, const Qt::SortOrder order)
-{
-//    const QString &oldPath = m_fsModel->rootPath();
-//    m_fsModel->blockSignals(true);
-//    m_fsModel->setRootPath(m_rootPath);
-//    m_fsModel->sort(column, order);
-//    m_fsModel->setRootPath(oldPath);
-//    m_fsModel->blockSignals(false);
-}
-
-void
 ColumnsView::dirLoaded(const QString &dir)
 {
     if ( !sanityCheckForDir() )
@@ -286,7 +274,7 @@ ColumnsView::dirLoaded(const QString &dir)
         return;
 
     m_isSorted = true;
-//    sortingChanged(m_proxyModel->sortingColumn(), m_proxyModel->sortingOrder());
+    m_parent->container()->sort(m_model->sortingColumn(), m_model->sortingOrder(), m_rootPath);
     viewport()->update();
 }
 

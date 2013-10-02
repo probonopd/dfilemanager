@@ -790,7 +790,9 @@ TabBar::drawTab(QPainter *p, int index)
     //icon
 
     int leftMargin = 2;
-    tabIcon(index).paint(p, QRect(r.x() == rect().x() ? overlap+leftMargin : r.x()+leftMargin, r.y(), 16, r.bottom()-1));
+    QPixmap pix = tabIcon(index).pixmap(16);
+    style()->drawItemPixmap(p, QRect(r.x() == rect().x() ? overlap+leftMargin : r.x()+leftMargin, r.y(), 16, r.bottom()-1), Qt::AlignCenter, pix);
+//    tabIcon(index).paint(p, QRect(r.x() == rect().x() ? overlap+leftMargin : r.x()+leftMargin, r.y(), 16, r.bottom()-1));
 
     //text
 

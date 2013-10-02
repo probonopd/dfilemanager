@@ -373,6 +373,7 @@ PreView::setModel(QAbstractItemModel *model)
     connect(m_model, SIGNAL(flowDataChanged(const QModelIndex & , const QModelIndex &)), this, SLOT(dataChanged(const QModelIndex & , const QModelIndex &)));
     connect(m_model, SIGNAL(layoutChanged()),this, SLOT(reset()));
     connect(m_model, SIGNAL(modelReset()),this, SLOT(reset()));
+//    connect(m_model, SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(reset()) );
     connect(m_model, SIGNAL(rowsInserted(const QModelIndex & , int , int)), this, SLOT(rowsInserted(const QModelIndex & , int , int)));
     connect(m_model, SIGNAL(rowsRemoved(const QModelIndex & , int , int)), this, SLOT(rowsRemoved(const QModelIndex & , int , int)));
 }

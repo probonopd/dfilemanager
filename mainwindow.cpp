@@ -597,7 +597,7 @@ MainWindow::addTab(const QString &path)
     connect( container, SIGNAL(newTabRequest(QString)), this, SLOT(addTab(QString)));
     connect( container, SIGNAL(entered(QModelIndex)), m_infoWidget, SLOT(hovered(QModelIndex)));
     connect( container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
-//    connect( container->model(), SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
+    connect( container, SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
 
     QList<QAction *> actList;
     actList << m_openInTabAct << m_mkDirAct << m_pasteAct << m_copyAct << m_cutAct
@@ -738,48 +738,29 @@ MainWindow::hidePath()
 void
 MainWindow::sortingChanged(const int col, const Qt::SortOrder order)
 {
-    foreach ( QAction *a, m_sortActs->actions() )
-        a->blockSignals(true);
-    m_sortAscAct->blockSignals(true);
-    if ( col != m_activeContainer->model()->sortingColumn() )
-    {
-        m_sortNameAct->setChecked(col == 0);
-        m_sortSizeAct->setChecked(col == 1);
-        m_sortTypeAct->setChecked(col == 2);
-        m_sortDateAct->setChecked(col == 3);
-    }
-    Qt::SortOrder oldSort = (Qt::SortOrder)!m_sortAscAct->isChecked();
-    if ( oldSort != order )
-        m_sortAscAct->toggle();
-    foreach ( QAction *a, m_sortActs->actions() )
-        a->blockSignals(false);
-    m_sortAscAct->blockSignals(false);
+//    qDebug() << "sortingChanged" << col << order;
+    Store::config.behaviour.sortingCol=col;
+    Store::config.behaviour.sortingOrd=order;
+    m_sortNameAct->setChecked(col == 0);
+    m_sortSizeAct->setChecked(col == 1);
+    m_sortTypeAct->setChecked(col == 2);
+    m_sortDateAct->setChecked(col == 3);
+    m_sortDescAct->setChecked(order == Qt::DescendingOrder);
 }
 
 void
 MainWindow::setSorting()
 {
-    const QString &rootPath = m_model->rootPath();
-    m_model->setRootPath("");
-    if ( sender() == m_sortAscAct )
-    {
-        m_model->sort(m_model->sortingColumn(), (Qt::SortOrder)!m_sortAscAct->isChecked());
-        m_model->setRootPath(rootPath);
-        return;
-    }
-
-    int i = -1;
-
-    if ( sender() == m_sortNameAct )
+    int i = 0;
+    if ( m_sortNameAct->isChecked() )
         i = 0;
-    else if ( sender() == m_sortSizeAct )
+    else if ( m_sortSizeAct->isChecked() )
         i = 1;
-    else if ( sender() == m_sortTypeAct )
+    else if ( m_sortTypeAct->isChecked() )
         i = 2;
-    else if ( sender() == m_sortDateAct )
+    else if ( m_sortDateAct->isChecked() )
         i = 3;
-    m_model->sort(i, (Qt::SortOrder)!m_sortAscAct->isChecked());
-    m_model->setRootPath(rootPath);
+    m_activeContainer->sort(i, (Qt::SortOrder)m_sortDescAct->isChecked());
 }
 
 void

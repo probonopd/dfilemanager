@@ -95,11 +95,11 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
         v->setMouseTracking( true );
         connect( v, SIGNAL(entered(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
         connect( v, SIGNAL(viewportEntered()), this, SIGNAL(viewportEntered()));
-        connect( m_model, SIGNAL(rootPathAsIndex(QModelIndex)), v, SLOT(setRootIndex(QModelIndex)) );
+//        connect( m_model, SIGNAL(rootPathAsIndex(QModelIndex)), v, SLOT(setRootIndex(QModelIndex)) );
     }
 
-    connect ( m_model, SIGNAL(rootPathAsIndex(QModelIndex)), m_columnsWidget, SLOT(setRootIndex(QModelIndex)) );
-    connect( m_model, SIGNAL(rootPathAsIndex(QModelIndex)), m_flowView, SLOT(setRootIndex(QModelIndex)) );
+//    connect ( m_model, SIGNAL(rootPathAsIndex(QModelIndex)), m_columnsWidget, SLOT(setRootIndex(QModelIndex)) );
+//    connect( m_model, SIGNAL(rootPathAsIndex(QModelIndex)), m_flowView, SLOT(setRootIndex(QModelIndex)) );
 
 //    connect
 
@@ -124,7 +124,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     setView((View)Store::config.behaviour.view);
     emit iconSizeChanged(Store::config.views.iconView.iconSize*16);
 
-//    setRootIndex(m_proxyModel->index(rootPath));
+    sort(Store::config.behaviour.sortingCol, Store::config.behaviour.sortingOrd);
 }
 
 void
@@ -268,6 +268,7 @@ ViewContainer::rootPathChanged(const QString &path)
         return;
 
     const QModelIndex &rootIndex = m_model->index(path);
+    setRootIndex(rootIndex);
     emit currentPathChanged(path);
     m_selectModel->clearSelection();
 
@@ -276,18 +277,7 @@ ViewContainer::rootPathChanged(const QString &path)
 
     m_back = false;
     m_iconView->updateLayout();
-
-//    QStringList compList;
-//    QString separator = path == "/" ? 0L : "/";
-
-//    foreach (QString cEntry, m_model->rootDirectory().entryList())
-//    {
-//        cEntry.prepend(path + separator);
-//        if(QFileInfo(cEntry).isDir())
-//            compList.append(cEntry);
-//    }
-
-//    flowView->flowView()->setCurrentIndex(fsModel->index(0,0,fsModel->index(fsModel->rootPath())));
+    sort(m_model->sortingColumn(), m_model->sortingOrder());
 }
 
 void
@@ -429,9 +419,26 @@ ViewContainer::customCommand()
 }
 
 void
+ViewContainer::sort(const int column, const Qt::SortOrder order, const QString &path)
+{
+    const QString &rootPath = m_model->rootPath();
+    if ( !path.isEmpty() || m_myView == Columns )
+    {
+        m_model->blockSignals(true);
+        m_model->setRootPath(path);
+    }
+    m_model->sort(column, order);
+    if ( !path.isEmpty() || m_myView == Columns )
+    {
+        m_model->setRootPath(rootPath);
+        m_model->blockSignals(false);
+    }
+    emit sortingChanged(column, order);
+}
+
+void
 ViewContainer::setRootIndex(const QModelIndex &index)
 {
-    qDebug() << "setRootIndex:" << index.model();
     VIEWS(setRootIndex(index));
 }
 

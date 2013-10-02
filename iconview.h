@@ -31,6 +31,7 @@
 #include <QTransform>
 
 #include "filesystemmodel.h"
+#include "viewcontainer.h"
 
 namespace DFM
 {
@@ -54,6 +55,7 @@ protected:
 };
 #endif
 class FileSystemModel;
+class ViewContainer;
 class IconView : public QListView
 {
     Q_OBJECT
@@ -91,6 +93,7 @@ private slots:
     void updateIconSize();
 
 private:
+    ViewContainer *m_container;
     QPoint m_startPos;
     QList<int> m_allowedSizes;
     bool m_slide, m_startSlide;

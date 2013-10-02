@@ -271,9 +271,9 @@ MainWindow::createActions()
     connect(m_newWindowAct, SIGNAL(triggered()), this, SLOT(newWindow()));
     addAction(m_newWindowAct);
 
-    m_sortAscAct = new QAction(tr("Ascending"), this);
-    m_sortAscAct->setCheckable(true);
-    connect ( m_sortAscAct, SIGNAL(triggered()), this, SLOT(setSorting()) );
+    m_sortDescAct = new QAction(tr("Descending"), this);
+    m_sortDescAct->setCheckable(true);
+    connect ( m_sortDescAct, SIGNAL(triggered()), this, SLOT(setSorting()) );
 
     m_sortActs = new QActionGroup(this);
     m_sortNameAct = m_sortActs->addAction(tr("Name"));
@@ -286,7 +286,6 @@ MainWindow::createActions()
         connect ( a, SIGNAL(triggered()), this, SLOT(setSorting()) );
     }
     m_sortActs->setExclusive(true);
-    m_sortNameAct->setChecked(true);
 }
 
 void
@@ -386,7 +385,7 @@ MainWindow::createToolBars()
     sortMenu->addSeparator()->setText(tr("Sort By:"));
     sortMenu->addActions(m_sortActs->actions());
     sortMenu->addSeparator();
-    sortMenu->addAction(m_sortAscAct);
+    sortMenu->addAction(m_sortDescAct);
     tb->setMenu(sortMenu);
     tb->setPopupMode(QToolButton::InstantPopup);
     m_toolBar->addWidget(tb);

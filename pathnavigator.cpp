@@ -77,23 +77,27 @@ Menu::mousePressEvent(QMouseEvent *e)
         e->accept();
 }
 
-NavButton::NavButton(QWidget *parent, const QString &path)
-    :QToolButton(parent)
+NavButton::NavButton(QWidget *parent, const QString &path, const QString &text)
+    : QToolButton(parent)
     , m_path(path)
     , m_nav(static_cast<PathNavigator *>(parent))
     , m_hasData(false)
 {
+    setText(text);
     setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     connect(this, SIGNAL(released()), this, SLOT(emitPath()));
     setFixedHeight(23);
     if ( m_nav->path() != path )
         setMinimumWidth(23);
     setIconSize(QSize(16, 16));
-    QFont f(qApp->font());
-    f.setPointSize(qMax<int>(8, f.pointSize()*0.8));
-    setFont(f);
     setAcceptDrops(true);
     setForegroundRole(QPalette::Text);
+}
+
+QSize
+NavButton::sizeHint() const
+{
+    return QSize(18+fontMetrics().boundingRect(text()).width(), 23);
 }
 
 void
@@ -135,7 +139,38 @@ NavButton::dragLeaveEvent(QDragLeaveEvent *e)
 void
 NavButton::paintEvent(QPaintEvent *e)
 {
-    QToolButton::paintEvent(e);
+//    QToolButton::paintEvent(e);
+    const QPixmap &pix = m_nav->model()->fileIcon(m_nav->model()->index(m_path)).pixmap(16);
+    QPainter p(this);
+    p.drawTiledPixmap(0, 2, 16, 16, pix);
+//    p.drawText(18, 2, width()-18, height()-5, Qt::AlignLeft|Qt::AlignVCenter, text());
+
+    QRect textRect = QRect(18, 2, width()-18, height()-5);
+    const QColor &fg=palette().color(foregroundRole());
+    const QColor &bg=palette().color(backgroundRole());
+    int y = bg.value()>fg.value()?1:-1;
+    const QColor &emb = Ops::colorMid(bg, y==1?Qt::white:Qt::black);
+
+    QLinearGradient lgf(textRect.topLeft(), textRect.topRight());
+    lgf.setColorAt(0.0f, fg);
+    lgf.setColorAt(0.8f, fg);
+    lgf.setColorAt(1.0f, Qt::transparent);
+    QLinearGradient lgb(textRect.topLeft(), textRect.topRight());
+    lgb.setColorAt(0.0f, emb);
+    lgb.setColorAt(0.8f, emb);
+    lgb.setColorAt(1.0f, Qt::transparent);
+    if ( rect().width() < sizeHint().width() )
+        p.setPen(QPen(lgb, 1.0f));
+    else
+        p.setPen(emb);
+    p.drawText(textRect.translated(0, 1), Qt::AlignLeft|Qt::AlignVCenter, text());
+    if ( rect().width() < sizeHint().width() )
+        p.setPen(QPen(lgf, 1.0f));
+    else
+        p.setPen(fg);
+    p.drawText(textRect, Qt::AlignLeft|Qt::AlignVCenter, text());
+    p.end();
+
     if ( m_hasData )
     {
         QRectF r(rect());
@@ -212,24 +247,27 @@ PathNavigator::genNavFromPath( const QString &path )
 
     foreach ( const QString &newPath, m_pathList )
     {
-        NavButton *nb = new NavButton( this, newPath );
         QString buttonText( QFileInfo( newPath ).fileName().isEmpty() ? "/." : QFileInfo( newPath ).fileName() );
+        NavButton *nb = new NavButton( this, newPath, buttonText );
 
-//        buttonText = nb->fontMetrics().elidedText( buttonText, Qt::ElideRight, 164 );
-        nb->setText( buttonText );
-
-        QFont font = nb->font();
-        font.setBold( true );
+        QFont f(font());
+        f.setPointSize(qMax<int>(8, f.pointSize()*0.8));
 
         if( newPath == path )
-            nb->setFont( font );
+        {
+            f.setBold( true );
+            nb->setFont( f );
+        }
         else
+        {
+            setFont(f);
             nb->setCursor( Qt::PointingHandCursor );
+        }
 
-        if( nb->text() == "/." )
-            nb->setIcon( QIcon::fromTheme( "folder-system", QIcon::fromTheme( "inode-directory" ) ) );
-        else
-            nb->setIcon( qvariant_cast<QIcon>( m_fsModel->data( m_fsModel->index( newPath ), Qt::DecorationRole ) ) );
+//        if( nb->text() == "/." )
+//            nb->setIcon( QIcon::fromTheme( "folder-system", QIcon::fromTheme( "inode-directory" ) ) );
+//        else
+//            nb->setIcon( m_fsModel->fileIcon(m_fsModel->index(newPath)) );
 
         m_layout->addWidget( nb );
         connect( nb, SIGNAL( navPath( QString ) ), m_fsModel, SLOT( setPath( QString ) ) );

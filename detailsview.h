@@ -28,10 +28,12 @@
 #include <QDebug>
 #include <QHeaderView>
 #include "filesystemmodel.h"
+#include "viewcontainer.h"
 
 namespace DFM
 {
 
+class ViewContainer;
 class DetailsView : public QTreeView
 {
     Q_OBJECT
@@ -46,6 +48,7 @@ public:
     void showEvent(QShowEvent *);
     void setModel(QAbstractItemModel *model);
     void setRootIndex(const QModelIndex &index) { QTreeView::setRootIndex(index); m_detailsWidth = 0; }
+    ViewContainer *container();
 
 signals:
     void newTabRequest(const QModelIndex &path);
