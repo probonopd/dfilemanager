@@ -790,7 +790,7 @@ PlacesView::setPlaceIcon()
 {
     if ( !m_lastClicked )
         return;
-    const QString &i = IconDialog::icon();
+    const QString &i = IconDialog::iconName();
     if ( i.isEmpty() || !m_lastClicked->parent() )
         return;
     if ( Place *place = dynamic_cast<Place *>(m_lastClicked) )

@@ -106,7 +106,8 @@ public:
     void sort(int column, Qt::SortOrder order = Qt::AscendingOrder);
     inline int sortingColumn() const { return m_sortCol; }
     inline Qt::SortOrder sortingOrder() const { return m_sortOrder; }
-    void forceReSort();
+    void forceEmitDataChangedFor(const QString &file);
+    inline FileIconProvider *ip() { return m_iconProvider; }
 
 public slots:
     void setPath(const QString &path) { setRootPath(path); }

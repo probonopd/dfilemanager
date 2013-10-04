@@ -88,25 +88,14 @@ public:
         : QWidget(parent)
         , m_path(path)
         , m_fsModel(fsModel)
+        , m_nav(qobject_cast<PathNavigator *>(parent))
     {
         setAttribute(Qt::WA_Hover);
         setFixedSize(6, 7);
     }
 
 protected:
-    void mousePressEvent(QMouseEvent *event)
-    {
-        Menu menu;
-        foreach ( const QFileInfo &info, QDir( m_path ).entryInfoList( QDir::AllDirs | QDir::NoDotAndDotDot ) )
-        {
-            QAction *action = new QAction( info.fileName(), this );
-            action->setText( info.fileName() );
-            action->setData( info.filePath() );
-            menu.addAction( action );
-            connect( action, SIGNAL( triggered() ), this, SLOT( setPath() ) );
-        }
-        menu.exec(event->globalPos());
-    }
+    void mousePressEvent(QMouseEvent *event);
     void paintEvent(QPaintEvent *);
     void leaveEvent(QEvent *e) {QWidget::leaveEvent(e); update(); }
 
@@ -115,6 +104,7 @@ private slots:
 
 private:
     QString m_path;
+    PathNavigator *m_nav;
     FileSystemModel *m_fsModel;
 };
 

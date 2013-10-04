@@ -36,7 +36,7 @@ class IconDialog : public QDialog
     Q_OBJECT
 public:
     explicit IconDialog(QWidget *parent = 0);
-    static inline QString icon() { return IconDialog().getIcon(); }
+    static inline QString iconName() { return IconDialog().getIcon(); }
     QString getIcon();
 
 private slots:

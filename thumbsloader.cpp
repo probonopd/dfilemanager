@@ -38,9 +38,29 @@ ThumbsLoader::ThumbsLoader(QObject *parent) :
     QThread(parent),
     m_extent(256),
     m_fsModel(static_cast<DFM::FileSystemModel *>(parent))
-{}
+{
+    connect(m_fsModel, SIGNAL(fileRenamed(QString,QString,QString)), this, SLOT(fileRenamed(QString,QString,QString)));
+}
 
-bool ThumbsLoader::hasThumb(const QString &file)
+void
+ThumbsLoader::fileRenamed(const QString &path, const QString &oldName, const QString &newName)
+{
+    const QString &file = QString("%1%2%3").arg(path, QDir::separator(), oldName);
+    removeThumb(file);
+}
+
+void
+ThumbsLoader::removeThumb(const QString &file)
+{
+    if ( s_thumbs.contains(file) )
+    {
+        s_thumbs.remove(file);
+        s_dateCheck.remove(file);
+    }
+}
+
+bool
+ThumbsLoader::hasThumb(const QString &file)
 {
     return s_thumbs.contains(file) && s_dateCheck.value(file) == QFileInfo(file).lastModified().toString();
 }
@@ -190,10 +210,11 @@ ImagesThread::queueName(const QIcon &icon)
 }
 
 void
-ImagesThread::queueFile(const QString &file, const QImage &source )
+ImagesThread::queueFile(const QString &file, const QImage &source, const bool force )
 {
-    if ( m_pixQueue.contains(file) || m_images[0].contains(file) )
+    if ( (m_pixQueue.contains(file) || m_images[0].contains(file)) && !force )
         return;
+
     m_pixQueue << file;
     m_sourceImgs.insert(file, source);
     start();

@@ -49,6 +49,10 @@ public:
     bool hasThumb(const QString &file);
     QImage thumb(const QString &file);
     void clearQueue();
+
+public slots:
+    void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
+    void removeThumb(const QString &file);
     
 signals:
     void thumbFor(const QString &file);
@@ -68,7 +72,7 @@ class ImagesThread : public QThread
     Q_OBJECT
 public:
     explicit ImagesThread(QObject *parent = 0);
-    void queueFile( const QString &file, const QImage &source );
+    void queueFile( const QString &file, const QImage &source, const bool force = false );
     void queueName( const QIcon &icon );
     QImage flowData( const QString &file, const bool refl = false );
     QImage flowNameData( const QString &name, const bool refl = false );

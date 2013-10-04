@@ -70,7 +70,9 @@ FileIconProvider::loadThemedFolders(const QString &path)
         dirPath.append(".directory");
         const QSettings settings(dirPath, QSettings::IniFormat);
         const QString &iconName = settings.value("Desktop Entry/Icon").toString();
-        if ( QIcon::hasThemeIcon(iconName) && !s_themedDirs.contains(file.filePath()) )
+        if ( QIcon::hasThemeIcon(iconName)
+             && ( !s_themedDirs.contains(file.filePath())
+             || ( s_themedDirs.contains(file.filePath()) && s_themedDirs.value(file.filePath()) != iconName ) ) )
         {
             s_themedDirs.insert(file.filePath(), iconName);
             const QModelIndex &index = m_fsModel->index(file.filePath());
@@ -112,11 +114,19 @@ FileSystemModel::~FileSystemModel()
 }
 
 void
+FileSystemModel::forceEmitDataChangedFor(const QString &file)
+{
+    const QModelIndex &idx = index(file);
+    emit dataChanged(idx, idx);
+    emit flowDataChanged(idx, idx);
+}
+
+void
 FileSystemModel::thumbFor(const QString &file)
 {
     const QModelIndex &idx = index(file);
     emit dataChanged(idx, idx);
-    m_it->queueFile(file, m_thumbsLoader->thumb(file));
+    m_it->queueFile(file, m_thumbsLoader->thumb(file), true);
 }
 
 void
@@ -201,7 +211,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
             return QIcon(QPixmap::fromImage(m_thumbsLoader->thumb(file)));
         else
         {
-            if ( QImageReader(file).canRead() && Store::config.views.showThumbs )
+            if ( Store::config.views.showThumbs )
                 m_thumbsLoader->queueFile(file);
             return iconProvider()->icon(QFileInfo(file));
         }
@@ -256,12 +266,6 @@ FileSystemModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int 
 
     IO::Job::copy(data->urls(), filePath(parent), true, true);
     return true;
-}
-
-void
-FileSystemModel::forceReSort()
-{
-//    sort(m_sortCol, m_sortOrder);
 }
 
 void

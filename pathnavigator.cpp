@@ -62,6 +62,29 @@ PathSeparator::setPath()
 }
 
 void
+PathSeparator::mousePressEvent(QMouseEvent *event)
+{
+    Menu menu;
+    foreach ( const QFileInfo &info, QDir( m_path ).entryInfoList( QDir::AllDirs | QDir::NoDotAndDotDot ) )
+    {
+        QAction *action = new QAction( info.fileName(), this );
+        action->setText( info.fileName() );
+        action->setData( info.filePath() );
+        if ( m_nav->path().startsWith(info.filePath()) )
+        {
+//            QFont fnt = action->font();
+//            fnt.setBold(true);
+//            fnt.setPointSize(fnt.pointSize()*1.2);
+            action->setEnabled(false);
+//            action->setFont(fnt);
+        }
+        menu.addAction( action );
+        connect( action, SIGNAL( triggered() ), this, SLOT( setPath() ) );
+    }
+    menu.exec(event->globalPos());
+}
+
+void
 Menu::mousePressEvent(QMouseEvent *e)
 {
     if ( e->button() == Qt::LeftButton )

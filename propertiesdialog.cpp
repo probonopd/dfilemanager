@@ -132,8 +132,14 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
         QToolButton *iconLabel = new QToolButton(this);
         iconLabel->setIcon(fsModel->fileIcon(fsModel->index(f.filePath())));
         iconLabel->setToolButtonStyle(Qt::ToolButtonIconOnly);
-        iconLabel->setProperty("file", f.filePath());
-        connect( iconLabel, SIGNAL(clicked()), this, SLOT(setIcon()) );
+        iconLabel->setIconSize(QSize(32, 32));
+        if ( f.isDir() )
+        {
+            iconLabel->setProperty("file", f.filePath());
+            connect( iconLabel, SIGNAL(clicked()), this, SLOT(setIcon()) );
+        }
+        else
+            iconLabel->setEnabled(false);
         l->addWidget(iconLabel, row, 0, right);
         l->addWidget(m_nameEdit = new QLineEdit(f.fileName()), row, 1, left);
         m_nameEdit->setMinimumWidth(128);
@@ -180,15 +186,23 @@ void
 GeneralInfo::setIcon()
 {
     QToolButton *tb = qobject_cast<QToolButton *>(sender());
-    QIcon i = QIcon::fromTheme(DFM::IconDialog::icon());
-    if ( !i.isNull() )
+    QIcon i = QIcon::fromTheme(DFM::IconDialog::iconName());
+    if ( !i.isNull() && QIcon::hasThemeIcon(i.name()) )
     {
-        QString file = tb->property("file").toString();
-        file.append(QDir::separator());
-        file.append(".directory");
-        QSettings settings(file, QSettings::IniFormat);
+        const QString &file = tb->property("file").toString();
+        QString stngs = file;
+        stngs.append(QDir::separator());
+        stngs.append(".directory");
+        QSettings settings(stngs, QSettings::IniFormat);
         settings.setValue("Desktop Entry/Icon", i.name());
         tb->setIcon(i);
+
+//        qDebug() << file << i.name() << settings.value("Desktop Entry/Icon");
+
+        DFM::FileSystemModel *fsModel = DFM::MainWindow::currentContainer()->model();
+        qDebug() << QFileInfo(file).path();
+        fsModel->ip()->loadThemedFolders(QFileInfo(file).path());
+        fsModel->forceEmitDataChangedFor(file);
     }
 }
 
