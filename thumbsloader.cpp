@@ -68,9 +68,7 @@ ThumbsLoader::hasThumb(const QString &file)
 void
 ThumbsLoader::queueFile(const QString &file)
 {
-    if ( m_queue.contains(file) )
-        return;
-    if ( s_thumbs.contains(file) && s_dateCheck.value(file) == QFileInfo(file).lastModified().toString() )
+    if ( m_queue.contains(file) || hasThumb(file) )
         return;
 
     m_queue << file;
@@ -129,45 +127,48 @@ ImagesThread::ImagesThread(QObject *parent)
     , m_fsModel(static_cast<FileSystemModel *>(parent))
 {}
 
-void ImagesThread::clearQueue() { m_pixQueue.clear(); }
+void ImagesThread::clearQueue() { m_imgQueue.clear(); }
 
 void
 ImagesThread::removeData(const QString &file)
 {
     for ( int i = 0; i < 2; ++i )
         m_images[i].remove(file);
-    m_pixQueue.removeOne(file);
+    m_imgQueue.remove(file);
 }
 
 void
 ImagesThread::genImagesFor(const QString &file)
 {
-    const QImage &source = m_sourceImgs.take(file);
+    if ( file.isEmpty() )
+        return;
+    const QImage &source = m_imgQueue.value(file);
     if ( source.isNull() )
         return;
-
     m_images[0].insert(file, Ops::flowImg(source));
     m_images[1].insert(file, Ops::reflection(source));
     emit imagesReady(file);
+    m_imgQueue.remove(file);
 }
 
 void
 ImagesThread::genNameIconsFor(const QString &name)
 {
-    const QImage &source = m_themeSource.take(name);
+    const QImage &source = m_nameQueue.value(name);
     if ( source.isNull() )
         return;
     s_themeIcons[0].insert(name, Ops::flowImg(source));
     s_themeIcons[1].insert(name, Ops::reflection(source));
+    m_nameQueue.remove(name);
 //    emit imagesReady(source.first);
 }
 
 void ImagesThread::run()
 {
     while ( !m_nameQueue.isEmpty() )
-        genNameIconsFor(m_nameQueue.takeFirst());
-    while ( !m_pixQueue.isEmpty() )
-        genImagesFor(m_pixQueue.takeFirst());
+        genNameIconsFor(m_nameQueue.keys().first());
+    while ( !m_imgQueue.isEmpty() )
+        genImagesFor(m_imgQueue.keys().first());
 }
 
 QImage
@@ -203,19 +204,18 @@ ImagesThread::queueName(const QIcon &icon)
 {
     if ( m_nameQueue.contains(icon.name()) || s_themeIcons[0].contains(icon.name()) )
         return;
-    m_nameQueue << icon.name();
+
     const QImage &source = icon.pixmap(SIZE).toImage();
-    m_themeSource.insert(icon.name(), source);
+    m_nameQueue.insert(icon.name(), source);
     start();
 }
 
 void
 ImagesThread::queueFile(const QString &file, const QImage &source, const bool force )
 {
-    if ( (m_pixQueue.contains(file) || m_images[0].contains(file)) && !force )
+    if ( (m_imgQueue.contains(file) || m_images[0].contains(file)) && !force )
         return;
 
-    m_pixQueue << file;
-    m_sourceImgs.insert(file, source);
+    m_imgQueue.insert(file, source);
     start();
 }

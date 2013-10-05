@@ -79,7 +79,7 @@ public:
     bool hasData( const QString &file );
     bool hasNameData( const QString &name );
     void removeData( const QString &file );
-    inline bool hasFileInQueue( const QString &file ) { return m_pixQueue.contains(file); }
+    inline bool hasFileInQueue( const QString &file ) { return m_imgQueue.contains(file); }
     void clearQueue();
 
 public slots:
@@ -94,11 +94,10 @@ protected:
     void run();
 
 private:
-    QStringList m_pixQueue, m_nameQueue;
-    QMap<QString, QImage> m_sourceImgs;
-    QMap<QString, QImage> m_result[2];
-    QHash<QString, QImage> m_images[2];
-    QHash<QString, QImage> m_themeSource;
+    QMap<QString, QImage> m_imgQueue;
+    QMap<QString, QImage> m_names[2];
+    QMap<QString, QImage> m_images[2];
+    QMap<QString, QImage> m_nameQueue;
     FileSystemModel *m_fsModel;
 };
 

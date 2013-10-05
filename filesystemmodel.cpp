@@ -87,6 +87,8 @@ FileSystemModel::FileSystemModel(QObject *parent)
     , m_history(new History(this))
     , m_sortCol(0)
     , m_sortOrder(Qt::AscendingOrder)
+    , m_it(new ImagesThread(this))
+    , m_thumbsLoader(new ThumbsLoader(this))
 {
     setResolveSymlinks(false);
     setIconProvider(m_iconProvider = new FileIconProvider(this));
@@ -95,9 +97,7 @@ FileSystemModel::FileSystemModel(QObject *parent)
     setReadOnly(false);
     m_nameThumbs = supportedThumbs();
     connect ( this, SIGNAL(rootPathChanged(QString)), this, SLOT(emitRootIndex(QString)) );
-    m_thumbsLoader = new ThumbsLoader(this);
     connect ( m_thumbsLoader, SIGNAL(thumbFor(QString)), this, SLOT(thumbFor(QString)) );
-    m_it = new ImagesThread(this);
     connect ( m_it, SIGNAL(imagesReady(QString)), this, SLOT(flowDataAvailable(QString)) );
     connect ( this, SIGNAL(rootPathChanged(QString)), m_history, SLOT(addPath(QString)) );
     connect ( this, SIGNAL(rootPathChanged(QString)), m_it, SLOT(clearData()) );

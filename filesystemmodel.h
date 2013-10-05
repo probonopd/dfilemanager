@@ -122,6 +122,7 @@ signals:
     void flowDataChanged( const QModelIndex &start, const QModelIndex &end );
 
 private:
+    friend class ImagesThread;
     QStringList m_nameThumbs;
     FileIconProvider *m_iconProvider;
     ThumbsLoader *m_thumbsLoader;
