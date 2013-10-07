@@ -32,7 +32,6 @@ using namespace DFM;
 
 static QHash<QString, QImage> s_thumbs;
 static QHash<QString, QString> s_dateCheck;
-static QImageReader ir;
 
 ThumbsLoader::ThumbsLoader(QObject *parent) :
     QThread(parent),
@@ -60,7 +59,7 @@ ThumbsLoader::removeThumb(const QString &file)
 }
 
 bool
-ThumbsLoader::hasThumb(const QString &file)
+ThumbsLoader::hasThumb(const QString &file) const
 {
     return s_thumbs.contains(file) && s_dateCheck.value(file) == QFileInfo(file).lastModified().toString();
 }
@@ -76,7 +75,7 @@ ThumbsLoader::queueFile(const QString &file)
 }
 
 QImage
-ThumbsLoader::thumb(const QString &file)
+ThumbsLoader::thumb(const QString &file) const
 {
     if ( hasThumb(file) )
         return s_thumbs.value(file);
@@ -84,27 +83,33 @@ ThumbsLoader::thumb(const QString &file)
 }
 
 void
-ThumbsLoader::loadThumb( const QString &path )
+ThumbsLoader::genThumb( const QString &path )
 {
-    if ( !QFileInfo(path).exists() )
+    const QFileInfo &fi(path);
+    if ( !fi.isReadable() )
     {
-        s_thumbs.remove(path);
+        removeThumb(path);
         return;
     }
-    ir.setFileName(path);
+
+    QImageReader ir(path);
     if ( !ir.canRead() || path.endsWith( "xcf", Qt::CaseInsensitive ) )
         return;
 
-    QSize thumbsize = ir.size();
+    QSize thumbsize(ir.size());
     if ( qMax( thumbsize.width(), thumbsize.height() ) > m_extent )
         thumbsize.scale( m_extent, m_extent, Qt::KeepAspectRatio );
     ir.setScaledSize(thumbsize);
 
-    const QImage image(ir.read());
+    const QImage &image(ir.read());
+
+//    static quint64 i = 0;
+//    i+=image.byteCount();
+//    qDebug() << "size of thumbs in memory" << Ops::prettySize(i);
 
     if ( !image.isNull() )
     {
-        s_dateCheck.insert(path, QFileInfo(path).lastModified().toString());
+        s_dateCheck.insert(path, fi.lastModified().toString());
         s_thumbs.insert(path, image);
         emit thumbFor(path);
     }
@@ -116,7 +121,7 @@ void
 ThumbsLoader::run()
 {
     while ( !m_queue.isEmpty() )
-        loadThumb(m_queue.takeFirst());
+        genThumb(m_queue.takeFirst());
 }
 
 
@@ -140,7 +145,7 @@ ImagesThread::removeData(const QString &file)
 void
 ImagesThread::genImagesFor(const QString &file)
 {
-    if ( file.isEmpty() )
+    if ( !QFileInfo(file).isReadable() )
         return;
     const QImage &source = m_imgQueue.value(file);
     if ( source.isNull() )
@@ -202,7 +207,7 @@ ImagesThread::hasNameData(const QString &name)
 void
 ImagesThread::queueName(const QIcon &icon)
 {
-    if ( m_nameQueue.contains(icon.name()) || s_themeIcons[0].contains(icon.name()) )
+    if ( m_nameQueue.contains(icon.name()) || hasNameData(icon.name()) )
         return;
 
     const QImage &source = icon.pixmap(SIZE).toImage();

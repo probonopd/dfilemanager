@@ -126,7 +126,8 @@ FileSystemModel::thumbFor(const QString &file)
 {
     const QModelIndex &idx = index(file);
     emit dataChanged(idx, idx);
-    m_it->queueFile(file, m_thumbsLoader->thumb(file), true);
+    if ( m_container->currentViewType() == ViewContainer::Flow )
+        m_it->queueFile(file, m_thumbsLoader->thumb(file), true);
 }
 
 void
@@ -140,8 +141,7 @@ bool FileSystemModel::hasThumb(const QString &file) { return m_thumbsLoader->has
 
 QVariant
 FileSystemModel::data(const QModelIndex &index, int role) const
-{
-    if (!index.isValid() || index.model() != this)
+{  if (!index.isValid() || index.model() != this)
         return QVariant();
 
     switch ( role )
@@ -196,7 +196,6 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
     const QFileInfo &fi = fileInfo(index);
     const QString &file = fi.filePath();
-
     const bool customIcon = Store::config.icons.customIcons.contains(file);
 
     if ( index.column() == 0 && role == Qt::DecorationRole && customIcon )
@@ -211,7 +210,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
             return QIcon(QPixmap::fromImage(m_thumbsLoader->thumb(file)));
         else
         {
-            if ( Store::config.views.showThumbs )
+            if ( Store::config.views.showThumbs && supportedThumbs().contains(fi.suffix(), Qt::CaseInsensitive) )
                 m_thumbsLoader->queueFile(file);
             return iconProvider()->icon(QFileInfo(file));
         }
@@ -223,7 +222,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
         if ( m_it->hasData(file) )
             return QPixmap::fromImage(m_it->flowData(file, role == FlowRefl));
-        if ( !m_thumbsLoader->hasThumb(file) && Store::config.views.showThumbs )
+        if ( !m_thumbsLoader->hasThumb(file) && Store::config.views.showThumbs && supportedThumbs().contains(fi.suffix(), Qt::CaseInsensitive) )
             m_thumbsLoader->queueFile(file);
 
         if ( m_thumbsLoader->hasThumb(file) && !m_it->hasData(file) && Store::config.views.showThumbs )
@@ -231,7 +230,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
         if ( m_it->hasNameData(icon.name()) )
             return QPixmap::fromImage(m_it->flowNameData(icon.name(), role == FlowRefl));
-        else
+        else if ( !icon.name().isEmpty() )
             m_it->queueName(icon);
 
         if ( role == FlowRefl )

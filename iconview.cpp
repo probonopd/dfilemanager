@@ -191,6 +191,7 @@ public:
 protected:
     QSize sizeHint( const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
+//        return textData(option, index, Size).toSize();
         static QHash<QPair<QString, int>, QSize> s_sizes[2];
         const bool selected = option.state&QStyle::State_Selected;
         const QString &path = m_model->filePath(index);

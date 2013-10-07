@@ -46,8 +46,8 @@ public:
     explicit ThumbsLoader(QObject *parent = 0);
     enum Type { Thumb = 0, FlowPic, Reflection, FallBackRefl };
     void queueFile(const QString &file);
-    bool hasThumb(const QString &file);
-    QImage thumb(const QString &file);
+    bool hasThumb(const QString &file) const;
+    QImage thumb(const QString &file) const;
     void clearQueue();
 
 public slots:
@@ -58,8 +58,8 @@ signals:
     void thumbFor(const QString &file);
 
 protected:
-    virtual void run();
-    void loadThumb( const QString &path );
+    void run();
+    void genThumb(const QString &path);
 
 private:
     QStringList m_queue;

@@ -46,8 +46,8 @@ Ops
 QString
 Ops::getMimeType(const QString &file)
 {
-    QFileInfo f(file);
-    if ( !f.exists() )
+    const QFileInfo f(file);
+    if ( !f.isReadable() )
         return QString();
 
     if ( f.isSymLink())
@@ -55,9 +55,11 @@ Ops::getMimeType(const QString &file)
     if ( f.isDir() )
         return "inode/directory";
 #ifdef Q_WS_X11
-    magic_t magic = magic_open( MAGIC_MIME_TYPE );
-    magic_load( magic, NULL );
-    return QString( magic_file( magic, file.toLatin1() ) );
+    magic_t magicMime = magic_open( MAGIC_MIME_TYPE );
+    magic_load( magicMime, NULL );
+    const QString &mime( magic_file( magicMime, file.toStdString().c_str() ) );
+    magic_close(magicMime);
+    return mime;
 #else
     return QString();
 #endif
@@ -69,9 +71,12 @@ Ops::getFileType(const QString &file)
 #ifdef Q_WS_X11
     if ( !QFileInfo(file).exists() )
         return QString();
-    magic_t mgcMime = magic_open( MAGIC_CONTINUE ); //print anything we can get
-    magic_load( mgcMime, NULL );
-    return QString( magic_file( mgcMime, file.toStdString().c_str() ) );
+
+    magic_t magicMime = magic_open( MAGIC_CONTINUE );
+    magic_load( magicMime, NULL );
+    const QString &mime( magic_file( magicMime, file.toStdString().c_str() ) );
+    magic_close(magicMime);
+    return mime;
 #else
     return QString();
 #endif
