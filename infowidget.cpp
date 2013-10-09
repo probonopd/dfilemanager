@@ -115,21 +115,6 @@ InfoWidget::paintEvent(QPaintEvent *event)
     QFrame::paintEvent(event);
 }
 
-static inline float realSize(const float &size, int *t)
-{
-    float s = size;
-    while (s > 1024)
-    {
-        if (*t == 5)
-            break;
-        s = s/1024;
-        ++(*t);
-    }
-    return s;
-}
-
-static QString type[6] = { " Byte", " KiB", " MiB", " GiB", " TiB", " PiB" };
-
 void
 InfoWidget::hovered(const QModelIndex &index)
 {
@@ -162,7 +147,5 @@ InfoWidget::hovered(const QModelIndex &index)
     const QString &s(fsModel->data(fsModel->index(index.row(), 4, index.parent())).toString());
     m_perm[1]->setText(s.mid(0, s.lastIndexOf(",")));
 
-    int t = 0;
-    float size = realSize((float)(fsModel->fileInfo(index).size()), &t);
-    m_sizeLbl->setText(dir ? qvariant_cast<QString>(fsModel->data(fsModel->index(fsModel->filePath(index), 1))) : QString::number(size) + type[t]);
+    m_sizeLbl->setText(dir ? qvariant_cast<QString>(fsModel->data(fsModel->index(fsModel->filePath(index), 1))) : Ops::prettySize(fsModel->fileInfo(index).size()));
 }
