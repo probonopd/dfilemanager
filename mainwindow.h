@@ -67,6 +67,7 @@ public:
 
 public slots:
     void addTab(const QString &path = QDir::homePath());
+    void receiveMessage(const QStringList &message);
     inline void setRootPath( const QString &path ) { m_model->setRootPath(path); }
 
 protected:

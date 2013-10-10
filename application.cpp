@@ -23,6 +23,7 @@
 #include "mainwindow.h"
 #include <QSharedMemory>
 #include <QDebug>
+#include <QDesktopServices>
 
 #ifdef Q_WS_X11
 #if 0
@@ -36,17 +37,35 @@ static Atom netClientListStacking = 0;
 
 Application::Application(int &argc, char *argv[], const QString &key)
     : QApplication(argc, argv)
+    , m_sharedMem(new QSharedMemory(key, this))
+    , m_key(key)
+    , m_fsWatcher(0)
 {
-    QSharedMemory mem(key);
-    if ( mem.attach() )
-    {
+    const QString &dirPath(QDesktopServices::storageLocation(QDesktopServices::TempLocation));
+    if ( !QFileInfo(dirPath).exists() )
+        QDir().mkpath(dirPath);
+
+    m_filePath = QString("%1%2dfm_message_file").arg(dirPath, QDir::separator());
+    m_file.setFileName(m_filePath);
+    if ( m_sharedMem->attach() )
         m_isRunning = true;
-    }
     else
     {
         m_isRunning = false;
-        if ( !mem.create(1) )
+        if ( !m_sharedMem->create(1) )
             qDebug() << "failed to create shared memory";
+        //        connect(m_localServer, SIGNAL(newConnection()), this, SLOT(receiveMessage()));
+        //        m_localServer->listen(key);
+
+        if ( m_file.open(QFile::WriteOnly|QFile::Truncate) )
+        {
+            m_file.write(QByteArray());
+            m_file.close();
+        }
+        m_fsWatcher = new QFileSystemWatcher(this);
+        m_fsWatcher->addPath(m_filePath);
+
+        connect(m_fsWatcher, SIGNAL(fileChanged(QString)), this, SLOT(fileChanged(QString)));
     }
 #ifdef Q_WS_X11
 #if 0
@@ -54,6 +73,43 @@ Application::Application(int &argc, char *argv[], const QString &key)
     netClientListStacking = XInternAtom(DPY, "_NET_CLIENT_LIST_STACKING", False);
 #endif
 #endif
+}
+
+static QDateTime s_lastModified;
+
+void
+Application::fileChanged(const QString &file)
+{
+    if ( isRunning() || (s_lastModified==QFileInfo(m_file).lastModified()) )
+        return;
+
+    s_lastModified = QFileInfo(m_file).lastModified();
+
+    if (m_file.open(QFile::ReadOnly))
+    {
+        QTextStream out(&m_file);
+        QStringList message;
+        while (!out.atEnd())
+            message << out.readLine();
+        if ( !message.isEmpty() )
+            emit lastMessage(message);
+        m_file.close();
+    }
+}
+
+bool
+Application::setMessage(const QStringList &message)
+{
+    if ( !isRunning() )
+        return false;
+
+    if (m_file.open(QFile::WriteOnly|QFile::Truncate))
+    {
+        QTextStream out(&m_file);
+        foreach (const QString &string, message)
+            out << QString("%1\n").arg(string);
+        m_file.close();
+    }
 }
 
 #ifdef Q_WS_X11

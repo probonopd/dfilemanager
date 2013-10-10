@@ -25,44 +25,44 @@
 
 int main(int argc, char *argv[])
 {
-//    Q_INIT_RESOURCE(resources);
-
-    QSharedMemory mem("dfmkeys");
-    if ( mem.attach() )
-    {
-        qDebug() << "dfm is already running... exiting";
-        return 0;
-    }
-    else
-    {
-        if ( !mem.create(1) )
-            qDebug() << "mem creation failed";
+    //    Q_INIT_RESOURCE(resources);
 
 #if QT_VERSION < 0x050000
-        QApplication::setGraphicsSystem("raster");
+    QApplication::setGraphicsSystem("raster");
 #endif
-        QApplication app(argc, argv);
+    Application app(argc, argv);
 
-        DFM::Store::readConfig();
-
-        if ( app.font().pointSize() < DFM::Store::config.behaviour.minFontSize )
-        {
-            QFont font = app.font();
-            font.setPointSize(DFM::Store::config.behaviour.minFontSize);
-            app.setFont(font);
-        }
-
-        if ( !DFM::Store::config.styleSheet.isEmpty() )
-        {
-            QFile file(DFM::Store::config.styleSheet);
-            file.open(QFile::ReadOnly);
-            app.setStyleSheet(file.readAll());
-            file.close();
-        }
-
-        DFM::MainWindow *mainWin = new DFM::MainWindow(app.arguments());
-        mainWin->show();
-        return app.exec();
+    if ( app.isRunning() )
+    {
+        QStringList message;
+        if ( argc>1 )
+            for (int i = 0; i<argc; ++i)
+                if ( i )
+                    message << QString(argv[i]);
+        app.setMessage(message);
+        return 0;
     }
+
+    DFM::Store::readConfig();
+
+    if ( app.font().pointSize() < DFM::Store::config.behaviour.minFontSize )
+    {
+        QFont font = app.font();
+        font.setPointSize(DFM::Store::config.behaviour.minFontSize);
+        app.setFont(font);
+    }
+
+    if ( !DFM::Store::config.styleSheet.isEmpty() )
+    {
+        QFile file(DFM::Store::config.styleSheet);
+        file.open(QFile::ReadOnly);
+        app.setStyleSheet(file.readAll());
+        file.close();
+    }
+
+    DFM::MainWindow *mainWin = new DFM::MainWindow(app.arguments());
+    QObject::connect(&app, SIGNAL(lastMessage(QStringList)), mainWin, SLOT(receiveMessage(QStringList)));
+    mainWin->show();
+    return app.exec();
 }
 

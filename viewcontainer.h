@@ -40,6 +40,7 @@ class ColumnsWidget;
 class IconView;
 class FlowView;
 class BreadCrumbs;
+class PathNavigator;
 class ViewContainer : public QFrame
 {
     Q_OBJECT
@@ -77,6 +78,7 @@ public:
     QString currentFilter();
     QStringList visited() { return m_backList; }
     void sort(const int column = 0, const Qt::SortOrder order = Qt::AscendingOrder, const QString &path = QString());
+    PathNavigator *pathNav();
 
 protected:
     void leaveEvent(QEvent *) { emit leftView(); }

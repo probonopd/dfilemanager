@@ -127,6 +127,10 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     sort(Store::config.behaviour.sortingCol, Store::config.behaviour.sortingOrd);
 }
 
+PathNavigator
+*ViewContainer::pathNav()
+{ return m_breadCrumbs->pathNav(); }
+
 void
 ViewContainer::setModel(QAbstractItemModel *model)
 {

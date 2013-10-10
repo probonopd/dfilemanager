@@ -113,11 +113,14 @@ MainWindow::MainWindow(QStringList arguments)
     m_tabWin->setCentralWidget(m_stackedWidget);
 
     QString startPath = Store::config.startPath;
-    m_appPath = arguments[0];
-    if ( QFileInfo(arguments.at(0)).isDir() )
-        startPath = arguments.at(0);
-    else if (arguments.count() > 1 && QFileInfo(arguments.at(1)).isDir())
-        startPath = arguments.at(1);
+    if ( !arguments.isEmpty() )
+    {
+        m_appPath = arguments[0];
+        if ( QFileInfo(arguments.at(0)).isDir() )
+            startPath = arguments.at(0);
+        else if (arguments.count() > 1 && QFileInfo(arguments.at(1)).isDir())
+            startPath = arguments.at(1);
+    }
     addTab(startPath);
 
     QVBoxLayout *vBox = new QVBoxLayout();
@@ -145,6 +148,20 @@ MainWindow::MainWindow(QStringList arguments)
     m_activeContainer->setFocus();
     m_statusBar->setVisible(m_statAct->isChecked());
     QTimer::singleShot(200, m_toolBar, SLOT(update())); //should be superfluos but make sure toolbar is painted correctly....
+}
+
+void
+MainWindow::receiveMessage(const QStringList &message)
+{
+    activateWindow();
+    raise();
+    setFocus();
+    foreach ( const QString &msg, message )
+        if ( QFileInfo(msg).isDir() )
+        {
+            addTab(msg);
+            m_tabBar->setCurrentIndex(m_tabBar->count()-1);
+        }
 }
 
 void
@@ -305,7 +322,7 @@ MainWindow::rootPathChanged(QString index)
     m_filterBox->clear();
     m_activeContainer->setFilter("");
     m_placesView->activateAppropriatePlace(index);
-    m_tabBar->setTabText(m_tabBar->currentIndex(),m_model->rootDirectory().dirName());
+    m_tabBar->setTabText(m_tabBar->currentIndex(), QFileInfo(activeContainer()->breadCrumbs()->currentPath()).fileName());
     if ( Store::config.behaviour.gayWindow )
         m_tabBar->setTabIcon(m_tabBar->currentIndex(), m_model->iconProvider()->icon(QFileInfo(m_model->rootPath())));
 }
@@ -609,10 +626,11 @@ MainWindow::addTab(const QString &path)
     if (!m_model)
         m_model = container->model();
     static_cast<FileIconProvider *>(m_model->iconProvider())->loadThemedFolders(m_model->rootPath());
+
     if ( Store::config.behaviour.gayWindow )
-        m_tabBar->addTab(m_model->iconProvider()->icon(QFileInfo(newPath)), QFileInfo(newPath).fileName());
+        m_tabBar->addTab(m_model->iconProvider()->icon(QFileInfo(container->model()->rootPath())), QFileInfo(container->model()->rootPath()).fileName());
     else
-        m_tabBar->addTab(QFileInfo(newPath).fileName());
+        m_tabBar->addTab(QFileInfo(container->model()->rootPath()).fileName());
 
     if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
         m_tabBar->setVisible(m_tabBar->count() > 1);

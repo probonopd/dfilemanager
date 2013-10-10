@@ -161,6 +161,7 @@ public:
     inline void setEditable( const bool editable ) { setCurrentWidget( editable ? static_cast<QWidget *>(m_pathBox) : static_cast<QWidget *>(m_pathNav) ); currentWidget()->setFocus(); }
     inline QString currentPath() { return m_pathNav->path(); }
     inline bool isEditable() { return currentWidget() == static_cast<QWidget *>(m_pathBox); }
+    inline PathNavigator *pathNav() { return m_pathNav; }
 public slots:
     inline void setPath( const QString &path ) { m_pathNav->setPath(path); }
     void setRootPath( const QString &rootPath );

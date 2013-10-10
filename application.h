@@ -23,6 +23,9 @@
 #define APPLICATION_H
 
 #include <QApplication>
+#include <QSharedMemory>
+#include <QFileSystemWatcher>
+#include <QFile>
 #if 0
 #include <QMainWindow>
 #include "dockwidget.h"
@@ -44,10 +47,15 @@ class Application : public QApplication
 {
     Q_OBJECT
 public:
-    explicit Application(int &argc, char *argv[], const QString &key = "dfm"); /*: QApplication(argc, argv) {}*/
+    explicit Application(int &argc, char *argv[], const QString &key = "dfmkey"); /*: QApplication(argc, argv) {}*/
     inline bool isRunning() { return m_isRunning; }
+    bool setMessage(const QStringList &message);
+
 signals:
-    void message( const QStringList &msg );
+    void lastMessage( const QStringList &message );
+
+private slots:
+    void fileChanged(const QString &file);
 
 #if 0
     inline void manageDock( DFM::Docks::DockWidget *dock ) { m_docks << dock; }
@@ -65,6 +73,11 @@ protected:
 
 private:
     bool m_isRunning;
+    QSharedMemory *m_sharedMem;
+    QFileSystemWatcher *m_fsWatcher;
+    QString m_key;
+    QString m_filePath;
+    QFile m_file;
 #if 0
     QList<DFM::Docks::DockWidget *> m_docks;
     QMainWindow *m_mainWindow;
