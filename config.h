@@ -37,7 +37,15 @@ typedef struct Config
     QString startPath, styleSheet;
     struct behaviour
     {
-        bool hideTabBarWhenOnlyOneTab, systemIcons, devUsage, gayWindow, frame, newTabButton, windowsStyle, invertedColors, capsContainers;
+        bool hideTabBarWhenOnlyOneTab,
+        systemIcons,
+        devUsage,
+        gayWindow,
+        frame,
+        newTabButton,
+        windowsStyle,
+        invertedColors,
+        capsContainers;
         int tabShape, tabRoundness, tabHeight, tabWidth, tabOverlap, sortingCol;
         Qt::SortOrder sortingOrd;
         int view, minFontSize;
@@ -46,7 +54,7 @@ typedef struct Config
     struct views
     {
         QByteArray flowSize;
-        bool showThumbs, singleClick;
+        bool showThumbs, singleClick, dirSettings;
         struct iconView
         {
             bool smoothScroll;

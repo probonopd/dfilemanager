@@ -212,10 +212,12 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
   , m_viewBox(new QComboBox(this))
   , m_singleClick(new QCheckBox(tr("Open folders and files with one click"), this))
   , m_lineCount(new QSpinBox(this))
+  , m_dirSettings(new QCheckBox(tr("Store view for each dir separately (unix only)"), this))
 {
     m_smoothScroll->setChecked(Store::config.views.iconView.smoothScroll);
     m_showThumbs->setChecked(Store::config.views.showThumbs);
     m_singleClick->setChecked(Store::config.views.singleClick);
+    m_dirSettings->setChecked(Store::config.views.dirSettings);
 
     //IconView
     m_iconSlider->setRange(1, 16);
@@ -281,6 +283,7 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     QVBoxLayout *vLayout = new QVBoxLayout();
     vLayout->addWidget(m_showThumbs);
     vLayout->addWidget(m_singleClick);
+    vLayout->addWidget(m_dirSettings);
     vLayout->addLayout(defView);
     vLayout->addWidget(gBox);
     vLayout->addWidget(detailsBox);
@@ -355,6 +358,7 @@ SettingsDialog::accept()
     Store::config.views.singleClick = m_viewWidget->m_singleClick->isChecked();
     Store::config.views.iconView.lineCount = m_viewWidget->m_lineCount->value();
     Store::config.behaviour.capsContainers = m_behWidget->m_capsConts->isChecked();
+    Store::config.views.dirSettings = m_viewWidget->m_dirSettings->isChecked();
 
     Store::settings()->setValue("behaviour.gayWindow", m_behWidget->m_tabsBox->isChecked());
     Store::settings()->setValue("behaviour.gayWindow.tabShape", m_behWidget->m_tabShape->currentIndex());

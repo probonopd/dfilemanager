@@ -347,21 +347,6 @@ DeviceItem::setMounted( const bool mount )
         m_solid.as<Solid::StorageAccess>()->teardown();
 }
 
-static QString spaceType[6] = { " Byte", " KiB", " MiB", " GiB", " TiB", " PiB" };
-
-static inline float realSize(const float size, int *t)
-{
-    float s = size;
-    while (s > 1024.0)
-    {
-        if (*t == 5)
-            break;
-        s = s/1024.0;
-        ++(*t);
-    }
-    return s;
-}
-
 void
 DeviceItem::updateSpace()
 {
@@ -822,19 +807,23 @@ PlacesView::activateAppropriatePlace( const QString &path )
 void
 PlacesView::showHiddenDevices()
 {
+#ifdef Q_WS_X11
     m_hiddenDevices.removeDuplicates();
     foreach ( DeviceItem *d, deviceManager()->deviceItems() )
         if ( d->isHidden() )
             d->show();
+#endif
 }
 
 void
 PlacesView::hideHiddenDevices()
 {
+#ifdef Q_WS_X11
     m_hiddenDevices.removeDuplicates();
     foreach ( DeviceItem *d, deviceManager()->deviceItems() )
         if ( d->isHidden() )
             d->hide();
+#endif
 }
 
 void
@@ -845,11 +834,13 @@ PlacesView::contextMenuEvent( QContextMenuEvent *event )
 
     QMenu popupMenu;
 
+#ifdef Q_WS_X11
     if ( DeviceItem *d = itemAt<DeviceItem *>(event->pos()) )
         popupMenu.addActions(d->actions());
     else if ( DeviceManager *dm = itemAt<DeviceManager *>(event->pos()) )
         popupMenu.addActions(dm->actions());
     else
+#endif
         popupMenu.addActions( actions() );
     popupMenu.exec( event->globalPos() );
 }
@@ -952,8 +943,9 @@ PlacesView::store()
         }
         s.endGroup();
     }
-
+#ifdef Q_WS_X11
     s.setValue("hiddenDevices", m_hiddenDevices);
+#endif
     m_timer->start();
 }
 

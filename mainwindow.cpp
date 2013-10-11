@@ -153,9 +153,7 @@ MainWindow::MainWindow(QStringList arguments)
 void
 MainWindow::receiveMessage(const QStringList &message)
 {
-    activateWindow();
-    raise();
-    setFocus();
+    setWindowState(windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
     foreach ( const QString &msg, message )
         if ( QFileInfo(msg).isDir() )
         {

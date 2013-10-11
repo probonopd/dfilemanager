@@ -120,8 +120,9 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     layout->setSpacing(0);
     setLayout(layout);
 
+    setView((View)Store::config.behaviour.view, false);
     m_model->setRootPath(rootPath);
-    setView((View)Store::config.behaviour.view);
+
     emit iconSizeChanged(Store::config.views.iconView.iconSize*16);
 
     sort(Store::config.behaviour.sortingCol, Store::config.behaviour.sortingOrd);
@@ -157,7 +158,7 @@ QItemSelectionModel
 }
 
 void
-ViewContainer::setView(View view)
+ViewContainer::setView(View view, bool store)
 {
     m_myView = view;
     if (view == Icon)
@@ -169,6 +170,20 @@ ViewContainer::setView(View view)
     else if (view == Flow)
         m_viewStack->setCurrentWidget(m_flowView);
     emit viewChanged();
+
+#ifdef Q_WS_X11
+    if ( Store::config.views.dirSettings && store )
+    {
+        QString dirPath = m_model->rootPath();
+        if ( !dirPath.endsWith(QDir::separator()) )
+            dirPath.append(QDir::separator());
+        dirPath.append(".directory");
+        QSettings settings(dirPath, QSettings::IniFormat);
+        settings.beginGroup("DFM");
+        settings.setValue("view", (int)view);
+        settings.endGroup();
+    }
+#endif
 }
 
 static QList<QAction *> s_actions;
@@ -282,6 +297,25 @@ ViewContainer::rootPathChanged(const QString &path)
     m_back = false;
     m_iconView->updateLayout();
     sort(m_model->sortingColumn(), m_model->sortingOrder());
+
+#ifdef Q_WS_X11
+    if ( Store::config.views.dirSettings )
+    {
+        QString dirPath = path;
+        if ( !dirPath.endsWith(QDir::separator()) )
+            dirPath.append(QDir::separator());
+        dirPath.append(".directory");
+        QSettings settings(dirPath, QSettings::IniFormat);
+        settings.beginGroup("DFM");
+        QVariant var = settings.value("view");
+        if ( var.isValid() )
+        {
+            View view = (View)var.value<int>();
+            setView(view, false);
+        }
+        settings.endGroup();
+    }
+#endif
 }
 
 void

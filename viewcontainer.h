@@ -50,7 +50,7 @@ public:
     virtual ~ViewContainer(){}
     static QList<QAction *> rightClickActions();
     FileSystemModel *model();
-    void setView(View view);
+    void setView(View view, bool store = true);
     QAbstractItemView *currentView() const;
     View currentViewType() const { return m_myView; }
     DetailsView *detailsView() { return m_detailsView; }

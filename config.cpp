@@ -87,6 +87,7 @@ Store::readConfiguration()
     config.behaviour.sortingOrd = (Qt::SortOrder)settings()->value("behaviour.sortingOrd", 0).toInt();
 
     config.behaviour.capsContainers = settings()->value("behaviour.capsContainers", false).toBool();
+    config.views.dirSettings = settings()->value("views.dirSettings", false).toBool();
 
     settings()->beginGroup("CustomIcons");
 
@@ -157,6 +158,8 @@ Store::writeConfiguration()
 
     settings()->setValue("behaviour.sortingCol", qBound(0, config.behaviour.sortingCol, 4));
     settings()->setValue("behaviour.sortingOrd", config.behaviour.sortingOrd);
+
+    settings()->setValue("views.dirSettings", config.views.dirSettings);
 
     if ( !config.behaviour.gayWindow )
         settings()->setValue("hideTabBarWhenOnlyOne", config.behaviour.hideTabBarWhenOnlyOneTab);
