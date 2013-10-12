@@ -80,7 +80,7 @@ static QDateTime s_lastModified;
 void
 Application::fileChanged(const QString &file)
 {
-    if ( isRunning() || (s_lastModified==QFileInfo(m_file).lastModified()) )
+    if ( isRunning() || (s_lastModified.isValid()&&s_lastModified==QFileInfo(m_file).lastModified()) )
         return;
 
     s_lastModified = QFileInfo(m_file).lastModified();
@@ -91,8 +91,7 @@ Application::fileChanged(const QString &file)
         QStringList message;
         while (!out.atEnd())
             message << out.readLine();
-        if ( !message.isEmpty() )
-            emit lastMessage(message);
+        emit lastMessage(message);
         m_file.close();
     }
 }
