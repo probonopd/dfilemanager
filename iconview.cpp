@@ -420,6 +420,8 @@ IconView::keyPressEvent(QKeyEvent *event)
         else if ( selectionModel()->selectedIndexes().count() )
             foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
                 emit activated(index);
+        event->accept();
+        return;
     }
     QListView::keyPressEvent(event);
 }

@@ -118,6 +118,8 @@ DetailsView::keyPressEvent(QKeyEvent *event)
         else if ( selectionModel()->selectedIndexes().count() )
             foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
                 emit activated(index);
+        event->accept();
+        return;
     }
     QTreeView::keyPressEvent(event);
 }
