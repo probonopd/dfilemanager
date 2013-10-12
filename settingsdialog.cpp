@@ -42,7 +42,7 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     , m_layOrder(new QComboBox(m_tabsBox))
     , m_capsConts(new QCheckBox(tr("Use CAPITAL LETTERS on containers in bookmarks")))
     , m_startUpWidget(new StartupWidget(this))
-    , m_invActBookm(new QCheckBox(tr("Inver icon on active bookmark"), this))
+    , m_invActBookm(new QCheckBox(tr("Icon on active bookmark follows textrole"), this))
 {
     m_hideTabBar->setChecked(Store::config.behaviour.hideTabBarWhenOnlyOneTab);
     m_useCustomIcons->setChecked(Store::config.behaviour.systemIcons);
@@ -114,9 +114,9 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     vl->addWidget(m_hideTabBar);
     vl->addWidget(m_useCustomIcons);
     vl->addWidget(m_drawDevUsage);
+    vl->addWidget(m_invActBookm);
     vl->addWidget(m_capsConts);
     vl->addWidget(m_tabsBox);
-    vl->addWidget(m_invActBookm);
     vl->addStretch();
     setLayout(vl);
 }
