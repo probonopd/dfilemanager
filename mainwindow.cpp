@@ -36,6 +36,8 @@ static MainWindow *s_currentWindow = 0;
 static QList<MainWindow *> s_openWindows;
 
 MainWindow::MainWindow(QStringList arguments)
+    : QMainWindow()
+    , m_sortButton(0)
 { 
     addActions(Store::customActions());
     s_currentWindow = this;

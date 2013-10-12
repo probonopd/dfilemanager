@@ -91,19 +91,29 @@ DetailsView::dirLoaded(const QString &path)
          || m_detailsWidth > 0 )
         return;
 
-    int w = width()-(verticalScrollBar()->isVisible()*style()->pixelMetric(QStyle::PM_ScrollBarExtent));
-    setColumnWidth(0, w);
+//    int w = width()-(verticalScrollBar()->isVisible()*style()->pixelMetric(QStyle::PM_ScrollBarExtent));
+//    setColumnWidth(0, w);
 
-    for ( int i = 1; i < m_model->columnCount(rootIndex()); ++i )
-    {
-        resizeColumnToContents(i);
-        m_detailsWidth+=columnWidth(i);
-    }
+//    for ( int i = 0; i < m_model->columnCount(rootIndex()); ++i )
+//    {
+//        resizeColumnToContents(i);
+//        m_detailsWidth+=columnWidth(i);
+//    }
 
-    w-=m_detailsWidth;
-    if ( m_detailsWidth < 1 || w > width()-16 )
-        qDebug() << "something went wrong when resizing columns in detailsview" << m_detailsWidth;
-    setColumnWidth(0, w);
+//    w-=m_detailsWidth;
+//    if ( m_detailsWidth < 1 || w > width()-16 )
+//        qDebug() << "something went wrong when resizing columns in detailsview" << m_detailsWidth;
+//    setColumnWidth(0, w);
+
+//    const int w = verticalScrollBar()->isVisible()?width()-verticalScrollBar()->width():width();
+//    setColumnWidth(0, w*0.6f);
+//    setColumnWidth(1, w*0.1f);
+//    setColumnWidth(2, w*0.1f);
+//    setColumnWidth(3, w*0.2f);
+
+//    setColumnWidth(0, width()*0.4f);
+//    for ( int i = 1; i < m_model->columnCount(rootIndex()); ++i )
+//        setColumnWidth(i, width()*0.2);
 }
 
 void
@@ -130,8 +140,15 @@ void
 DetailsView::resizeEvent(QResizeEvent *event)
 {
     QTreeView::resizeEvent(event);
-    if ( !m_userPlayed )
-        setColumnWidth(0, viewport()->width()-m_detailsWidth);
+//    if ( !m_userPlayed )
+//        setColumnWidth(0, viewport()->width()-m_detailsWidth);
+    const int w = verticalScrollBar()->isVisible()?width()-(verticalScrollBar()->width()+1):width();
+    setColumnWidth(0, w*0.6f);
+    setColumnWidth(1, w*0.1f);
+    setColumnWidth(2, w*0.1f);
+    setColumnWidth(3, w*0.2f);
+//    for ( int i = 1; i < m_model->columnCount(rootIndex()); ++i )
+//        setColumnWidth(i, width()*0.2);
 }
 
 void

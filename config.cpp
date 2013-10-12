@@ -166,6 +166,8 @@ Store::writeConfiguration()
     settings()->setValue("styleSheet", config.styleSheet);
     settings()->setValue("views.singleClick", config.views.singleClick);
 
+    settings()->setValue("useSystemIcons", config.behaviour.systemIcons);
+
 //    settings()->setValue("behaviour.gayWindow", config.behaviour.gayWindow);
 //    settings()->setValue("behaviour.gayWindow.tabShape", config.behaviour.tabShape);
 //    settings()->setValue("behaviour.gayWindow.tabRoundness", config.behaviour.tabRoundness);

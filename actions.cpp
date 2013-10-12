@@ -378,17 +378,17 @@ MainWindow::createToolBars()
     m_toolBar->addSeparator();
     m_toolBar->addAction(m_homeAct);
     m_toolBar->addSeparator();
-    QToolButton *tb = new QToolButton(this);
-    tb->setIcon(IconProvider::icon(IconProvider::Sort, 16, tb->palette().color(tb->foregroundRole()), false));
-    QMenu *sortMenu = new QMenu(tb);
+    m_sortButton = new QToolButton(this);
+    m_sortButton->setIcon(IconProvider::icon(IconProvider::Sort, 16, m_sortButton->palette().color(m_sortButton->foregroundRole()), false));
+    QMenu *sortMenu = new QMenu(m_sortButton);
     sortMenu->setSeparatorsCollapsible(false);
     sortMenu->addSeparator()->setText(tr("Sort By:"));
     sortMenu->addActions(m_sortActs->actions());
     sortMenu->addSeparator();
     sortMenu->addAction(m_sortDescAct);
-    tb->setMenu(sortMenu);
-    tb->setPopupMode(QToolButton::InstantPopup);
-    m_toolBar->addWidget(tb);
+    m_sortButton->setMenu(sortMenu);
+    m_sortButton->setPopupMode(QToolButton::InstantPopup);
+    m_toolBar->addWidget(m_sortButton);
 
     QWidget *searchWidget = new QWidget(m_toolBar);
     searchWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -404,6 +404,7 @@ MainWindow::createToolBars()
     gl->addWidget(m_filterBox, 0, 1);
 
     m_toolBar->addWidget(searchWidget);
+    QTimer::singleShot(1000, this, SLOT(updateIcons()));
 }
 
 void

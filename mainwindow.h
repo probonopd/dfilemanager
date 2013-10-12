@@ -77,13 +77,13 @@ protected:
     void keyPressEvent(QKeyEvent *ke);
     void windowActivationChange(bool wasActive);
     void showEvent(QShowEvent *e);
-    void updateIcons();
     void createActions();
     void createToolBars();
     void writeSettings();
     void createSlider();
 
 private slots:
+    void updateIcons();
     void goHome();
     void goBack();
     void goUp();
@@ -157,6 +157,7 @@ private:
     QMainWindow *m_tabWin;
     QList<QAction *> m_actions;
     QMenu *m_mainMenu;
+    QToolButton *m_sortButton;
 
     QMenu *m_fileMenu, *m_editMenu, *m_goMenu, *m_viewMenu, *m_helpMenu;
     QToolBar *m_toolBar;

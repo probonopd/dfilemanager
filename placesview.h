@@ -257,6 +257,7 @@ protected:
     void keyReleaseEvent(QKeyEvent *);
     void mouseReleaseEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
+    void paletteChange(const QPalette &pal);
 
 signals:
     void newTabRequest( const QString &path );

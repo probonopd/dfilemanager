@@ -47,7 +47,10 @@ MainWindow::readSettings()
 void
 MainWindow::updateIcons()
 {
-    const QColor &tbfgc(m_toolBar->palette().color(m_toolBar->foregroundRole()));
+    if ( !m_sortButton )
+        return;
+
+    const QColor &tbfgc(m_sortButton->palette().color(m_sortButton->foregroundRole()));
     const int tbis = m_toolBar->iconSize().height();
     m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
     m_goBackAct->setIcon(IconProvider::icon(IconProvider::GoBack, tbis, tbfgc, Store::config.behaviour.systemIcons));
@@ -58,6 +61,8 @@ MainWindow::updateIcons()
     m_flowAct->setIcon(IconProvider::icon(IconProvider::FlowView, tbis, tbfgc, Store::config.behaviour.systemIcons));
     m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
     m_configureAct->setIcon(IconProvider::icon(IconProvider::Configure, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    if ( m_sortButton )
+        m_sortButton->setIcon(IconProvider::icon(IconProvider::Sort, tbis, tbfgc, false));
 }
 
 void

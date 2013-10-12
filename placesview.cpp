@@ -166,7 +166,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 #endif
 
     fg=!selected?PAL.color(QPalette::Text):PAL.color(QPalette::HighlightedText);
-    const QColor &bg = selected?PAL.color(QPalette::Highlight):PAL.color(QPalette::Base);
+    const QColor &bg = selected?PAL.color( QPalette::Highlight ):PAL.color(QPalette::Base);
     int y = bg.value()>fg.value()?1:-1;
     const QColor &emb = Ops::colorMid(bg, y==1?Qt::white:Qt::black);
     QLinearGradient lgf(textRect.topLeft(), textRect.topRight());
@@ -512,6 +512,14 @@ PlacesView::PlacesView( QWidget *parent )
     connect ( this, SIGNAL(placeActivated(QString)), MainWindow::currentWindow(), SLOT(setRootPath(QString)) );
     connect ( m_timer, SIGNAL(timeout()), this, SLOT(updateAllWindows()) );
     connect ( MainWindow::currentWindow(), SIGNAL(settingsChanged()), viewport(), SLOT(update()) );
+}
+
+void
+PlacesView::paletteChange(const QPalette &pal)
+{
+    QPalette p(pal);
+    p.setColor(QPalette::Highlight, qApp->palette().color(QPalette::Highlight));
+    setPalette(p);
 }
 
 #define RETURN \
