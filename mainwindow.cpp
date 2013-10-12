@@ -20,6 +20,7 @@
 
 
 #include "mainwindow.h"
+#include "application.h"
 #include "iojob.h"
 #include "settingsdialog.h"
 #include "propertiesdialog.h"
@@ -806,11 +807,15 @@ MainWindow::showEvent(QShowEvent *e)
 void
 MainWindow::windowActivationChange(bool wasActive)
 {
+    if ( s_currentWindow )
+        disconnect(APP, SIGNAL(lastMessage(QStringList)), s_currentWindow, SLOT(receiveMessage(QStringList)));
     if ( !wasActive )
     {
         s_currentWindow = this;
         emit viewChanged(m_activeContainer->currentView());
     }
+    if ( s_currentWindow )
+        connect(APP, SIGNAL(lastMessage(QStringList)), s_currentWindow, SLOT(receiveMessage(QStringList)));
     if ( Store::config.behaviour.gayWindow )
         foreach ( WinButton *btn, findChildren<WinButton *>() )
         {
