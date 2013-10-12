@@ -52,6 +52,9 @@ DetailsView::DetailsView(QWidget *parent)
     , m_userPlayed(false)
 {
     setItemDelegate(new DetailsDelegate());
+    header()->setStretchLastSection(false);
+//    header()->setResizeMode(QHeaderView::Interactive);
+
     setUniformRowHeights(true);
     setSelectionMode(QAbstractItemView::ExtendedSelection);
     setSortingEnabled(true);
@@ -68,6 +71,7 @@ DetailsView::DetailsView(QWidget *parent)
     setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     connect(header(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), container(), SIGNAL(sortingChanged(int,Qt::SortOrder)));
     connect(container(), SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
+    connect(header(), SIGNAL(sectionResized(int,int,int)), this, SLOT(userPlayed()));
 }
 
 ViewContainer
@@ -80,40 +84,6 @@ ViewContainer
             return c;
         w = w->parentWidget();
     }
-}
-
-void
-DetailsView::dirLoaded(const QString &path)
-{
-    if ( path != m_model->rootPath()
-         || path != m_model->filePath(rootIndex())
-         || !isVisible()
-         || m_detailsWidth > 0 )
-        return;
-
-//    int w = width()-(verticalScrollBar()->isVisible()*style()->pixelMetric(QStyle::PM_ScrollBarExtent));
-//    setColumnWidth(0, w);
-
-//    for ( int i = 0; i < m_model->columnCount(rootIndex()); ++i )
-//    {
-//        resizeColumnToContents(i);
-//        m_detailsWidth+=columnWidth(i);
-//    }
-
-//    w-=m_detailsWidth;
-//    if ( m_detailsWidth < 1 || w > width()-16 )
-//        qDebug() << "something went wrong when resizing columns in detailsview" << m_detailsWidth;
-//    setColumnWidth(0, w);
-
-//    const int w = verticalScrollBar()->isVisible()?width()-verticalScrollBar()->width():width();
-//    setColumnWidth(0, w*0.6f);
-//    setColumnWidth(1, w*0.1f);
-//    setColumnWidth(2, w*0.1f);
-//    setColumnWidth(3, w*0.2f);
-
-//    setColumnWidth(0, width()*0.4f);
-//    for ( int i = 1; i < m_model->columnCount(rootIndex()); ++i )
-//        setColumnWidth(i, width()*0.2);
 }
 
 void
@@ -132,23 +102,9 @@ DetailsView::setModel(QAbstractItemModel *model)
 {
     QTreeView::setModel(model);
     m_model = qobject_cast<FileSystemModel *>(model);
-    connect(m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)));
-//    connect( m_model, SIGNAL(sortingChanged(int,Qt::SortOrder)), viewport(), SLOT(update()) );
-}
-
-void
-DetailsView::resizeEvent(QResizeEvent *event)
-{
-    QTreeView::resizeEvent(event);
-//    if ( !m_userPlayed )
-//        setColumnWidth(0, viewport()->width()-m_detailsWidth);
-    const int w = verticalScrollBar()->isVisible()?width()-(verticalScrollBar()->width()+1):width();
-    setColumnWidth(0, w*0.6f);
-    setColumnWidth(1, w*0.1f);
-    setColumnWidth(2, w*0.1f);
-    setColumnWidth(3, w*0.2f);
-//    for ( int i = 1; i < m_model->columnCount(rootIndex()); ++i )
-//        setColumnWidth(i, width()*0.2);
+    header()->setResizeMode(0, QHeaderView::Stretch);
+    for ( int i = 1; i<header()->count(); ++i )
+        header()->setResizeMode(i, QHeaderView::ResizeToContents);
 }
 
 void
@@ -220,12 +176,3 @@ DetailsView::mousePressEvent(QMouseEvent *event)
         setDragEnabled(false);
     QTreeView::mousePressEvent(event);
 }
-
-void
-DetailsView::showEvent(QShowEvent *e)
-{
-    QTreeView::showEvent(e);
-    dirLoaded(m_model->filePath(rootIndex()));
-}
-
-

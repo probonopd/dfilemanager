@@ -39,23 +39,23 @@ class DetailsView : public QTreeView
     Q_OBJECT
 public:
     explicit DetailsView(QWidget *parent = 0);
-    void resizeEvent(QResizeEvent *event);
     void setFilter(QString filter);
+    void setModel(QAbstractItemModel *model);
+    void setRootIndex(const QModelIndex &index) { QTreeView::setRootIndex(index); m_detailsWidth = 0; }
+    ViewContainer *container();
+
+protected:
     void contextMenuEvent(QContextMenuEvent *event);
     void mouseReleaseEvent(QMouseEvent *e);
     void mousePressEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *);
-    void showEvent(QShowEvent *);
-    void setModel(QAbstractItemModel *model);
-    void setRootIndex(const QModelIndex &index) { QTreeView::setRootIndex(index); m_detailsWidth = 0; }
-    ViewContainer *container();
 
 signals:
     void newTabRequest(const QModelIndex &path);
 
 private slots:
-    void dirLoaded(const QString &path);
     void sortingChanged(const int column, const Qt::SortOrder order);
+    void userPlayed() { m_userPlayed = true; }
 
 private:
     FileSystemModel *m_model;
