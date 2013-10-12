@@ -89,6 +89,8 @@ Store::readConfiguration()
     config.behaviour.capsContainers = settings()->value("behaviour.capsContainers", false).toBool();
     config.views.dirSettings = settings()->value("views.dirSettings", false).toBool();
 
+    config.behaviour.invActBookmark = settings()->value("behaviour.invActBookmark", false).toBool();
+
     settings()->beginGroup("CustomIcons");
 
     int extent = 256;
@@ -167,6 +169,7 @@ Store::writeConfiguration()
     settings()->setValue("views.singleClick", config.views.singleClick);
 
     settings()->setValue("useSystemIcons", config.behaviour.systemIcons);
+    settings()->setValue("behaviour.invActBookmark", config.behaviour.invActBookmark);
 
 //    settings()->setValue("behaviour.gayWindow", config.behaviour.gayWindow);
 //    settings()->setValue("behaviour.gayWindow.tabShape", config.behaviour.tabShape);

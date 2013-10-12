@@ -42,11 +42,13 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     , m_layOrder(new QComboBox(m_tabsBox))
     , m_capsConts(new QCheckBox(tr("Use CAPITAL LETTERS on containers in bookmarks")))
     , m_startUpWidget(new StartupWidget(this))
+    , m_invActBookm(new QCheckBox(tr("Inver icon on active bookmark"), this))
 {
     m_hideTabBar->setChecked(Store::config.behaviour.hideTabBarWhenOnlyOneTab);
     m_useCustomIcons->setChecked(Store::config.behaviour.systemIcons);
     m_drawDevUsage->setChecked(Store::config.behaviour.devUsage);
     m_capsConts->setChecked(Store::config.behaviour.capsContainers);
+    m_invActBookm->setChecked(Store::config.behaviour.invActBookmark);
     m_startUpWidget->setStartupPath(Store::settings()->value("startPath").toString());
 
     m_tabsBox->setCheckable(true);
@@ -114,6 +116,7 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     vl->addWidget(m_drawDevUsage);
     vl->addWidget(m_capsConts);
     vl->addWidget(m_tabsBox);
+    vl->addWidget(m_invActBookm);
     vl->addStretch();
     setLayout(vl);
 }
@@ -359,6 +362,7 @@ SettingsDialog::accept()
     Store::config.views.iconView.lineCount = m_viewWidget->m_lineCount->value();
     Store::config.behaviour.capsContainers = m_behWidget->m_capsConts->isChecked();
     Store::config.views.dirSettings = m_viewWidget->m_dirSettings->isChecked();
+    Store::config.behaviour.invActBookmark = m_behWidget->m_invActBookm->isChecked();
 
     Store::settings()->setValue("behaviour.gayWindow", m_behWidget->m_tabsBox->isChecked());
     Store::settings()->setValue("behaviour.gayWindow.tabShape", m_behWidget->m_tabShape->currentIndex());

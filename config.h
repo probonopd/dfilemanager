@@ -45,7 +45,8 @@ typedef struct Config
         newTabButton,
         windowsStyle,
         invertedColors,
-        capsContainers;
+        capsContainers,
+        invActBookmark;
         int tabShape, tabRoundness, tabHeight, tabWidth, tabOverlap, sortingCol;
         Qt::SortOrder sortingOrd;
         int view, minFontSize;

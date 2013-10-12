@@ -193,7 +193,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     QRect iconRect( QPoint( RECT.x()+( indent*0.75f ), RECT.y() + ( RECT.height() - DECOSIZE.height() )/2 ), DECOSIZE );
     QPixmap iconPix = qvariant_cast<QIcon>( index.data( Qt::DecorationRole ) ).pixmap( DECOSIZE.height() );
 
-    if ( selected )
+    if ( selected && Store::config.behaviour.invActBookmark )
     {
         QImage img = iconPix.toImage();
         img = img.convertToFormat(QImage::Format_ARGB32);
@@ -211,7 +211,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 //    if ( qMax(iconPix.width(), iconPix.height()) > 16 )
 //        iconPix = iconPix.scaled(QSize(16, 16),Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     QApplication::style()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, iconPix);
-    if ( selected ) QApplication::style()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, iconPix);
+    if ( selected && Store::config.behaviour.invActBookmark ) QApplication::style()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, iconPix);
     painter->restore();
 }
 

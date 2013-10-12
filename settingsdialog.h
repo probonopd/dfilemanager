@@ -81,7 +81,7 @@ private:
     QGroupBox *m_tabsBox;
     QComboBox *m_tabShape, *m_layOrder;
     QSpinBox *m_tabRndns, *m_tabHeight, *m_tabWidth, *m_overlap;
-    QCheckBox *m_hideTabBar, *m_useCustomIcons, *m_drawDevUsage, *m_newTabButton, *m_capsConts;
+    QCheckBox *m_hideTabBar, *m_useCustomIcons, *m_drawDevUsage, *m_newTabButton, *m_capsConts, *m_invActBookm;
     StartupWidget *m_startUpWidget;
 };
 

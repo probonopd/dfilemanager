@@ -72,6 +72,7 @@ MainWindow::updateConfig()
     if ( m_activeContainer )
         m_activeContainer->refresh();
     updateIcons();
+    m_placesView->viewport()->update();
     emit settingsChanged();
 }
 
