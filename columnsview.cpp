@@ -157,6 +157,8 @@ ColumnsView::setFilter(QString filter)
 void
 ColumnsView::keyPressEvent(QKeyEvent *event)
 {
+    if ( event->key() == Qt::Key_Escape )
+        clearSelection();
     if ( event->key() == Qt::Key_Return && event->modifiers() == Qt::NoModifier && state() != QAbstractItemView::EditingState )
     {
         if ( selectionModel()->selectedIndexes().count() )
@@ -194,6 +196,19 @@ void
 ColumnsView::mouseReleaseEvent(QMouseEvent *e)
 {
     const QModelIndex &index = indexAt(e->pos());
+    if ( !index.isValid() )
+        return QListView::mouseReleaseEvent(e);
+
+    if ( Store::config.views.singleClick
+         && !e->modifiers()
+         && e->button() == Qt::LeftButton
+         && m_pressPos == e->pos() )
+    {
+        emit activated(index);
+        e->accept();
+        return;
+    }
+
     if ( !Store::config.views.singleClick
          && e->modifiers() == Qt::NoModifier
          && e->button() == Qt::LeftButton
@@ -201,8 +216,8 @@ ColumnsView::mouseReleaseEvent(QMouseEvent *e)
          && m_model->fileInfo(index).isDir() )
         emit dirActivated(index);
     else if ( e->button() == Qt::MiddleButton
-              && indexAt(e->pos()).isValid()
-              && m_pressPos == e->pos() )
+              && m_pressPos == e->pos()
+              && !e->modifiers() )
         emit newTabRequest(index);
     else
         QListView::mouseReleaseEvent(e);

@@ -50,6 +50,7 @@ DetailsView::DetailsView(QWidget *parent)
     : QTreeView(parent)
     , m_model(0)
     , m_userPlayed(false)
+    , m_pressPos(QPoint())
 {
     setItemDelegate(new DetailsDelegate());
     header()->setStretchLastSection(false);
@@ -110,6 +111,8 @@ DetailsView::setModel(QAbstractItemModel *model)
 void
 DetailsView::keyPressEvent(QKeyEvent *event)
 {
+    if ( event->key() == Qt::Key_Escape )
+        clearSelection();
     if ( event->key() == Qt::Key_Return && event->modifiers() == Qt::NoModifier && state() != QAbstractItemView::EditingState )
     {
         if ( selectionModel()->selectedRows().count() )
@@ -160,14 +163,34 @@ DetailsView::contextMenuEvent(QContextMenuEvent *event)
 void
 DetailsView::mouseReleaseEvent(QMouseEvent *e)
 {
-    if (e->button() == Qt::MiddleButton)
-        if (indexAt(e->pos()).isValid())
-        {
-            e->accept();
-            emit newTabRequest(indexAt(e->pos()));
-            return;
-        }
     setDragEnabled(true);
+    const QModelIndex &index = indexAt(e->pos());
+
+    if ( !index.isValid() )
+    {
+        QTreeView::mouseReleaseEvent(e);
+        return;
+    }
+
+    if ( Store::config.views.singleClick
+         && !e->modifiers()
+         && e->button() == Qt::LeftButton
+         && m_pressPos == e->pos() )
+    {
+        emit activated(index);
+        e->accept();
+        return;
+    }
+
+    if (e->button() == Qt::MiddleButton
+            && m_pressPos == e->pos()
+            && !e->modifiers())
+    {
+        e->accept();
+        emit newTabRequest(index);
+        return;
+    }
+
     QTreeView::mouseReleaseEvent(e);
 }
 
@@ -176,5 +199,6 @@ DetailsView::mousePressEvent(QMouseEvent *event)
 {
     if (event->modifiers() == Qt::MetaModifier)
         setDragEnabled(false);
+    m_pressPos = event->pos();
     QTreeView::mousePressEvent(event);
 }

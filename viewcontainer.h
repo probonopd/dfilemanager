@@ -110,7 +110,6 @@ private slots:
     void genNewTabRequest(QModelIndex index);
     void customActionTriggered();
     void scriptTriggered();
-    void settingsChanged();
 
 private:
     bool m_back;

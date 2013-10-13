@@ -412,6 +412,8 @@ IconView::scrollEvent()
 void
 IconView::keyPressEvent(QKeyEvent *event)
 {
+    if ( event->key() == Qt::Key_Escape )
+        clearSelection();
     if ( event->key() == Qt::Key_Return && event->modifiers() == Qt::NoModifier && state() != QAbstractItemView::EditingState )
     {
         if ( selectionModel()->selectedRows().count() )
@@ -453,10 +455,10 @@ IconView::mouseMoveEvent( QMouseEvent *event )
 void
 IconView::mousePressEvent( QMouseEvent *event )
 {
+    m_startPos = event->pos();
     if ( event->button() == Qt::MiddleButton )
     {
         m_startSlide = true;
-        m_startPos = event->pos();
         setDragEnabled( false );   //we will likely not want to drag items around at this point...
         event->accept();
         return;
@@ -468,9 +470,25 @@ IconView::mousePressEvent( QMouseEvent *event )
 void
 IconView::mouseReleaseEvent( QMouseEvent *e )
 {
+    const QModelIndex &index = indexAt(e->pos());
+
+    if ( !index.isValid() )
+        return QListView::mouseReleaseEvent(e);
+
+    if ( Store::config.views.singleClick
+         && !e->modifiers()
+         && e->button() == Qt::LeftButton
+         && m_startPos == e->pos() )
+    {
+        emit activated(index);
+        e->accept();
+        return;
+    }
+
     if ( e->button() == Qt::MiddleButton )
     {
-        if ( indexAt( e->pos() ).isValid() && e->pos() == m_startPos )
+        if ( e->pos() == m_startPos
+             && !e->modifiers() )
         {
             emit newTabRequest( indexAt( e->pos() ) );
             e->accept();
@@ -481,7 +499,6 @@ IconView::mouseReleaseEvent( QMouseEvent *e )
             m_startSlide = false;
             setDragEnabled( true );
             viewport()->update();
-            this->update();
             e->accept();
             return;
         }

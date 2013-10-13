@@ -71,10 +71,7 @@ void
 ColumnsWidget::connectView(ColumnsView *view)
 {
     view->disconnect();
-    if ( Store::config.views.singleClick )
-        connect(view, SIGNAL(clicked(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
-    else
-        connect(view, SIGNAL(activated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
+    connect(view, SIGNAL(activated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
     connect(view, SIGNAL(dirActivated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
     connect(view, SIGNAL(entered(QModelIndex)), m_container, SIGNAL(entered(QModelIndex)));
     connect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
