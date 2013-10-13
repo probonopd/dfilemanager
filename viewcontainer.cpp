@@ -64,7 +64,6 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     setSelectionModel(new QItemSelectionModel(m_model));
 
     connect( m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)));
-    connect( m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(directoryLoaded(QString)));
     connect( m_iconView, SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)));
 
     connect( m_iconView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
@@ -270,8 +269,8 @@ ViewContainer::rootPathChanged(const QString &path)
 
     m_back = false;
     m_iconView->updateLayout();
-    sort(m_model->sortingColumn(), m_model->sortingOrder());
 
+    bool needSort = true;
 #ifdef Q_WS_X11
     if ( Store::config.views.dirSettings )
     {
@@ -287,15 +286,20 @@ ViewContainer::rootPathChanged(const QString &path)
             View view = (View)var.value<int>();
             setView(view, false);
         }
+        QVariant varCol = settings.value("sortCol");
+        QVariant varOrd = settings.value("sortOrd");
+        if ( varCol.isValid() && varOrd.isValid() )
+        {
+            needSort = false;
+            int col = varCol.value<int>();
+            Qt::SortOrder ord = (Qt::SortOrder)varOrd.value<int>();
+            sort(col, ord);
+        }
         settings.endGroup();
     }
 #endif
-}
-
-void
-ViewContainer::directoryLoaded(QString index)
-{
-//    m_fsModel->loadThumbails(index);
+    if ( needSort )
+        sort(m_model->sortingColumn(), m_model->sortingOrder());
 }
 
 void
@@ -433,7 +437,7 @@ ViewContainer::customCommand()
 void
 ViewContainer::sort(const int column, const Qt::SortOrder order, const QString &path)
 {
-    const QString &rootPath = m_model->rootPath();
+    const QString &rootPath = this->rootPath();
     if ( !path.isEmpty() || m_myView == Columns )
     {
         m_model->blockSignals(true);
@@ -446,18 +450,6 @@ ViewContainer::sort(const int column, const Qt::SortOrder order, const QString &
         m_model->blockSignals(false);
     }
     emit sortingChanged(column, order);
-}
-
-void
-ViewContainer::setRootIndex(const QModelIndex &index)
-{
-    VIEWS(setRootIndex(index));
-}
-
-QSize
-ViewContainer::iconSize()
-{
-    return m_iconView->iconSize();
 }
 
 void
@@ -486,75 +478,25 @@ QAbstractItemView
     return static_cast<QAbstractItemView*>(m_flowView->detailsView());
 }
 
-QModelIndex
-ViewContainer::indexAt(const QPoint &p) const
-{
-    return currentView()->indexAt(mapFromParent(p));
-}
+void ViewContainer::setRootIndex(const QModelIndex &index) { VIEWS(setRootIndex(index)); }
 
-bool
-ViewContainer::setPathVisible(bool visible)
-{
-    m_breadCrumbs->setVisible(visible);
-}
+QModelIndex ViewContainer::indexAt(const QPoint &p) const { return currentView()->indexAt(mapFromParent(p)); }
 
-bool
-ViewContainer::pathVisible()
-{
-    return m_breadCrumbs->isVisible();
-}
+bool ViewContainer::setPathVisible(bool visible) { m_breadCrumbs->setVisible(visible); }
+bool ViewContainer::pathVisible() { return m_breadCrumbs->isVisible(); }
 
-bool
-ViewContainer::canGoBack()
-{
-    return m_backList.count() > 1;
-}
+bool ViewContainer::canGoBack() { return m_backList.count() > 1; }
+bool ViewContainer::canGoForward() { return m_forwardList.count() >= 1; }
 
-bool
-ViewContainer::canGoForward()
-{
-    return m_forwardList.count() >= 1;
-}
+void ViewContainer::genNewTabRequest(QModelIndex index) { emit newTabRequest(m_model->filePath(index)); }
 
-void
-ViewContainer::genNewTabRequest(QModelIndex index)
-{
-    emit newTabRequest(m_model->filePath(index));
-}
+BreadCrumbs *ViewContainer::breadCrumbs() { return m_breadCrumbs; }
 
-void
-ViewContainer::setRootPath(const QString &rootPath)
-{
-//    m_proxyModel->setRootPath(rootPath);
-}
+void ViewContainer::setPathEditable(bool editable) { m_breadCrumbs->setEditable(editable); }
 
-//void
-//ViewContainer::resizeEvent(QResizeEvent *event)
-//{
-//    pathNav->setFixedWidth(rect().width() - style()->pixelMetric(QStyle::PM_ScrollBarExtent)*2);
-//    pathNav->move(style()->pixelMetric(QStyle::PM_ScrollBarExtent),rect().height() - (pathNav->rect().height() + style()->pixelMetric(QStyle::PM_ScrollBarExtent)));
-//}
+void ViewContainer::animateIconSize(int start, int stop) { m_iconView->setNewSize(stop); }
+QSize ViewContainer::iconSize() { return m_iconView->iconSize(); }
 
-BreadCrumbs
-*ViewContainer::breadCrumbs()
-{
-    return m_breadCrumbs;
-}
+QString ViewContainer::currentFilter() { return m_dirFilter; }
 
-void
-ViewContainer::setPathEditable(bool editable)
-{
-    m_breadCrumbs->setEditable(editable);
-}
-
-void
-ViewContainer::animateIconSize(int start, int stop)
-{
-    m_iconView->setNewSize(stop);
-}
-
-QString
-ViewContainer::currentFilter()
-{
-    return m_dirFilter;
-}
+QString ViewContainer::rootPath() const { return m_model->rootPath(); }

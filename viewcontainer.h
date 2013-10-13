@@ -41,6 +41,7 @@ class IconView;
 class FlowView;
 class BreadCrumbs;
 class PathNavigator;
+class FileSystemModel;
 class ViewContainer : public QFrame
 {
     Q_OBJECT
@@ -79,6 +80,7 @@ public:
     QStringList visited() { return m_backList; }
     void sort(const int column = 0, const Qt::SortOrder order = Qt::AscendingOrder, const QString &path = QString());
     PathNavigator *pathNav();
+    QString rootPath() const;
 
 protected:
     void leaveEvent(QEvent *) { emit leftView(); }
@@ -102,10 +104,8 @@ signals:
 public slots:
     void activate(const QModelIndex &index);
     bool setPathVisible(bool visible);
-    void setRootPath(const QString &rootPath);
 
 private slots:
-    void directoryLoaded(QString index);
     void rootPathChanged(const QString &path);
     void genNewTabRequest(QModelIndex index);
     void customActionTriggered();

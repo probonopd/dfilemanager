@@ -755,16 +755,47 @@ MainWindow::hidePath()
 }
 
 void
-MainWindow::sortingChanged(const int col, const Qt::SortOrder order)
+MainWindow::sortingChanged(const int column, const Qt::SortOrder order)
 {
 //    qDebug() << "sortingChanged" << col << order;
-    Store::config.behaviour.sortingCol=col;
+    Store::config.behaviour.sortingCol=column;
     Store::config.behaviour.sortingOrd=order;
-    m_sortNameAct->setChecked(col == 0);
-    m_sortSizeAct->setChecked(col == 1);
-    m_sortTypeAct->setChecked(col == 2);
-    m_sortDateAct->setChecked(col == 3);
+    m_sortNameAct->setChecked(column == 0);
+    m_sortSizeAct->setChecked(column == 1);
+    m_sortTypeAct->setChecked(column == 2);
+    m_sortDateAct->setChecked(column == 3);
     m_sortDescAct->setChecked(order == Qt::DescendingOrder);
+
+#ifdef Q_WS_X11
+    if ( Store::config.views.dirSettings )
+    {
+        QString dirPath = m_model->rootPath();
+        if ( !dirPath.endsWith(QDir::separator()) )
+            dirPath.append(QDir::separator());
+        dirPath.append(".directory");
+        QSettings settings(dirPath, QSettings::IniFormat);
+        settings.beginGroup("DFM");
+        QVariant varCol = settings.value("sortCol");
+        if ( varCol.isValid() )
+        {
+            int col = varCol.value<int>();
+            if ( col != column )
+                settings.setValue("sortCol", column);
+        }
+        else
+            settings.setValue("sortCol", column);
+        QVariant varOrd = settings.value("sortOrd");
+        if ( varCol.isValid() )
+        {
+            Qt::SortOrder ord = (Qt::SortOrder)varOrd.value<int>();
+            if ( ord != order )
+                settings.setValue("sortOrd", order);
+        }
+        else
+            settings.setValue("sortOrd", order);
+        settings.endGroup();
+    }
+#endif
 }
 
 void
