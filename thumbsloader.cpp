@@ -26,6 +26,7 @@
 #include "operations.h"
 #include "config.h"
 #include "viewcontainer.h"
+#include "application.h"
 #include <QBitmap>
 
 using namespace DFM;
@@ -92,20 +93,12 @@ ThumbsLoader::genThumb( const QString &path )
         return;
     }
 
-    QImageReader ir(path);
-    if ( !ir.canRead() || path.endsWith( "xcf", Qt::CaseInsensitive ) )
-        return;
-
-    QSize thumbsize(ir.size());
-    if ( qMax( thumbsize.width(), thumbsize.height() ) > m_extent )
-        thumbsize.scale( m_extent, m_extent, Qt::KeepAspectRatio );
-    ir.setScaledSize(thumbsize);
-
-    const QImage &image(ir.read());
-
-//    static quint64 i = 0;
-//    i+=image.byteCount();
-//    qDebug() << "size of thumbs in memory" << Ops::prettySize(i);
+    QImage image;
+    if ( !APP->plugins().isEmpty() )
+        for ( int i = 0; i<APP->plugins().count(); ++i )
+            if( ThumbInterface *ti = qobject_cast<ThumbInterface *>(APP->plugins().at(i)) )
+                if ( ti->suffixes().contains(fi.suffix(), Qt::CaseInsensitive) )
+                    image = ti->thumb(path, m_extent);
 
     if ( !image.isNull() )
     {

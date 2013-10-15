@@ -26,7 +26,8 @@ HEADERS = mainwindow.h \
     iojob.h \
     thumbsloader.h \
     preview.h \
-    columnswidget.h
+    columnswidget.h \
+    interfaces.h
 SOURCES = main.cpp \
     mainwindow.cpp \
     iconview.cpp \

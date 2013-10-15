@@ -50,12 +50,14 @@ public:
     explicit Application(int &argc, char *argv[], const QString &key = "dfmkey"); /*: QApplication(argc, argv) {}*/
     inline bool isRunning() { return m_isRunning; }
     bool setMessage(const QStringList &message);
+    QObjectList plugins() { return m_plugins; }
 
 signals:
     void lastMessage( const QStringList &message );
 
 private slots:
     void fileChanged(const QString &file);
+    void loadPlugins();
 
 #if 0
     inline void manageDock( DFM::Docks::DockWidget *dock ) { m_docks << dock; }
@@ -78,6 +80,7 @@ private:
     QString m_key;
     QString m_filePath;
     QFile m_file;
+    QObjectList m_plugins;
 #if 0
     QList<DFM::Docks::DockWidget *> m_docks;
     QMainWindow *m_mainWindow;

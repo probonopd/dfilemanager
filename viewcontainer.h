@@ -110,6 +110,7 @@ private slots:
     void genNewTabRequest(QModelIndex index);
     void customActionTriggered();
     void scriptTriggered();
+    void dirChanged(const QString &dir);
 
 private:
     bool m_back;
@@ -120,6 +121,7 @@ private:
     ColumnsWidget *m_columnsWidget;
     FlowView *m_flowView;
     FileSystemModel *m_model;
+    QFileSystemWatcher *m_fsWatcher;
     QStackedWidget *m_viewStack;
     QStringList m_backList;
     QStringList m_forwardList;

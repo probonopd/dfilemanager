@@ -338,19 +338,8 @@ ColumnsView::sanityCheckForDir()
     {
         emit pathDeleted(this);
         hide();
-        if ( m_model )
-        {
-            QString dir = m_rootPath;
-            while ( !QFileInfo(dir).exists() )
-            {
-                if ( m_fsWatcher->directories().contains(dir) )
-                    m_fsWatcher->removePath(dir);
-                dir = QFileInfo(dir).path();
-            }
-            if ( m_model->rootPath() != dir )
-                m_model->setRootPath(dir);
-            return false;
-        }
+        if ( m_fsWatcher->directories().contains(m_rootPath) )
+            m_fsWatcher->removePath(m_rootPath);
         return false;
     }
     return true;

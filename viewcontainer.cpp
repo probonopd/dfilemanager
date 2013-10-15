@@ -47,6 +47,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     , m_detailsView(new DetailsView(this))
     , m_flowView(new FlowView(this))
     , m_breadCrumbs(new BreadCrumbs(this, m_model))
+    , m_fsWatcher(new QFileSystemWatcher(this))
 
 {
     m_breadCrumbs->setVisible(Store::settings()->value("pathVisible", true).toBool());
@@ -63,12 +64,12 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     setModel(m_model);
     setSelectionModel(new QItemSelectionModel(m_model));
 
-    connect( m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)));
-    connect( m_iconView, SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)));
-
-    connect( m_iconView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
-    connect( m_detailsView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
-    connect( m_flowView->detailsView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+    connect( m_fsWatcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)) );
+    connect( m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)) );
+    connect( m_iconView, SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)) );
+    connect( m_iconView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
+    connect( m_detailsView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
+    connect( m_flowView->detailsView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
 
     foreach (QAbstractItemView *v, QList<QAbstractItemView *>() << m_iconView << m_detailsView /*<< m_columnsView*/ << m_flowView->detailsView())
     {
@@ -101,15 +102,9 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     sort(Store::config.behaviour.sortingCol, Store::config.behaviour.sortingOrd);
 }
 
-PathNavigator
-*ViewContainer::pathNav()
-{ return m_breadCrumbs->pathNav(); }
+PathNavigator *ViewContainer::pathNav() { return m_breadCrumbs->pathNav(); }
 
-void
-ViewContainer::setModel(QAbstractItemModel *model)
-{
-    VIEWS(setModel(model));
-}
+void ViewContainer::setModel(QAbstractItemModel *model) { VIEWS(setModel(model)); }
 
 void
 ViewContainer::setSelectionModel(QItemSelectionModel *selectionModel)
@@ -118,17 +113,9 @@ ViewContainer::setSelectionModel(QItemSelectionModel *selectionModel)
     VIEWS(setSelectionModel(selectionModel));
 }
 
-FileSystemModel
-*ViewContainer::model()
-{
-    return m_model;
-}
+FileSystemModel *ViewContainer::model() { return m_model; }
 
-QItemSelectionModel
-*ViewContainer::selectionModel()
-{
-    return m_selectModel;
-}
+QItemSelectionModel *ViewContainer::selectionModel() { return m_selectModel; }
 
 void
 ViewContainer::setView(View view, bool store)
@@ -263,6 +250,9 @@ ViewContainer::rootPathChanged(const QString &path)
     setRootIndex(rootIndex);
     emit currentPathChanged(path);
     m_selectModel->clearSelection();
+    if ( !m_fsWatcher->directories().isEmpty() )
+        m_fsWatcher->removePaths(m_fsWatcher->directories());
+    m_fsWatcher->addPath(path);
 
     if (!m_back && rootIndex.isValid() && (m_backList.isEmpty() || m_backList.count() &&  path != m_backList.last()))
         m_backList.append(path);
@@ -303,6 +293,13 @@ ViewContainer::rootPathChanged(const QString &path)
 }
 
 void
+ViewContainer::dirChanged(const QString &dir)
+{
+    if ( !QFileInfo(dir).exists() )
+        m_model->setRootPath(dir.mid(0, dir.lastIndexOf(QDir::separator())));
+}
+
+void
 ViewContainer::goBack()
 {
     if(m_backList.count() == 1)
@@ -331,11 +328,7 @@ ViewContainer::goUp()
     return true;
 }
 
-void
-ViewContainer::goHome()
-{
-    m_model->setRootPath(QDir::homePath());
-}
+void ViewContainer::goHome() { m_model->setRootPath(QDir::homePath()); }
 
 void
 ViewContainer::refresh()

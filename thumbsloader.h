@@ -34,6 +34,7 @@
 #include <QEvent>
 #include <QFileSystemWatcher>
 #include "filesystemmodel.h"
+#include "interfaces.h"
 
 namespace DFM
 {

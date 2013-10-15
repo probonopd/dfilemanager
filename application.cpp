@@ -21,9 +21,11 @@
 
 #include "application.h"
 #include "mainwindow.h"
+#include "interfaces.h"
 #include <QSharedMemory>
 #include <QDebug>
 #include <QDesktopServices>
+#include <QPluginLoader>
 
 #ifdef Q_WS_X11
 #if 0
@@ -51,6 +53,7 @@ Application::Application(int &argc, char *argv[], const QString &key)
         m_isRunning = true;
     else
     {
+        loadPlugins();
         m_isRunning = false;
         if ( !m_sharedMem->create(1) )
             qDebug() << "failed to create shared memory";
@@ -108,6 +111,37 @@ Application::setMessage(const QStringList &message)
         foreach (const QString &string, message)
             out << QString("%1\n").arg(string);
         m_file.close();
+    }
+}
+
+
+void Application::loadPlugins()
+{
+    QDir pluginsDir = QDir(applicationDirPath());
+
+#if defined(Q_OS_WIN)
+    if (pluginsDir.dirName().toLower() == "debug" || pluginsDir.dirName().toLower() == "release")
+        pluginsDir.cdUp();
+#elif defined(Q_OS_MAC)
+    if (pluginsDir.dirName() == "MacOS")
+    {
+        pluginsDir.cdUp();
+        pluginsDir.cdUp();
+        pluginsDir.cdUp();
+    }
+#endif
+    pluginsDir.cd("plugins");
+
+    QStringList pluginFileNames;
+    foreach (QString fileName, pluginsDir.entryList(QDir::Files))
+    {
+        QPluginLoader loader(pluginsDir.absoluteFilePath(fileName));
+        QObject *plugin = loader.instance();
+        if (plugin)
+        {
+            m_plugins << plugin;
+            pluginFileNames += fileName;
+        }
     }
 }
 
