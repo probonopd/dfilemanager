@@ -128,6 +128,8 @@ Application::loadPlugins()
         QObject *plugin = loader.instance();
         if (plugin)
         {
+            if ( ThumbInterface *it = qobject_cast<ThumbInterface *>(plugin) )
+                qDebug() << "loaded plugin for" << it->suffixes() << "files";
             m_plugins << plugin;
             pluginFileNames += fileName;
         }
