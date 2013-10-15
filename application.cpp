@@ -22,6 +22,7 @@
 #include "application.h"
 #include "mainwindow.h"
 #include "interfaces.h"
+#include "config.h"
 #include <QSharedMemory>
 #include <QDebug>
 #include <QDesktopServices>
@@ -53,7 +54,6 @@ Application::Application(int &argc, char *argv[], const QString &key)
         m_isRunning = true;
     else
     {
-        loadPlugins();
         m_isRunning = false;
         if ( !m_sharedMem->create(1) )
             qDebug() << "failed to create shared memory";
@@ -115,23 +115,12 @@ Application::setMessage(const QStringList &message)
 }
 
 
-void Application::loadPlugins()
+void
+Application::loadPlugins()
 {
-    QDir pluginsDir = QDir(applicationDirPath());
-
-#if defined(Q_OS_WIN)
-    if (pluginsDir.dirName().toLower() == "debug" || pluginsDir.dirName().toLower() == "release")
-        pluginsDir.cdUp();
-#elif defined(Q_OS_MAC)
-    if (pluginsDir.dirName() == "MacOS")
-    {
-        pluginsDir.cdUp();
-        pluginsDir.cdUp();
-        pluginsDir.cdUp();
-    }
-#endif
-    pluginsDir.cd("plugins");
-
+    if (DFM::Store::config.pluginPath.isEmpty())
+        return;
+    QDir pluginsDir = QDir(DFM::Store::config.pluginPath);
     QStringList pluginFileNames;
     foreach (QString fileName, pluginsDir.entryList(QDir::Files))
     {

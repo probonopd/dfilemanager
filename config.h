@@ -34,7 +34,7 @@ namespace DFM
 
 typedef struct Config
 {
-    QString startPath, styleSheet;
+    QString startPath, styleSheet, pluginPath;
     struct behaviour
     {
         bool hideTabBarWhenOnlyOneTab,

@@ -51,13 +51,13 @@ public:
     inline bool isRunning() { return m_isRunning; }
     bool setMessage(const QStringList &message);
     QObjectList plugins() { return m_plugins; }
+    void loadPlugins();
 
 signals:
     void lastMessage( const QStringList &message );
 
 private slots:
     void fileChanged(const QString &file);
-    void loadPlugins();
 
 #if 0
     inline void manageDock( DFM::Docks::DockWidget *dock ) { m_docks << dock; }

@@ -21,6 +21,7 @@
 
 #include "config.h"
 #include "mainwindow.h"
+#include "application.h"
 #include <QDir>
 #include <QProcess>
 
@@ -50,6 +51,8 @@ Store
 void
 Store::readConfiguration()
 {
+    config.pluginPath = settings()->value("pluginPath", QString()).toString();
+
     config.docks.lock = settings()->value( "docks.lock", 0 ).toInt();
     config.docks.infoArea = settings()->value("docks.infoArea", 8).toInt();
     config.startPath = settings()->value("startPath", QDir::homePath()).toString();
@@ -127,6 +130,8 @@ Store::readConfiguration()
     }
     settings()->endGroup();
 
+    APP->loadPlugins();
+
 //    Configuration::settings()->beginGroup("Scripts");
 //    foreach ( const QString &string, Configuration::settings()->childKeys())
 //    {
@@ -170,6 +175,8 @@ Store::writeConfiguration()
 
     settings()->setValue("useSystemIcons", config.behaviour.systemIcons);
     settings()->setValue("behaviour.invActBookmark", config.behaviour.invActBookmark);
+
+    settings()->setValue("pluginPath", config.pluginPath);
 
 //    settings()->setValue("behaviour.gayWindow", config.behaviour.gayWindow);
 //    settings()->setValue("behaviour.gayWindow.tabShape", config.behaviour.tabShape);
