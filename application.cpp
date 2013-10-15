@@ -118,6 +118,7 @@ Application::setMessage(const QStringList &message)
 void
 Application::loadPlugins()
 {
+    qDebug() << QDesktopServices::storageLocation(QDesktopServices::DataLocation);
     if (DFM::Store::config.pluginPath.isEmpty())
         return;
     QDir pluginsDir = QDir(DFM::Store::config.pluginPath);

@@ -68,7 +68,7 @@ ThumbsLoader::hasThumb(const QString &file) const
 void
 ThumbsLoader::queueFile(const QString &file)
 {
-    if ( m_queue.contains(file) || hasThumb(file) )
+    if ( m_queue.contains(file) || hasThumb(file) || m_tried.contains(file) )
         return;
 
     m_queue << file;
@@ -105,7 +105,9 @@ ThumbsLoader::genThumb( const QString &path )
         s_dateCheck.insert(path, fi.lastModified().toString());
         s_thumbs.insert(path, image);
         emit thumbFor(path);
+        return;
     }
+    m_tried << path;
 }
 
 void ThumbsLoader::clearQueue() { m_queue.clear(); }

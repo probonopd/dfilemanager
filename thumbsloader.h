@@ -63,7 +63,7 @@ protected:
     void genThumb(const QString &path);
 
 private:
-    QStringList m_queue;
+    QStringList m_queue, m_tried;
     FileSystemModel *m_fsModel;
     int m_extent;
 };

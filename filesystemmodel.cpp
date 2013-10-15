@@ -210,7 +210,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
             return QIcon(QPixmap::fromImage(m_thumbsLoader->thumb(file)));
         else
         {
-            if ( Store::config.views.showThumbs && supportedThumbs().contains(fi.suffix(), Qt::CaseInsensitive) )
+            if ( Store::config.views.showThumbs )
                 m_thumbsLoader->queueFile(file);
             return iconProvider()->icon(QFileInfo(file));
         }
