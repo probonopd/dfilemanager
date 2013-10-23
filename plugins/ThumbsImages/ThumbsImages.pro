@@ -3,5 +3,5 @@
  INCLUDEPATH    += ../../
  HEADERS        += thumbsimages.h
  SOURCES        += thumbsimages.cpp
- TARGET          = $$qtLibraryTarget(thumbsplugin)
+ TARGET          = $$qtLibraryTarget(thumbsimageplugin)
  DESTDIR         = ./plugins

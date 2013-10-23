@@ -421,8 +421,8 @@ PreView::reset()
     if ( m_rootIndex.isValid() && m_model && m_model->rowCount(m_rootIndex) )
     {
         populate(0, m_model->rowCount(m_rootIndex)-1);
-        m_scrollBar->setRange(0, m_model->rowCount(m_rootIndex)-1);
-        m_scrollBar->setValue(qBound(0, m_savedRow, m_items.count()));
+        m_scrollBar->setRange(0, m_items.count()-1);
+        m_scrollBar->setValue(qBound(0, m_savedRow, m_items.count()-1));
     }
 }
 
@@ -474,7 +474,7 @@ PreView::rowsRemoved(const QModelIndex &parent, int start, int end)
         clear();
         return;
     }
-    if ( m_rootIndex != parent || m_items.isEmpty() )
+    if ( m_model->filePath(m_rootIndex) != m_model->filePath(parent) || m_items.isEmpty() )
         return;
 
     m_timeLine->stop();
@@ -484,10 +484,10 @@ PreView::rowsRemoved(const QModelIndex &parent, int start, int end)
             delete m_items.takeAt(i);
 
     m_scrollBar->blockSignals(true);
-    m_scrollBar->setRange(0, m_items.count());
-    m_scrollBar->setValue(qBound(0, start-1, m_items.count()));
+    m_scrollBar->setRange(0, m_items.count()-1);
+    m_scrollBar->setValue(qBound(0, start-1, m_items.count()-1));
     m_scrollBar->blockSignals(false);
-    setCenterIndex(m_model->index(qBound(0, start-1, m_items.count()), 0, m_rootIndex));
+    setCenterIndex(m_model->index(qBound(0, start-1, m_items.count()-1), 0, m_rootIndex));
     updateItemsPos();
 }
 

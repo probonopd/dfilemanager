@@ -414,14 +414,14 @@ IconView::keyPressEvent(QKeyEvent *event)
 {
     if ( event->key() == Qt::Key_Escape )
         clearSelection();
-    if ( event->key() == Qt::Key_Return && event->modifiers() == Qt::NoModifier && state() != QAbstractItemView::EditingState )
+    if ( event->key() == Qt::Key_Return
+         && event->modifiers() == Qt::NoModifier
+         && state() == NoState )
     {
-        if ( selectionModel()->selectedRows().count() )
-            foreach ( const QModelIndex &index, selectionModel()->selectedRows() )
-                emit activated(index);
-        else if ( selectionModel()->selectedIndexes().count() )
+        if ( selectionModel()->selectedIndexes().count() )
             foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
-                emit activated(index);
+                if ( !index.column() )
+                    emit activated(index);
         event->accept();
         return;
     }
@@ -478,7 +478,8 @@ IconView::mouseReleaseEvent( QMouseEvent *e )
     if ( Store::config.views.singleClick
          && !e->modifiers()
          && e->button() == Qt::LeftButton
-         && m_startPos == e->pos() )
+         && m_startPos == e->pos()
+         && state() == NoState )
     {
         emit activated(index);
         e->accept();

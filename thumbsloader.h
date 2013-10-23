@@ -49,11 +49,11 @@ public:
     void queueFile(const QString &file);
     bool hasThumb(const QString &file) const;
     QImage thumb(const QString &file) const;
-    void clearQueue();
 
 public slots:
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
     void removeThumb(const QString &file);
+    void clearQueue();
     
 signals:
     void thumbFor(const QString &file);

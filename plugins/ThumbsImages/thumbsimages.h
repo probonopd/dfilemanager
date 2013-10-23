@@ -11,8 +11,13 @@ class ThumbsImages : public QObject, ThumbInterface
     Q_INTERFACES(ThumbInterface)
 
 public:
+    ~ThumbsImages();
+    void init();
     QStringList suffixes() const;
-    QImage thumb(const QString &file, const int size = 256) const;
+    QString name() const;
+    QString description() const;
+    bool canRead(const QString &file) const;
+    QImage thumb(const QString &file, const int size = 256);
 };
 
 

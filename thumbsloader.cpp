@@ -28,6 +28,7 @@
 #include "viewcontainer.h"
 #include "application.h"
 #include <QBitmap>
+#include <QAbstractItemModel>
 
 using namespace DFM;
 
@@ -40,6 +41,8 @@ ThumbsLoader::ThumbsLoader(QObject *parent) :
     m_fsModel(static_cast<DFM::FileSystemModel *>(parent))
 {
     connect(m_fsModel, SIGNAL(fileRenamed(QString,QString,QString)), this, SLOT(fileRenamed(QString,QString,QString)));
+    connect(m_fsModel, SIGNAL(modelAboutToBeReset()), this, SLOT(clearQueue()));
+    connect(m_fsModel, SIGNAL(layoutAboutToBeChanged()), this, SLOT(clearQueue()));
 }
 
 void
@@ -97,7 +100,7 @@ ThumbsLoader::genThumb( const QString &path )
     if ( !APP->plugins().isEmpty() )
         for ( int i = 0; i<APP->plugins().count(); ++i )
             if( ThumbInterface *ti = qobject_cast<ThumbInterface *>(APP->plugins().at(i)) )
-                if ( ti->suffixes().contains(fi.suffix(), Qt::CaseInsensitive) )
+                if ( ti->canRead(path) )
                     image = ti->thumb(path, m_extent);
 
     if ( !image.isNull() )

@@ -125,6 +125,7 @@ void
 FileSystemModel::thumbFor(const QString &file)
 {
     const QModelIndex &idx = index(file);
+//    if ( m_container->currentView()->state() == QAbstractItemView::NoState )
     emit dataChanged(idx, idx);
     if ( m_container->currentViewType() == ViewContainer::Flow )
         m_it->queueFile(file, m_thumbsLoader->thumb(file), true);

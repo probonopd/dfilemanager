@@ -34,8 +34,11 @@ class ThumbInterface
 public:
     virtual ~ThumbInterface() {}
 
-    virtual QStringList suffixes() const = 0;
-    virtual QImage thumb(const QString &file, const int size = 256) const = 0;
+    virtual bool canRead(const QString &file) const = 0;
+    virtual void init() = 0;
+    virtual QString name() const = 0;
+    virtual QString description() const = 0;
+    virtual QImage thumb(const QString &file, const int size = 256) = 0;
 };
 
 Q_DECLARE_INTERFACE(ThumbInterface, "dfm.ThumbInterface/0.01")

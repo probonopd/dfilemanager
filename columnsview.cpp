@@ -159,11 +159,13 @@ ColumnsView::keyPressEvent(QKeyEvent *event)
 {
     if ( event->key() == Qt::Key_Escape )
         clearSelection();
-    if ( event->key() == Qt::Key_Return && event->modifiers() == Qt::NoModifier && state() != QAbstractItemView::EditingState )
+    if ( event->key() == Qt::Key_Return
+         && event->modifiers() == Qt::NoModifier
+         && state() == NoState )
     {
         if ( selectionModel()->selectedIndexes().count() )
             foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
-                if ( index.column() == 0 )
+                if ( !index.column() )
                     emit activated(index);
         event->accept();
         return;
@@ -202,7 +204,8 @@ ColumnsView::mouseReleaseEvent(QMouseEvent *e)
     if ( Store::config.views.singleClick
          && !e->modifiers()
          && e->button() == Qt::LeftButton
-         && m_pressPos == e->pos() )
+         && m_pressPos == e->pos()
+         && state() == NoState )
     {
         emit activated(index);
         e->accept();

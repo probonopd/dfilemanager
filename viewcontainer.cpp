@@ -99,7 +99,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
 
     emit iconSizeChanged(Store::config.views.iconView.iconSize*16);
 
-    sort(Store::config.behaviour.sortingCol, Store::config.behaviour.sortingOrd);
+//    sort(Store::config.behaviour.sortingCol, Store::config.behaviour.sortingOrd);
 }
 
 PathNavigator *ViewContainer::pathNav() { return m_breadCrumbs->pathNav(); }

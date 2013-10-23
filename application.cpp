@@ -54,6 +54,7 @@ Application::Application(int &argc, char *argv[], const QString &key)
         m_isRunning = true;
     else
     {
+        setOrganizationName("dfm");
         m_isRunning = false;
         if ( !m_sharedMem->create(1) )
             qDebug() << "failed to create shared memory";
@@ -118,7 +119,6 @@ Application::setMessage(const QStringList &message)
 void
 Application::loadPlugins()
 {
-    qDebug() << QDesktopServices::storageLocation(QDesktopServices::DataLocation);
     if (DFM::Store::config.pluginPath.isEmpty())
         return;
     QDir pluginsDir = QDir(DFM::Store::config.pluginPath);
@@ -130,7 +130,11 @@ Application::loadPlugins()
         if (plugin)
         {
             if ( ThumbInterface *it = qobject_cast<ThumbInterface *>(plugin) )
-                qDebug() << "loaded plugin for" << it->suffixes() << "files";
+            {
+                qDebug() << "initializing plugin" << it->name();
+                qDebug() << "plugin description:" << it->description();
+                it->init();
+            }
             m_plugins << plugin;
             pluginFileNames += fileName;
         }
