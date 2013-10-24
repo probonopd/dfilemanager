@@ -56,6 +56,9 @@ public slots:
     void reconnectViews();
     void showCurrent();
 
+private slots:
+    void expand(const QModelIndex &index);
+
 protected:
     void connectView(ColumnsView *view);
     void showEvent(QShowEvent *e);

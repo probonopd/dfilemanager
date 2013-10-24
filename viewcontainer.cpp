@@ -29,6 +29,7 @@
 #include <QInputDialog>
 #include <QCompleter>
 #include <QMenu>
+#include <QDesktopServices>
 
 using namespace DFM;
 
@@ -206,37 +207,14 @@ ViewContainer::activate(const QModelIndex &index)
     if ( !index.isValid() )
         return;
 
-    if ( !m_model->fileInfo(index).exists() )
+    const QFileInfo f(m_model->fileInfo(index));
+    if ( Ops::openFile(f.filePath()) )
         return;
 
-    QProcess process;
     if (m_model->isDir(index))
     {
-        m_model->setRootPath(m_model->filePath(index));
+        m_model->setRootPath(f.filePath());
         m_forwardList.clear();
-    }
-    else if(m_model->fileInfo(index).isExecutable() && (m_model->fileInfo(index).suffix().isEmpty() ||
-                                                         m_model->fileInfo(index).suffix() == "sh" ||
-                                                         m_model->fileInfo(index).suffix() == "exe")) // windows executable
-    {
-        QString file;
-#ifdef Q_WS_X11 //linux
-        file = m_model->filePath(index);
-#else
-        file = m_fsModel->fileName(index);
-#endif
-        process.startDetached(file);
-    }
-    else
-    {
-        QStringList list;
-        list << m_model->filePath(index);
-
-#ifdef Q_WS_X11 //linux
-        process.startDetached("xdg-open", list);
-#else //windows
-        process.startDetached("cmd /c start " + list.at(0)); //todo: fix, this works but shows a cmd window real quick
-#endif
     }
 }
 
@@ -430,18 +408,18 @@ ViewContainer::customCommand()
 void
 ViewContainer::sort(const int column, const Qt::SortOrder order, const QString &path)
 {
-    const QString &rootPath = this->rootPath();
-    if ( !path.isEmpty() || m_myView == Columns )
-    {
-        m_model->blockSignals(true);
-        m_model->setRootPath(path);
-    }
+//    const QString &rootPath = this->rootPath();
+//    if ( !path.isEmpty() || m_myView == Columns )
+//    {
+//        m_model->blockSignals(true);
+//        m_model->setRootPath(path);
+//    }
     m_model->sort(column, order);
-    if ( !path.isEmpty() || m_myView == Columns )
-    {
-        m_model->setRootPath(rootPath);
-        m_model->blockSignals(false);
-    }
+//    if ( !path.isEmpty() || m_myView == Columns )
+//    {
+//        m_model->setRootPath(rootPath);
+//        m_model->blockSignals(false);
+//    }
     emit sortingChanged(column, order);
 }
 

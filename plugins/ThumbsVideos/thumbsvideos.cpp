@@ -33,7 +33,7 @@ ThumbsVideos::thumb(const QString &file, const int size)
 bool
 ThumbsVideos::canRead(const QString &file) const
 {
-    return END("mkv")||END("avi")||END("mp4");
+    return END("mkv")||END("avi")||END("mp4")||END("mpg");
 }
 
 #undef END

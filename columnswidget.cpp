@@ -77,6 +77,7 @@ ColumnsWidget::connectView(ColumnsView *view)
     connect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
     connect(view, SIGNAL(viewportEntered()), m_container, SIGNAL(viewportEntered()));
     connect(view, SIGNAL(focusRequest(ColumnsView*)), this, SLOT(setCurrentView(ColumnsView*)));
+    connect(view, SIGNAL(expandRequest(QModelIndex)), this, SLOT(expand(QModelIndex)));
 }
 
 void
@@ -90,8 +91,9 @@ void
 ColumnsWidget::clear()
 {
     m_columns.clear();
-    while (QLayoutItem *item = m_viewLay->takeAt(0))
+    while ( !m_viewLay->isEmpty() )
     {
+        QLayoutItem *item = m_viewLay->takeAt(0);
         delete item->widget();
         delete item;
     }
@@ -157,32 +159,15 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
     if ( rootPath.isEmpty() )
         return;
 
-    m_visited << rootPath;
-    m_rootIndex = index;
-    m_rootList = fromRoot();
+    clear();
 
-    bool parIsVis = false;
-
-    QString prev;
-    foreach ( const QString &path, m_rootList )
-    {
-        ColumnsView *view = viewFor(path);
-        if ( !prev.isEmpty() && isValid(prev) )
-            column(prev)->setActiveFileName(path);
-        prev = path;
-        parIsVis |= bool(m_visited.contains(path));
-        view->setVisible(parIsVis);
-    }
-
-    int i = m_rootList.count()-1;
-    QString parentPath = rootPath;
-    while ( isValid(++i) )
-    {
-        if ( QFileInfo(column(i)->rootPath()).path() == parentPath && column(i)->isVisible() )
-            parentPath = column(i)->rootPath();
-        else
-            column(i)->hide();
-    }
+    ColumnsView *view = new ColumnsView(this, m_model, rootPath);
+    connectView(view);
+    view->setSelectionModel(m_slctModel);
+    view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+    m_columns << view;
+    m_viewLay->insertWidget(m_viewLay->count()-1, view);
+    setCurrentView(view);
 
     if ( isValid(rootPath) )
         setCurrentView(column(rootPath));
@@ -190,6 +175,32 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
 }
 
 void ColumnsWidget::showCurrent() { ensureWidgetVisible(currentView()); }
+
+void
+ColumnsWidget::expand(const QModelIndex &index)
+{
+    const QString &dirPath(m_model->filePath(index));
+    int i = m_columns.indexOf(currentView());
+    if ( m_viewLay->count() > ++i )
+    {
+        while (QLayoutItem *item = m_viewLay->itemAt(i))
+        {
+            if ( item->spacerItem() )
+                break;
+            m_columns.removeOne((ColumnsView *)item->widget());
+            m_viewLay->removeItem(item);
+            delete item->widget();
+            delete item;
+        }
+    }
+    ColumnsView *view = new ColumnsView(this, m_model, dirPath);
+    connectView(view);
+    view->setSelectionModel(m_slctModel);
+    view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+    m_columns << view;
+    m_viewLay->insertWidget(m_viewLay->count()-1, view);
+    setCurrentView(view);
+}
 
 void
 ColumnsWidget::setCurrentView( ColumnsView *view )

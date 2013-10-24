@@ -28,6 +28,7 @@
 #include <QApplication>
 #include <QAction>
 #include <QItemSelectionModel>
+#include <QDesktopServices>
 
 //#include <blkid/blkid.h> //dev block id info... maybe need later
 
@@ -95,30 +96,19 @@ Ops::colorMid(const QColor c1, const QColor c2, int i1, int i2)
     return QColor(r,g,b,a);
 }
 
-void
+bool
 Ops::openFile(const QString &file)
 {
-    if(!QFileInfo(file).exists())
-        return;
+    const QFileInfo f(file);
+    if ( !f.exists() )
+        return false;
 
-    QProcess process;
-    if(QFileInfo(file).isExecutable() && (QFileInfo(file).suffix().isEmpty() ||
-                                                         QFileInfo(file).suffix() == "sh" ||
-                                                         QFileInfo(file).suffix() == "exe")) // windows executable
-    {
-        process.startDetached(file);
-    }
+    if (f.isDir())
+        return false;
+    else if (f.isExecutable() && ( f.suffix().isEmpty() || f.suffix() == "sh" || f.suffix() == "exe" ))
+        return QProcess::startDetached(f.filePath());
     else
-    {
-        QStringList list;
-        list << file;
-
-#ifdef Q_WS_X11 //linux
-        process.startDetached("xdg-open",list);
-#else //windows
-        process.startDetached("cmd /c start " + list.at(0)); //todo: fix, this works but shows a cmd window real quick
-#endif
-    }
+        return QDesktopServices::openUrl(QUrl::fromLocalFile(f.filePath()));
 }
 
 void

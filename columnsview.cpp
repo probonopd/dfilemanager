@@ -33,7 +33,8 @@ class ColumnsDelegate : public QStyledItemDelegate
 public:
     explicit ColumnsDelegate(QWidget *parent = 0)
         : QStyledItemDelegate(parent)
-        , m_view(static_cast<ColumnsView *>(parent)){}
+        , m_view(static_cast<ColumnsView *>(parent))
+        , m_model(static_cast<FileSystemModel *>(m_view->model())){}
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
         if ( index.data().toString() == m_view->activeFileName() )
@@ -43,6 +44,24 @@ public:
             painter->fillRect(option.rect, h);
         }
         QStyledItemDelegate::paint(painter, option, index);
+        if ( m_model->isDir(index) )
+        {
+            painter->save();
+            painter->setRenderHint(QPainter::Antialiasing);
+            QRect r(0,0,7,7);
+            r.moveCenter(m_view->expanderRect(index).center());
+            QPolygon p;
+            p.putPoints(0, 4, r.left(), r.top(), r.left(), r.bottom(), r.right(), r.center().y(), r.left(), r.top());
+            QPainterPath path;
+            QColor arcol = (option.state & QStyle::State_Selected)?option.palette.color(QPalette::HighlightedText):option.palette.color(QPalette::Text);
+            if ( index.data().toString() != m_view->activeFileName() )
+                arcol = Ops::colorMid(option.palette.color(QPalette::Base), arcol);
+            path.addPolygon(p);
+            painter->setPen(QPen(arcol, 2.0f, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            painter->setBrush(arcol);
+            painter->drawPath(path);
+            painter->restore();
+        }
     }
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
@@ -53,6 +72,7 @@ public:
 
 private:
     ColumnsView *m_view;
+    FileSystemModel *m_model;
 };
 
 ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QString &rootPath)
@@ -67,7 +87,6 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QStri
     , m_fsWatcher(new QFileSystemWatcher(this))
     , m_sortModel(0)
 {
-    setItemDelegate(new ColumnsDelegate(this));
     setViewMode(QListView::ListMode);
     setResizeMode(QListView::Adjust);
     setIconSize(QSize(16, 16));
@@ -194,12 +213,29 @@ ColumnsView::contextMenuEvent(QContextMenuEvent *event)
     popupMenu.exec( event->globalPos() );
 }
 
+QRect
+ColumnsView::expanderRect(const QModelIndex &index)
+{
+    QRect vr = visualRect(index);
+    const int s = vr.height();
+    return QRect(vr.right()-s, vr.top(), s, s);
+}
+
 void
 ColumnsView::mouseReleaseEvent(QMouseEvent *e)
 {
     const QModelIndex &index = indexAt(e->pos());
     if ( !index.isValid() )
         return QListView::mouseReleaseEvent(e);
+
+    if ( expanderRect(index).contains(e->pos())
+         && index == indexAt(m_pressPos) )
+    {
+        emit expandRequest(index);
+        setActiveFileName(index.data().toString());
+        e->accept();
+        return;
+    }
 
     if ( Store::config.views.singleClick
          && !e->modifiers()
@@ -244,6 +280,7 @@ ColumnsView::setModel(QAbstractItemModel *model)
 {
     QListView::setModel(model);
     m_model = qobject_cast<FileSystemModel *>(model);
+    setItemDelegate(new ColumnsDelegate(this));
 }
 
 void
@@ -265,7 +302,7 @@ ColumnsView::rowsInserted(const QModelIndex &parent, int start, int end)
     if ( m_width > wbefore )
     {
         int w = m_width;
-        w+=22; //icon
+        w+=40; //icon && expanders...
         w+=style()->pixelMetric(QStyle::PM_ScrollBarExtent, 0, this);
         setFixedWidth(w);
     }
@@ -292,8 +329,8 @@ ColumnsView::dirLoaded(const QString &dir)
         return;
 
     m_isSorted = true;
-    m_parent->container()->sort(m_model->sortingColumn(), m_model->sortingOrder(), m_rootPath);
-    viewport()->update();
+//    m_parent->container()->sort(m_model->sortingColumn(), m_model->sortingOrder(), m_rootPath);
+//    viewport()->update();
 }
 
 void
@@ -306,7 +343,7 @@ ColumnsView::fileRenamed(const QString &path, const QString &oldName, const QStr
     if ( w > m_width )
     {
         m_width = w ;
-        w+=22; //icon
+        w+=40; //icon && expanders...
         w+=style()->pixelMetric(QStyle::PM_ScrollBarExtent, 0, this);
         setFixedWidth(w);
     }
@@ -329,7 +366,7 @@ ColumnsView::updateWidth()
         if ( W > w )
             w = W;
     }
-    w+=22; //icon
+    w+=40; //icon && expanders...
     w+=style()->pixelMetric(QStyle::PM_ScrollBarExtent, 0, this);
     setFixedWidth(qMax(64, w));
 }

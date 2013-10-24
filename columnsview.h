@@ -45,6 +45,7 @@ public:
     inline QString activeFileName() { return m_activeFile; }
     inline QString rootPath() { return m_rootPath; }
     void setRootPath( const QString &path );
+    QRect expanderRect(const QModelIndex &index);
 
 public slots:
     void updateWidth();
@@ -60,6 +61,7 @@ signals:
     void showed(ColumnsView *view);
     void pathDeleted(ColumnsView *view);
     void dirActivated(const QModelIndex &dir);
+    void expandRequest(const QModelIndex &index);
 
 protected:
     void rowsInserted(const QModelIndex &parent, int start, int end);

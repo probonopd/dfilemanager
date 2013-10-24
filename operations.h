@@ -45,7 +45,7 @@ public:
     static QString getMimeType(const QString &file);
     static QString getFileType(const QString &file);
     static QColor colorMid(const QColor c1, const QColor c2, int i1 = 1, int i2 = 1);
-    static void openFile( const QString &file );
+    static bool openFile( const QString &file );
     static Ops *instance();
     static QString prettySize(quint64 bytes);
     static QImage reflection( const QImage &img = QImage() );
