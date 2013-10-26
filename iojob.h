@@ -143,7 +143,7 @@ private:
     QStringList m_inFiles, m_rmPaths;
     QString m_destDir, m_inFile, m_newFile, m_outFile;
     bool m_cut, m_canceled, m_pause;
-    quint64 m_total, m_allProgress, m_diffCheck;
+    quint64 m_total, m_allProgress, m_diffCheck, m_inSize;
     QMutex m_mutex;
     QWaitCondition m_pauseCond;
     Mode m_mode;

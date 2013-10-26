@@ -62,6 +62,7 @@ public:
     inline InfoWidget *infoWidget() { return m_infoWidget; }
     inline QList<QAction *> acts() const { return m_actions; }
     inline QMenu *mainMenu() { return m_mainMenu; }
+    inline QSlider *iconSizeSlider() { return m_iconSizeSlider; }
     void updateConfig();
     void createMenus();
 

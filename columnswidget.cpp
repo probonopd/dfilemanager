@@ -44,10 +44,10 @@ ColumnsWidget::ColumnsWidget(QWidget *parent)
     m_viewLay->addStretch();
     setWidgetResizable(true);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    m_viewport->setAutoFillBackground(false);
-    m_viewport->setFrameStyle(0/*QFrame::StyledPanel|QFrame::Sunken*/);
-    setAutoFillBackground(false);
+//    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    m_viewport->setAutoFillBackground(true);
+    m_viewport->setBackgroundRole(QPalette::Base);
+    m_viewport->setFrameStyle(QFrame::StyledPanel|QFrame::Sunken);
     setFrameStyle(0);
     connect( MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(reconnectViews()) );
     connect( horizontalScrollBar(), SIGNAL(rangeChanged(int,int)), this, SLOT(showCurrent()) );

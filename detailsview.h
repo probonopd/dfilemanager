@@ -62,6 +62,7 @@ private:
     bool m_userPlayed;
     int m_detailsWidth;
     QPoint m_pressPos;
+    QModelIndex m_pressedIndex;
 };
 
 }

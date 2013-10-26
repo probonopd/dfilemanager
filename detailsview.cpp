@@ -51,6 +51,7 @@ DetailsView::DetailsView(QWidget *parent)
     , m_model(0)
     , m_userPlayed(false)
     , m_pressPos(QPoint())
+    , m_pressedIndex(QModelIndex())
 {
     setItemDelegate(new DetailsDelegate());
     header()->setStretchLastSection(false);
@@ -175,7 +176,7 @@ DetailsView::mouseReleaseEvent(QMouseEvent *e)
     if ( Store::config.views.singleClick
          && !e->modifiers()
          && e->button() == Qt::LeftButton
-         && indexAt(m_pressPos) == index
+         && m_pressedIndex == index
          && visualRect(index).contains(e->pos())
          && !state() )
     {
@@ -201,6 +202,7 @@ DetailsView::mousePressEvent(QMouseEvent *event)
 {
     if (event->modifiers() == Qt::MetaModifier)
         setDragEnabled(false);
+    m_pressedIndex = indexAt(event->pos());
     m_pressPos = event->pos();
     QTreeView::mousePressEvent(event);
 }

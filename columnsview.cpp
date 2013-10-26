@@ -104,6 +104,7 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QStri
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setTextElideMode(Qt::ElideNone);
+    setFrameStyle(0);
 //    connect( m_parent, SIGNAL(currentViewChagned(ColumnsView*)), viewport(), SLOT(update()) );
     if ( FileSystemModel *fsModel = qobject_cast<FileSystemModel *>(model) )
     {

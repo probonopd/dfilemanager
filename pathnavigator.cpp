@@ -277,15 +277,10 @@ PathNavigator::genNavFromPath( const QString &path )
         f.setPointSize(qMax<int>(Store::config.behaviour.minFontSize, f.pointSize()*0.8));
 
         if( newPath == path )
-        {
             f.setBold( true );
-            nb->setFont( f );
-        }
         else
-        {
-            setFont(f);
             nb->setCursor( Qt::PointingHandCursor );
-        }
+        nb->setFont(f);
 
 //        if( nb->text() == "/." )
 //            nb->setIcon( QIcon::fromTheme( "folder-system", QIcon::fromTheme( "inode-directory" ) ) );

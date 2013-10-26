@@ -382,6 +382,8 @@ IOThread::IOThread(const QStringList &inf, const QString &dest, const bool cut, 
     , m_diffCheck(0)
     , m_timer(new QTimer(this))
     , m_speedTimer(new QTimer(this))
+    , m_mode(Continue)
+    , m_inSize(0)
 {
     connect(this, SIGNAL(finished()), this, SLOT(finishedSlot()));
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
@@ -533,18 +535,16 @@ IOThread::copyRecursive(const QString &inFile, const QString &outFile, bool cut,
                 setPaused(true);
                 PAUSE;
             }
-        QFileInfoList entries = QDir(inFile).entryInfoList(QDir::AllDirs|QDir::Files|QDir::NoDotAndDotDot|QDir::Hidden, QDir::Name|QDir::DirsFirst);
-        while (!entries.isEmpty())
+        const QDir &inDir(inFile);
+        const QStringList &entries(inDir.entryList(QDir::AllDirs|QDir::Files|QDir::NoDotAndDotDot|QDir::Hidden, QDir::Name|QDir::DirsFirst));
+        const int n = entries.count();
+        for ( int i = 0; i < n; ++i )
         {
-            const QFileInfo &in = entries.takeFirst();
-            copyRecursive( in.filePath() , QString("%1%2%3").arg(outFile, QDir::separator(), in.fileName()), cut, sameDisk );
+            const QString &name = entries.at(i);
+            copyRecursive( inDir.absoluteFilePath(name) , QString("%1%2%3").arg(outFile, QDir::separator(), name), cut, sameDisk );
         }
-        if (cut && QFileInfo(outFile).exists())
-            remove(inFile);
-        return;
     }
-
-    if ( !clone(inFile, outFile) )
+    else if ( !clone(inFile, outFile) )
     {
         emit errorSignal();
         setPaused(true);
@@ -579,6 +579,7 @@ IOThread::clone(const QString &in, const QString &out)
     quint64 inBytes = 0, totalInBytes = 0, totalSize = fileIn.size();
     m_fileProgress = m_inProgress = 0;
     char block[1048576]; //read/write 1 megabyte at a time
+    m_inSize = fileIn.size();
 
     while (!fileIn.atEnd())
     {

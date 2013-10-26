@@ -372,10 +372,8 @@ IconView::wheelEvent( QWheelEvent * event )
 
         if ( event->modifiers() & Qt::CTRL )
         {
-            m_newSize = numDegrees > 0 ? qMin( iconWidth() + 16, 256 ) : qMax( iconWidth() - 16, 16 );
-            m_firstIndex = firstValidIndex();
-            if ( !m_sizeTimer->isActive() )
-                m_sizeTimer->start(25);
+            QSlider *s = MainWindow::window(this)->iconSizeSlider();
+            s->setValue(s->value()+(numDegrees>0?1:-1));
         }
         else
         {
