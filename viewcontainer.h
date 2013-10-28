@@ -110,7 +110,8 @@ private slots:
     void genNewTabRequest(QModelIndex index);
     void customActionTriggered();
     void scriptTriggered();
-    void dirChanged(const QString &dir);
+    void dirChanged(const QString &path);
+    void dirLoaded(const QString &path);
 
 private:
     bool m_back;

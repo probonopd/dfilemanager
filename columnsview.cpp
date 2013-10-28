@@ -89,6 +89,7 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QStri
 {
     setViewMode(QListView::ListMode);
     setResizeMode(QListView::Adjust);
+    setLayoutMode(QListView::Batched);
     setIconSize(QSize(16, 16));
     setUniformItemSizes(true);
     setDragDropMode(QAbstractItemView::DragDrop);

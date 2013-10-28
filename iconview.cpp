@@ -317,7 +317,7 @@ IconView::IconView( QWidget *parent )
     setWrapping( true );
     setEditTriggers( QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed );
     setSelectionRectVisible( true );
-    setLayoutMode( QListView::SinglePass );
+    setLayoutMode( QListView::Batched );
     setDragDropMode( QAbstractItemView::DragDrop );
     setDropIndicatorShown( true );
     setDefaultDropAction( Qt::MoveAction );
@@ -327,10 +327,10 @@ IconView::IconView( QWidget *parent )
     setAttribute( Qt::WA_Hover );
     setMouseTracking( true );
     setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+
     connect( m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollEvent()) );
     connect( this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)) );
     connect( MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(correctLayout()) );
-
     connect( m_sizeTimer, SIGNAL(timeout()), this, SLOT(updateIconSize()) );
 
     m_slide = false;
@@ -597,8 +597,6 @@ IconView::setModel( QAbstractItemModel *model )
     QListView::setModel( model );
     if ( m_model = qobject_cast<FileSystemModel *>( model ) )
     {
-        connect( m_model, SIGNAL( rootPathChanged( QString ) ), this,
-                SLOT( rootPathChanged( QString ) ) );
         connect( m_model, SIGNAL( directoryLoaded( QString ) ), this,
                 SLOT( rootPathChanged( QString ) ) );
 //        connect( m_container, SIGNAL(sortingChanged(int,Qt::SortOrder)), viewport(), SLOT(update()) );
@@ -609,7 +607,8 @@ IconView::setModel( QAbstractItemModel *model )
 void
 IconView::rootPathChanged( QString path )
 {
-    updateLayout();
+    if ( path == m_model->rootPath() )
+        updateLayout();
 }
 
 QModelIndex

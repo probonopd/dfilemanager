@@ -41,7 +41,7 @@ public:
     explicit DetailsView(QWidget *parent = 0);
     void setFilter(QString filter);
     void setModel(QAbstractItemModel *model);
-    void setRootIndex(const QModelIndex &index) { QTreeView::setRootIndex(index); m_detailsWidth = 0; }
+    void setRootIndex(const QModelIndex &index) { scheduleDelayedItemsLayout(); QTreeView::setRootIndex(index); m_detailsWidth = 0; }
     ViewContainer *container();
 
 protected:
@@ -55,11 +55,9 @@ signals:
 
 private slots:
     void sortingChanged(const int column, const Qt::SortOrder order);
-    void userPlayed() { m_userPlayed = true; }
 
 private:
     FileSystemModel *m_model;
-    bool m_userPlayed;
     int m_detailsWidth;
     QPoint m_pressPos;
     QModelIndex m_pressedIndex;

@@ -49,22 +49,17 @@ protected:
 DetailsView::DetailsView(QWidget *parent)
     : QTreeView(parent)
     , m_model(0)
-    , m_userPlayed(false)
     , m_pressPos(QPoint())
     , m_pressedIndex(QModelIndex())
 {
     setItemDelegate(new DetailsDelegate());
     header()->setStretchLastSection(false);
-//    header()->setResizeMode(QHeaderView::Interactive);
-
     setUniformRowHeights(true);
     setSelectionMode(QAbstractItemView::ExtendedSelection);
     setSortingEnabled(true);
     sortByColumn(0, Qt::AscendingOrder);
-//    setRootIsDecorated(false);
     setEditTriggers(QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
     setExpandsOnDoubleClick(false);
-//    setItemsExpandable(false);
     setDragDropMode(QAbstractItemView::DragDrop);
     setDropIndicatorShown(true);
     setDefaultDropAction(Qt::MoveAction);
@@ -73,7 +68,6 @@ DetailsView::DetailsView(QWidget *parent)
     setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     connect(header(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), container(), SIGNAL(sortingChanged(int,Qt::SortOrder)));
     connect(container(), SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
-    connect(header(), SIGNAL(sectionResized(int,int,int)), this, SLOT(userPlayed()));
 }
 
 ViewContainer

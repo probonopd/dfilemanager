@@ -39,6 +39,10 @@ using namespace DFM;
     m_columnsWidget->RUN;\
     m_flowView->RUN
 
+//#define VIEWS(RUN)\
+//    m_iconView->RUN;\
+//    m_columnsWidget->RUN;
+
 ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     : QFrame(parent)
     , m_model(new FileSystemModel(this))
@@ -65,7 +69,11 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     setModel(m_model);
     setSelectionModel(new QItemSelectionModel(m_model));
 
+    connect ( MainWindow::window(this)->placesView(), SIGNAL(placeActivated(QString)), m_model, SLOT(setPath(QString)) );
+
     connect( m_fsWatcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)) );
+    connect( m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)) );
+//    connect( m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)) );
     connect( m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)) );
     connect( m_iconView, SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)) );
     connect( m_iconView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
@@ -225,6 +233,9 @@ ViewContainer::rootPathChanged(const QString &path)
         return;
 
     const QModelIndex &rootIndex = m_model->index(path);
+    if ( !rootIndex.isValid() )
+        return;
+
     setRootIndex(rootIndex);
     emit currentPathChanged(path);
     m_selectModel->clearSelection();
@@ -236,8 +247,11 @@ ViewContainer::rootPathChanged(const QString &path)
         m_backList.append(path);
 
     m_back = false;
-    m_iconView->updateLayout();
+}
 
+void
+ViewContainer::dirLoaded(const QString &path)
+{
     bool needSort = true;
 #ifdef Q_WS_X11
     if ( Store::config.views.dirSettings )
@@ -271,16 +285,16 @@ ViewContainer::rootPathChanged(const QString &path)
 }
 
 void
-ViewContainer::dirChanged(const QString &dir)
+ViewContainer::dirChanged(const QString &path)
 {
-    if ( !QFileInfo(dir).exists() )
-        m_model->setRootPath(dir.mid(0, dir.lastIndexOf(QDir::separator())));
+    if ( !QFileInfo(path).exists() )
+        m_model->setRootPath(path.mid(0, path.lastIndexOf(QDir::separator())));
 }
 
 void
 ViewContainer::goBack()
 {
-    if(m_backList.count() == 1)
+    if (m_backList.count() == 1)
         return;
 
     m_back = true;
@@ -385,24 +399,23 @@ void
 ViewContainer::customCommand()
 {
     QModelIndexList selectedItems;
-    if(m_selectModel->selectedRows(0).count())
+    if (m_selectModel->selectedRows(0).count())
         selectedItems = m_selectModel->selectedRows(0);
     else
         selectedItems = m_selectModel->selectedIndexes();
 
     QModelIndex idx;
-    if(selectedItems.count() == 1)
+    if (selectedItems.count() == 1)
         idx = selectedItems.first();
     bool ok;
     QString text = QInputDialog::getText(this, tr("Open With"), tr("Custom Command:"), QLineEdit::Normal, QString(), &ok);
-    if(!ok)
+    if (!ok)
         return;
 
     QStringList args(text.split(" "));
     args << (m_model->filePath(idx).isNull() ? m_model->rootPath() : m_model->filePath(idx));
     QString program = args.takeFirst();
-    QProcess process;
-    process.startDetached(program,args);
+    QProcess::startDetached(program, args);
 }
 
 void
@@ -426,17 +439,11 @@ ViewContainer::sort(const int column, const Qt::SortOrder order, const QString &
 void
 ViewContainer::createDirectory()
 {
-    m_model->mkdir(m_model->index(m_model->rootPath()),"new_directory");
+    m_model->mkdir(m_model->index(m_model->rootPath()), "new_directory");
     QModelIndex newFolder = m_model->index(m_model->rootPath() + QDir::separator() + "new_directory");
 
-    switch (m_myView)
-    {
-    case Icon : m_iconView->edit(newFolder); m_iconView->scrollTo(newFolder); break;
-    case Details : m_detailsView->edit(newFolder); m_detailsView->scrollTo(newFolder); break;
-    case Columns : m_columnsWidget->edit(newFolder); m_columnsWidget->scrollTo(newFolder); break;
-    case Flow : m_flowView->detailsView()->edit(newFolder); m_flowView->detailsView()->scrollTo(newFolder); break;
-    default: break;
-    }
+    currentView()->scrollTo(newFolder);
+    currentView()->edit(newFolder);
 }
 
 QAbstractItemView

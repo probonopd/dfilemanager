@@ -238,7 +238,7 @@ PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model )
 void
 PathNavigator::setPath( const QString &path )
 {
-    if ( path == m_path )
+    if ( path == m_path || path != m_fsModel->rootPath() )
         return;
     m_path = path;
     emit pathChanged( path );
@@ -334,8 +334,8 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel) : QStackedWi
     connect ( m_pathBox, SIGNAL(activated(QString)), this, SLOT(setRootPath(QString)) );
     connect ( m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()) );
 //    connect ( m_pathBox, SIGNAL(textChanged(QString)), this, SLOT(complete(QString)) );
-    connect ( m_fsModel, SIGNAL(rootPathChanged(QString)), m_pathNav, SLOT(setPath(QString)) );
-    connect ( m_fsModel, SIGNAL(rootPathChanged(QString)), this, SLOT(pathChanged(QString)) );
+    connect ( m_fsModel, SIGNAL(directoryLoaded(QString)), m_pathNav, SLOT(setPath(QString)) );
+    connect ( m_fsModel, SIGNAL(directoryLoaded(QString)), this, SLOT(pathChanged(QString)) );
     connect ( m_pathNav, SIGNAL(pathChanged(QString)), this, SIGNAL(newPath(QString)) );
     connect ( m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()) );
     setCurrentWidget(m_pathNav);
@@ -346,6 +346,8 @@ void BreadCrumbs::setRootPath( const QString &rootPath ) { m_fsModel->setRootPat
 void
 BreadCrumbs::pathChanged(const QString &path)
 {
+    if ( path != m_fsModel->rootPath() )
+        return;
     bool exists = false;
     for (int i = 0; i < m_pathBox->count();i++)
     {

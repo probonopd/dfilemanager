@@ -509,7 +509,6 @@ PlacesView::PlacesView( QWidget *parent )
 
     connect ( this, SIGNAL(changed()), this, SLOT(store()) );
     connect ( this, SIGNAL(clicked(QModelIndex)), this, SLOT(emitPath(QModelIndex)) );
-    connect ( this, SIGNAL(placeActivated(QString)), MainWindow::currentWindow(), SLOT(setRootPath(QString)) );
     connect ( m_timer, SIGNAL(timeout()), this, SLOT(updateAllWindows()) );
     connect ( MainWindow::currentWindow(), SIGNAL(settingsChanged()), viewport(), SLOT(update()) );
 }
