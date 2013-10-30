@@ -49,12 +49,15 @@ protected:
     void mouseReleaseEvent(QMouseEvent *e);
     void mousePressEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *);
+    void resizeEvent(QResizeEvent *event);
+    void drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const;
 
 signals:
     void newTabRequest(const QModelIndex &path);
 
 private slots:
     void sortingChanged(const int column, const Qt::SortOrder order);
+    void dirLoaded(const QString &path);
 
 private:
     FileSystemModel *m_model;

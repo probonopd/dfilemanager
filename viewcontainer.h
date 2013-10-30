@@ -25,6 +25,7 @@
 #include <QStackedWidget>
 #include <QComboBox>
 #include <QSortFilterProxyModel>
+#include <QLineEdit>
 
 #include "iconview.h"
 #include "detailsview.h"
@@ -35,7 +36,6 @@
 
 namespace DFM
 {
-
 class ColumnsWidget;
 class IconView;
 class FlowView;
@@ -90,7 +90,6 @@ protected:
     
 signals:
     void viewChanged();
-    void currentPathChanged(QString path);
     void iconSizeChanged(int size);
     void itemHovered(QString index);
     void clearHovered();
@@ -112,6 +111,7 @@ private slots:
     void scriptTriggered();
     void dirChanged(const QString &path);
     void dirLoaded(const QString &path);
+    void loadViewFromDir(const QString &path = QString());
 
 private:
     bool m_back;

@@ -798,7 +798,6 @@ TabBar::drawTab(QPainter *p, int index)
 
     QFont f(font());
     f.setBold(index == currentIndex());
-    int l = QFontMetrics(f).width(s);
     p->setFont(f);
 
     r.setRight(tabButton(index, RightSide)->geometry().x());

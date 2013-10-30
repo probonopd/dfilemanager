@@ -31,6 +31,8 @@ class DetailsDelegate : public QStyledItemDelegate
 protected:
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
+        if ( !index.data().isValid() )
+            return;
         painter->save();
         const bool isHovered = option.state & QStyle::State_MouseOver;
         const bool isSelected = option.state & QStyle::State_Selected;
@@ -66,6 +68,7 @@ DetailsView::DetailsView(QWidget *parent)
     setAcceptDrops(true);
     setDragEnabled(true);
     setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+
     connect(header(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), container(), SIGNAL(sortingChanged(int,Qt::SortOrder)));
     connect(container(), SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
 }
@@ -94,13 +97,30 @@ DetailsView::sortingChanged(const int column, const Qt::SortOrder order)
 }
 
 void
+DetailsView::dirLoaded(const QString &path)
+{
+//    for ( int i = 1; i<header()->count(); ++i )
+//        resizeColumnToContents(i);
+
+}
+
+void
+DetailsView::drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const
+{
+    if ( !index.data().isValid() )
+        return;
+    QTreeView::drawBranches(painter, rect, index);
+}
+
+void
 DetailsView::setModel(QAbstractItemModel *model)
 {
     QTreeView::setModel(model);
     m_model = qobject_cast<FileSystemModel *>(model);
-    header()->setResizeMode(0, QHeaderView::Stretch);
-    for ( int i = 1; i<header()->count(); ++i )
-        header()->setResizeMode(i, QHeaderView::ResizeToContents);
+    connect(m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)));
+//    header()->setResizeMode(0, QHeaderView::Stretch);
+    for ( int i = 0; i<header()->count(); ++i )
+        header()->setResizeMode(i, QHeaderView::Fixed);
 }
 
 void
@@ -199,4 +219,16 @@ DetailsView::mousePressEvent(QMouseEvent *event)
     m_pressedIndex = indexAt(event->pos());
     m_pressPos = event->pos();
     QTreeView::mousePressEvent(event);
+}
+
+void
+DetailsView::resizeEvent(QResizeEvent *event)
+{
+    const int w = event->size().width();
+    setColumnWidth(0, w*0.6f);
+    setColumnWidth(1, w*0.12f);
+    setColumnWidth(2, w*0.08f);
+    setColumnWidth(3, w*0.2f);
+//    for ( int i = 1; i < header()->count(); ++i )
+//        setColumnWidth(i, w*0.1f);
 }

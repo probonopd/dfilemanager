@@ -316,6 +316,8 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut, bool
             return;
     }
     quint64 fileSize = 0;
+    const quint64 destId = Ops::getDriveInfo<Ops::Id>( destination );
+    bool sameDisk = destId != 0;
     foreach (const QString &file, copyFiles)
     {
         if ( QFileInfo(file).isDir() )
@@ -328,6 +330,9 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut, bool
             getDirs(file, &fileSize);
         else
             fileSize += fileInfo.size();
+
+        if ( sameDisk )
+            sameDisk = ( (quint64)Ops::getDriveInfo<Ops::Id>( file ) ==  destId );
     }
 
     CopyDialog *copyDialog = new CopyDialog(MainWindow::currentWindow());
@@ -336,7 +341,7 @@ Job::cp(const QStringList &copyFiles, const QString &destination, bool cut, bool
     copyDialog->show();
 
 #ifdef Q_WS_X11
-    if ( fileSize > Ops::getDriveInfo<Ops::Free>( destination ) )
+    if ( fileSize > Ops::getDriveInfo<Ops::Free>( destination ) && !(cut && sameDisk) )
     {
         QMessageBox::critical(MainWindow::currentWindow(), tr("not enough room on destination"), QString("%1 has not enough space").arg(destination));
         copyDialog->reject();
@@ -365,7 +370,7 @@ Job::cp(const QList<QUrl> &copyFiles, const QString &destination, bool cut, bool
 
 //---------------------------------------------------------------------------------------------------------
 
-IOThread::IOThread(const QStringList &inf, const QString &dest, const bool cut, const qint64 &totalSize, QObject *parent)
+IOThread::IOThread(const QStringList &inf, const QString &dest, const bool cut, const quint64 totalSize, QObject *parent)
     : QThread(parent)
     , m_canceled(false)
     , m_inFiles(inf)

@@ -69,7 +69,7 @@ public:
 public slots:
     void addTab(const QString &path = QDir::homePath());
     void receiveMessage(const QStringList &message);
-    inline void setRootPath( const QString &path ) { m_model->setRootPath(path); }
+    inline void setRootPath( const QString &path ) { m_model->setPath(path); }
 
 protected:
     void closeEvent(QCloseEvent *event);
@@ -130,7 +130,7 @@ private slots:
     void stackChanged(int);
     void newWindow() { (new MainWindow(QStringList() << m_activeContainer->model()->rootPath()))->show(); }
     void readSettings();
-    void activateRecentFolder(const QString &folder) { m_activeContainer->model()->setRootPath(folder); }
+    void activateRecentFolder(const QString &folder) { m_activeContainer->model()->setPath(folder); }
     void addBookmarks();
     void setSorting();
     void sortingChanged(const int column, const Qt::SortOrder order);

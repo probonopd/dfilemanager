@@ -89,6 +89,7 @@ FileSystemModel::FileSystemModel(QObject *parent)
     , m_sortOrder(Qt::AscendingOrder)
     , m_it(new ImagesThread(this))
     , m_thumbsLoader(new ThumbsLoader(this))
+    , m_blockData(false)
 {
     setResolveSymlinks(false);
     setIconProvider(m_iconProvider = new FileIconProvider(this));
@@ -142,7 +143,8 @@ bool FileSystemModel::hasThumb(const QString &file) { return m_thumbsLoader->has
 
 QVariant
 FileSystemModel::data(const QModelIndex &index, int role) const
-{  if (!index.isValid() || index.model() != this)
+{
+    if (!index.isValid() || index.model() != this || m_blockData)
         return QVariant();
 
     switch ( role )
@@ -160,16 +162,18 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         }
         else if ( index.column() == 4 )
         {
-            QString permission;
-            const QFileInfo file = fileInfo(index);
-            permission.append(file.permission(QFile::ReadUser) ? "r, " : "-, ");
-            permission.append(file.permission(QFile::WriteUser) ? "w, " : "-, ");
-            if (!file.isDir())
-                permission.append(file.isExecutable() && !fileInfo(index).isDir() ? "x, " : "-, ");
-            permission.append(file.owner());
-            return permission;
+            return QString();
+//            QString permission;
+//            const QFileInfo file = fileInfo(index);
+//            permission.append(file.permission(QFile::ReadUser) ? "r, " : "-, ");
+//            permission.append(file.permission(QFile::WriteUser) ? "w, " : "-, ");
+//            if (!file.isDir())
+//                permission.append(file.isExecutable() && !fileInfo(index).isDir() ? "x, " : "-, ");
+//            permission.append(file.owner());
+//            return permission;
         }
         else if (index.column() == 1 && fileInfo(index).isDir() )
+//            return QString();
             return QString("%1 Entrie(s)").arg(QString::number(QDir(filePath(index)).entryList(QDir::NoDotAndDotDot|QDir::AllEntries).count()));
         break;
     case Qt::FontRole:
@@ -274,6 +278,7 @@ FileSystemModel::sort(int column, Qt::SortOrder order)
     m_sortCol = column;
     m_sortOrder = order;
     QFileSystemModel::sort(column, order);
+    m_blockData = false;
 //    qDebug() << "sorted..." << rootPath() << column << order;
 }
 
@@ -297,11 +302,34 @@ FileSystemModel::supportedThumbs( const bool filter )
     return s_st[filter];
 }
 
-FileProxyModel::FileProxyModel(QObject *parent)
-    : QSortFilterProxyModel(parent)
-    , m_fsModel(new FileSystemModel(parent))
+void
+FileSystemModel::setPath(const QString &path)
 {
-    setSourceModel(m_fsModel);
+    m_blockData = true;
+    emit rootPathAboutToChange(path);
+    setRootPath(path);
+//    bool needSort = true;
+//#ifdef Q_WS_X11
+//    if ( Store::config.views.dirSettings )
+//    {
+//        QString dirPath = path;
+//        if ( !dirPath.endsWith(QDir::separator()) )
+//            dirPath.append(QDir::separator());
+//        dirPath.append(".directory");
+//        QSettings settings(dirPath, QSettings::IniFormat);
+//        settings.beginGroup("DFM");
+//        QVariant varCol = settings.value("sortCol");
+//        QVariant varOrd = settings.value("sortOrd");
+//        if ( varCol.isValid() && varOrd.isValid() )
+//        {
+//            needSort = false;
+//            int col = varCol.value<int>();
+//            Qt::SortOrder ord = (Qt::SortOrder)varOrd.value<int>();
+//            sort(col, ord);
+//        }
+//        settings.endGroup();
+//    }
+//#endif
+//    if ( needSort )
+//        sort(sortingColumn(), sortingOrder());
 }
-
-

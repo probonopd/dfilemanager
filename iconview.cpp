@@ -102,7 +102,7 @@ public:
     }
     void paint( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
-        if ( !m_model )
+        if ( !m_model || !index.data().isValid() )
             return;
 
         painter->save();
@@ -317,7 +317,7 @@ IconView::IconView( QWidget *parent )
     setWrapping( true );
     setEditTriggers( QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed );
     setSelectionRectVisible( true );
-    setLayoutMode( QListView::Batched );
+//    setLayoutMode( QListView::Batched );
     setDragDropMode( QAbstractItemView::DragDrop );
     setDropIndicatorShown( true );
     setDefaultDropAction( Qt::MoveAction );

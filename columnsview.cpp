@@ -37,6 +37,8 @@ public:
         , m_model(static_cast<FileSystemModel *>(m_view->model())){}
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
+        if ( !index.data().isValid() )
+            return;
         if ( index.data().toString() == m_view->activeFileName() )
         {
             QColor h = m_view->palette().color(QPalette::Highlight);
@@ -89,7 +91,7 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QStri
 {
     setViewMode(QListView::ListMode);
     setResizeMode(QListView::Adjust);
-    setLayoutMode(QListView::Batched);
+//    setLayoutMode(QListView::Batched);
     setIconSize(QSize(16, 16));
     setUniformItemSizes(true);
     setDragDropMode(QAbstractItemView::DragDrop);

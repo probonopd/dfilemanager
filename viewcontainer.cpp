@@ -73,8 +73,9 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
 
     connect( m_fsWatcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)) );
     connect( m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)) );
-//    connect( m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)) );
     connect( m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)) );
+    connect( m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(loadViewFromDir(QString)) );
+//    connect( m_model, SIGNAL(rootPathAboutToChange(QString)), this, SLOT(rootPathChanged(QString)) );
     connect( m_iconView, SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)) );
     connect( m_iconView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
     connect( m_detailsView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
@@ -104,7 +105,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     setLayout(layout);
 
     setView((View)Store::config.behaviour.view, false);
-    m_model->setRootPath(rootPath);
+    m_model->setPath(rootPath);
 
     emit iconSizeChanged(Store::config.views.iconView.iconSize*16);
 
@@ -221,29 +222,48 @@ ViewContainer::activate(const QModelIndex &index)
 
     if (m_model->isDir(index))
     {
-        m_model->setRootPath(f.filePath());
+        m_model->setPath(f.filePath());
         m_forwardList.clear();
     }
 }
 
 void
+ViewContainer::loadViewFromDir(const QString &path)
+{
+#ifdef Q_WS_X11
+    if ( !Store::config.views.dirSettings )
+        return;
+    QString dirPath = path;
+    if ( !dirPath.endsWith(QDir::separator()) )
+        dirPath.append(QDir::separator());
+    dirPath.append(".directory");
+    QSettings settings(dirPath, QSettings::IniFormat);
+    settings.beginGroup("DFM");
+    QVariant var = settings.value("view");
+    if ( var.isValid() )
+    {
+        View view = (View)var.value<int>();
+        setView(view, false);
+    }
+#endif
+}
+
+void
 ViewContainer::rootPathChanged(const QString &path)
 {
-    if ( path.isEmpty() )
+    if ( path.isEmpty() || !QFileInfo(path).isDir() )
         return;
 
     const QModelIndex &rootIndex = m_model->index(path);
-    if ( !rootIndex.isValid() )
-        return;
+    if ( rootIndex.isValid() )
+        setRootIndex(rootIndex);
 
-    setRootIndex(rootIndex);
-    emit currentPathChanged(path);
     m_selectModel->clearSelection();
     if ( !m_fsWatcher->directories().isEmpty() )
         m_fsWatcher->removePaths(m_fsWatcher->directories());
     m_fsWatcher->addPath(path);
 
-    if (!m_back && rootIndex.isValid() && (m_backList.isEmpty() || m_backList.count() &&  path != m_backList.last()))
+    if (!m_back && (m_backList.isEmpty() || m_backList.count() &&  path != m_backList.last()))
         m_backList.append(path);
 
     m_back = false;
@@ -262,12 +282,6 @@ ViewContainer::dirLoaded(const QString &path)
         dirPath.append(".directory");
         QSettings settings(dirPath, QSettings::IniFormat);
         settings.beginGroup("DFM");
-        QVariant var = settings.value("view");
-        if ( var.isValid() )
-        {
-            View view = (View)var.value<int>();
-            setView(view, false);
-        }
         QVariant varCol = settings.value("sortCol");
         QVariant varOrd = settings.value("sortOrd");
         if ( varCol.isValid() && varOrd.isValid() )
@@ -288,7 +302,7 @@ void
 ViewContainer::dirChanged(const QString &path)
 {
     if ( !QFileInfo(path).exists() )
-        m_model->setRootPath(path.mid(0, path.lastIndexOf(QDir::separator())));
+        m_model->setPath(path.mid(0, path.lastIndexOf(QDir::separator())));
 }
 
 void
@@ -299,7 +313,7 @@ ViewContainer::goBack()
 
     m_back = true;
     m_forwardList << m_backList.takeLast();
-    m_model->setRootPath(m_backList.last());
+    m_model->setPath(m_backList.last());
 }
 
 void
@@ -308,7 +322,7 @@ ViewContainer::goForward()
     if (m_forwardList.isEmpty())
         return;
 
-    m_model->setRootPath(m_forwardList.takeLast());
+    m_model->setPath(m_forwardList.takeLast());
 }
 
 bool
@@ -316,18 +330,18 @@ ViewContainer::goUp()
 {
     if (m_breadCrumbs->currentPath() == "/")
         return false;
-    m_model->setRootPath(QFileInfo(m_model->rootPath()).dir().path());
+    m_model->setPath(QFileInfo(m_model->rootPath()).dir().path());
     return true;
 }
 
-void ViewContainer::goHome() { m_model->setRootPath(QDir::homePath()); }
+void ViewContainer::goHome() { m_model->setPath(QDir::homePath()); }
 
 void
 ViewContainer::refresh()
 {
     m_model->blockSignals(true);
-    m_model->setRootPath("");
-    m_model->setRootPath(m_breadCrumbs->currentPath());
+    m_model->setPath("");
+    m_model->setPath(m_breadCrumbs->currentPath());
     m_model->blockSignals(false);
     setRootIndex(m_model->index(m_breadCrumbs->currentPath()));
 }

@@ -323,7 +323,7 @@ MainWindow::rootPathChanged(QString index)
     m_filterBox->clear();
     m_activeContainer->setFilter("");
     m_placesView->activateAppropriatePlace(index);
-    m_tabBar->setTabText(m_tabBar->currentIndex(), QFileInfo(activeContainer()->breadCrumbs()->currentPath()).fileName());
+    m_tabBar->setTabText(m_tabBar->currentIndex(), m_model->rootDirectory().dirName());
     if ( Store::config.behaviour.gayWindow )
         m_tabBar->setTabIcon(m_tabBar->currentIndex(), m_model->iconProvider()->icon(QFileInfo(m_model->rootPath())));
 }
@@ -375,10 +375,10 @@ MainWindow::updateStatusBar(QString index)
     QStringList realSize = sz.split(".");
     sz = realSize.at(0);
     QString szEnd;
-    if(realSize.count() == 2)
+    if (realSize.count() == 2)
         szEnd = realSize.at(1);
     QString end;
-    if(szEnd.count() >= 3)
+    if (szEnd.count() >= 3)
     {
         QString endSize = szEnd;
         endSize.truncate(3);
@@ -392,12 +392,12 @@ MainWindow::updateStatusBar(QString index)
             endStart++;
         end = QString::number(endStart);
     }
-    else if(szEnd.count() == 1)
+    else if (szEnd.count() == 1)
         end = szEnd + "0";
-    else if(szEnd.count() == 2)
+    else if (szEnd.count() == 2)
         end = szEnd;
 
-    if(!end.isEmpty())
+    if (!end.isEmpty())
         sz = sz + "." + end;
 
 
@@ -405,11 +405,11 @@ MainWindow::updateStatusBar(QString index)
     QString _folder = folders > 1 ? " Folders" : " Folder";
     QString _file = files > 1 ? " Files " : " File ";
 
-    if(folders >= 1 && files >= 1)
+    if (folders >= 1 && files >= 1)
         messaage = QString::number(folders) + _folder + ", " + QString::number(files) + _file + "(" + sz + statSize + ")";
-    else if(folders >= 1 && files == 0)
+    else if (folders >= 1 && files == 0)
         messaage = QString::number(folders) + _folder;
-    else if(folders == 0 && files >= 1)
+    else if (folders == 0 && files >= 1)
         messaage = QString::number(files) + _file + sz + " " + statSize;
 
     statusMessage = messaage;
@@ -481,7 +481,7 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
 void
 MainWindow::goHome()
 {  
-    m_model->setRootPath(QDir::homePath());
+    m_model->setPath(QDir::homePath());
 }
 
 void
@@ -604,8 +604,8 @@ MainWindow::addTab(const QString &path)
         newPath = QDir::homePath();
     ViewContainer *container = new ViewContainer(this, newPath);
     container->installEventFilter(this);
-    connect( container, SIGNAL(currentPathChanged(QString)), this, SLOT(rootPathChanged(QString)));
-    connect( container, SIGNAL(currentPathChanged(QString)), m_recentFoldersView, SLOT(folderEntered(QString)));
+    connect( container->model(), SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)));
+    connect( container->model(), SIGNAL(rootPathChanged(QString)), m_recentFoldersView, SLOT(folderEntered(QString)));
     connect( container, SIGNAL(viewChanged()), this, SLOT(checkViewAct()));
     connect( container->model(), SIGNAL(directoryLoaded(QString)), this, SLOT(directoryLoaded(QString)));
     connect( container->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(mainSelectionChanged(QItemSelection,QItemSelection)));

@@ -635,7 +635,7 @@ PreView::mouseReleaseEvent(QMouseEvent *event)
             {
                 const QString &file = m_model->filePath(index);
                 if ( QFileInfo(file).isDir() )
-                    m_model->setRootPath(file);
+                    m_model->setPath(file);
                 else
                     Ops::openFile(file);
             }

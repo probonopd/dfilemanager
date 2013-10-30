@@ -147,7 +147,7 @@ void
 Ops::setRootPath()
 {
     QAction *action = static_cast<QAction *>(sender());
-    MainWindow::currentContainer()->model()->setRootPath(action->data().toString());
+    MainWindow::currentContainer()->model()->setPath(action->data().toString());
 }
 
 QString

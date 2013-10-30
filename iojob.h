@@ -109,7 +109,7 @@ class IOThread : public QThread
     Q_OBJECT
 public:
     enum Type { Copy = 0, Remove };
-    IOThread(const QStringList &inf, const QString &dest, const bool cut, const qint64 &totalSize, QObject *parent = 0);
+    IOThread(const QStringList &inf, const QString &dest, const bool cut, const quint64 totalSize, QObject *parent = 0);
     IOThread(const QStringList &paths = QStringList(), QObject *parent = 0);
     void run();
     bool paused() { return m_pause; }

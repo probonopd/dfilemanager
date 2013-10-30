@@ -58,7 +58,7 @@ PathSeparator::setPath()
 {
     QAction *action = static_cast<QAction *>(sender());
     const QString &path = action->data().toString();
-    m_fsModel->setRootPath(path);
+    m_fsModel->setPath(path);
 }
 
 void
@@ -71,13 +71,7 @@ PathSeparator::mousePressEvent(QMouseEvent *event)
         action->setText( info.fileName() );
         action->setData( info.filePath() );
         if ( m_nav->path().startsWith(info.filePath()) )
-        {
-//            QFont fnt = action->font();
-//            fnt.setBold(true);
-//            fnt.setPointSize(fnt.pointSize()*1.2);
             action->setEnabled(false);
-//            action->setFont(fnt);
-        }
         menu.addAction( action );
         connect( action, SIGNAL( triggered() ), this, SLOT( setPath() ) );
     }
@@ -341,7 +335,7 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel) : QStackedWi
     setCurrentWidget(m_pathNav);
 }
 
-void BreadCrumbs::setRootPath( const QString &rootPath ) { m_fsModel->setRootPath( rootPath ); setEditable(false); }
+void BreadCrumbs::setRootPath( const QString &rootPath ) { m_fsModel->setPath( rootPath ); setEditable(false); }
 
 void
 BreadCrumbs::pathChanged(const QString &path)
@@ -372,10 +366,10 @@ BreadCrumbs::complete( const QString &path )
     const QString &current = path.mid(path.lastIndexOf(QDir::separator())+1);
     QStringList paths;
     foreach ( const QString &subPath, QDir(p).entryList(QStringList() << "*"+current+"*", QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot, QDir::Name) )
-        paths << p + subPath;
+        paths << QString("%1%2%3").arg(p, subPath, QDir::separator());
 
-    QCompleter *comp = new QCompleter(paths, m_pathBox);
-    comp->setCompletionMode(QCompleter::PopupCompletion);
-    comp->setCaseSensitivity(Qt::CaseInsensitive);
-    m_pathBox->setCompleter(comp);
+    QCompleter comp(paths, m_pathBox);
+    comp.setCompletionMode(QCompleter::PopupCompletion);
+    comp.setCaseSensitivity(Qt::CaseInsensitive);
+    m_pathBox->setCompleter(&comp);
 }

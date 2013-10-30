@@ -97,7 +97,7 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
     bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
     static QStringList supportedThumbs( const bool filter = false );
-    inline void refresh() { const QString &path = rootPath(); setRootPath(""); setRootPath(path); }
+//    inline void refresh() { const QString &path = rootPath(); setRootPath(""); setRootPath(path); }
     bool hasThumb( const QString &file );
     bool hasFlowData( const QString &file );
     History *history() { return m_history; }
@@ -110,7 +110,7 @@ public:
     inline FileIconProvider *ip() { return m_iconProvider; }
 
 public slots:
-    void setPath(const QString &path) { setRootPath(path); }
+    void setPath(const QString &path);
 
 private slots:
     void emitRootIndex( const QString &path ) { emit rootPathAsIndex(index(path)); }
@@ -120,6 +120,7 @@ private slots:
 signals:
     void rootPathAsIndex( const QModelIndex &index );
     void flowDataChanged( const QModelIndex &start, const QModelIndex &end );
+    void rootPathAboutToChange( const QString &path );
 
 private:
     friend class ImagesThread;
@@ -132,31 +133,7 @@ private:
     int m_sortCol;
     Qt::SortOrder m_sortOrder;
     QString m_prevRp;
-};
-
-class FileProxyModel : public QSortFilterProxyModel
-{
-    Q_OBJECT
-public:
-    explicit FileProxyModel(QObject *parent = 0);
-    FileSystemModel *fsModel() { return m_fsModel; }
-    QString filePath(const QModelIndex &index) { return m_fsModel->filePath(mapToSource(index)); }
-    QString fileName(const QModelIndex &index) { return m_fsModel->fileName(mapToSource(index)); }
-    QIcon fileIcon(const QModelIndex &index) { return m_fsModel->fileIcon(mapToSource(index)); }
-    FileIconProvider *iconProvider() { return static_cast<FileIconProvider *>(m_fsModel->iconProvider()); }
-    QString rootPath() { return m_fsModel->rootPath(); }
-    void setRootPath(const QString &rootPath) { m_fsModel->setRootPath(rootPath); }
-    QFileInfo fileInfo(const QModelIndex &index) { return m_fsModel->fileInfo(mapToSource(index)); }
-    bool isDir(const QModelIndex &index) { return m_fsModel->isDir(mapToSource(index)); }
-    QDir rootDirectory() { return m_fsModel->rootDirectory(); }
-    QModelIndex index(int row, int column, const QModelIndex &parent) const { return QSortFilterProxyModel::index(row, column, parent); }
-    QModelIndex index(const QString &file, int column = 0) { return mapFromSource(m_fsModel->index(file, column)); }
-    void mkdir(const QModelIndex &parent, const QString &name) { m_fsModel->mkdir(mapToSource(parent), name); }
-    void setFilter(const QDir::Filters filters) { m_fsModel->setFilter(filters); }
-    bool hasThumb(const QString &file) { return m_fsModel->hasThumb(file); }
-
-private:
-    FileSystemModel *m_fsModel;
+    bool m_blockData;
 };
 
 }
