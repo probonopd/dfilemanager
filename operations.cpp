@@ -258,27 +258,29 @@ Ops::flowImg( const QImage &image )
 QImage
 Ops::reflection( const QImage &img )
 {
-   QImage refl(SIZE, SIZE, QImage::Format_ARGB32);
-   refl.fill( Qt::transparent);
-   QRect r = img.rect();
-   r.moveCenter(refl.rect().center());
-   r.moveTop(refl.rect().top());
-   QPainter p(&refl);
-   p.setBrushOrigin(r.topLeft());
-   if ( !img.isNull() )
-       p.fillRect(r, img.mirrored());
-   p.end();
-   int size = refl.width() * refl.height();
-   QRgb *pixel = reinterpret_cast<QRgb *>(refl.bits());
-   QColor bg = DFM::Ops::colorMid(qApp->palette().color(QPalette::Highlight), Qt::black);
-   bg.setHsv(bg.hue(), qMin(64, bg.saturation()), bg.value(), bg.alpha());
-   for ( int i = 0; i < size; ++i )
-       if ( qAlpha(pixel[i]) )
-       {
-           QColor c = QColor(pixel[i]);
-           c = DFM::Ops::colorMid(c, bg, 1, 4);
-           pixel[i] = qRgba(c.red(), c.green(), c.blue(), qAlpha(pixel[i]));
-       }
-   return Ops::blurred( refl, refl.rect(), 5 );
+    if ( img.isNull() )
+        return QImage();
+    QImage refl(SIZE, SIZE, QImage::Format_ARGB32);
+    refl.fill( Qt::transparent);
+    QRect r = img.rect();
+    r.moveCenter(refl.rect().center());
+    r.moveTop(refl.rect().top());
+    QPainter p(&refl);
+    p.setBrushOrigin(r.topLeft());
+    if ( !img.isNull() )
+        p.fillRect(r, img.mirrored());
+    p.end();
+    int size = refl.width() * refl.height();
+    QRgb *pixel = reinterpret_cast<QRgb *>(refl.bits());
+    QColor bg = DFM::Ops::colorMid(qApp->palette().color(QPalette::Highlight), Qt::black);
+    bg.setHsv(bg.hue(), qMin(64, bg.saturation()), bg.value(), bg.alpha());
+    for ( int i = 0; i < size; ++i )
+        if ( qAlpha(pixel[i]) )
+        {
+            QColor c = QColor(pixel[i]);
+            c = DFM::Ops::colorMid(c, bg, 1, 4);
+            pixel[i] = qRgba(c.red(), c.green(), c.blue(), qAlpha(pixel[i]));
+        }
+    return Ops::blurred( refl, refl.rect(), 5 );
 }
 
