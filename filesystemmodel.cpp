@@ -147,34 +147,42 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     if (!index.isValid() || index.model() != this || m_blockData)
         return QVariant();
 
+    const QFileInfo &fi(fileInfo(index));
     switch ( role )
     {
     case Qt::DisplayRole:
-        if (index.column() == 3)
+        if (index.column() == 0)
+            return fi.fileName();
+        else if (index.column() == 1 )
         {
-            QString lastMod;
-            const QDateTime lastDate = lastModified(index);
-            lastMod.append(QString::number(lastDate.date().day()) + "/");
-            lastMod.append(QString::number(lastDate.date().month()) + "/");
-            lastMod.append(QString::number(lastDate.date().year()) + " ");
-            lastMod.append(lastDate.time().toString());
-            return lastMod;
+            if ( fi.isDir() )
+                return QString("--");
+            else
+                return Ops::prettySize(fi.size());
+//            return QString("%1 Entrie(s)").arg(QString::number(QDir(filePath(index)).entryList(QDir::NoDotAndDotDot|QDir::AllEntries).count()));
         }
+        else if (index.column() == 2)
+        {
+            if (fi.isSymLink())
+                return tr("Symlink");
+            else if (fi.isDir())
+                return tr("Folder");
+            else if (fi.suffix().isEmpty())
+                return tr("File");
+            else
+                return fi.suffix();
+        }
+        else if (index.column() == 3)
+            return fi.lastModified();
         else if ( index.column() == 4 )
         {
-            return QString();
-//            QString permission;
-//            const QFileInfo file = fileInfo(index);
-//            permission.append(file.permission(QFile::ReadUser) ? "r, " : "-, ");
-//            permission.append(file.permission(QFile::WriteUser) ? "w, " : "-, ");
-//            if (!file.isDir())
-//                permission.append(file.isExecutable() && !fileInfo(index).isDir() ? "x, " : "-, ");
-//            permission.append(file.owner());
-//            return permission;
+            QString permission;
+            permission.append(fi.permission(QFile::ReadUser) ? "r, " : "-, ");
+            permission.append(fi.permission(QFile::WriteUser) ? "w, " : "-, ");
+            permission.append(fi.isExecutable() ? "x, " : "-, ");
+            permission.append(fi.owner());
+            return permission;
         }
-        else if (index.column() == 1 && fileInfo(index).isDir() )
-//            return QString();
-            return QString("%1 Entrie(s)").arg(QString::number(QDir(filePath(index)).entryList(QDir::NoDotAndDotDot|QDir::AllEntries).count()));
         break;
     case Qt::FontRole:
         if ( m_container->selectionModel()->selectedIndexes().contains(index) && !index.column() )
@@ -185,28 +193,27 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         }
         break;
     case Qt::TextAlignmentRole:
-        if (index.column() == 1)
-            return int(Qt::AlignVCenter | Qt::AlignRight);
-        if (index.column() == 3)
-            return int(Qt::AlignCenter);
+        if (index.column() == 1 )
+            return int(Qt::AlignVCenter|Qt::AlignRight);
+        else
+            return int(Qt::AlignLeft|Qt::AlignVCenter);
         break;
     case Qt::InitialSortOrderRole:
         return Qt::AscendingOrder;
         break;
     default:
         if ( role != Qt::DecorationRole && role < FlowImg )
-            return QFileSystemModel::data(index, role);
+            return QVariant();
         break;
     }
 
-    const QFileInfo &fi = fileInfo(index);
     const QString &file = fi.filePath();
     const bool customIcon = Store::config.icons.customIcons.contains(file);
 
     if ( index.column() == 0 && role == Qt::DecorationRole && customIcon )
         return QIcon(Store::config.icons.customIcons.value(file));
 
-    if ( (role != FileIconRole && role < FlowImg ) || index.column() > 0 )
+    if ( (role != FileIconRole && role < FlowImg) || index.column() > 0 )
             return QFileSystemModel::data(index, role);
 
     if ( role == Qt::DecorationRole )
@@ -243,7 +250,8 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
         return icon.pixmap(SIZE);
     }
-    return QFileSystemModel::data(index, role);
+    return QVariant();
+//    return QFileSystemModel::data(index, role);
 }
 
 QVariant

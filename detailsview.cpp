@@ -23,6 +23,7 @@
 #include "viewcontainer.h"
 #include "filesystemmodel.h"
 #include "mainwindow.h"
+#include <qmath.h>
 
 using namespace DFM;
 
@@ -68,6 +69,7 @@ DetailsView::DetailsView(QWidget *parent)
     setAcceptDrops(true);
     setDragEnabled(true);
     setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     connect(header(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), container(), SIGNAL(sortingChanged(int,Qt::SortOrder)));
     connect(container(), SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
@@ -225,10 +227,10 @@ void
 DetailsView::resizeEvent(QResizeEvent *event)
 {
     const int w = event->size().width();
-    setColumnWidth(0, w*0.6f);
-    setColumnWidth(1, w*0.12f);
-    setColumnWidth(2, w*0.08f);
-    setColumnWidth(3, w*0.2f);
+    setColumnWidth(0, qRound(w*0.6f));
+    setColumnWidth(1, qRound(w*0.12f));
+    setColumnWidth(2, qRound(w*0.08f));
+    setColumnWidth(3, qRound(w*0.2f));
 //    for ( int i = 1; i < header()->count(); ++i )
 //        setColumnWidth(i, w*0.1f);
 }
