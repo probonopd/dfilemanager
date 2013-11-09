@@ -19,7 +19,7 @@ QImage
 ThumbsImages::thumb(const QString &file, const int size)
 {
     QImageReader ir(file);
-    if ( !ir.canRead() || file.endsWith( "xcf", Qt::CaseInsensitive ) )
+    if ( !ir.canRead() )
         return QImage();
 
     QSize thumbsize(ir.size());
