@@ -468,7 +468,6 @@ FileSystemModel::setRootPath(const QString &path)
     if ( !QFileInfo(path).isDir() )
         return;
 
-    const QModelIndex &from = index(rootPath());
     m_rootPath = path;
     if ( !m_watcher->directories().isEmpty() )
         m_watcher->removePaths(m_watcher->directories());
@@ -488,7 +487,6 @@ FileSystemModel::setRootPath(const QString &path)
         node = node->parent();
     }
     m_watcher->addPaths(newPaths);
-    changePersistentIndex(from, index(rootPath()));
     emit rootPathChanged(rootPath());
 }
 
@@ -784,9 +782,15 @@ FileSystemModel::sort(int column, Qt::SortOrder order)
 {
     m_sortColumn = column;
     m_sortOrder = order;
-    const QModelIndex &from = index(rootPath());
+    const QModelIndexList &oldList = persistentIndexList();
+    Nodes old;
+    for ( int i = 0; i < oldList.count(); ++i )
+        old << fromIndex(oldList.at(i));
     m_rootNode->sort(column, order);
-    changePersistentIndex(from, index(rootPath()));
+    QModelIndexList newList;
+    for ( int i = 0; i < old.count(); ++i )
+        newList << index(old.at(i)->filePath());
+    changePersistentIndexList(oldList, newList);
 }
 
 void
@@ -796,9 +800,9 @@ FileSystemModel::setHiddenVisible(bool visible)
         return;
 
     m_showHidden = visible;
-    const QModelIndex &from = index(rootPath());
+//    const QModelIndex &from = index(rootPath());
     rootNode()->setHiddenVisible(showHidden());
-    changePersistentIndex(from, index(rootPath()));
+//    changePersistentIndex(from, index(rootPath()));
     emit hiddenVisibilityChanged(m_showHidden);
 }
 
