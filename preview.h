@@ -163,7 +163,8 @@ private:
     friend class PixmapItem;
     GraphicsScene *m_scene;
     FileSystemModel *m_model;
-    QModelIndex m_centerIndex, m_prevCenter, m_rootIndex, m_savedCenter;
+    QModelIndex m_centerIndex, m_prevCenter, m_savedCenter;
+    QPersistentModelIndex m_rootIndex;
     int m_row, m_nextRow, m_newRow, m_savedRow;
     float m_y, m_x, m_perception, m_xpos;
     bool m_wantsDrag, m_hasZUpdate;

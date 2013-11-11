@@ -57,7 +57,6 @@ signals:
 
 private slots:
     void sortingChanged(const int column, const Qt::SortOrder order);
-    void dirLoaded(const QString &path);
 
 private:
     FileSystemModel *m_model;

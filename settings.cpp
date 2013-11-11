@@ -87,8 +87,8 @@ MainWindow::writeSettings()
     Store::settings()->setValue("pathVisible", m_pathVisibleAct->isChecked());
     Store::settings()->setValue("pathEditable", m_pathEditAct->isChecked());
     Store::settings()->setValue("menuVisible", m_menuAct->isChecked());
-    Store::config.behaviour.sortingCol = m_model->sortingColumn();
-    Store::config.behaviour.sortingOrd = m_model->sortingOrder();
+    Store::config.behaviour.sortingCol = m_model->sortColumn();
+    Store::config.behaviour.sortingOrd = m_model->sortOrder();
     Store::writeConfig();
     m_placesView->store();
 }

@@ -375,12 +375,15 @@ PreView::setModel(QAbstractItemModel *model)
     connect(m_model, SIGNAL(modelReset()),this, SLOT(reset()));
 //    connect(m_model, SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(reset()) );
     connect(m_model, SIGNAL(rowsInserted(const QModelIndex & , int , int)), this, SLOT(rowsInserted(const QModelIndex & , int , int)));
-    connect(m_model, SIGNAL(rowsRemoved(const QModelIndex & , int , int)), this, SLOT(rowsRemoved(const QModelIndex & , int , int)));
+    connect(m_model, SIGNAL(rowsAboutToBeRemoved(const QModelIndex & , int , int)), this, SLOT(rowsRemoved(const QModelIndex & , int , int)));
 }
 
 void
 PreView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
+    if ( !topLeft.isValid() || !bottomRight.isValid() )
+        return;
+
     const int start = topLeft.row(), end = bottomRight.row();
 
     if ( m_items.count() > end )
@@ -414,9 +417,14 @@ PreView::setCenterIndex(const QModelIndex &index)
 void
 PreView::reset()
 {
+//    qDebug() << "PreView::reset" << m_rootIndex.isValid() << m_model->rowCount(m_rootIndex);
+
     clear();
     if ( !QFileInfo(m_rootPath).exists() )
         return;
+
+    if ( !m_rootIndex.isValid() )
+        m_rootIndex = m_model->index(m_rootPath);
 
     if ( m_rootIndex.isValid() && m_model && m_model->rowCount(m_rootIndex) )
     {
@@ -474,6 +482,9 @@ PreView::rowsRemoved(const QModelIndex &parent, int start, int end)
         clear();
         return;
     }
+    if ( !parent.isValid() )
+        return;
+
     if ( m_model->filePath(m_rootIndex) != m_model->filePath(parent) || m_items.isEmpty() )
         return;
 
@@ -515,11 +526,15 @@ PreView::rowsInserted(const QModelIndex &parent, int start, int end)
         return;
 
     populate(start, end);
+
+    if ( !m_items.isEmpty() )
+        m_scrollBar->setRange(0, m_items.count()-1);
 }
 
 void
 PreView::populate(const int start, const int end)
 {
+//    qDebug() << "PreView::populate, rootindex is valid:" << m_rootIndex.isValid() << start << end;
     if ( !m_rootIndex.isValid() )
         return;
 
@@ -528,6 +543,7 @@ PreView::populate(const int start, const int end)
         const QModelIndex &index = m_model->index(i, 0, m_rootIndex);
         if ( !index.isValid() )
             continue;
+//        qDebug() << "PreView::populate, inserting items..." << i;
         m_items.insert(i, new PixmapItem(m_scene, m_rootItem));
     }
 

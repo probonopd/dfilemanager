@@ -94,7 +94,7 @@ ColumnsWidget::clear()
     while ( !m_viewLay->isEmpty() )
     {
         QLayoutItem *item = m_viewLay->takeAt(0);
-        delete item->widget();
+        item->widget()->deleteLater();
         delete item;
     }
 }

@@ -256,7 +256,7 @@ ColumnsView::mouseReleaseEvent(QMouseEvent *e)
          && e->modifiers() == Qt::NoModifier
          && e->button() == Qt::LeftButton
          && m_pressPos == e->pos()
-         && m_model->fileInfo(index).isDir() )
+         && m_model->isDir(index) )
         emit dirActivated(index);
     else if ( e->button() == Qt::MiddleButton
               && m_pressPos == e->pos()

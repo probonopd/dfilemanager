@@ -213,6 +213,23 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
         }
         break;
     }
+    case Hidden :
+    {
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setBrush(color);
+        int i = 0, half = 0, h = size/2, z = size/4, _z = size/8;
+        while ( i < 4 )
+        {
+            if ( i==1||i==3 )
+                p.setOpacity(0.33);
+            else
+                p.setOpacity(1);
+            p.fillRect(half+_z, (i==1||i==3)?h+_z:_z, z, z, color);
+            if ( i )
+                half = h;
+            ++i;
+        }
+    }
     }
     p.end();
     return QIcon(pix);

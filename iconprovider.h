@@ -43,7 +43,8 @@ enum Type { IconView = 0,
             GoHome,
             Search,
             Clear,
-            Sort
+            Sort,
+            Hidden
           };
 
 const QIcon icon(Type type, int size, QColor color, bool themeIcon);

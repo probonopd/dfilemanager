@@ -102,12 +102,12 @@ public:
     }
     void paint( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
-        if ( !m_model || !index.data().isValid() )
+        if ( !m_model || !index.isValid() || !option.rect.isValid() )
             return;
 
         painter->save();
         painter->setRenderHint( QPainter::Antialiasing );
-        painter->setFont(qvariant_cast<QFont>(m_model->data(index, Qt::FontRole)));
+//        painter->setFont(qvariant_cast<QFont>(m_model->data(index, Qt::FontRole)));
 
         const bool selected = option.state & QStyle::State_Selected;
         const int step = selected ? 8 : ViewAnimator::hoverLevel(m_iv, index);
@@ -554,7 +554,6 @@ IconView::updateLayout()
     if ( rootIndex().isValid() && model()->rowCount( rootIndex() ) < horItemCount && model()->rowCount( rootIndex() ) > 1 )
         horItemCount = model()->rowCount( rootIndex() );
 
-
     setGridSize( QSize( contentsWidth/horItemCount, m_gridHeight ) );
 }
 
@@ -591,15 +590,14 @@ IconView::contextMenuEvent( QContextMenuEvent *event )
     popupMenu.exec( event->globalPos() );
 }
 
+
 void
 IconView::setModel( QAbstractItemModel *model )
 {
     QListView::setModel( model );
     if ( m_model = qobject_cast<FileSystemModel *>( model ) )
     {
-        connect( m_model, SIGNAL( directoryLoaded( QString ) ), this,
-                SLOT( rootPathChanged( QString ) ) );
-//        connect( m_container, SIGNAL(sortingChanged(int,Qt::SortOrder)), viewport(), SLOT(update()) );
+        connect( m_model, SIGNAL( rootPathChanged( QString ) ), this, SLOT( rootPathChanged( QString ) ) );
         static_cast<IconDelegate*>( itemDelegate() )->setModel( m_model );
     }
 }
@@ -607,8 +605,7 @@ IconView::setModel( QAbstractItemModel *model )
 void
 IconView::rootPathChanged( QString path )
 {
-    if ( path == m_model->rootPath() )
-        updateLayout();
+    updateLayout();
 }
 
 QModelIndex

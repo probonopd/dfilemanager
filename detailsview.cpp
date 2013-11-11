@@ -99,14 +99,6 @@ DetailsView::sortingChanged(const int column, const Qt::SortOrder order)
 }
 
 void
-DetailsView::dirLoaded(const QString &path)
-{
-//    for ( int i = 1; i<header()->count(); ++i )
-//        resizeColumnToContents(i);
-
-}
-
-void
 DetailsView::drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const
 {
     if ( !index.data().isValid() )
@@ -119,8 +111,6 @@ DetailsView::setModel(QAbstractItemModel *model)
 {
     QTreeView::setModel(model);
     m_model = qobject_cast<FileSystemModel *>(model);
-    connect(m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)));
-//    header()->setResizeMode(0, QHeaderView::Stretch);
     for ( int i = 0; i<header()->count(); ++i )
         header()->setResizeMode(i, QHeaderView::Fixed);
 }

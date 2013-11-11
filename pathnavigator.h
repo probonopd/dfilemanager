@@ -40,6 +40,8 @@
 namespace DFM
 {
 class PathNavigator;
+class BreadCrumbs;
+class PathBox;
 class NavButton : public QToolButton
 {
     Q_OBJECT
@@ -60,7 +62,7 @@ protected:
     void paintEvent(QPaintEvent *);
 
 private slots:
-    void emitPath() { emit navPath(m_path); }
+    inline void emitPath() { if ( !m_path.isNull() && !m_path.isEmpty() && QFileInfo(m_path).isDir() ) emit navPath(m_path); }
 
 private:
     QString m_path;
@@ -132,9 +134,6 @@ public:
 signals:
     void pathChanged(const QString &path);
     void edit();
-    
-public slots:
-    void setPath(const QString &path);
 
 protected:
     void mousePressEvent(QMouseEvent *e) { QFrame::mousePressEvent(e); m_hasPress = true; }
@@ -150,6 +149,7 @@ private:
     FileSystemModel *m_fsModel;
     QHBoxLayout *m_layout;
     QList<QWidget *> m_widgets;
+    BreadCrumbs *m_bc;
     bool m_hasPress;
 };
 
@@ -162,8 +162,8 @@ public:
     inline QString currentPath() { return m_pathNav->path(); }
     inline bool isEditable() { return currentWidget() == static_cast<QWidget *>(m_pathBox); }
     inline PathNavigator *pathNav() { return m_pathNav; }
+    inline PathBox *pathBox() { return m_pathBox; }
 public slots:
-    inline void setPath( const QString &path ) { m_pathNav->setPath(path); }
     void setRootPath( const QString &rootPath );
     inline void toggleEditable() { currentWidget() == m_pathNav ? setEditable(true) : setEditable(false); }
     void complete( const QString &path);

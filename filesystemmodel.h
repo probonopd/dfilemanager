@@ -40,8 +40,11 @@
 #include "thumbsloader.h"
 #include "viewcontainer.h"
 
+#include <QAbstractItemModel>
+
 namespace DFM
 {
+
 class FileSystemModel;
 
 class History : public QObject
@@ -64,7 +67,7 @@ class FileIconProvider : public QObject, public QFileIconProvider
 {
     Q_OBJECT
 public:
-    inline FileIconProvider(FileSystemModel *model = 0);
+    FileIconProvider(FileSystemModel *model = 0);
     QIcon icon(const QFileInfo &info) const;
 
 public slots:
@@ -76,64 +79,140 @@ signals:
 private:
     FileSystemModel *m_fsModel;
 };
+
 class ThumbsLoader;
 class ImagesThread;
 class ViewContainer;
-class FileSystemModel : public QFileSystemModel
+class FileSystemModel : public QAbstractItemModel
 {
     Q_OBJECT
 public:
+    class Node;
+    typedef QList<FileSystemModel::Node *> Nodes;
+    class Node
+    {
+    public:
+        virtual ~Node();
+        void insertChild(Node *node);
+
+        inline QString &filePath() { return m_filePath; }
+        inline QFileInfo &fileInfo() { return m_fi; }
+        void populate();
+        void rePopulate();
+        bool hasChild( const int child );
+        bool hasChild( const QString &name );
+        Nodes children();
+        int childCount();
+        int row();
+        Node *child(const int c);
+        QString name();
+        inline Node *parent() const { return m_parent; }
+        inline bool isPopulated() const { return m_isPopulated; }
+        inline bool isRootNode() { return bool(this==model()->rootNode()); }
+        inline void refresh() { m_fi.refresh(); }
+        bool rename(const QString &newName);
+        QVariant data(const int column);
+        Node *fromPath(const QString &path);
+        void sort(int column, Qt::SortOrder order);
+        static void sort(Nodes *nodes);
+        inline int sortColumn() { return model()->sortColumn(); }
+        inline Qt::SortOrder sortOrder() { return model()->sortOrder(); }
+        inline bool showHidden() { return model()->showHidden(); }
+        bool isHidden();
+        inline FileSystemModel *model() { return m_model; }
+        void setHiddenVisible(bool visible);
+        inline void setLocked(bool lock) { m_isLocked = lock; }
+        inline bool isLocked() { return m_isLocked; }
+
+    protected:
+        Node *genPath(QStringList path, int index = 0);
+        Node(FileSystemModel *model = 0, const QString &path = QString(), Node *parent = 0);
+
+    private:
+        bool m_isPopulated, m_isLocked;
+        Node *m_parent;
+        Nodes m_children, m_hidden;
+        QFileInfo m_fi;
+        QString m_filePath;
+        FileSystemModel *m_model;
+        friend class FileSystemModel;
+    };
     enum Roles {
-//        FileIconRole = Qt::DecorationRole,
-//        FilePathRole = Qt::UserRole + 1,
-//        FileNameRole = Qt::UserRole + 2,
-//        FilePermissions = Qt::UserRole + 3,
-        FlowImg = Qt::UserRole + 4,
+        FileIconRole = Qt::DecorationRole,
+        FilePathRole = Qt::UserRole + 1,
+        FileNameRole = Qt::UserRole + 2,
+        FilePermissions = Qt::UserRole + 3,
+        FlowImg = Qt::UserRole +4,
         FlowRefl = Qt::UserRole +5,
         FlowShape = Qt::UserRole +6
     };
     explicit FileSystemModel(QObject *parent = 0);
-    virtual ~FileSystemModel();
+    ~FileSystemModel();
+    Qt::ItemFlags flags(const QModelIndex &index) const;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
-    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
-    static QStringList supportedThumbs( const bool filter = false );
-//    inline void refresh() { const QString &path = rootPath(); setRootPath(""); setRootPath(path); }
-    bool hasThumb( const QString &file );
-    bool hasFlowData( const QString &file );
-    History *history() { return m_history; }
-    int columnCount(const QModelIndex &parent) const;
+    bool setData(const QModelIndex &index, const QVariant &value, int role);
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
-    void sort(int column, Qt::SortOrder order = Qt::AscendingOrder);
-    inline int sortingColumn() const { return m_sortCol; }
-    inline Qt::SortOrder sortingOrder() const { return m_sortOrder; }
+    int rowCount(const QModelIndex &parent) const;
+    int columnCount(const QModelIndex &parent) const { return 4; }
+    Node *fromIndex(const QModelIndex &index) const;
+    QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
+    QModelIndex parent(const QModelIndex &child) const;
+    QModelIndex index(const QString &path) const;
+    void fetchMore(const QModelIndex &parent);
+    bool canFetchMore(const QModelIndex &parent) const;
+    void setRootPath(const QString &path);
+    bool hasChildren(const QModelIndex &parent) const;
+    void sort(int column, Qt::SortOrder order);
+    void setHiddenVisible(bool visible);
+    inline bool showHidden() const { return m_showHidden; }
+    inline int sortColumn() const { return m_sortColumn; }
+    inline Qt::SortOrder sortOrder() const { return m_sortOrder; }
+    inline Node *rootNode() { return m_rootNode; }
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
+    QMimeData *mimeData(const QModelIndexList &indexes) const;
+    inline FileIconProvider *ip() { return m_ip; }
+    inline QIcon fileIcon(const QModelIndex &index) const { return bool(index.column()==0)?data(index, Qt::DecorationRole).value<QIcon>():QIcon(); }
+    inline QString fileName(const QModelIndex &index) const { return index.isValid()?fromIndex(index)->name():QString(); }
+    QString filePath(const QModelIndex &index) const;
+    bool hasThumb(const QString &file) const;
     void forceEmitDataChangedFor(const QString &file);
-    inline FileIconProvider *ip() { return m_iconProvider; }
+    inline QString rootPath() const { return m_rootPath; }
+    inline QDir rootDirectory() const { return QDir(m_rootPath); }
+    inline FileIconProvider *iconProvider() { return m_ip; }
+    inline bool isDir(const QModelIndex &index) const { return index.isValid()?fromIndex(index)->fileInfo().isDir():false; }
+    inline QFileInfo fileInfo(const QModelIndex &index) const { return index.isValid()?fromIndex(index)->fileInfo():QFileInfo(); }
+    QModelIndex mkdir(const QModelIndex &parent, const QString &name);
 
 public slots:
-    void setPath(const QString &path);
+    inline void setPath(const QString &path) { if ( QFileInfo(path).isDir() ) setRootPath(path); }
+    inline void refresh() { setRootPath(m_rootPath); }
 
 private slots:
-    void emitRootIndex( const QString &path ) { emit rootPathAsIndex(index(path)); }
     void thumbFor( const QString &file );
     void flowDataAvailable( const QString &file );
+    void dirChanged( const QString &path );
+    void emitRootPathLater() { emit rootPathChanged(m_rootPath); }
 
 signals:
-    void rootPathAsIndex( const QModelIndex &index );
     void flowDataChanged( const QModelIndex &start, const QModelIndex &end );
-    void rootPathAboutToChange( const QString &path );
+    void rootPathChanged(const QString &path);
+    void directoryLoaded(const QString &path);
+    void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
+    void hiddenVisibilityChanged(bool visible);
 
 private:
-    friend class ImagesThread;
-    QStringList m_nameThumbs;
-    FileIconProvider *m_iconProvider;
-    ThumbsLoader *m_thumbsLoader;
-    ImagesThread *m_it;
-    ViewContainer *m_container;
-    History *m_history;
-    int m_sortCol;
+    Node *m_rootNode;
+    QAbstractItemView *m_view;
+    bool m_showHidden;
+    QString m_rootPath;
+    FileIconProvider *m_ip;
+    int m_sortColumn;
     Qt::SortOrder m_sortOrder;
-    QString m_prevRp;
-    bool m_blockData;
+    ImagesThread *m_it;
+    ThumbsLoader *m_thumbsLoader;
+    ViewContainer *m_container;
+    QFileSystemWatcher *m_watcher;
+    friend class ImagesThread;
 };
 
 }

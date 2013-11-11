@@ -110,9 +110,8 @@ private slots:
     void genPlace();
     void mainSelectionChanged(QItemSelection selected,QItemSelection notselected);
     void togglePath();
-    void rootPathChanged(QString index);
-    void directoryLoaded(QString);
-    void updateStatusBar(QString index);
+    void rootPathChanged(const QString &path);
+    void updateStatusBar(const QString &path);
     void createDirectory();
     void setViewIconSize(int);
     void setSliderPos(int size);

@@ -218,8 +218,9 @@ PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model )
     , m_fsModel(model)
     , m_hasPress(false)
     , m_layout(new QHBoxLayout(this))
+    , m_bc(static_cast<BreadCrumbs *>(parent))
 {
-    connect( this, SIGNAL( pathChanged( QString ) ), this, SLOT( genNavFromPath( QString ) ) );
+    connect( m_fsModel, SIGNAL( rootPathChanged(QString)), this, SLOT( genNavFromPath( QString ) ) );
     setForegroundRole( QPalette::Text );
     setBackgroundRole( QPalette::Base );
     setMaximumHeight( 23 );
@@ -230,20 +231,12 @@ PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model )
 }
 
 void
-PathNavigator::setPath( const QString &path )
-{
-    if ( path == m_path || path != m_fsModel->rootPath() )
-        return;
-    m_path = path;
-    emit pathChanged( path );
-}
-
-void
 PathNavigator::clear()
 {
     while (QLayoutItem *item = m_layout->takeAt(0))
     {
-        delete item->widget();
+        if ( item->widget() )
+            delete item->widget();
         delete item;
     }
 }
@@ -255,31 +248,26 @@ PathNavigator::genNavFromPath( const QString &path )
     m_pathList.clear();
     clear();
 
-    while ( index.parent().isValid() )
+    while ( index.isValid() )
     {
-        index = index.parent();
         m_pathList.prepend( m_fsModel->filePath( index ) );
+        index = index.parent();
     }
-    m_pathList << path;
 
-    foreach ( const QString &newPath, m_pathList )
+    for ( int i = 0; i < m_pathList.count(); ++i )
     {
+        const QString &newPath = m_pathList.at(i);
         QString buttonText( QFileInfo( newPath ).fileName().isEmpty() ? "/." : QFileInfo( newPath ).fileName() );
         NavButton *nb = new NavButton( this, newPath, buttonText );
 
         QFont f(font());
         f.setPointSize(qMax<int>(Store::config.behaviour.minFontSize, f.pointSize()*0.8));
 
-        if( newPath == path )
+        if ( newPath == path )
             f.setBold( true );
         else
             nb->setCursor( Qt::PointingHandCursor );
         nb->setFont(f);
-
-//        if( nb->text() == "/." )
-//            nb->setIcon( QIcon::fromTheme( "folder-system", QIcon::fromTheme( "inode-directory" ) ) );
-//        else
-//            nb->setIcon( m_fsModel->fileIcon(m_fsModel->index(newPath)) );
 
         m_layout->addWidget( nb );
         connect( nb, SIGNAL( navPath( QString ) ), m_fsModel, SLOT( setPath( QString ) ) );
@@ -291,6 +279,7 @@ PathNavigator::genNavFromPath( const QString &path )
         }
     }
     m_layout->addStretch();
+    m_bc->pathBox()->setEditText(path);
 }
 
 BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel) : QStackedWidget(parent)
@@ -327,10 +316,6 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel) : QStackedWi
     connect ( m_pathBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(setRootPath(QString)) );
     connect ( m_pathBox, SIGNAL(activated(QString)), this, SLOT(setRootPath(QString)) );
     connect ( m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()) );
-//    connect ( m_pathBox, SIGNAL(textChanged(QString)), this, SLOT(complete(QString)) );
-    connect ( m_fsModel, SIGNAL(directoryLoaded(QString)), m_pathNav, SLOT(setPath(QString)) );
-    connect ( m_fsModel, SIGNAL(directoryLoaded(QString)), this, SLOT(pathChanged(QString)) );
-    connect ( m_pathNav, SIGNAL(pathChanged(QString)), this, SIGNAL(newPath(QString)) );
     connect ( m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()) );
     setCurrentWidget(m_pathNav);
 }
@@ -340,7 +325,9 @@ void BreadCrumbs::setRootPath( const QString &rootPath ) { m_fsModel->setPath( r
 void
 BreadCrumbs::pathChanged(const QString &path)
 {
-    if ( path != m_fsModel->rootPath() )
+    if ( !m_fsModel )
+        return;
+    if ( path.isNull() || path.isEmpty() || path != m_fsModel->rootPath() )
         return;
     bool exists = false;
     for (int i = 0; i < m_pathBox->count();i++)

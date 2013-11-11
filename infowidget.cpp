@@ -138,14 +138,14 @@ InfoWidget::hovered(const QModelIndex &index)
     QPixmap pix = icon.pixmap(64);
     const bool dir = fsModel->fileInfo(index).isDir();
     m_tw->setPixmap(pix);
-    m_fileName->setText(fsModel->data(fsModel->index(fsModel->filePath(index), 0)).toString());
+    m_fileName->setText(fsModel->fileName(index));
     m_ownerLbl->setText(fsModel->fileInfo(index).owner());
     m_typeLbl->setText(Ops::getFileType(fsModel->filePath(index)));
     m_mimeLbl->setText(Ops::getMimeType(fsModel->filePath(index)));
 
-    m_lastMod[1]->setText(fsModel->data(fsModel->index(index.row(), 3, index.parent())).toString());
+    m_lastMod[1]->setText(fsModel->fileInfo(index).lastModified().toString());
     const QString &s(fsModel->data(fsModel->index(index.row(), 4, index.parent())).toString());
     m_perm[1]->setText(s.mid(0, s.lastIndexOf(",")));
 
-    m_sizeLbl->setText(dir ? qvariant_cast<QString>(fsModel->data(fsModel->index(fsModel->filePath(index), 1))) : Ops::prettySize(fsModel->fileInfo(index).size()));
+    m_sizeLbl->setText(dir ? "--" : Ops::prettySize(fsModel->fileInfo(index).size()));
 }

@@ -795,6 +795,8 @@ PlacesView::setPlaceIcon()
 void
 PlacesView::activateAppropriatePlace( const QString &path )
 {
+    if ( path.isNull() || path.isEmpty() )
+        return;
     for ( int i = 0; i < containerCount(); i++ )
         for( int a = 0; a < container( i )->rowCount(); a++ )
         {
@@ -805,7 +807,7 @@ PlacesView::activateAppropriatePlace( const QString &path )
                 setCurrentItem( place );
                 return;
             }
-            else if ( current && path.contains( place->path() ) )
+            else if ( place && current && path.contains( place->path() ) )
                 if ( current->path().length() < place->path().length() )
                     setCurrentItem( place );
         }

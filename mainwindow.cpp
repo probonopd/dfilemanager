@@ -151,6 +151,14 @@ MainWindow::MainWindow(QStringList arguments)
     m_activeContainer->setFocus();
     m_statusBar->setVisible(m_statAct->isChecked());
     QTimer::singleShot(200, m_toolBar, SLOT(update())); //should be superfluos but make sure toolbar is painted correctly....
+
+#if 0
+
+    QTreeView *view = new QTreeView();
+    FileSystemModel *ftm = new FileSystemModel(view);
+    view->setSortingEnabled(true);
+    view->show();
+#endif
 }
 
 void
@@ -317,26 +325,21 @@ MainWindow::pasteSelection()
 }
 
 void
-MainWindow::rootPathChanged(QString index)
+MainWindow::rootPathChanged(const QString &path)
 {
     setWindowTitle(m_model->rootDirectory().dirName());
     m_filterBox->clear();
     m_activeContainer->setFilter("");
-    m_placesView->activateAppropriatePlace(index);
+    m_placesView->activateAppropriatePlace(path);
     m_tabBar->setTabText(m_tabBar->currentIndex(), m_model->rootDirectory().dirName());
     if ( Store::config.behaviour.gayWindow )
         m_tabBar->setTabIcon(m_tabBar->currentIndex(), m_model->iconProvider()->icon(QFileInfo(m_model->rootPath())));
-}
-
-void
-MainWindow::directoryLoaded(QString index)
-{
-    updateStatusBar(index);
+    updateStatusBar(path);
     setActions();
 }
 
 void
-MainWindow::updateStatusBar(QString index)
+MainWindow::updateStatusBar(const QString &path)
 {
     QDir crnt = m_model->rootDirectory();
 
@@ -348,11 +351,10 @@ MainWindow::updateStatusBar(QString index)
     int files = allfiles - folders;
 
     qreal size = 0;
-    foreach(QString entry, crnt.entryList())
+    foreach (const QFileInfo &file, crnt.entryInfoList())
     {
-        QFileInfo *file = new QFileInfo(index + "/" + entry);
-        if(!file->isDir())
-            size += file->size();
+        if (!file.isDir())
+            size += file.size();
     }
     int sizeType = 0;
     while(size > 1024)
@@ -565,10 +567,11 @@ MainWindow::deleteCurrentSelection()
 void
 MainWindow::toggleHidden()
 {
-    if(m_showHiddenAct->isChecked())
-        m_model->setFilter(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::System | QDir::Hidden);
-    else
-        m_model->setFilter(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::System);
+     m_model->setHiddenVisible(m_showHiddenAct->isChecked());
+//    if(m_showHiddenAct->isChecked())
+//        m_model->setFilter(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::System | QDir::Hidden);
+//    else
+//        m_model->setFilter(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::System);
 }
 
 
@@ -604,10 +607,9 @@ MainWindow::addTab(const QString &path)
         newPath = QDir::homePath();
     ViewContainer *container = new ViewContainer(this, newPath);
     container->installEventFilter(this);
-    connect( container->model(), SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)));
-    connect( container->model(), SIGNAL(rootPathChanged(QString)), m_recentFoldersView, SLOT(folderEntered(QString)));
+    connect( container, SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)));
+    connect( container, SIGNAL(rootPathChanged(QString)), m_recentFoldersView, SLOT(folderEntered(QString)));
     connect( container, SIGNAL(viewChanged()), this, SLOT(checkViewAct()));
-    connect( container->model(), SIGNAL(directoryLoaded(QString)), this, SLOT(directoryLoaded(QString)));
     connect( container->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(mainSelectionChanged(QItemSelection,QItemSelection)));
     connect( container, SIGNAL(iconSizeChanged(int)), this, SLOT(setSliderPos(int)));
     connect( container, SIGNAL(viewportEntered()), this, SLOT(viewClearHover()));
@@ -616,6 +618,7 @@ MainWindow::addTab(const QString &path)
     connect( container, SIGNAL(entered(QModelIndex)), m_infoWidget, SLOT(hovered(QModelIndex)));
     connect( container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
     connect( container, SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
+    connect( container->model(), SIGNAL(hiddenVisibilityChanged(bool)), m_showHiddenAct, SLOT(setChecked(bool)) );
 
     QList<QAction *> actList;
     actList << m_openInTabAct << m_mkDirAct << m_pasteAct << m_copyAct << m_cutAct
@@ -644,7 +647,7 @@ MainWindow::tabChanged(int currentIndex)
         return;
     m_stackedWidget->setCurrentIndex(currentIndex);
     m_activeContainer = static_cast<ViewContainer*>(m_stackedWidget->currentWidget());
-    sortingChanged(m_activeContainer->model()->sortingColumn(), m_activeContainer->model()->sortingOrder());
+    sortingChanged(m_activeContainer->model()->sortColumn(), m_activeContainer->model()->sortOrder());
     emit viewChanged( m_activeContainer->currentView() );
     m_model = m_activeContainer->model();
     m_recentFoldersView->folderEntered(m_model->rootPath());

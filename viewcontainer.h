@@ -99,19 +99,18 @@ signals:
     void leftView();
     void filterChanged();
     void sortingChanged(const int column, const Qt::SortOrder order);
+    void rootPathChanged(const QString &path);
     
 public slots:
     void activate(const QModelIndex &index);
     bool setPathVisible(bool visible);
 
 private slots:
-    void rootPathChanged(const QString &path);
+    void setRootPath(const QString &path);
     void genNewTabRequest(QModelIndex index);
     void customActionTriggered();
     void scriptTriggered();
     void dirChanged(const QString &path);
-    void dirLoaded(const QString &path);
-    void loadViewFromDir(const QString &path = QString());
 
 private:
     bool m_back;
