@@ -366,9 +366,7 @@ static bool lessThen(FileSystemModel::Node *n1, FileSystemModel::Node *n2)
 void
 FileSystemModel::Node::sort(int column, Qt::SortOrder order)
 {
-    emit model()->layoutAboutToBeChanged();
     qStableSort(m_children.begin(), m_children.end(), lessThen);
-    emit model()->layoutChanged();
 
     Nodes::const_iterator i = m_children.constBegin(), end = m_children.constEnd();
     while ( i != end )
@@ -782,6 +780,7 @@ FileSystemModel::sort(int column, Qt::SortOrder order)
 {
     m_sortColumn = column;
     m_sortOrder = order;
+    emit layoutAboutToBeChanged();
     const QModelIndexList &oldList = persistentIndexList();
     Nodes old;
     for ( int i = 0; i < oldList.count(); ++i )
@@ -791,6 +790,7 @@ FileSystemModel::sort(int column, Qt::SortOrder order)
     for ( int i = 0; i < old.count(); ++i )
         newList << index(old.at(i)->filePath());
     changePersistentIndexList(oldList, newList);
+    emit layoutChanged();
 }
 
 void
