@@ -61,6 +61,7 @@ MainWindow::updateIcons()
     m_flowAct->setIcon(IconProvider::icon(IconProvider::FlowView, tbis, tbfgc, Store::config.behaviour.systemIcons));
     m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
     m_configureAct->setIcon(IconProvider::icon(IconProvider::Configure, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_showHiddenAct->setIcon(IconProvider::icon(IconProvider::Hidden, tbis, tbfgc, Store::config.behaviour.systemIcons));
     if ( m_sortButton )
         m_sortButton->setIcon(IconProvider::icon(IconProvider::Sort, tbis, tbfgc, false));
 }
