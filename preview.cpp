@@ -531,7 +531,7 @@ void
 PreView::rowsInserted(const QModelIndex &parent, int start, int end)
 {
     if ( !parent.isValid() || m_rootIndex != parent )
-        return;v
+        return;
 
     populate(start, end);
 
