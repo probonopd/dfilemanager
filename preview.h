@@ -145,6 +145,7 @@ protected:
     void correctItemsPos(const int leftStart, const int rightStart);
     void showPrevious();
     void showNext();
+    inline int validate(const int row) { return qBound(0, row, m_items.count()-1); }
 
     template<typename T>T itemAtAs(const QPoint &pos){return dynamic_cast<T>(itemAt(pos));}
 

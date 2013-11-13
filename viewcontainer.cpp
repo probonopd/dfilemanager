@@ -340,7 +340,9 @@ ViewContainer::rename()
 void
 ViewContainer::setFilter(QString filter)
 {
-    VIEWS(setFilter(filter));
+//    VIEWS(setFilter(filter));
+    FileSystemModel::Node *node = model()->fromIndex(model()->index(model()->rootPath()));
+    node->setFilter(filter);
     m_dirFilter = filter;
     emit filterChanged();
 }

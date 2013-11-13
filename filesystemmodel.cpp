@@ -112,6 +112,33 @@ QString FileSystemModel::Node::name() { return fileInfo().fileName().isEmpty()?Q
 FileSystemModel::Nodes FileSystemModel::Node::children() { return m_children; }
 
 void
+FileSystemModel::Node::setFilter(const QString &filter)
+{
+    m_filter = filter;
+    const QModelIndex &idx = model()->index(filePath());
+    int i = m_children.count();
+    while ( --i > -1 )
+        if ( !m_children.at(i)->name().contains(filter, Qt::CaseInsensitive) )
+            m_filtered << m_children.takeAt(i);
+    i = m_hidden.count();
+    while ( --i > -1 )
+        if ( !m_hidden.at(i)->name().contains(filter, Qt::CaseInsensitive) )
+            m_filtered << m_hidden.takeAt(i);
+    i = m_filtered.count();
+    while ( --i > -1 )
+        if ( m_filtered.at(i)->name().contains(filter, Qt::CaseInsensitive) )
+        {
+            if ( m_filtered.at(i)->isHidden() && !showHidden() )
+                m_hidden << m_filtered.takeAt(i);
+            else if ( m_filtered.at(i)->isHidden() && showHidden() )
+                m_children << m_filtered.takeAt(i);
+            else
+                m_children << m_filtered.takeAt(i);
+        }
+    model()->sort(sortColumn(), sortOrder());
+}
+
+void
 FileSystemModel::Node::insertChild(Node *node)
 {
     if ( node->isHidden() && !showHidden() )
@@ -277,10 +304,18 @@ FileSystemModel::Node::rePopulate()
         if ( !node->fileInfo().exists() )
             delete m_hidden.takeAt(i);
     }
+    i = m_filtered.count();
+    while ( --i > -1 )
+    {
+        Node *node = m_filtered.at(i);
+        node->refresh();
+        if ( !node->fileInfo().exists() )
+            delete m_filtered.takeAt(i);
+    }
 
     const QDir::Filters filters = QDir::AllEntries|QDir::System|QDir::NoDotAndDotDot|QDir::Hidden;
     const QDir dir(filePath());
-    QStringList entries = dir.entryList(filters);
+    const QStringList entries = dir.entryList(filters);
     if ( dir.isAbsolute() )
         for ( int i = 0; i < entries.count(); ++i )
         {
@@ -308,6 +343,14 @@ FileSystemModel::Node::hasChild(const QString &name)
     }
     i = m_hidden.constBegin();
     end = m_hidden.constEnd();
+    while ( i != end )
+    {
+        if ( (*i)->name() == name )
+            return true;
+        ++i;
+    }
+    i = m_filtered.constBegin();
+    end = m_filtered.constEnd();
     while ( i != end )
     {
         if ( (*i)->name() == name )

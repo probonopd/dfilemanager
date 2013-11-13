@@ -123,6 +123,8 @@ public:
         void setHiddenVisible(bool visible);
         inline void setLocked(bool lock) { m_isLocked = lock; }
         inline bool isLocked() { return m_isLocked; }
+        void setFilter(const QString &filter);
+        inline QString filter() const { return m_filter; }
 
     protected:
         Node *genPath(QStringList path, int index = 0);
@@ -131,9 +133,9 @@ public:
     private:
         bool m_isPopulated, m_isLocked;
         Node *m_parent;
-        Nodes m_children, m_hidden;
+        Nodes m_children, m_hidden, m_filtered;
         QFileInfo m_fi;
-        QString m_filePath;
+        QString m_filePath, m_filter;
         FileSystemModel *m_model;
         friend class FileSystemModel;
     };

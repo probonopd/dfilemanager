@@ -275,10 +275,11 @@ PreView::prepareAnimation()
 #define CENTER QPoint(m_x-SIZE/2.0f, m_y)
 #define LEFT QPointF((m_x-SIZE)-space, m_y)
 #define RIGHT QPointF(m_x+space, m_y)
-    m_anim[New]->setItem(m_items.at(m_nextRow));
+    m_anim[New]->setItem(m_items.at(validate(m_nextRow)));
     m_anim[New]->setPosAt(1, CENTER);
 
-    m_anim[Prev]->setItem(m_items.at(m_row));
+
+    m_anim[Prev]->setItem(m_items.at(validate(m_row)));
     m_anim[Prev]->setPosAt(1, m_nextRow > m_row ? LEFT : RIGHT);
 #undef CENTER
 #undef RIGHT
@@ -371,6 +372,7 @@ PreView::setModel(QAbstractItemModel *model)
 {
     m_model = static_cast<FileSystemModel *>(model);
     connect(m_model, SIGNAL(flowDataChanged(const QModelIndex & , const QModelIndex &)), this, SLOT(dataChanged(const QModelIndex & , const QModelIndex &)));
+    connect(m_model, SIGNAL(layoutAboutToBeChanged()),this, SLOT(clear()));
     connect(m_model, SIGNAL(layoutChanged()),this, SLOT(reset()));
     connect(m_model, SIGNAL(modelReset()),this, SLOT(reset()));
 //    connect(m_model, SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(reset()) );
@@ -394,7 +396,7 @@ PreView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 void
 PreView::setCenterIndex(const QModelIndex &index)
 {
-    if ( !index.isValid() || m_centerIndex == index )
+    if ( !index.isValid() )
         return;
 
     if ( index.row() )
@@ -403,11 +405,17 @@ PreView::setCenterIndex(const QModelIndex &index)
         m_savedCenter = index;
         m_centerFile = m_model->filePath(index);
     }
+    else if ( m_items.count() <= 1 )
+    {
+        m_savedRow = 0;
+        m_nextRow = 0;
+        m_row = 0;
+    }
 
     m_prevCenter = m_centerIndex;
     m_centerIndex = index;
     m_nextRow = m_row;
-    m_row = index.row();
+    m_row = qMin(index.row(), m_items.count()-1);
     m_textItem->setText(index.data().toString());
     m_textItem->setZValue(m_items.count()+2);
     m_gfxProxy->setZValue(m_items.count()+2);
@@ -496,9 +504,12 @@ PreView::rowsRemoved(const QModelIndex &parent, int start, int end)
 
     m_scrollBar->blockSignals(true);
     m_scrollBar->setRange(0, m_items.count()-1);
-    m_scrollBar->setValue(qBound(0, start-1, m_items.count()-1));
+    m_scrollBar->setValue(validate(start-1));
     m_scrollBar->blockSignals(false);
-    setCenterIndex(m_model->index(qBound(0, start-1, m_items.count()-1), 0, m_rootIndex));
+    QModelIndex center = m_model->index(validate(start-1), 0, m_rootIndex);
+    if ( m_items.count() == 1 )
+        center = m_model->index(0, 0, parent);
+    setCenterIndex(center);
     updateItemsPos();
 }
 
@@ -520,10 +531,7 @@ void
 PreView::rowsInserted(const QModelIndex &parent, int start, int end)
 {
     if ( !parent.isValid() || m_rootIndex != parent )
-        return;
-
-    if ( !m_model->hasIndex(start, 0, parent) || !m_model->hasIndex(end, 0, parent) )
-        return;
+        return;v
 
     populate(start, end);
 
@@ -546,10 +554,9 @@ PreView::populate(const int start, const int end)
 //        qDebug() << "PreView::populate, inserting items..." << i;
         m_items.insert(i, new PixmapItem(m_scene, m_rootItem));
     }
-
     QModelIndex index = m_model->index(m_centerFile);
     if ( !index.isValid() )
-        index = m_model->index(qBound(0, m_savedRow, m_items.count()), 0, m_rootIndex);
+        index = m_model->index(validate(m_savedRow), 0, m_rootIndex);
 
     setCenterIndex(index);
     updateItemsPos();
@@ -559,7 +566,10 @@ PreView::populate(const int start, const int end)
 void
 PreView::updateItemsPos()
 {
-    if ( !m_items.count() || m_row == -1 || m_row > m_model->rowCount(m_rootIndex)-1 || !isVisible() )
+    if ( m_items.isEmpty()
+         || m_row == -1
+         || m_row > m_model->rowCount(m_rootIndex)-1
+         || !isVisible() )
         return;
 
     m_timeLine->stop();
@@ -569,7 +579,8 @@ PreView::updateItemsPos()
     center->setScale(1);
     center->resetTransform();
 
-    correctItemsPos(m_row-1, m_row+1 );
+    if ( m_items.count() > 1 )
+        correctItemsPos(m_row-1, m_row+1 );
 }
 
 void
@@ -718,8 +729,13 @@ PreView::clear()
     m_centerIndex = QModelIndex();
     m_prevCenter = QModelIndex();
     m_row = -1;
+    m_nextRow = -1;
     m_newRow = -1;
     m_pressed = 0;
+    m_savedRow = -1;
+    m_savedCenter = QModelIndex();
+    m_centerFile = QString();
+    m_savedRow = 0;
     while ( !m_items.isEmpty() )
         delete m_items.takeFirst();
     m_textItem->setText(QString());
