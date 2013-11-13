@@ -129,7 +129,7 @@ private slots:
     void stackChanged(int);
     void newWindow() { (new MainWindow(QStringList() << m_activeContainer->model()->rootPath()))->show(); }
     void readSettings();
-    void activateRecentFolder(const QString &folder) { m_activeContainer->model()->setPath(folder); }
+    void activatePath(const QString &folder) { m_activeContainer->model()->setPath(folder); }
     void addBookmarks();
     void setSorting();
     void sortingChanged(const int column, const Qt::SortOrder order);

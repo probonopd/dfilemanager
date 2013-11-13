@@ -98,10 +98,11 @@ MainWindow::MainWindow(QStringList arguments)
     connect( m_tabBar, SIGNAL(currentChanged(int)), this, SLOT(tabChanged(int)));
     connect( m_tabBar, SIGNAL(newTabRequest()), this, SLOT(newTab()));
     connect( m_placesView, SIGNAL(newTabRequest(QString)), this, SLOT(addTab(QString)));
+    connect( m_placesView, SIGNAL(placeActivated(QString)), this, SLOT(activatePath(QString)) );
     connect( m_tabBar,SIGNAL(tabCloseRequested(int)), this, SLOT(tabClosed(int)));
     connect( m_tabBar, SIGNAL(tabMoved(int,int)), this, SLOT(tabMoved(int,int)));
     connect( m_stackedWidget, SIGNAL(currentChanged(int)), this, SLOT(stackChanged(int)));
-    connect( m_recentFoldersView, SIGNAL(recentFolderClicked(QString)), this, SLOT(activateRecentFolder(QString)));
+    connect( m_recentFoldersView, SIGNAL(recentFolderClicked(QString)), this, SLOT(activatePath(QString)));
 
     createActions();
     readSettings();
@@ -645,8 +646,9 @@ MainWindow::tabChanged(int currentIndex)
 {
     if ( currentIndex < 0 )
         return;
+
     m_stackedWidget->setCurrentIndex(currentIndex);
-    m_activeContainer = static_cast<ViewContainer*>(m_stackedWidget->currentWidget());
+    m_activeContainer = static_cast<ViewContainer *>(m_stackedWidget->currentWidget());
     sortingChanged(m_activeContainer->model()->sortColumn(), m_activeContainer->model()->sortOrder());
     emit viewChanged( m_activeContainer->currentView() );
     m_model = m_activeContainer->model();

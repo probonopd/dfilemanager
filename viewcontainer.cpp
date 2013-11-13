@@ -69,8 +69,6 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     setModel(m_model);
     setSelectionModel(new QItemSelectionModel(m_model));
 
-    connect ( MainWindow::window(this)->placesView(), SIGNAL(placeActivated(QString)), m_model, SLOT(setPath(QString)) );
-
     connect( m_fsWatcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)) );
     connect( m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(setRootPath(QString)) );
 //    connect( m_model, SIGNAL(rootPathAboutToChange(QString)), this, SLOT(rootPathChanged(QString)) );
