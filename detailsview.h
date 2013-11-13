@@ -32,16 +32,17 @@
 
 namespace DFM
 {
-
+class FileSystemModel;
 class ViewContainer;
 class DetailsView : public QTreeView
 {
     Q_OBJECT
 public:
     explicit DetailsView(QWidget *parent = 0);
+//    ~DetailsView(){}
     void setFilter(QString filter);
     void setModel(QAbstractItemModel *model);
-    void setRootIndex(const QModelIndex &index) { scheduleDelayedItemsLayout(); QTreeView::setRootIndex(index); m_detailsWidth = 0; }
+    void setRootIndex(const QModelIndex &index) { QTreeView::setRootIndex(index); m_detailsWidth = 0; }
     ViewContainer *container();
 
 protected:

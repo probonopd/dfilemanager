@@ -85,6 +85,7 @@ ViewContainer
             return c;
         w = w->parentWidget();
     }
+    return 0;
 }
 
 void
