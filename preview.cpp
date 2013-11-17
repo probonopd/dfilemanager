@@ -36,9 +36,9 @@
 
 using namespace DFM;
 
-#define ANGLE 67.5f
-#define SCALE 0.70f
-#define PERSPECTIVE 0.66f
+#define ANGLE 66.0f
+#define SCALE 0.80f
+#define PERSPECTIVE 0.6f
 #define TESTPERF1 QElapsedTimer timer; timer.start()
 #define TESTPERF2(_TEXT_) qDebug() << _TEXT_ << timer.elapsed() << "millisecs"
 
@@ -156,12 +156,15 @@ PixmapItem::updateShape()
 }
 
 void
-PixmapItem::rotate(const float angle, const Qt::Axis axis)
+PixmapItem::transform(const float angle, const Qt::Axis axis, const float xscale, const float yscale)
 {
     QTransform t;
     t.translate(SIZE/2.0f, SIZE*PERSPECTIVE);
     t.rotate(angle, axis);
     t.translate(-SIZE/2.0f, -SIZE*PERSPECTIVE);
+    t.translate(SIZE/2.0f, SIZE/2.0f);
+    t.scale(1.0f/*+(1.0f-xscale)/2*/, yscale);
+    t.translate(-SIZE/2.0f, -SIZE/2.0f);
     setTransform(t);
     m_rotate = angle;
 }
@@ -300,13 +303,11 @@ PreView::animStep(const qreal value)
     const float f = SCALE+(value*(1.0f-SCALE)), s = space*value;
     const bool goingUp = m_nextRow > m_row;
 
-    m_items.at(m_row)->setScale(SCALE/f);
     float rotate = ANGLE * value;
-    m_items.at(m_row)->rotate(goingUp ? -rotate : rotate, Qt::YAxis);
+    m_items.at(m_row)->transform(goingUp ? -rotate : rotate, Qt::YAxis, SCALE/f, SCALE/f);
 
-    m_items.at(m_nextRow)->setScale(f);
     rotate = ANGLE-rotate;
-    m_items.at(m_nextRow)->rotate(goingUp ? rotate : -rotate, Qt::YAxis);
+    m_items.at(m_nextRow)->transform(goingUp ? rotate : -rotate, Qt::YAxis, f, f);
 
     int i = m_items.count();
     while ( --i > -1 )
@@ -576,7 +577,6 @@ PreView::updateItemsPos()
     PixmapItem *center = m_items.at(m_row);
     center->setZValue(m_items.count());
     center->setPos(m_x-SIZE/2.0f, m_y);
-    center->setScale(1);
     center->resetTransform();
 
     if ( m_items.count() > 1 )
@@ -593,8 +593,7 @@ PreView::correctItemsPos(const int leftStart, const int rightStart)
     {
         p = *i;
         p->setPos( rect().center().x()+space, m_y );
-        p->setScale(SCALE);
-        p->rotate(ANGLE, Qt::YAxis);
+        p->transform(ANGLE, Qt::YAxis, SCALE, SCALE);
         m_xpos = p->x();
         p->setZValue(z);
         while ( ++i < m_items.end() ) //right side
@@ -602,8 +601,7 @@ PreView::correctItemsPos(const int leftStart, const int rightStart)
             --z;
             p = *i;
             p->setPos(m_xpos+=space, m_y);
-            p->setScale(SCALE);
-            p->rotate(ANGLE, Qt::YAxis);
+            p->transform(ANGLE, Qt::YAxis, SCALE, SCALE);
             p->setZValue(z);
         }
     }
@@ -615,8 +613,7 @@ PreView::correctItemsPos(const int leftStart, const int rightStart)
     {
         p = *i;
         p->setPos( (rect().center().x()-SIZE)-space, m_y );
-        p->setScale(SCALE);
-        p->rotate(-ANGLE, Qt::YAxis);
+        p->transform(-ANGLE, Qt::YAxis, SCALE, SCALE);
         m_xpos = p->x();
         p->setZValue(z);
 
@@ -625,8 +622,7 @@ PreView::correctItemsPos(const int leftStart, const int rightStart)
             --z;
             p = *i;
             p->setPos(m_xpos-=space, m_y);
-            p->setScale(SCALE);
-            p->rotate(-ANGLE, Qt::YAxis);
+            p->transform(-ANGLE, Qt::YAxis, SCALE, SCALE);
             p->setZValue(z);
         }
     }

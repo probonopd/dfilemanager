@@ -86,7 +86,7 @@ class PixmapItem : public QGraphicsItem
 {
 public:
     PixmapItem( GraphicsScene *scene = 0, QGraphicsItem *parent = 0 );
-    void rotate( const float angle, const Qt::Axis axis );
+    void transform( const float angle, const Qt::Axis axis, const float xscale = 1.0f, const float yscale = 1.0f );
     QRectF boundingRect() const { return RECT; }
     inline void saveX() { m_savedX = pos().x(); }
     inline float savedX() { return m_savedX; }

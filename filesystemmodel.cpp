@@ -349,7 +349,7 @@ FileSystemModel::Node::hasChild(const QString &name)
 {
     for ( int i = 0; i < Filtered+1; ++i )
     {
-        FileSystemModel::Nodes::const_iterator start = m_children[Visible].constBegin(), end = m_children[Visible].constEnd();
+        FileSystemModel::Nodes::const_iterator start = m_children[i].constBegin(), end = m_children[i].constEnd();
         while ( start != end )
         {
             if ( (*start)->name() == name )
