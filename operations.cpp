@@ -174,6 +174,8 @@ Ops::prettySize(quint64 bytes)
 QImage
 Ops::blurred(const QImage& image, const QRect& rect, int radius, bool alphaOnly)
 {
+    if ( image.isNull() )
+        return QImage();
    int tab[] = { 14, 10, 8, 6, 5, 5, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2 };
    int alpha = (radius < 1)  ? 16 : (radius > 17) ? 1 : tab[radius-1];
 
