@@ -63,7 +63,12 @@ MainWindow::updateIcons()
     m_configureAct->setIcon(IconProvider::icon(IconProvider::Configure, tbis, tbfgc, Store::config.behaviour.systemIcons));
     m_showHiddenAct->setIcon(IconProvider::icon(IconProvider::Hidden, tbis, tbfgc, Store::config.behaviour.systemIcons));
     if ( m_sortButton )
+    {
         m_sortButton->setIcon(IconProvider::icon(IconProvider::Sort, tbis, tbfgc, false));
+        m_toolBar->widgetForAction(m_showHiddenAct)->setMinimumWidth(m_sortButton->width());
+        m_toolBar->widgetForAction(m_homeAct)->setMinimumWidth(m_sortButton->width());
+        m_toolBar->widgetForAction(m_configureAct)->setMinimumWidth(m_sortButton->width());
+    }
 }
 
 void

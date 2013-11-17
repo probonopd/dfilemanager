@@ -143,7 +143,7 @@ private:
     QWidget *m_toolBarSpacer;
     SearchBox *m_filterBox;
     Docks::DockWidget *m_dockLeft, *m_dockRight, *m_dockBottom;
-    QString statusMessage, slctnMessage, m_appPath;
+    QString m_statusMessage, m_slctnMessage, m_appPath;
     QItemSelection *currentSelection;
     QSlider *m_iconSizeSlider;
     QLayout *m_statusLayout;

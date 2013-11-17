@@ -177,14 +177,7 @@ MainWindow::receiveMessage(const QStringList &message)
 void
 MainWindow::filterCurrentDir(const QString &filter)
 {
-#if 0 //for some reason this is 'glitchy'... some folders are not hidden when should
-    QString f = filter;
-    f.replace(" ", "*");
-    f.prepend("*");
-    f.append("*");
-    m_activeContainer->model()->setNameFilters(QStringList() << f);
-#endif
-    m_activeContainer->setFilter(filter);  //temporary solution
+    m_activeContainer->setFilter(filter);
 }
 
 void
@@ -256,13 +249,13 @@ MainWindow::mainSelectionChanged(QItemSelection selected,QItemSelection notselec
 
     if(selectedItems.count() == 1)
     {
-        slctnMessage = " ::  " + QString::fromLatin1("\'") + selectedItem + QString::fromLatin1("\'") + " Selected";
+        m_slctnMessage = " ::  " + QString::fromLatin1("\'") + selectedItem + QString::fromLatin1("\'") + " Selected";
 
     }
     else if(selectedItems.count() > 1)
-        slctnMessage =  " ::  " + QString::number(selectedItems.count()) + " Items Selected";
+        m_slctnMessage =  " ::  " + QString::number(selectedItems.count()) + " Items Selected";
 
-    QString newMessage = m_activeContainer->selectionModel()->selection().isEmpty() ? statusMessage : statusMessage + slctnMessage;
+    QString newMessage = m_activeContainer->selectionModel()->selection().isEmpty() ? m_statusMessage : m_statusMessage + m_slctnMessage;
     m_statusBar->showMessage(newMessage);
 }
 
@@ -415,7 +408,7 @@ MainWindow::updateStatusBar(const QString &path)
     else if (folders == 0 && files >= 1)
         messaage = QString::number(files) + _file + sz + " " + statSize;
 
-    statusMessage = messaage;
+    m_statusMessage = messaage;
     m_statusBar->showMessage(messaage);
 }
 
@@ -450,7 +443,7 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
     {
         QString newMessage = ( m_activeContainer->selectionModel()->selection().isEmpty() ||
                                m_activeContainer->selectionModel()->currentIndex().parent() !=
-                m_model->index(m_model->rootPath())) ? statusMessage : statusMessage + slctnMessage;
+                m_model->index(m_model->rootPath())) ? m_statusMessage : m_statusMessage + m_slctnMessage;
         if(m_statusBar->currentMessage() != newMessage)
             m_statusBar->showMessage(newMessage);
         return false;
@@ -606,8 +599,8 @@ MainWindow::addTab(const QString &path)
         newPath = QDir::homePath();
     ViewContainer *container = new ViewContainer(this, newPath);
     container->installEventFilter(this);
-    connect( container, SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)));
-    connect( container, SIGNAL(rootPathChanged(QString)), m_recentFoldersView, SLOT(folderEntered(QString)));
+    connect( container->model(), SIGNAL(directoryLoaded(QString)), this, SLOT(rootPathChanged(QString)));
+    connect( container->model(), SIGNAL(directoryLoaded(QString)), m_recentFoldersView, SLOT(folderEntered(QString)));
     connect( container, SIGNAL(viewChanged()), this, SLOT(checkViewAct()));
     connect( container->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(mainSelectionChanged(QItemSelection,QItemSelection)));
     connect( container, SIGNAL(iconSizeChanged(int)), this, SLOT(setSliderPos(int)));
@@ -725,7 +718,7 @@ MainWindow::viewClearHover()
 {
     QString newMessage = ( m_activeContainer->selectionModel()->selection().isEmpty()
                            ||  m_activeContainer->selectionModel()->currentIndex().parent() != m_model->index(m_model->rootPath()))
-            ? statusMessage : statusMessage + slctnMessage;
+            ? m_statusMessage : m_statusMessage + m_slctnMessage;
     if(m_statusBar->currentMessage() != newMessage)
         m_statusBar->showMessage(newMessage);
 }
@@ -772,11 +765,8 @@ MainWindow::sortingChanged(const int column, const Qt::SortOrder order)
 #ifdef Q_WS_X11
     if ( Store::config.views.dirSettings )
     {
-        QString dirPath = m_model->rootPath();
-        if ( !dirPath.endsWith(QDir::separator()) )
-            dirPath.append(QDir::separator());
-        dirPath.append(".directory");
-        QSettings settings(dirPath, QSettings::IniFormat);
+        QDir dir(m_model->rootPath());
+        QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
         settings.beginGroup("DFM");
         QVariant varCol = settings.value("sortCol");
         if ( varCol.isValid() )

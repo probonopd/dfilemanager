@@ -46,9 +46,9 @@ Application::Application(int &argc, char *argv[], const QString &key)
 {
     const QString &dirPath(QDesktopServices::storageLocation(QDesktopServices::TempLocation));
     if ( !QFileInfo(dirPath).exists() )
-        QDir().mkpath(dirPath);
+        QDir::root().mkpath(dirPath);
 
-    m_filePath = QString("%1%2dfm_message_file").arg(dirPath, QDir::separator());
+    m_filePath = QDir(dirPath).absoluteFilePath("dfm_message_file");
     m_file.setFileName(m_filePath);
     if ( m_sharedMem->attach() )
         m_isRunning = true;
@@ -139,6 +139,20 @@ Application::loadPlugins()
             pluginFileNames += fileName;
         }
     }
+}
+
+bool
+Application::notify(QObject *receiver, QEvent *event)
+{
+    try
+    {
+        return QApplication::notify(receiver, event);
+    }
+    catch (std::exception& e)
+    {
+        qCritical() << "Exception thrown:" << e.what();
+    }
+    return false;
 }
 
 #ifdef Q_WS_X11

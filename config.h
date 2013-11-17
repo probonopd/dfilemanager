@@ -82,6 +82,7 @@ typedef struct Config
 class Store : public QObject
 {
 public:
+    ~Store(){}
     static Store *instance();
     static inline void readConfig() { instance()->readConfiguration(); }
     static inline void writeConfig() { instance()->writeConfiguration(); }
@@ -93,7 +94,6 @@ public:
 
 protected:
     explicit Store( QObject *parent = 0 );
-    ~Store(){}
     void readConfiguration();
     void writeConfiguration();
     inline QList<QAction *> ca() const { return m_customActions; }

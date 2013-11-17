@@ -48,7 +48,7 @@ ThumbsLoader::ThumbsLoader(QObject *parent) :
 void
 ThumbsLoader::fileRenamed(const QString &path, const QString &oldName, const QString &newName)
 {
-    const QString &file = QString("%1%2%3").arg(path, QDir::separator(), oldName);
+    const QString &file = QDir(path).absoluteFilePath(oldName);
     removeThumb(file);
 }
 

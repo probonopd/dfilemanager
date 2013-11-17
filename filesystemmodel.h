@@ -41,6 +41,7 @@
 #include "viewcontainer.h"
 
 #include <QAbstractItemModel>
+#include <QMutex>
 
 namespace DFM
 {
@@ -80,6 +81,7 @@ private:
     FileSystemModel *m_fsModel;
 };
 
+class DataGatherer;
 class ThumbsLoader;
 class ImagesThread;
 class ViewContainer;
@@ -92,9 +94,9 @@ public:
     class Node
     {
     public:
-        virtual ~Node();
+        enum Children { Visible = 0, Hidden = 1, Filtered = 2 };
+        ~Node();
         void insertChild(Node *node);
-
         inline QString &filePath() { return m_filePath; }
         inline QFileInfo &fileInfo() { return m_fi; }
         void populate();
@@ -112,7 +114,6 @@ public:
         inline void refresh() { m_fi.refresh(); }
         bool rename(const QString &newName);
         QVariant data(const int column);
-        Node *fromPath(const QString &path);
         void sort(int column, Qt::SortOrder order);
         static void sort(Nodes *nodes);
         inline int sortColumn() { return model()->sortColumn(); }
@@ -125,15 +126,16 @@ public:
         inline bool isLocked() { return m_isLocked; }
         void setFilter(const QString &filter);
         inline QString filter() const { return m_filter; }
+        Node *node(const QString &path, bool checkOnly = true);
 
     protected:
-        Node *genPath(QStringList path, int index = 0);
+        Node *nodeFromPath(const QString &path, bool checkOnly = true);
         Node(FileSystemModel *model = 0, const QString &path = QString(), Node *parent = 0);
 
     private:
         bool m_isPopulated, m_isLocked;
         Node *m_parent;
-        Nodes m_children, m_hidden, m_filtered;
+        Nodes m_children[Filtered+1];
         QFileInfo m_fi;
         QString m_filePath, m_filter;
         FileSystemModel *m_model;
@@ -184,16 +186,19 @@ public:
     inline bool isDir(const QModelIndex &index) const { return index.isValid()?fromIndex(index)->fileInfo().isDir():false; }
     inline QFileInfo fileInfo(const QModelIndex &index) const { return index.isValid()?fromIndex(index)->fileInfo():QFileInfo(); }
     QModelIndex mkdir(const QModelIndex &parent, const QString &name);
+    inline DataGatherer *dataGatherer() { return m_dataGatherer; }
+    inline QFileSystemWatcher *dirWatcher() { return m_watcher; }
 
 public slots:
-    inline void setPath(const QString &path) { if ( QFileInfo(path).isDir() ) setRootPath(path); }
-    inline void refresh() { setRootPath(m_rootPath); }
+    inline void setPath(const QString &path) { setRootPath(path); }
+    void refresh();
 
 private slots:
     void thumbFor( const QString &file );
     void flowDataAvailable( const QString &file );
     void dirChanged( const QString &path );
-    void emitRootPathLater() { emit rootPathChanged(m_rootPath); }
+    void emitRootPathLater() { emit rootPathChanged(rootPath()); }
+    void nodeGenerated(const QString &path, FileSystemModel::Node *node);
 
 signals:
     void flowDataChanged( const QModelIndex &start, const QModelIndex &end );
@@ -214,7 +219,30 @@ private:
     ThumbsLoader *m_thumbsLoader;
     ViewContainer *m_container;
     QFileSystemWatcher *m_watcher;
+    DataGatherer *m_dataGatherer;
     friend class ImagesThread;
+};
+
+class DataGatherer : public QThread
+{
+    Q_OBJECT
+public:
+    enum Task { Populate = 0, Generate = 1 };
+    explicit DataGatherer(QObject *parent = 0):QThread(parent), m_node(0){}
+    void populateNode(FileSystemModel::Node *node);
+    void generateNode(const QString &path, FileSystemModel::Node *node);
+
+protected:
+    void run();
+
+signals:
+    void nodeGenerated(const QString &path, FileSystemModel::Node *node);
+
+private:
+    FileSystemModel::Node *m_node, *m_result;
+    QMutex m_mutex;
+    Task m_task;
+    QString m_path;
 };
 
 }

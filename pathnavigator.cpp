@@ -245,6 +245,9 @@ void
 PathNavigator::genNavFromPath( const QString &path )
 {
     QModelIndex index = m_fsModel->index( path );
+    if ( !index.isValid() )
+        return;
+
     m_pathList.clear();
     clear();
 
@@ -344,19 +347,19 @@ BreadCrumbs::pathChanged(const QString &path)
 void
 BreadCrumbs::complete( const QString &path )
 {
-    QString p = path;
-    if ( !QDir(p).exists() )
-        p = path.mid(0, path.lastIndexOf(QDir::separator()));
-    if ( !p.endsWith(QDir::separator()) )
-        p.append(QDir::separator());
+//    QString p = path;
+//    if ( !QDir(p).exists() )
+//        p = path.mid(0, path.lastIndexOf(QDir::separator()));
+//    if ( !p.endsWith(QDir::separator()) )
+//        p.append(QDir::separator());
 
-    const QString &current = path.mid(path.lastIndexOf(QDir::separator())+1);
-    QStringList paths;
-    foreach ( const QString &subPath, QDir(p).entryList(QStringList() << "*"+current+"*", QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot, QDir::Name) )
-        paths << QString("%1%2%3").arg(p, subPath, QDir::separator());
+//    const QString &current = path.mid(path.lastIndexOf(QDir::separator())+1);
+//    QStringList paths;
+//    foreach ( const QString &subPath, QDir(p).entryList(QStringList() << "*"+current+"*", QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot, QDir::Name) )
+//        paths << QString("%1%2%3").arg(p, subPath, QDir::separator());
 
-    QCompleter comp(paths, m_pathBox);
-    comp.setCompletionMode(QCompleter::PopupCompletion);
-    comp.setCaseSensitivity(Qt::CaseInsensitive);
-    m_pathBox->setCompleter(&comp);
+//    QCompleter comp(paths, m_pathBox);
+//    comp.setCompletionMode(QCompleter::PopupCompletion);
+//    comp.setCaseSensitivity(Qt::CaseInsensitive);
+//    m_pathBox->setCompleter(&comp);
 }

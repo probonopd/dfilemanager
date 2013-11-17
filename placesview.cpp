@@ -559,7 +559,7 @@ PlacesView::dropEvent( QDropEvent *event )
             const QFileInfo &f(file);
             if ( !f.isDir() )
                 continue;
-            QSettings settings( QString("%1%2.directory").arg(f.filePath()).arg(QDir::separator()), QSettings::IniFormat );
+            QSettings settings( QDir(file).absoluteFilePath(".directory"), QSettings::IniFormat );
             const QIcon &icon = QIcon::fromTheme(settings.value( "Desktop Entry/Icon" ).toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
             places->appendRow(new Place(f.fileName(), f.filePath(), icon.name()));
         }
@@ -597,7 +597,7 @@ PlacesView::dropEvent( QDropEvent *event )
                     const QFileInfo &f(file);
                     if ( !f.isDir() )
                         continue;
-                    QSettings settings( QString("%1%2.directory").arg(f.filePath()).arg(QDir::separator()), QSettings::IniFormat );
+                    QSettings settings( QDir(file).absoluteFilePath(".directory"), QSettings::IniFormat );
                     const QIcon &icon = QIcon::fromTheme(settings.value( "Desktop Entry/Icon" ).toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
                     addPlace( f.fileName(), f.filePath(), icon, cont );
                 }
@@ -620,7 +620,7 @@ PlacesView::dropEvent( QDropEvent *event )
                 const QFileInfo &f(file);
                 if ( !f.isDir() )
                     continue;
-                QSettings settings( QString("%1%2.directory").arg(f.filePath()).arg(QDir::separator()), QSettings::IniFormat );
+                QSettings settings( QDir(file).absoluteFilePath(".directory"), QSettings::IniFormat );
                 const QIcon &icon = QIcon::fromTheme(settings.value( "Desktop Entry/Icon" ).toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
                 Place *item = new Place(f.fileName(), f.filePath(), icon.name());
                 Container *c = container( indexAt( event->pos() ).parent().row() );

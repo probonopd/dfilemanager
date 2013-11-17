@@ -112,7 +112,7 @@ FileExistsDialog::textChanged(const QString &text)
     const bool hasChanged = text != QFileInfo(m_file).fileName();
     m_overWrite->setEnabled( !hasChanged );
     m_overWriteAll->setEnabled( !hasChanged );
-    m_newFileName = QString("%1%2%3").arg(QFileInfo(m_file).path()).arg(QDir::separator()).arg(text);
+    m_newFileName = QFileInfo(m_file).dir().absoluteFilePath(text);
     if ( QFileInfo(m_newFileName).exists() )
         m_name->setText("File " + m_newFileName + " already exists, what do you do?");
     m_newName->setEnabled( hasChanged && !QFileInfo(m_newFileName).exists() );
@@ -440,13 +440,11 @@ IOThread::run()
     case Copy:
     {
         const quint64 destId = Ops::getDriveInfo<Ops::Id>( m_destDir );
-        if ( !m_destDir.endsWith(QDir::separator()) )
-            m_destDir.append(QDir::separator());
         while (!m_canceled && !m_inFiles.isEmpty())
         {
             m_inFile = m_inFiles.takeFirst();
             const bool sameDisk = destId != 0 && ( (quint64)Ops::getDriveInfo<Ops::Id>( m_inFile ) ==  destId );
-            const QString &outFile = QString("%1%2").arg(m_destDir, QFileInfo(m_inFile).fileName());
+            const QString &outFile = QDir(m_destDir).absoluteFilePath(QFileInfo(m_inFile).fileName());
             copyRecursive( m_inFile, outFile, m_cut, sameDisk );
         }
         break;
@@ -546,7 +544,7 @@ IOThread::copyRecursive(const QString &inFile, const QString &outFile, bool cut,
         for ( int i = 0; i < n; ++i )
         {
             const QString &name = entries.at(i);
-            copyRecursive( inDir.absoluteFilePath(name) , QString("%1%2%3").arg(outFile, QDir::separator(), name), cut, sameDisk );
+            copyRecursive( inDir.absoluteFilePath(name) , QDir(outFile).absoluteFilePath(name), cut, sameDisk );
         }
     }
     else if ( !clone(inFile, outFile) )

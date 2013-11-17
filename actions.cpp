@@ -373,13 +373,12 @@ MainWindow::createToolBars()
 
     QWidget *spacerFixed = new QWidget(m_toolBar);
     spacerFixed->setFixedWidth(64);
-    const int fullWidth = 32;
     m_toolBar->addWidget(spacerFixed);
     m_toolBar->addAction(m_configureAct);
-    m_toolBar->widgetForAction(m_configureAct)->setMinimumWidth(fullWidth);
+
     m_toolBar->addSeparator();
     m_toolBar->addAction(m_homeAct);
-    m_toolBar->widgetForAction(m_homeAct)->setMinimumWidth(fullWidth);
+
     m_toolBar->addSeparator();
     m_sortButton = new QToolButton(this);
     m_sortButton->setIcon(IconProvider::icon(IconProvider::Sort, 16, m_sortButton->palette().color(m_sortButton->foregroundRole()), false));
@@ -391,11 +390,9 @@ MainWindow::createToolBars()
     sortMenu->addAction(m_sortDescAct);
     m_sortButton->setMenu(sortMenu);
     m_sortButton->setPopupMode(QToolButton::InstantPopup);
-    m_sortButton->setMinimumWidth(fullWidth);
     m_toolBar->addWidget(m_sortButton);
     m_toolBar->addSeparator();
     m_toolBar->addAction(m_showHiddenAct);
-    m_toolBar->widgetForAction(m_showHiddenAct)->setMinimumWidth(fullWidth);
 
     QWidget *searchWidget = new QWidget(m_toolBar);
     searchWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);

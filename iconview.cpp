@@ -192,6 +192,8 @@ protected:
     QSize sizeHint( const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
 //        return textData(option, index, Size).toSize();
+        if ( !m_model||!index.isValid() )
+            return QSize();
         static QHash<QPair<QString, int>, QSize> s_sizes[2];
         const bool selected = option.state&QStyle::State_Selected;
         const QString &path = m_model->filePath(index);
@@ -597,7 +599,7 @@ IconView::setModel( QAbstractItemModel *model )
     QListView::setModel( model );
     if ( m_model = qobject_cast<FileSystemModel *>( model ) )
     {
-        connect( m_model, SIGNAL( rootPathChanged( QString ) ), this, SLOT( rootPathChanged( QString ) ) );
+        connect( m_model, SIGNAL( directoryLoaded(QString)), this, SLOT( rootPathChanged( QString ) ) );
         static_cast<IconDelegate*>( itemDelegate() )->setModel( m_model );
     }
 }

@@ -190,10 +190,7 @@ GeneralInfo::setIcon()
     if ( !i.isNull() && QIcon::hasThemeIcon(i.name()) )
     {
         const QString &file = tb->property("file").toString();
-        QString stngs = file;
-        stngs.append(QDir::separator());
-        stngs.append(".directory");
-        QSettings settings(stngs, QSettings::IniFormat);
+        QSettings settings(QDir(file).absoluteFilePath(".directory"), QSettings::IniFormat);
         settings.setValue("Desktop Entry/Icon", i.name());
         tb->setIcon(i);
 
@@ -347,7 +344,7 @@ PropertiesDialog::accept()
             if (m_r->box(Rights::OthersExe)->isChecked()) permissions |= QFile::ExeOther; else permissions &= ~QFile::ExeOther;
         }
         file.setPermissions(permissions);
-        const QString &newFile = QString("%1%2%3").arg(fileInfo.path(), QDir::separator(), m_g->newName());
+        const QString &newFile = fileInfo.dir().absoluteFilePath(m_g->newName());
         if ( newFile != m_files.first() )
             QFile::rename(fileInfo.filePath(), newFile);
     }

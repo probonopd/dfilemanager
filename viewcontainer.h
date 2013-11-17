@@ -79,7 +79,7 @@ public:
     BreadCrumbs *breadCrumbs();
     QString currentFilter();
     QStringList visited() { return m_backList; }
-    void sort(const int column = 0, const Qt::SortOrder order = Qt::AscendingOrder, const QString &path = QString());
+    void sort(const int column = 0, const Qt::SortOrder order = Qt::AscendingOrder);
     PathNavigator *pathNav();
     QString rootPath() const;
 
@@ -112,6 +112,7 @@ private slots:
     void customActionTriggered();
     void scriptTriggered();
     void dirChanged(const QString &path);
+    void dirLoaded(const QString &path);
 
 private:
     bool m_back;

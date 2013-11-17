@@ -1,6 +1,7 @@
 #include "thumbsimages.h"
 #include <QImageReader>
 #include <QFileInfo>
+#include <QDebug>
 
 Q_EXPORT_PLUGIN2(thumbsimages, ThumbsImages)
 
@@ -22,12 +23,27 @@ ThumbsImages::thumb(const QString &file, const int size)
     if ( !ir.canRead() )
         return QImage();
 
+    //sometimes ir.size() doesnt return a valid size,
+    //this is at least true for xcf images,
+    //then we have to scale them later after we have
+    //the full image. This is slower.
     QSize thumbsize(ir.size());
-    if ( qMax( thumbsize.width(), thumbsize.height() ) > size )
+    if ( thumbsize.isValid() && qMax( thumbsize.width(), thumbsize.height() ) > size )
         thumbsize.scale( size, size, Qt::KeepAspectRatio );
     ir.setScaledSize(thumbsize);
 
-    return ir.read();
+    QImage img(ir.read());
+
+    //if the thumbsize isnt valid then we need to scale the
+    //image after loading the whole image.
+    if ( qMax( img.size().width(), img.size().height() ) > size )
+    {
+        QSize sz(img.size());
+        sz.scale( size, size, Qt::KeepAspectRatio );
+        img = img.scaled(sz, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+
+    return img;
 }
 
 static QStringList suf;

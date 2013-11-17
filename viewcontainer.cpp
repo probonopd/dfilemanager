@@ -59,9 +59,6 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     m_myView = Icon;
     m_back = false;
 
-    QString parentPath = rootPath.mid(0, rootPath.lastIndexOf(QDir::separator()));
-    static_cast<FileIconProvider *>(m_model->iconProvider())->loadThemedFolders(parentPath);
-
     m_viewStack->layout()->setSpacing(0);
     setFrameStyle(0/*QFrame::StyledPanel | QFrame::Sunken*/);
     setAutoFillBackground(false);
@@ -71,6 +68,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
 
     connect( m_fsWatcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)) );
     connect( m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(setRootPath(QString)) );
+    connect( m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)) );
 //    connect( m_model, SIGNAL(rootPathAboutToChange(QString)), this, SLOT(rootPathChanged(QString)) );
     connect( m_iconView, SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)) );
     connect( m_iconView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
@@ -90,9 +88,6 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     m_viewStack->addWidget(m_columnsWidget);
     m_viewStack->addWidget(m_flowView);
 
-//    m_detailsView->setColumnHidden(4, true);
-//    m_flowView->detailsView()->setColumnHidden(4, true);
-
     QVBoxLayout *layout = new QVBoxLayout();
     layout->addWidget(m_viewStack);
     layout->addWidget(m_breadCrumbs);
@@ -104,8 +99,6 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     m_model->setPath(rootPath);
 
     emit iconSizeChanged(Store::config.views.iconView.iconSize*16);
-
-//    sort(Store::config.behaviour.sortingCol, Store::config.behaviour.sortingOrd);
 }
 
 PathNavigator *ViewContainer::pathNav() { return m_breadCrumbs->pathNav(); }
@@ -140,11 +133,8 @@ ViewContainer::setView(View view, bool store)
 #ifdef Q_WS_X11
     if ( Store::config.views.dirSettings && store )
     {
-        QString dirPath = m_model->rootPath();
-        if ( !dirPath.endsWith(QDir::separator()) )
-            dirPath.append(QDir::separator());
-        dirPath.append(".directory");
-        QSettings settings(dirPath, QSettings::IniFormat);
+        QDir dir(m_model->rootPath());
+        QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
         settings.beginGroup("DFM");
         settings.setValue("view", (int)view);
         settings.endGroup();
@@ -226,56 +216,48 @@ ViewContainer::activate(const QModelIndex &index)
 void
 ViewContainer::setRootPath(const QString &path)
 {
-    if ( path.isNull() || path.isEmpty() || !QFileInfo(path).isDir() )
-        return;
-
     const QModelIndex &rootIndex = m_model->index(path);
     if ( rootIndex.isValid() )
     {
         setRootIndex(rootIndex);
-        bool needSort = true;
-#ifdef Q_WS_X11
-        if ( Store::config.views.dirSettings )
-        {
-            QString dirPath = path;
-            if ( !dirPath.endsWith(QDir::separator()) )
-                dirPath.append(QDir::separator());
-            dirPath.append(".directory");
-            QSettings settings(dirPath, QSettings::IniFormat);
-            settings.beginGroup("DFM");
-            QVariant varCol = settings.value("sortCol");
-            QVariant varOrd = settings.value("sortOrd");
-            if ( varCol.isValid() && varOrd.isValid() )
-            {
-                needSort = false;
-                int col = varCol.value<int>();
-                Qt::SortOrder ord = (Qt::SortOrder)varOrd.value<int>();
-                sort(col, ord);
-            }
-            QVariant var = settings.value("view");
-            if ( var.isValid() )
-            {
-                View view = (View)var.value<int>();
-                setView(view, false);
-            }
-            settings.endGroup();
-        }
-#endif
-        if ( needSort )
-            sort(m_model->sortColumn(), m_model->sortOrder());
-
         m_selectModel->clearSelection();
-//        if ( !m_fsWatcher->directories().isEmpty() )
-//            m_fsWatcher->removePaths(m_fsWatcher->directories());
-//        m_fsWatcher->addPath(path);
-
         if (!m_back && (m_backList.isEmpty() || m_backList.count() &&  path != m_backList.last()))
             m_backList.append(path);
-
         emit rootPathChanged(path);
     }
-
     m_back = false;
+}
+
+void
+ViewContainer::dirLoaded(const QString &path)
+{
+    bool needSort = true;
+#ifdef Q_WS_X11
+    if ( Store::config.views.dirSettings )
+    {
+        const QDir dir(path);
+        QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
+        settings.beginGroup("DFM");
+        QVariant varCol = settings.value("sortCol");
+        QVariant varOrd = settings.value("sortOrd");
+        if ( varCol.isValid() && varOrd.isValid() )
+        {
+            needSort = false;
+            int col = varCol.value<int>();
+            Qt::SortOrder ord = (Qt::SortOrder)varOrd.value<int>();
+            sort(col, ord);
+        }
+        QVariant var = settings.value("view");
+        if ( var.isValid() )
+        {
+            View view = (View)var.value<int>();
+            setView(view, false);
+        }
+        settings.endGroup();
+    }
+#endif
+    if ( needSort )
+        sort(m_model->sortColumn(), m_model->sortOrder());
 }
 
 void
@@ -340,6 +322,8 @@ ViewContainer::setFilter(QString filter)
 {
 //    VIEWS(setFilter(filter));
     FileSystemModel::Node *node = model()->fromIndex(model()->index(model()->rootPath()));
+    if ( !node )
+        return;
     node->setFilter(filter);
     m_dirFilter = filter;
     emit filterChanged();
@@ -411,29 +395,16 @@ ViewContainer::customCommand()
 }
 
 void
-ViewContainer::sort(const int column, const Qt::SortOrder order, const QString &path)
+ViewContainer::sort(const int column, const Qt::SortOrder order)
 {
-//    const QString &rootPath = this->rootPath();
-//    if ( !path.isEmpty() || m_myView == Columns )
-//    {
-//        m_model->blockSignals(true);
-//        m_model->setRootPath(path);
-//    }
     m_model->sort(column, order);
-//    if ( !path.isEmpty() || m_myView == Columns )
-//    {
-//        m_model->setRootPath(rootPath);
-//        m_model->blockSignals(false);
-//    }
     emit sortingChanged(column, order);
 }
 
 void
 ViewContainer::createDirectory()
 {
-    m_model->mkdir(m_model->index(m_model->rootPath()), "new_directory");
-    QModelIndex newFolder = m_model->index(m_model->rootPath() + QDir::separator() + "new_directory");
-
+    QModelIndex newFolder = m_model->mkdir(m_model->index(m_model->rootPath()), "new_directory");
     currentView()->scrollTo(newFolder);
     currentView()->edit(newFolder);
 }
