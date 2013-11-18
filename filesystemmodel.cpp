@@ -263,12 +263,10 @@ FileSystemModel::Node::populate()
     m_isPopulated = true;
     if ( isRootNode() )
     {
+        model()->beginInsertRows(QModelIndex(), 0, QDir::drives().count()-1);
         for ( int i = 0; i < QDir::drives().count(); ++i )
-        {
-            model()->beginInsertRows(model()->index(filePath()), i, i);
             new FileSystemModel::Node(model(), QDir::drives().at(i).filePath(), this);
-            model()->endInsertRows();
-        }
+        model()->endInsertRows();
     }
     else if ( fileInfo().isDir() )
     {
@@ -278,12 +276,10 @@ FileSystemModel::Node::populate()
         const int end = entries.count();
         if ( !dir.isAbsolute() )
             return;
+        model()->beginInsertRows(model()->index(filePath()), 0, end-1);
         for ( int i = 0; i < end; ++i )
-        {
-            model()->beginInsertRows(model()->index(filePath()), i, i);
             new FileSystemModel::Node(model(), dir.filePath(entries.at(i)), this);
-            model()->endInsertRows();
-        }
+        model()->endInsertRows();
     }
     if ( m_children[Visible].count()>1 )
         sort(&m_children[Visible]);
