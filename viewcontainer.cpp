@@ -74,6 +74,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     connect( m_iconView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
     connect( m_detailsView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
     connect( m_flowView->detailsView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
+    connect( m_model, SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SIGNAL(sortingChanged(int,Qt::SortOrder)) );
 
     foreach (QAbstractItemView *v, QList<QAbstractItemView *>() << m_iconView << m_detailsView /*<< m_columnsView*/ << m_flowView->detailsView())
     {
@@ -398,7 +399,6 @@ void
 ViewContainer::sort(const int column, const Qt::SortOrder order)
 {
     m_model->sort(column, order);
-    emit sortingChanged(column, order);
 }
 
 void

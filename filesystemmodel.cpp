@@ -87,18 +87,15 @@ FileIconProvider::loadThemedFolders(const QString &path)
 //-----------------------------------------------------------------------------
 
 FileSystemModel::Node::Node(FileSystemModel *model, const QString &path, Node *parent)
-    : m_parent(0)
+    : m_parent(parent)
     , m_isPopulated(false)
     , m_fi(path)
     , m_model(model)
     , m_filePath(path)
     , m_isLocked(false)
 {
-    if ( parent )
-    {
-        m_parent = parent;
+    if ( m_parent )
         m_parent->insertChild(this);
-    }
 }
 
 FileSystemModel::Node::~Node() { for (int i = 0; i<Filtered+1; ++i ) qDeleteAll(m_children[i]); }
@@ -111,7 +108,7 @@ bool FileSystemModel::Node::hasChild(const int child) { return child>-1&&child<c
 
 FileSystemModel::Node *FileSystemModel::Node::child(const int c) { return hasChild(c)?children().at(c):0; }
 
-QString FileSystemModel::Node::name() { return isRootNode()?QString():fileInfo().fileName().isEmpty()?QDir::rootPath():m_fi.fileName(); }
+QString FileSystemModel::Node::name() { return isRootNode()?QString():fileInfo().fileName().isEmpty()?filePath():m_fi.fileName(); }
 
 FileSystemModel::Nodes FileSystemModel::Node::children() { return m_children[Visible]; }
 
@@ -120,7 +117,6 @@ bool FileSystemModel::Node::isHidden() { return fileInfo().isHidden()&&!isLocked
 void
 FileSystemModel::Node::setFilter(const QString &filter)
 {
-    m_filter = filter;
     for ( int i = 0; i < Filtered; ++i )
     {
         int c = m_children[i].count();
@@ -140,7 +136,11 @@ FileSystemModel::Node::setFilter(const QString &filter)
             else
                 m_children[Visible] << m_children[Filtered].takeAt(f);
         }
-    model()->sort(sortColumn(), sortOrder());
+    if ( m_filter != filter )
+    {
+        m_filter = filter;
+        model()->sort(sortColumn(), sortOrder());
+    }
 }
 
 void
@@ -242,13 +242,8 @@ FileSystemModel::Node
 
     Node *node = model()->rootNode();
 
-    while ( !paths.isEmpty() )
-    {
-        if ( !node )
-            break;
-        const QString &p = paths.takeFirst();
-        node = node->nodeFromPath(p, checkOnly);
-    }
+    while ( !paths.isEmpty() && node )
+        node = node->nodeFromPath(paths.takeFirst(), checkOnly);
 
     if ( node && node->filePath() == path )
         return node;
@@ -281,13 +276,14 @@ FileSystemModel::Node::populate()
         QDir dir(filePath());
         const QStringList entries = dir.entryList(filters);
         const int end = entries.count();
-        if ( dir.isAbsolute() )
-            for ( int i = 0; i < end; ++i )
-            {
-                model()->beginInsertRows(model()->index(filePath()), i, i);
-                new FileSystemModel::Node(model(), dir.filePath(entries.at(i)), this);
-                model()->endInsertRows();
-            }
+        if ( !dir.isAbsolute() )
+            return;
+        for ( int i = 0; i < end; ++i )
+        {
+            model()->beginInsertRows(model()->index(filePath()), i, i);
+            new FileSystemModel::Node(model(), dir.filePath(entries.at(i)), this);
+            model()->endInsertRows();
+        }
     }
     if ( m_children[Visible].count()>1 )
         sort(&m_children[Visible]);
@@ -339,6 +335,7 @@ FileSystemModel::Node::rePopulate()
         }
     if ( filePath() == model()->rootPath() )
         emit model()->directoryLoaded(filePath());
+
     for ( int i = 0; i < m_children[Visible].count(); ++i )
         if ( m_children[Visible].at(i)->isPopulated() )
             m_children[Visible].at(i)->rePopulate();
@@ -673,8 +670,8 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     if (!index.isValid())
         return QVariant();
 
-    Node *node = static_cast<Node *>(index.internalPointer());
-    if ( !node )
+    Node *node = fromIndex(index);
+    if ( node->isRootNode() )
         return QVariant();
     if ( role == Qt::DecorationRole && index.column() > 0 )
         return QVariant();
@@ -688,7 +685,6 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         return int(Qt::AlignVCenter|Qt::AlignRight);
     else
         return int(Qt::AlignLeft|Qt::AlignVCenter);
-
 
     const QString &file = node->filePath();
     const bool customIcon = Store::config.icons.customIcons.contains(file);
@@ -869,9 +865,9 @@ FileSystemModel::canFetchMore(const QModelIndex &parent) const
     if ( parent.column() != 0 )
         return false;
     Node *node = fromIndex(parent);
-    if ( !node )
-        return false;
-    return (node->fileInfo().isDir()||node->isRootNode());
+    if ( node->isRootNode() )
+        return true;
+    return node->fileInfo().isDir();
 }
 
 void
@@ -891,6 +887,7 @@ FileSystemModel::fetchMore(const QModelIndex &parent)
 void
 FileSystemModel::sort(int column, Qt::SortOrder order)
 {
+    const bool orderChanged = bool(m_sortColumn!=column||m_sortOrder!=order);
     m_sortColumn = column;
     m_sortOrder = order;
     emit layoutAboutToBeChanged();
@@ -898,12 +895,44 @@ FileSystemModel::sort(int column, Qt::SortOrder order)
     Nodes old;
     for ( int i = 0; i < oldList.count(); ++i )
         old << fromIndex(oldList.at(i));
+
     rootNode()->sort(column, order);
+
     QModelIndexList newList;
     for ( int i = 0; i < old.count(); ++i )
         newList << index(old.at(i)->filePath());
     changePersistentIndexList(oldList, newList);
+    if ( orderChanged )
+        emit sortingChanged(column, order);
     emit layoutChanged();
+
+#ifdef Q_WS_X11
+    if ( Store::config.views.dirSettings && orderChanged )
+    {
+        QDir dir(rootPath());
+        QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
+        settings.beginGroup("DFM");
+        QVariant varCol = settings.value("sortCol");
+        if ( varCol.isValid() )
+        {
+            int col = varCol.value<int>();
+            if ( col != column )
+                settings.setValue("sortCol", column);
+        }
+        else
+            settings.setValue("sortCol", column);
+        QVariant varOrd = settings.value("sortOrd");
+        if ( varCol.isValid() )
+        {
+            Qt::SortOrder ord = (Qt::SortOrder)varOrd.value<int>();
+            if ( ord != order )
+                settings.setValue("sortOrd", order);
+        }
+        else
+            settings.setValue("sortOrd", order);
+        settings.endGroup();
+    }
+#endif
 }
 
 void

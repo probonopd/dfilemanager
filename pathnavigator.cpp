@@ -220,7 +220,7 @@ PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model )
     , m_layout(new QHBoxLayout(this))
     , m_bc(static_cast<BreadCrumbs *>(parent))
 {
-    connect( m_fsModel, SIGNAL( rootPathChanged(QString)), this, SLOT( genNavFromPath( QString ) ) );
+    connect( m_fsModel, SIGNAL( directoryLoaded(QString)), this, SLOT( genNavFromPath( QString ) ) );
     setForegroundRole( QPalette::Text );
     setBackgroundRole( QPalette::Base );
     setMaximumHeight( 23 );

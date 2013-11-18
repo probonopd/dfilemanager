@@ -97,8 +97,8 @@ public:
         enum Children { Visible = 0, Hidden = 1, Filtered = 2 };
         ~Node();
         void insertChild(Node *node);
-        inline QString &filePath() { return m_filePath; }
-        inline QFileInfo &fileInfo() { return m_fi; }
+        inline QString filePath() { return m_filePath; }
+        inline QFileInfo fileInfo() { return m_fi; }
         void populate();
         void rePopulate();
         bool hasChild( const int child );
@@ -206,6 +206,7 @@ signals:
     void directoryLoaded(const QString &path);
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
     void hiddenVisibilityChanged(bool visible);
+    void sortingChanged(const int sortCol, const Qt::SortOrder order);
 
 private:
     Node *m_rootNode;

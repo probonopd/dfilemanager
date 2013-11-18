@@ -39,7 +39,7 @@ class DetailsView : public QTreeView
     Q_OBJECT
 public:
     explicit DetailsView(QWidget *parent = 0);
-//    ~DetailsView(){}
+    ~DetailsView(){}
     void setFilter(QString filter);
     void setModel(QAbstractItemModel *model);
     void setRootIndex(const QModelIndex &index) { QTreeView::setRootIndex(index); m_detailsWidth = 0; }

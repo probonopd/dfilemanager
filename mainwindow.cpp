@@ -260,18 +260,6 @@ MainWindow::mainSelectionChanged(QItemSelection selected,QItemSelection notselec
 }
 
 void
-MainWindow::rename()
-{
-    m_activeContainer->rename();
-}
-
-void
-MainWindow::createDirectory()
-{
-    m_activeContainer->createDirectory();
-}
-
-void
 MainWindow::cutSelection()
 {
     setClipBoard();
@@ -472,29 +460,25 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
     return QMainWindow::eventFilter(obj, event);
 }
 
-void
-MainWindow::goHome()
-{  
-    m_model->setPath(QDir::homePath());
-}
+void MainWindow::rename() { m_activeContainer->rename(); }
 
-void
-MainWindow::goBack()
-{
-    m_activeContainer->goBack();
-}
+void MainWindow::createDirectory() { m_activeContainer->createDirectory(); }
 
-void
-MainWindow::goUp()
-{
-    m_activeContainer->goUp();
-}
+void MainWindow::goHome() { m_model->setPath(QDir::homePath()); }
 
-void
-MainWindow::goForward()
-{  
-    m_activeContainer->goForward();
-}
+void MainWindow::goBack() { m_activeContainer->goBack(); }
+
+void MainWindow::goUp() { m_activeContainer->goUp(); }
+
+void MainWindow::goForward() { m_activeContainer->goForward(); }
+
+void MainWindow::setViewIcons() { m_activeContainer->setView(ViewContainer::Icon); }
+
+void MainWindow::setViewDetails() { m_activeContainer->setView(ViewContainer::Details); }
+
+void MainWindow::setViewCols() { m_activeContainer->setView(ViewContainer::Columns); }
+
+void MainWindow::flowView() { m_activeContainer->setView(ViewContainer::Flow); }
 
 void
 MainWindow::genPlace()
@@ -504,30 +488,6 @@ MainWindow::genPlace()
     QString name = file.fileName();
     QIcon icon = QIcon::fromTheme("folder");
     m_placesView->addPlace(name, path, icon);
-}
-
-void
-MainWindow::setViewIcons()
-{
-    m_activeContainer->setView(ViewContainer::Icon);
-}
-
-void
-MainWindow::setViewDetails()
-{
-    m_activeContainer->setView(ViewContainer::Details);
-}
-
-void
-MainWindow::setViewCols()
-{
-    m_activeContainer->setView(ViewContainer::Columns);
-}
-
-void
-MainWindow::flowView()
-{
-    m_activeContainer->setView(ViewContainer::Flow);
 }
 
 void
@@ -550,46 +510,17 @@ MainWindow::about()
                           "that can manage files."));
 }
 
-void
-MainWindow::deleteCurrentSelection()
-{
-    m_activeContainer->deleteCurrentSelection();
-}
+void MainWindow::deleteCurrentSelection() { m_activeContainer->deleteCurrentSelection(); }
 
-void
-MainWindow::toggleHidden()
-{
-     m_model->setHiddenVisible(m_showHiddenAct->isChecked());
-//    if(m_showHiddenAct->isChecked())
-//        m_model->setFilter(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::System | QDir::Hidden);
-//    else
-//        m_model->setFilter(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::System);
-}
+void MainWindow::toggleHidden() { m_model->setHiddenVisible(m_showHiddenAct->isChecked()); }
 
+void MainWindow::refreshView() { m_activeContainer->refresh(); }
 
-void
-MainWindow::refreshView()
-{
-    m_activeContainer->refresh();
-}
+void MainWindow::customCommand() { m_activeContainer->customCommand(); }
 
-void
-MainWindow::customCommand()
-{
-    m_activeContainer->customCommand();
-}
+void MainWindow::toggleMenuVisible() { menuBar()->setVisible(m_menuAct->isChecked()); }
 
-void
-MainWindow::toggleMenuVisible()
-{
-    menuBar()->setVisible(m_menuAct->isChecked());
-}
-
-void
-MainWindow::toggleStatusVisible()
-{
-    m_statusBar->setVisible(m_statAct->isChecked());
-}
+void MainWindow::toggleStatusVisible() { m_statusBar->setVisible(m_statAct->isChecked()); }
 
 void
 MainWindow::addTab(const QString &path)
@@ -640,9 +571,10 @@ MainWindow::tabChanged(int currentIndex)
 
     m_stackedWidget->setCurrentIndex(currentIndex);
     m_activeContainer = static_cast<ViewContainer *>(m_stackedWidget->currentWidget());
-    sortingChanged(m_activeContainer->model()->sortColumn(), m_activeContainer->model()->sortOrder());
     emit viewChanged( m_activeContainer->currentView() );
     m_model = m_activeContainer->model();
+
+    sortingChanged(m_activeContainer->model()->sortColumn(), m_activeContainer->model()->sortOrder());
     m_recentFoldersView->folderEntered(m_model->rootPath());
     setWindowTitle(m_tabBar->tabText(currentIndex));
     m_activeContainer->setPathEditable(m_pathEditAct->isChecked());
@@ -651,6 +583,7 @@ MainWindow::tabChanged(int currentIndex)
     m_placesView->activateAppropriatePlace(m_model->rootPath());
     updateStatusBar(m_model->rootPath());
     m_filterBox->setText(m_activeContainer->currentFilter());
+    m_showHiddenAct->setChecked(m_model->showHidden());
     setActions();
 }
 
@@ -753,42 +686,14 @@ MainWindow::hidePath()
 void
 MainWindow::sortingChanged(const int column, const Qt::SortOrder order)
 {
-//    qDebug() << "sortingChanged" << col << order;
     Store::config.behaviour.sortingCol=column;
     Store::config.behaviour.sortingOrd=order;
+
     m_sortNameAct->setChecked(column == 0);
     m_sortSizeAct->setChecked(column == 1);
     m_sortTypeAct->setChecked(column == 2);
     m_sortDateAct->setChecked(column == 3);
     m_sortDescAct->setChecked(order == Qt::DescendingOrder);
-
-#ifdef Q_WS_X11
-    if ( Store::config.views.dirSettings )
-    {
-        QDir dir(m_model->rootPath());
-        QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
-        settings.beginGroup("DFM");
-        QVariant varCol = settings.value("sortCol");
-        if ( varCol.isValid() )
-        {
-            int col = varCol.value<int>();
-            if ( col != column )
-                settings.setValue("sortCol", column);
-        }
-        else
-            settings.setValue("sortCol", column);
-        QVariant varOrd = settings.value("sortOrd");
-        if ( varCol.isValid() )
-        {
-            Qt::SortOrder ord = (Qt::SortOrder)varOrd.value<int>();
-            if ( ord != order )
-                settings.setValue("sortOrd", order);
-        }
-        else
-            settings.setValue("sortOrd", order);
-        settings.endGroup();
-    }
-#endif
 }
 
 void

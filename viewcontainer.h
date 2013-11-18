@@ -49,7 +49,7 @@ class ViewContainer : public QFrame
 public:
     enum View { Icon = 0, Details = 1, Columns = 2, Flow = 3 };
     ViewContainer(QWidget *parent = 0, QString rootPath = QDir::homePath());
-//    ~ViewContainer(){}
+    ~ViewContainer(){}
     static QList<QAction *> rightClickActions();
     FileSystemModel *model();
     void setView(View view, bool store = true);
