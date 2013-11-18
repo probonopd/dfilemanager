@@ -136,11 +136,9 @@ FileSystemModel::Node::setFilter(const QString &filter)
             else
                 m_children[Visible] << m_children[Filtered].takeAt(f);
         }
-    if ( m_filter != filter )
-    {
-        m_filter = filter;
-        model()->sort(sortColumn(), sortOrder());
-    }
+
+    m_filter = filter;
+    model()->sort(sortColumn(), sortOrder());
 }
 
 void
