@@ -103,6 +103,7 @@ public:
         void rePopulate();
         bool hasChild( const int child );
         bool hasChild( const QString &name );
+        bool hasChildren() { return !m_children[Visible].isEmpty(); }
         Nodes children();
         int childCount();
         int row();

@@ -359,7 +359,7 @@ FileSystemModel::Node::hasChild(const QString &name)
 
 static bool lessThen(FileSystemModel::Node *n1, FileSystemModel::Node *n2)
 {
-    if ( !n1||!n2 )
+    if ( n1==n2 || n1->name().isEmpty() || n2->name().isEmpty() )
         return false;
     const Qt::SortOrder order = n1->sortOrder();
     const int column = n1->sortColumn();
@@ -411,14 +411,15 @@ FileSystemModel::Node::sort(int column, Qt::SortOrder order)
     if ( m_children[Visible].isEmpty() )
         return;
 
-    qStableSort(m_children[Visible].begin(), m_children[Visible].end(), lessThen);
+    if ( m_children[Visible].count() > 1 )
+        qStableSort(m_children[Visible].begin(), m_children[Visible].end(), lessThen);
 
-    Nodes::const_iterator i = m_children[Visible].constBegin(), end = m_children[Visible].constEnd();
-    while ( i != end )
+    int i = m_children[Visible].count();
+    while ( --i > -1 )
     {
-        if ( (*i)->isPopulated() )
-            (*i)->sort(column, order);
-        ++i;
+        Node *node = m_children[Visible].at(i);
+        if ( node->isPopulated() && node->hasChildren() )
+            node->sort(column, order);
     }
 }
 
