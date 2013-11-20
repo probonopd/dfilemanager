@@ -99,11 +99,11 @@ public:
         void insertChild(Node *node);
         inline QString filePath() { return m_filePath; }
         inline QFileInfo fileInfo() { return m_fi; }
-        void populate();
-        void rePopulate();
+        void populate(DataGatherer *thread = 0);
+        void rePopulate(DataGatherer *thread = 0);
         bool hasChild( const int child );
         bool hasChild( const QString &name );
-        bool hasChildren() { return !m_children[Visible].isEmpty(); }
+        inline bool hasChildren() { return !m_children[Visible].isEmpty(); }
         Nodes children();
         int childCount();
         int row();
@@ -141,6 +141,7 @@ public:
         QString m_filePath, m_filter;
         FileSystemModel *m_model;
         friend class FileSystemModel;
+        friend class DataGatherer;
     };
     enum Roles {
         FileIconRole = Qt::DecorationRole,
@@ -245,6 +246,7 @@ private:
     QMutex m_mutex;
     Task m_task;
     QString m_path;
+    friend class FileSystemModel::Node;
 };
 
 }

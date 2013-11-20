@@ -34,7 +34,7 @@ FileIconProvider::FileIconProvider(FileSystemModel *model)
     : QFileIconProvider()
     , m_fsModel(model)
 {
-    connect ( model, SIGNAL(directoryLoaded(QString)), this, SLOT(loadThemedFolders(QString)) );
+//    connect ( model, SIGNAL(directoryLoaded(QString)), this, SLOT(loadThemedFolders(QString)) );
     connect ( this, SIGNAL(dataChanged(QModelIndex,QModelIndex)), model, SIGNAL(dataChanged(QModelIndex,QModelIndex)) );
 }
 
@@ -52,7 +52,8 @@ FileIconProvider::icon(const QFileInfo &info) const
             return QIcon::fromTheme("inode-directory");
 
     if ( s_themedDirs.contains(info.absoluteFilePath()) )
-        return QIcon::fromTheme(s_themedDirs.value(info.absoluteFilePath()));
+        if ( QIcon::hasThemeIcon(s_themedDirs.value(info.absoluteFilePath())) )
+            return QIcon::fromTheme(s_themedDirs.value(info.absoluteFilePath()));
 
     QIcon icn = QFileIconProvider::icon(info);
     if ( QIcon::hasThemeIcon(icn.name()) )
@@ -74,9 +75,10 @@ FileIconProvider::loadThemedFolders(const QString &path)
         const QString &settingsFile(QDir(dirFile).absoluteFilePath(".directory"));
         const QSettings settings(settingsFile, QSettings::IniFormat);
         const QString &iconName = settings.value("Desktop Entry/Icon").toString();
-        if ( QIcon::hasThemeIcon(iconName)
-             && ( !s_themedDirs.contains(dirFile)
-             || ( s_themedDirs.contains(dirFile) && s_themedDirs.value(dirFile) != iconName ) ) )
+        if ( !iconName.isEmpty() )
+        if ( !s_themedDirs.contains(dirFile)
+             || ( s_themedDirs.contains(dirFile)
+                  && s_themedDirs.value(dirFile) != iconName ) )
         {
             s_themedDirs.insert(dirFile, iconName);
             const QModelIndex &index = m_fsModel->index(dir.absoluteFilePath(dirFile));
@@ -93,6 +95,7 @@ FileSystemModel::Node::Node(FileSystemModel *model, const QString &path, Node *p
     , m_model(model)
     , m_filePath(path)
     , m_isLocked(false)
+    , m_filter(QString(""))
 {
     if ( m_parent )
         m_parent->insertChild(this);
@@ -117,6 +120,11 @@ bool FileSystemModel::Node::isHidden() { return fileInfo().isHidden()&&!isLocked
 void
 FileSystemModel::Node::setFilter(const QString &filter)
 {
+    if ( filter == m_filter )
+        return;
+
+    m_filter = filter;
+    emit model()->layoutAboutToBeChanged();
     for ( int i = 0; i < Filtered; ++i )
     {
         int c = m_children[i].count();
@@ -136,9 +144,9 @@ FileSystemModel::Node::setFilter(const QString &filter)
             else
                 m_children[Visible] << m_children[Filtered].takeAt(f);
         }
-
-    m_filter = filter;
-    model()->sort(sortColumn(), sortOrder());
+    if ( m_children[Visible].count() > 1 )
+        sort(&m_children[Visible]);
+    emit model()->layoutChanged();
 }
 
 void
@@ -252,7 +260,7 @@ FileSystemModel::Node
 static QDir::Filters filters = QDir::AllEntries|QDir::System|QDir::NoDotAndDotDot|QDir::Hidden;
 
 void
-FileSystemModel::Node::populate()
+FileSystemModel::Node::populate(DataGatherer *thread)
 {
     if ( isLocked() )
         setLocked(false);
@@ -263,36 +271,49 @@ FileSystemModel::Node::populate()
     {
         model()->beginInsertRows(QModelIndex(), 0, QDir::drives().count()-1);
         for ( int i = 0; i < QDir::drives().count(); ++i )
-            new FileSystemModel::Node(model(), QDir::drives().at(i).filePath(), this);
+            new Node(model(), QDir::drives().at(i).filePath(), this);
         model()->endInsertRows();
     }
-    else if ( fileInfo().isDir() )
+    else if ( fileInfo().isDir() && fileInfo().isAbsolute() )
     {
         refresh();
-        QDir dir(filePath());
-        const QStringList entries = dir.entryList(filters);
-        const int end = entries.count();
-        if ( !dir.isAbsolute() )
-            return;
-        model()->beginInsertRows(model()->index(filePath()), 0, end-1);
-        for ( int i = 0; i < end; ++i )
-            new FileSystemModel::Node(model(), dir.filePath(entries.at(i)), this);
-        model()->endInsertRows();
+        QDirIterator it(filePath());
+        int i = 0;
+        while ( it.hasNext() )
+        {
+            QFileInfo fi(it.next());
+            if ( fi.isAbsolute() && fi.fileName() != "." && fi.fileName() != ".." )
+            {
+                if ( i == 10 )
+                    model()->beginInsertRows(model()->index(filePath()), childCount()-10, childCount());
+                new Node(model(), fi.filePath(), this);
+                if ( i == 10 )
+                {
+                    model()->endInsertRows();
+                    i = 0;
+                    if ( thread )
+                        thread->msleep(5);
+                }
+                else
+                    ++i;
+            }
+        }
     }
-    if ( m_children[Visible].count()>1 )
+    if ( m_children[Visible].count() > 1 )
         sort(&m_children[Visible]);
+    if ( filePath() == model()->rootPath() )
+        emit model()->directoryLoaded(filePath());
+    model()->iconProvider()->loadThemedFolders(filePath());
 }
 
 void
-FileSystemModel::Node::rePopulate()
+FileSystemModel::Node::rePopulate(DataGatherer *thread)
 {
     if ( isLocked() )
         setLocked(false);
     if ( !isPopulated() )
     {
-        populate();
-        if ( filePath() == model()->rootPath() )
-            emit model()->directoryLoaded(filePath());
+        populate(thread);
         return;
     }
     const QModelIndex &index = model()->index(filePath());
@@ -467,7 +488,7 @@ DataGatherer::run()
     {
         if ( !m_node )
             return;
-        m_node->rePopulate();
+        m_node->rePopulate(this);
         m_node->setHiddenVisible(m_node->showHidden());
         FileSystemModel *model = m_node->model();
         if ( m_node->filePath() != model->rootPath() )

@@ -552,7 +552,7 @@ MainWindow::addTab(const QString &path)
     m_stackedWidget->addWidget(container);
     if (!m_model)
         m_model = container->model();
-    static_cast<FileIconProvider *>(m_model->iconProvider())->loadThemedFolders(m_model->rootPath());
+//    static_cast<FileIconProvider *>(m_model->iconProvider())->loadThemedFolders(m_model->rootPath());
 
     if ( Store::config.behaviour.gayWindow )
         m_tabBar->addTab(m_model->iconProvider()->icon(QFileInfo(container->model()->rootPath())), QFileInfo(container->model()->rootPath()).fileName());

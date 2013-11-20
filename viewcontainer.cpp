@@ -220,6 +220,8 @@ ViewContainer::setRootPath(const QString &path)
     const QModelIndex &rootIndex = m_model->index(path);
     if ( rootIndex.isValid() )
     {
+        m_detailsView->setSortingEnabled(false);
+        m_flowView->detailsView()->setSortingEnabled(false);
         setRootIndex(rootIndex);
         m_selectModel->clearSelection();
         if (!m_back && (m_backList.isEmpty() || m_backList.count() &&  path != m_backList.last()))
@@ -232,6 +234,8 @@ ViewContainer::setRootPath(const QString &path)
 void
 ViewContainer::dirLoaded(const QString &path)
 {
+    m_detailsView->setSortingEnabled(true);
+    m_flowView->detailsView()->setSortingEnabled(true);
     bool needSort = true;
 #ifdef Q_WS_X11
     if ( Store::config.views.dirSettings )
@@ -398,6 +402,8 @@ ViewContainer::customCommand()
 void
 ViewContainer::sort(const int column, const Qt::SortOrder order)
 {
+    if ( column == m_model->sortColumn() && order == m_model->sortOrder() )
+        return;
     m_model->sort(column, order);
 }
 
