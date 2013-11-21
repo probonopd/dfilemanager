@@ -926,6 +926,8 @@ FileSystemModel::parent(const QModelIndex &child) const
 bool
 FileSystemModel::hasChildren(const QModelIndex &parent) const
 {
+    if ( isPopulating() )
+        return bool(fromIndex(parent)->filePath() == rootPath());
     return canFetchMore(parent);
 }
 
@@ -937,8 +939,6 @@ FileSystemModel::canFetchMore(const QModelIndex &parent) const
     if ( parent.column() != 0 || parent.model() != this )
         return false;
     Node *node = fromIndex(parent);
-    if ( !node )
-        return false;
     if ( node == m_rootNode )
         return false;
     return node->fileInfo().isDir();

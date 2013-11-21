@@ -372,8 +372,7 @@ MainWindow::createToolBars()
     m_toolBar->addSeparator();
 
     QWidget *spacerFixed = new QWidget(m_toolBar);
-    spacerFixed->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    spacerFixed->setMaximumWidth(64);
+    spacerFixed->setFixedWidth(64);
     m_toolBar->addWidget(spacerFixed);
     m_toolBar->addAction(m_configureAct);
 
