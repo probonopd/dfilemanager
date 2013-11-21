@@ -99,7 +99,7 @@ signals:
     void viewportEntered();
     void leftView();
     void filterChanged();
-    void sortingChanged(const int column, const Qt::SortOrder order);
+    void sortingChanged(const int column, const int order);
     void rootPathChanged(const QString &path);
     
 public slots:
@@ -113,6 +113,7 @@ private slots:
     void scriptTriggered();
     void dirChanged(const QString &path);
     void dirLoaded(const QString &path);
+    void modelSort(const int column, const int order);
 
 private:
     bool m_back;

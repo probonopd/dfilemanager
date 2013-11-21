@@ -99,8 +99,8 @@ public:
         void insertChild(Node *node);
         inline QString filePath() { return m_filePath; }
         inline QFileInfo fileInfo() { return m_fi; }
-        void populate(DataGatherer *thread = 0);
-        void rePopulate(DataGatherer *thread = 0);
+        void populate();
+        void rePopulate();
         bool hasChild( const int child );
         bool hasChild( const QString &name );
         inline bool hasChildren() { return !m_children[Visible].isEmpty(); }
@@ -111,7 +111,6 @@ public:
         QString name();
         inline Node *parent() const { return m_parent; }
         inline bool isPopulated() const { return m_isPopulated; }
-        inline bool isRootNode() { return bool(this==model()->rootNode()); }
         inline void refresh() { m_fi.refresh(); }
         bool rename(const QString &newName);
         QVariant data(const int column);
@@ -121,7 +120,7 @@ public:
         inline Qt::SortOrder sortOrder() { return model()->sortOrder(); }
         inline bool showHidden() { return model()->showHidden(); }
         bool isHidden();
-        inline FileSystemModel *model() { return m_model; }
+        FileSystemModel *model();
         void setHiddenVisible(bool visible);
         inline void setLocked(bool lock) { m_isLocked = lock; }
         inline bool isLocked() { return m_isLocked; }
@@ -138,12 +137,13 @@ public:
         Node *m_parent;
         Nodes m_children[Filtered+1];
         QFileInfo m_fi;
-        QString m_filePath, m_filter;
+        QString m_filePath, m_filter, m_name;
         FileSystemModel *m_model;
         friend class FileSystemModel;
         friend class DataGatherer;
     };
-    enum Roles {
+    enum Roles
+    {
         FileIconRole = Qt::DecorationRole,
         FilePathRole = Qt::UserRole + 1,
         FileNameRole = Qt::UserRole + 2,
@@ -190,6 +190,10 @@ public:
     QModelIndex mkdir(const QModelIndex &parent, const QString &name);
     inline DataGatherer *dataGatherer() { return m_dataGatherer; }
     inline QFileSystemWatcher *dirWatcher() { return m_watcher; }
+    void setSort(const int sortColumn, const int sortOrder);
+    void startPopulating() { m_isPopulating = true; }
+    void endPopulating() { m_isPopulating = false; }
+    bool isPopulating() const { return m_isPopulating; }
 
 public slots:
     inline void setPath(const QString &path) { setRootPath(path); }
@@ -208,12 +212,12 @@ signals:
     void directoryLoaded(const QString &path);
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
     void hiddenVisibilityChanged(bool visible);
-    void sortingChanged(const int sortCol, const Qt::SortOrder order);
+    void sortingChanged(const int sortCol, const int order);
 
 private:
     Node *m_rootNode;
     QAbstractItemView *m_view;
-    bool m_showHidden;
+    bool m_showHidden, m_isPopulating;
     QString m_rootPath;
     FileIconProvider *m_ip;
     int m_sortColumn;
@@ -231,7 +235,7 @@ class DataGatherer : public QThread
     Q_OBJECT
 public:
     enum Task { Populate = 0, Generate = 1 };
-    explicit DataGatherer(QObject *parent = 0):QThread(parent), m_node(0){}
+    explicit DataGatherer(QObject *parent = 0):QThread(parent), m_node(0), m_model(static_cast<FileSystemModel *>(parent)){}
     void populateNode(FileSystemModel::Node *node);
     void generateNode(const QString &path, FileSystemModel::Node *node);
 
@@ -243,10 +247,12 @@ signals:
 
 private:
     FileSystemModel::Node *m_node, *m_result;
+    FileSystemModel *m_model;
     QMutex m_mutex;
     Task m_task;
     QString m_path;
     friend class FileSystemModel::Node;
+    friend class FileSystemModel;
 };
 
 }

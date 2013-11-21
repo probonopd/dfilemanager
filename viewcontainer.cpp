@@ -74,7 +74,8 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     connect( m_iconView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
     connect( m_detailsView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
     connect( m_flowView->detailsView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
-    connect( m_model, SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SIGNAL(sortingChanged(int,Qt::SortOrder)) );
+    connect( m_model, SIGNAL(sortingChanged(int,int)), this, SIGNAL(sortingChanged(int,int)) );
+    connect( m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(modelSort(int,int)) );
 
     foreach (QAbstractItemView *v, QList<QAbstractItemView *>() << m_iconView << m_detailsView /*<< m_columnsView*/ << m_flowView->detailsView())
     {
@@ -100,6 +101,17 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     m_model->setPath(rootPath);
 
     emit iconSizeChanged(Store::config.views.iconView.iconSize*16);
+}
+
+void
+ViewContainer::modelSort(const int column, const int order)
+{
+    m_detailsView->header()->blockSignals(true);
+    m_detailsView->header()->setSortIndicator(column, (Qt::SortOrder)order);
+    m_detailsView->header()->blockSignals(false);
+    m_flowView->detailsView()->header()->blockSignals(true);
+    m_flowView->detailsView()->header()->setSortIndicator(column, (Qt::SortOrder)order);
+    m_flowView->detailsView()->header()->blockSignals(false);
 }
 
 PathNavigator *ViewContainer::pathNav() { return m_breadCrumbs->pathNav(); }
@@ -220,8 +232,19 @@ ViewContainer::setRootPath(const QString &path)
     const QModelIndex &rootIndex = m_model->index(path);
     if ( rootIndex.isValid() )
     {
-        m_detailsView->setSortingEnabled(false);
-        m_flowView->detailsView()->setSortingEnabled(false);
+        if ( Store::config.views.dirSettings )
+        {
+            const QDir dir(path);
+            QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
+            settings.beginGroup("DFM");
+            QVariant var = settings.value("view");
+            if ( var.isValid() )
+            {
+                View view = (View)var.value<int>();
+                setView(view, false);
+            }
+            settings.endGroup();
+        }
         setRootIndex(rootIndex);
         m_selectModel->clearSelection();
         if (!m_back && (m_backList.isEmpty() || m_backList.count() &&  path != m_backList.last()))
@@ -234,35 +257,6 @@ ViewContainer::setRootPath(const QString &path)
 void
 ViewContainer::dirLoaded(const QString &path)
 {
-    m_detailsView->setSortingEnabled(true);
-    m_flowView->detailsView()->setSortingEnabled(true);
-    bool needSort = true;
-#ifdef Q_WS_X11
-    if ( Store::config.views.dirSettings )
-    {
-        const QDir dir(path);
-        QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
-        settings.beginGroup("DFM");
-        QVariant varCol = settings.value("sortCol");
-        QVariant varOrd = settings.value("sortOrd");
-        if ( varCol.isValid() && varOrd.isValid() )
-        {
-            needSort = false;
-            int col = varCol.value<int>();
-            Qt::SortOrder ord = (Qt::SortOrder)varOrd.value<int>();
-            sort(col, ord);
-        }
-        QVariant var = settings.value("view");
-        if ( var.isValid() )
-        {
-            View view = (View)var.value<int>();
-            setView(view, false);
-        }
-        settings.endGroup();
-    }
-#endif
-    if ( needSort )
-        sort(m_model->sortColumn(), m_model->sortOrder());
 }
 
 void

@@ -51,6 +51,7 @@ public:
     static QImage reflection( const QImage &img = QImage() );
     static QImage flowImg( const QImage &img = QImage() );
     static QImage blurred( const QImage& image, const QRect& rect, int radius, bool alphaOnly = false );
+    static void getSorting(const QString &file, int *sortCol, Qt::SortOrder *order);
 
     template<typename T> static inline T absWinFor( QWidget *w )
     {

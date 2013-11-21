@@ -191,17 +191,7 @@ public:
 protected:
     QSize sizeHint( const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
-//        return textData(option, index, Size).toSize();
-        if ( !m_model||!index.isValid() )
-            return QSize();
-        static QHash<QPair<QString, int>, QSize> s_sizes[2];
-        const bool selected = option.state&QStyle::State_Selected;
-        const QString &path = m_model->filePath(index);
-        const int size = option.decorationSize.height();
-        if ( s_sizes[selected].contains(QPair<QString, int>(path, size)) )
-            return s_sizes[selected].value(QPair<QString, int>(path, size));
-        s_sizes[selected].insert(QPair<QString, int>(path, size), textData(option, index, Size).toSize());
-        return s_sizes[selected].value(QPair<QString, int>(path, size));
+        return textData(option, index, Size).toSize();
     }
     QVariant textData( const QStyleOptionViewItem &option, const QModelIndex &index, const Role role, QPainter *p = 0 ) const
     {

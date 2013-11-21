@@ -55,9 +55,11 @@ protected:
 
 signals:
     void newTabRequest(const QModelIndex &path);
+    void sortIndicatorChanged(int column, int order);
 
 private slots:
-    void sortingChanged(const int column, const Qt::SortOrder order);
+    void sortingChanged(const int column, const int order);
+    void sortingChanged(const int column, const Qt::SortOrder order) { emit sortIndicatorChanged(column, (int)order); }
 
 private:
     FileSystemModel *m_model;

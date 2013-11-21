@@ -30,6 +30,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QList>
+#include "iconprovider.h"
 
 using namespace DFM;
 
@@ -540,7 +541,7 @@ MainWindow::addTab(const QString &path)
     connect( container, SIGNAL(newTabRequest(QString)), this, SLOT(addTab(QString)));
     connect( container, SIGNAL(entered(QModelIndex)), m_infoWidget, SLOT(hovered(QModelIndex)));
     connect( container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
-    connect( container, SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
+    connect( container, SIGNAL(sortingChanged(int,int)), this, SLOT(sortingChanged(int,int)));
     connect( container->model(), SIGNAL(hiddenVisibilityChanged(bool)), m_showHiddenAct, SLOT(setChecked(bool)) );
 
     QList<QAction *> actList;
@@ -574,7 +575,7 @@ MainWindow::tabChanged(int currentIndex)
     emit viewChanged( m_activeContainer->currentView() );
     m_model = m_activeContainer->model();
 
-    sortingChanged(m_activeContainer->model()->sortColumn(), m_activeContainer->model()->sortOrder());
+    sortingChanged(m_activeContainer->model()->sortColumn(), (int)m_activeContainer->model()->sortOrder());
     m_recentFoldersView->folderEntered(m_model->rootPath());
     setWindowTitle(m_tabBar->tabText(currentIndex));
     m_activeContainer->setPathEditable(m_pathEditAct->isChecked());
@@ -642,7 +643,7 @@ MainWindow::setActions()
 void
 MainWindow::viewItemHovered( const QModelIndex &index )
 {
-    const QString &file = m_model->filePath( m_model->index( m_model->filePath(index) ) );
+    const QString &file = m_model->filePath(index);
     m_statusBar->showMessage( file );
 }
 
@@ -684,16 +685,16 @@ MainWindow::hidePath()
 }
 
 void
-MainWindow::sortingChanged(const int column, const Qt::SortOrder order)
+MainWindow::sortingChanged(const int column, const int order)
 {
     Store::config.behaviour.sortingCol=column;
-    Store::config.behaviour.sortingOrd=order;
+    Store::config.behaviour.sortingOrd=(Qt::SortOrder)order;
 
     m_sortNameAct->setChecked(column == 0);
     m_sortSizeAct->setChecked(column == 1);
     m_sortTypeAct->setChecked(column == 2);
     m_sortDateAct->setChecked(column == 3);
-    m_sortDescAct->setChecked(order == Qt::DescendingOrder);
+    m_sortDescAct->setChecked((Qt::SortOrder)order == Qt::DescendingOrder);
 }
 
 void
@@ -752,6 +753,81 @@ MainWindow::windowActivationChange(bool wasActive)
             btn->setStyleSheet(qApp->styleSheet());
             btn->update();
         }
+}
+
+void
+MainWindow::readSettings()
+{
+    restoreState(Store::settings()->value("windowState").toByteArray(), 1);
+    m_tabWin->restoreState(Store::settings()->value("tabWindowState").toByteArray(), 1);
+    resize(Store::settings()->value("size", QSize(800, 300)).toSize());
+    move(Store::settings()->value("pos", QPoint(200, 200)).toPoint());
+
+    m_tabWin->addDockWidget(Qt::LeftDockWidgetArea, m_dockLeft);
+    m_tabWin->addDockWidget(Qt::RightDockWidgetArea, m_dockRight);
+    m_tabWin->addDockWidget((Qt::DockWidgetArea)Store::config.docks.infoArea, m_dockBottom);
+
+    m_statAct->setChecked(Store::settings()->value("statusVisible", true).toBool());
+    m_pathVisibleAct->setChecked(Store::settings()->value("pathVisible", true).toBool());
+    m_pathEditAct->setChecked(Store::settings()->value("pathEditable", false).toBool());
+    m_menuAct->setChecked(Store::settings()->value("menuVisible", true).toBool());
+    m_placesView->populate();
+    updateConfig();
+}
+
+void
+MainWindow::updateIcons()
+{
+    if ( !m_sortButton )
+        return;
+
+    const QColor &tbfgc(m_sortButton->palette().color(m_sortButton->foregroundRole()));
+    const int tbis = m_toolBar->iconSize().height();
+    m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_goBackAct->setIcon(IconProvider::icon(IconProvider::GoBack, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_goForwardAct->setIcon(IconProvider::icon(IconProvider::GoForward, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_iconViewAct->setIcon(IconProvider::icon(IconProvider::IconView, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_listViewAct->setIcon(IconProvider::icon(IconProvider::DetailsView, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_colViewAct->setIcon(IconProvider::icon(IconProvider::ColumnsView, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_flowAct->setIcon(IconProvider::icon(IconProvider::FlowView, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_configureAct->setIcon(IconProvider::icon(IconProvider::Configure, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_showHiddenAct->setIcon(IconProvider::icon(IconProvider::Hidden, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    if ( m_sortButton )
+    {
+        m_sortButton->setIcon(IconProvider::icon(IconProvider::Sort, tbis, tbfgc, false));
+        m_toolBar->widgetForAction(m_showHiddenAct)->setMinimumWidth(m_sortButton->width());
+        m_toolBar->widgetForAction(m_homeAct)->setMinimumWidth(m_sortButton->width());
+        m_toolBar->widgetForAction(m_configureAct)->setMinimumWidth(m_sortButton->width());
+    }
+}
+
+void
+MainWindow::updateConfig()
+{
+    m_tabBar->setVisible(m_tabBar->count() > 1 ? true : !Store::config.behaviour.hideTabBarWhenOnlyOneTab);
+    if ( m_activeContainer )
+        m_activeContainer->refresh();
+    updateIcons();
+    m_placesView->viewport()->update();
+    emit settingsChanged();
+}
+
+void
+MainWindow::writeSettings()
+{
+    Store::settings()->setValue("pos", pos());
+    Store::settings()->setValue("size", size());
+    Store::settings()->setValue("windowState", saveState(1));
+    Store::settings()->setValue("tabWindowState", m_tabWin->saveState(1));
+    Store::settings()->setValue("statusVisible", m_statAct->isChecked());
+    Store::settings()->setValue("pathVisible", m_pathVisibleAct->isChecked());
+    Store::settings()->setValue("pathEditable", m_pathEditAct->isChecked());
+    Store::settings()->setValue("menuVisible", m_menuAct->isChecked());
+    Store::config.behaviour.sortingCol = m_model->sortColumn();
+    Store::config.behaviour.sortingOrd = m_model->sortOrder();
+    Store::writeConfig();
+    m_placesView->store();
 }
 
 MainWindow *MainWindow::currentWindow() { return s_currentWindow; }

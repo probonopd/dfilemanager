@@ -417,6 +417,8 @@ PreView::setCenterIndex(const QModelIndex &index)
     m_centerIndex = index;
     m_nextRow = m_row;
     m_row = qMin(index.row(), m_items.count()-1);
+    if ( !m_textItem || !m_gfxProxy )
+        return;
     m_textItem->setText(index.data().toString());
     m_textItem->setZValue(m_items.count()+2);
     m_gfxProxy->setZValue(m_items.count()+2);

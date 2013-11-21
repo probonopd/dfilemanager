@@ -286,3 +286,19 @@ Ops::reflection( const QImage &img )
     return Ops::blurred( refl, refl.rect(), 5 );
 }
 
+void
+Ops::getSorting(const QString &file, int *sortCol, Qt::SortOrder *order)
+{
+    const QDir dir(file);
+    QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
+    settings.beginGroup("DFM");
+    QVariant varCol = settings.value("sortCol");
+    QVariant varOrd = settings.value("sortOrd");
+    if ( varCol.isValid() && varOrd.isValid() )
+    {
+        *sortCol = varCol.value<int>();
+        *order = (Qt::SortOrder)varOrd.value<int>();
+    }
+    settings.endGroup();
+}
+

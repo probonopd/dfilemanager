@@ -71,8 +71,9 @@ DetailsView::DetailsView(QWidget *parent)
     setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-    connect(header(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), container(), SIGNAL(sortingChanged(int,Qt::SortOrder)));
-    connect(container(), SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
+    connect(this, SIGNAL(sortIndicatorChanged(int,int)), container(), SIGNAL(sortingChanged(int,int)));
+    connect(header(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
+    connect(container(), SIGNAL(sortingChanged(int,int)), this, SLOT(sortingChanged(int,int)));
 }
 
 ViewContainer
@@ -89,12 +90,12 @@ ViewContainer
 }
 
 void
-DetailsView::sortingChanged(const int column, const Qt::SortOrder order)
+DetailsView::sortingChanged(const int column, const int order)
 {
     if ( header() && model() == m_model && column>-1&&column<header()->count() )
     {
         header()->blockSignals(true);
-        header()->setSortIndicator(column, order);
+        header()->setSortIndicator(column, (Qt::SortOrder)order);
         header()->blockSignals(false);
     }
 }

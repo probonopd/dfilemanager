@@ -132,7 +132,7 @@ private slots:
     void activatePath(const QString &folder) { m_activeContainer->model()->setPath(folder); }
     void addBookmarks();
     void setSorting();
-    void sortingChanged(const int column, const Qt::SortOrder order);
+    void sortingChanged(const int column, const int order);
 
 signals:
     void viewChanged( QAbstractItemView *view );

@@ -88,6 +88,54 @@ FileIconProvider::loadThemedFolders(const QString &path)
 }
 //-----------------------------------------------------------------------------
 
+static bool lessThen(FileSystemModel::Node *n1, FileSystemModel::Node *n2)
+{
+    if ( !n1 || !n2 || n1 == n2 || !n1->parent() || !n2->parent() )
+        return false;
+    const Qt::SortOrder order = n1->sortOrder();
+    const int column = n1->sortColumn();
+
+    if ( n1->fileInfo().isDir() && !n2->fileInfo().isDir() )
+        return true;
+    if ( !n1->fileInfo().isDir() && n2->fileInfo().isDir() )
+        return false;
+
+    if ( n1->isHidden() && !n2->isHidden() )
+        return false;
+    if ( !n1->isHidden() && n2->isHidden() )
+        return true;
+
+    switch (column)
+    {
+    case 0:
+        if ( order == Qt::AscendingOrder ) //name
+            return n1->name().toLower()<n2->name().toLower();
+        else
+            return !(n1->name().toLower()<n2->name().toLower());
+        break;
+    case 1:
+        if ( order == Qt::AscendingOrder )  //size
+            return n1->fileInfo().size()<n2->fileInfo().size();
+        else
+            return !(n1->fileInfo().size()<n2->fileInfo().size());
+        break;
+    case 2:
+        if ( order == Qt::AscendingOrder )  //type
+            return n1->fileInfo().suffix()<n2->fileInfo().suffix();
+        else
+            return !(n1->fileInfo().suffix()<n2->fileInfo().suffix());
+        break;
+    case 3:
+        if ( order == Qt::AscendingOrder )  //lastModified
+            return n1->fileInfo().lastModified()<n2->fileInfo().lastModified();
+        else
+            return !(n1->fileInfo().lastModified()<n2->fileInfo().lastModified());
+        break;
+    default:
+        return false;
+    }
+}
+
 FileSystemModel::Node::Node(FileSystemModel *model, const QString &path, Node *parent)
     : m_parent(parent)
     , m_isPopulated(false)
@@ -99,6 +147,12 @@ FileSystemModel::Node::Node(FileSystemModel *model, const QString &path, Node *p
 {
     if ( m_parent )
         m_parent->insertChild(this);
+    if ( m_fi == QFileInfo() )
+        m_name = "-";
+    else if ( m_fi.fileName().isEmpty() )
+        m_name = filePath();
+    else
+        m_name = m_fi.fileName();
 }
 
 FileSystemModel::Node::~Node() { for (int i = 0; i<Filtered+1; ++i ) qDeleteAll(m_children[i]); }
@@ -111,11 +165,13 @@ bool FileSystemModel::Node::hasChild(const int child) { return child>-1&&child<c
 
 FileSystemModel::Node *FileSystemModel::Node::child(const int c) { return hasChild(c)?children().at(c):0; }
 
-QString FileSystemModel::Node::name() { return isRootNode()?QString():fileInfo().fileName().isEmpty()?filePath():m_fi.fileName(); }
+QString FileSystemModel::Node::name() { return m_name; }
 
 FileSystemModel::Nodes FileSystemModel::Node::children() { return m_children[Visible]; }
 
 bool FileSystemModel::Node::isHidden() { return fileInfo().isHidden()&&!isLocked(); }
+
+FileSystemModel *FileSystemModel::Node::model() { return m_model; }
 
 void
 FileSystemModel::Node::setFilter(const QString &filter)
@@ -155,7 +211,13 @@ FileSystemModel::Node::insertChild(Node *node)
     if ( node->isHidden() && !showHidden() )
         m_children[Hidden] << node;
     else
+    {
+        model()->beginInsertRows(model()->index(filePath()), childCount(), childCount());
         m_children[Visible] << node;
+        model()->endInsertRows();
+        model()->dataGatherer()->msleep(5);
+
+    }
 }
 
 bool
@@ -166,6 +228,7 @@ FileSystemModel::Node::rename(const QString &newName)
     if ( QFile::rename(oldName, dir.absoluteFilePath(newName)) )
     {
         m_filePath = dir.absoluteFilePath(newName);
+        m_name = newName;
         m_fi.setFile(m_filePath);
         m_fi.refresh();
         return true;
@@ -260,14 +323,14 @@ FileSystemModel::Node
 static QDir::Filters filters = QDir::AllEntries|QDir::System|QDir::NoDotAndDotDot|QDir::Hidden;
 
 void
-FileSystemModel::Node::populate(DataGatherer *thread)
+FileSystemModel::Node::populate()
 {
     if ( isLocked() )
         setLocked(false);
     if ( isPopulated() )
         return;
     m_isPopulated = true;
-    if ( isRootNode() )
+    if ( this == model()->rootNode() )
     {
         model()->beginInsertRows(QModelIndex(), 0, QDir::drives().count()-1);
         for ( int i = 0; i < QDir::drives().count(); ++i )
@@ -277,43 +340,35 @@ FileSystemModel::Node::populate(DataGatherer *thread)
     else if ( fileInfo().isDir() && fileInfo().isAbsolute() )
     {
         refresh();
-        QDirIterator it(filePath());
-        int i = 0;
+        QDirIterator it(filePath(), filters);
         while ( it.hasNext() )
-        {
-            QFileInfo fi(it.next());
-            if ( fi.isAbsolute() && fi.fileName() != "." && fi.fileName() != ".." )
-            {
-                if ( i == 10 )
-                    model()->beginInsertRows(model()->index(filePath()), childCount()-10, childCount());
-                new Node(model(), fi.filePath(), this);
-                if ( i == 10 )
-                {
-                    model()->endInsertRows();
-                    i = 0;
-                    if ( thread )
-                        thread->msleep(5);
-                }
-                else
-                    ++i;
-            }
-        }
+            new Node(model(), it.next(), this);
     }
-    if ( m_children[Visible].count() > 1 )
-        sort(&m_children[Visible]);
+
     if ( filePath() == model()->rootPath() )
         emit model()->directoryLoaded(filePath());
     model()->iconProvider()->loadThemedFolders(filePath());
 }
 
 void
-FileSystemModel::Node::rePopulate(DataGatherer *thread)
+FileSystemModel::Node::rePopulate()
 {
+    model()->startPopulating();
     if ( isLocked() )
         setLocked(false);
+    if ( filePath() == model()->rootPath() )
+    {
+        int sc = model()->sortColumn();
+        Qt::SortOrder so = model()->sortOrder();
+        Ops::getSorting(filePath(), &sc, &so);
+        if ( sc != model()->sortColumn() || so != model()->sortOrder() )
+            model()->setSort(sc, so);
+    }
     if ( !isPopulated() )
     {
-        populate(thread);
+        populate();
+        model()->sort(model()->sortColumn(), model()->sortOrder());
+        model()->endPopulating();
         return;
     }
     const QModelIndex &index = model()->index(filePath());
@@ -348,8 +403,10 @@ FileSystemModel::Node::rePopulate(DataGatherer *thread)
                 model()->endInsertRows();
             }
         }
+    model()->endPopulating();
     if ( filePath() == model()->rootPath() )
         emit model()->directoryLoaded(filePath());
+    model()->sort(model()->sortColumn(), model()->sortOrder());
 
     for ( int i = 0; i < m_children[Visible].count(); ++i )
         if ( m_children[Visible].at(i)->isPopulated() )
@@ -370,54 +427,6 @@ FileSystemModel::Node::hasChild(const QString &name)
         }
     }
     return false;
-}
-
-static bool lessThen(FileSystemModel::Node *n1, FileSystemModel::Node *n2)
-{
-    if ( n1==n2 || n1->name().isEmpty() || n2->name().isEmpty() )
-        return false;
-    const Qt::SortOrder order = n1->sortOrder();
-    const int column = n1->sortColumn();
-
-    if ( n1->fileInfo().isDir() && !n2->fileInfo().isDir() )
-        return true;
-    if ( !n1->fileInfo().isDir() && n2->fileInfo().isDir() )
-        return false;
-
-    if ( n1->isHidden() && !n2->isHidden() )
-        return false;
-    if ( !n1->isHidden() && n2->isHidden() )
-        return true;
-
-    switch (column)
-    {
-    case 0:
-        if ( order == Qt::AscendingOrder ) //name
-            return n1->name().toLower()<n2->name().toLower();
-        else
-            return !(n1->name().toLower()<n2->name().toLower());
-        break;
-    case 1:
-        if ( order == Qt::AscendingOrder )  //size
-            return n1->fileInfo().size()<n2->fileInfo().size();
-        else
-            return !(n1->fileInfo().size()<n2->fileInfo().size());
-        break;
-    case 2:
-        if ( order == Qt::AscendingOrder )  //type
-            return n1->fileInfo().suffix()<n2->fileInfo().suffix();
-        else
-            return !(n1->fileInfo().suffix()<n2->fileInfo().suffix());
-        break;
-    case 3:
-        if ( order == Qt::AscendingOrder )  //lastModified
-            return n1->fileInfo().lastModified()<n2->fileInfo().lastModified();
-        else
-            return !(n1->fileInfo().lastModified()<n2->fileInfo().lastModified());
-        break;
-    default:
-        return false;
-    }
 }
 
 void
@@ -441,6 +450,10 @@ FileSystemModel::Node::sort(int column, Qt::SortOrder order)
 void
 FileSystemModel::Node::sort(Nodes *nodes)
 {
+    if ( !nodes )
+        return;
+    if ( nodes->count() < 2 )
+        return;
     qStableSort(nodes->begin(), nodes->end(), lessThen);
 }
 
@@ -478,22 +491,63 @@ FileSystemModel::Node::setHiddenVisible(bool visible)
 }
 
 //-----------------------------------------------------------------------------
+# if 0
+#ifdef Q_OS_LINUX
+// for ioprio
+#include <unistd.h>
+#include <sys/syscall.h>
+enum {
+    IOPRIO_CLASS_NONE,
+    IOPRIO_CLASS_RT,
+    IOPRIO_CLASS_BE,
+    IOPRIO_CLASS_IDLE
+};
+
+enum {
+    IOPRIO_WHO_PROCESS = 1,
+    IOPRIO_WHO_PGRP,
+    IOPRIO_WHO_USER
+};
+#define IOPRIO_CLASS_SHIFT  13
+#endif
+#endif
 
 void
 DataGatherer::run()
 {
+#if 0
+    bool ioPriorityWorked = false;
+#if defined(Q_OS_LINUX) && defined(SYS_ioprio_set)
+
+    // try setting the idle priority class
+    int i = IOPRIO_CLASS_IDLE << IOPRIO_CLASS_SHIFT;
+    qDebug() << IOPRIO_CLASS_IDLE << IOPRIO_CLASS_SHIFT << i;
+
+    ioPriorityWorked = ( syscall( SYS_ioprio_set, IOPRIO_WHO_PROCESS, 0, IOPRIO_CLASS_IDLE << IOPRIO_CLASS_SHIFT ) >= 0 );
+
+    // try setting the lowest priority in the best-effort priority class (the default class)
+
+    if( !ioPriorityWorked )
+        ioPriorityWorked = ( syscall( SYS_ioprio_set, IOPRIO_WHO_PROCESS, 0, 7 | ( IOPRIO_CLASS_BE << IOPRIO_CLASS_SHIFT ) ) >= 0 );
+#endif
+    if( !ioPriorityWorked )
+        setPriority( QThread::IdlePriority );
+
+    qDebug() << ioPriorityWorked;
+#endif
+
     switch ( m_task )
     {
     case Populate:
     {
         if ( !m_node )
             return;
-        m_node->rePopulate(this);
+
+        m_node->rePopulate();
         m_node->setHiddenVisible(m_node->showHidden());
-        FileSystemModel *model = m_node->model();
-        if ( m_node->filePath() != model->rootPath() )
+        if ( m_node->filePath() != m_model->rootPath() )
             return;
-        QFileSystemWatcher *watcher = model->dirWatcher();
+        QFileSystemWatcher *watcher = m_model->dirWatcher();
         if ( !watcher->directories().isEmpty() )
             watcher->removePaths(watcher->directories());
         QStringList newPaths;
@@ -526,10 +580,8 @@ DataGatherer::populateNode(FileSystemModel::Node *node)
 {
     if ( isRunning() )
         return;
-    m_mutex.lock();
     m_task = Populate;
     m_node = node;
-    m_mutex.unlock();
     start();
 //    QTimer::singleShot(1000, this, SLOT(start()));
 }
@@ -539,12 +591,10 @@ DataGatherer::generateNode(const QString &path, FileSystemModel::Node *node)
 {
     if ( isRunning() )
         return;
-    m_mutex.lock();
     m_task = Generate;
     m_path = path;
     m_node = node;
     m_result = 0;
-    m_mutex.unlock();
     start();
 }
 
@@ -563,6 +613,7 @@ FileSystemModel::FileSystemModel(QObject *parent)
     , m_watcher(new QFileSystemWatcher(this))
     , m_container(0)
     , m_dataGatherer(new DataGatherer(this))
+    , m_isPopulating(false)
 {
     if ( ViewContainer *vc = qobject_cast<ViewContainer *>(parent) )
         m_container = vc;
@@ -583,6 +634,14 @@ FileSystemModel::~FileSystemModel()
         m_thumbsLoader->wait();
     while ( m_it->isRunning() )
         m_it->wait();
+}
+
+void
+FileSystemModel::setSort(const int sortColumn, const int sortOrder)
+{
+    m_sortColumn = sortColumn;
+    m_sortOrder = (Qt::SortOrder)sortOrder;
+    emit sortingChanged(m_sortColumn, (int)m_sortOrder);
 }
 
 void
@@ -644,12 +703,12 @@ FileSystemModel::flags(const QModelIndex &index) const
     if (!index.isValid())
         return 0;
     Qt::ItemFlags flags = QAbstractItemModel::flags(index);
-    Node *node = fromIndex(index);
-    if ( node->fileInfo().isWritable() )
+    QFileInfo fi(fileInfo(index));
+    if ( fi.isWritable() )
         flags |= Qt::ItemIsEditable;
-    if ( node->fileInfo().isDir() )
+    if ( fi.isDir() )
         flags |= Qt::ItemIsDropEnabled;
-    if ( node->fileInfo().isReadable() )
+    if ( fi.isReadable() )
         flags |= Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
     return flags;
 }
@@ -687,7 +746,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         return QVariant();
 
     Node *node = fromIndex(index);
-    if ( node->isRootNode() )
+    if ( node == m_rootNode )
         return QVariant();
     if ( role == Qt::DecorationRole && index.column() > 0 )
         return QVariant();
@@ -814,8 +873,10 @@ FileSystemModel::rowCount(const QModelIndex &parent) const
 FileSystemModel::Node
 *FileSystemModel::fromIndex(const QModelIndex &index) const
 {
+    if ( !index.isValid() )
+        return m_rootNode;
     Node *node = static_cast<Node *>(index.internalPointer());
-    if ( index.isValid() && node )
+    if ( node )
         return node;
     return m_rootNode;
 }
@@ -840,9 +901,6 @@ FileSystemModel::index(int row, int column, const QModelIndex &parent) const
 QModelIndex
 FileSystemModel::index(const QString &path) const
 {
-    if ( !QFileInfo(path).exists() )
-        return QModelIndex();
-
     Node *node = m_rootNode->node(path);
     if ( !node )
         return QModelIndex();
@@ -868,8 +926,6 @@ FileSystemModel::parent(const QModelIndex &child) const
 bool
 FileSystemModel::hasChildren(const QModelIndex &parent) const
 {
-    if ( !parent.isValid() )
-        return false;
     return canFetchMore(parent);
 }
 
@@ -878,11 +934,13 @@ FileSystemModel::canFetchMore(const QModelIndex &parent) const
 {
     if ( !parent.isValid() )
         return false;
-    if ( parent.column() != 0 )
+    if ( parent.column() != 0 || parent.model() != this )
         return false;
     Node *node = fromIndex(parent);
-    if ( node->isRootNode() )
-        return true;
+    if ( !node )
+        return false;
+    if ( node == m_rootNode )
+        return false;
     return node->fileInfo().isDir();
 }
 
@@ -891,18 +949,17 @@ FileSystemModel::fetchMore(const QModelIndex &parent)
 {
     if ( parent.isValid() && parent.column() != 0 )
         return;
-
     Node *node = fromIndex(parent);
     if ( !node )
         return;
     if ( !node->isPopulated() )
         dataGatherer()->populateNode(node);
-
 }
 
 void
 FileSystemModel::sort(int column, Qt::SortOrder order)
 {
+    dataGatherer()->m_mutex.lock();
     const bool orderChanged = bool(m_sortColumn!=column||m_sortOrder!=order);
     m_sortColumn = column;
     m_sortOrder = order;
@@ -919,7 +976,7 @@ FileSystemModel::sort(int column, Qt::SortOrder order)
         newList << index(old.at(i)->filePath());
     changePersistentIndexList(oldList, newList);
     if ( orderChanged )
-        emit sortingChanged(column, order);
+        emit sortingChanged(column, (int)order);
     emit layoutChanged();
 
 #ifdef Q_WS_X11
@@ -949,6 +1006,7 @@ FileSystemModel::sort(int column, Qt::SortOrder order)
         settings.endGroup();
     }
 #endif
+    dataGatherer()->m_mutex.unlock();
 }
 
 void
@@ -997,7 +1055,5 @@ FileSystemModel::filePath(const QModelIndex &index) const
     if ( !index.isValid() )
         return QString();
     Node *node = fromIndex(index);
-    if ( !node )
-        return QString();
     return node->filePath();
 }

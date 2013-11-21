@@ -32,7 +32,6 @@ SOURCES = main.cpp \
     mainwindow.cpp \
     iconview.cpp \
     placesview.cpp \
-    settings.cpp \
     actions.cpp \
     deletedialog.cpp \
     icondialog.cpp \
