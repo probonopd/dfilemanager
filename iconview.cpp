@@ -485,7 +485,7 @@ IconView::updateLayout()
 {
     if ( !isVisible() )
         return;
-    const int horMargin = verticalScrollBar()->width() + qMax( 2, style()->pixelMetric( QStyle::PM_DefaultFrameWidth ) );
+    const int horMargin = style()->pixelMetric(QStyle::PM_ScrollBarExtent) + qMax( 1, style()->pixelMetric(QStyle::PM_DefaultFrameWidth)*3 );
     int contentsWidth = width()-horMargin;
 
     int horItemCount = contentsWidth/( iconSize().width() + Store::config.views.iconView.textWidth*2 );
