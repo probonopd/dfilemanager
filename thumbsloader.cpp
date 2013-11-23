@@ -34,6 +34,7 @@ using namespace DFM;
 
 static QHash<QString, QImage> s_thumbs;
 static QHash<QString, QString> s_dateCheck;
+static QHash<QString, QString> s_icons;
 
 ThumbsLoader::ThumbsLoader(QObject *parent) :
     QThread(parent),
@@ -63,6 +64,20 @@ ThumbsLoader::removeThumb(const QString &file)
 }
 
 bool
+ThumbsLoader::hasIcon(const QString &dir) const
+{
+    return s_icons.contains(dir);
+}
+
+QString
+ThumbsLoader::icon(const QString &dir) const
+{
+    if ( hasIcon(dir) )
+        return s_icons.value(dir);
+    return QString();
+}
+
+bool
 ThumbsLoader::hasThumb(const QString &file) const
 {
     return s_thumbs.contains(file) && s_dateCheck.value(file) == QFileInfo(file).lastModified().toString();
@@ -71,7 +86,7 @@ ThumbsLoader::hasThumb(const QString &file) const
 void
 ThumbsLoader::queueFile(const QString &file)
 {
-    if ( m_queue.contains(file) || hasThumb(file) || m_tried.contains(file) )
+    if ( m_queue.contains(file) || hasThumb(file) || hasIcon(file) || m_tried.contains(file) )
         return;
 
     m_queue << file;
@@ -96,6 +111,22 @@ ThumbsLoader::genThumb( const QString &path )
         return;
     }
 
+    if ( fi.isDir() )
+    {
+        const QString &dirFile(fi.absoluteFilePath());
+        const QString &settingsFile(QDir(dirFile).absoluteFilePath(".directory"));
+        const QSettings settings(settingsFile, QSettings::IniFormat);
+        const QString &iconName = settings.value("Desktop Entry/Icon").toString();
+        if ( !iconName.isEmpty() )
+            if ( !hasIcon(dirFile) )
+        {
+            s_icons.insert(dirFile, iconName);
+            const QModelIndex &index = m_fsModel->index(dirFile);
+            emit thumbFor(path, iconName);
+        }
+        return;
+    }
+
     QImage image;
     if ( !APP->plugins().isEmpty() )
         for ( int i = 0; i<APP->plugins().count(); ++i )
@@ -107,7 +138,7 @@ ThumbsLoader::genThumb( const QString &path )
     {
         s_dateCheck.insert(path, fi.lastModified().toString());
         s_thumbs.insert(path, image);
-        emit thumbFor(path);
+        emit thumbFor(path, QString());
         return;
     }
     m_tried << path;
@@ -160,10 +191,10 @@ ImagesThread::genNameIconsFor(const QString &name)
     const QImage &source = m_nameQueue.value(name);
     if ( source.isNull() )
         return;
+
     s_themeIcons[0].insert(name, Ops::flowImg(source));
     s_themeIcons[1].insert(name, Ops::reflection(source));
     m_nameQueue.remove(name);
-//    emit imagesReady(source.first);
 }
 
 void ImagesThread::run()

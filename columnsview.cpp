@@ -293,23 +293,23 @@ ColumnsView::rowsInserted(const QModelIndex &parent, int start, int end)
     QListView::rowsInserted(parent, start, end);
     if ( parent != rootIndex() )
         return;
-    int wbefore = m_width;
-    for ( int i = start; i<=end; ++i )
-    {
-        const QModelIndex &index = m_model->index(i, 0, parent);
-        if ( !index.isValid() )
-            continue;
-        const int W =  fontMetrics().boundingRect( index.data().toString() ).width();
-        if ( W > m_width )
-            m_width = W;
-    }
-    if ( m_width > wbefore )
-    {
-        int w = m_width;
-        w+=40; //icon && expanders...
-        w+=style()->pixelMetric(QStyle::PM_ScrollBarExtent, 0, this);
-        setFixedWidth(w);
-    }
+//    int wbefore = m_width;
+//    for ( int i = start; i<=end; ++i )
+//    {
+//        const QModelIndex &index = m_model->index(i, 0, parent);
+//        if ( !index.isValid() )
+//            continue;
+//        const int W =  fontMetrics().boundingRect( index.data().toString() ).width();
+//        if ( W > m_width )
+//            m_width = W;
+//    }
+//    if ( m_width > wbefore )
+//    {
+//        int w = m_width;
+//        w+=40; //icon && expanders...
+//        w+=style()->pixelMetric(QStyle::PM_ScrollBarExtent, 0, this);
+//        setFixedWidth(w);
+//    }
 }
 
 void

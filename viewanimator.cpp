@@ -44,9 +44,12 @@ ViewAnimator::indexHovered(const QModelIndex &index)
         m_model = index.model();
         connect(m_model, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(rowsRemoved(QModelIndex,int,int)));
     }
-    m_hoveredIndex = index;
-    if (!m_animTimer->isActive())
-        m_animTimer->start(30);
+    if ( index.isValid() && index.flags() & Qt::ItemIsEnabled )
+    {
+        m_hoveredIndex = index;
+        if (!m_animTimer->isActive())
+            m_animTimer->start(30);
+    }
 }
 
 void

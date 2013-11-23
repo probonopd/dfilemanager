@@ -198,8 +198,7 @@ GeneralInfo::setIcon()
 
         DFM::FileSystemModel *fsModel = DFM::MainWindow::currentContainer()->model();
         qDebug() << QFileInfo(file).path();
-        fsModel->ip()->loadThemedFolders(QFileInfo(file).path());
-        fsModel->forceEmitDataChangedFor(file);
+        fsModel->thumbsLoader()->queueFile(file);
     }
 }
 

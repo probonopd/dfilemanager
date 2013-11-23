@@ -48,7 +48,9 @@ public:
     enum Type { Thumb = 0, FlowPic, Reflection, FallBackRefl };
     void queueFile(const QString &file);
     bool hasThumb(const QString &file) const;
+    bool hasIcon(const QString &dir) const;
     QImage thumb(const QString &file) const;
+    QString icon(const QString &dir) const;
 
 public slots:
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
@@ -56,7 +58,7 @@ public slots:
     void clearQueue();
     
 signals:
-    void thumbFor(const QString &file);
+    void thumbFor(const QString &file, const QString &name);
 
 protected:
     void run();

@@ -375,8 +375,9 @@ PreView::setModel(QAbstractItemModel *model)
     connect(m_model, SIGNAL(flowDataChanged(const QModelIndex & , const QModelIndex &)), this, SLOT(dataChanged(const QModelIndex & , const QModelIndex &)));
     connect(m_model, SIGNAL(layoutAboutToBeChanged()),this, SLOT(clear()));
     connect(m_model, SIGNAL(layoutChanged()),this, SLOT(reset()));
+    connect(m_model, SIGNAL(modelAboutToBeReset()), this, SLOT(clear()));
     connect(m_model, SIGNAL(modelReset()),this, SLOT(reset()));
-//    connect(m_model, SIGNAL(sortingChanged(int,Qt::SortOrder)), this, SLOT(reset()) );
+    connect(m_model, SIGNAL(directoryLoaded(QString)),this, SLOT(reset()));
     connect(m_model, SIGNAL(rowsInserted(const QModelIndex & , int , int)), this, SLOT(rowsInserted(const QModelIndex & , int , int)));
     connect(m_model, SIGNAL(rowsAboutToBeRemoved(const QModelIndex & , int , int)), this, SLOT(rowsRemoved(const QModelIndex & , int , int)));
 }
@@ -545,19 +546,15 @@ PreView::rowsInserted(const QModelIndex &parent, int start, int end)
 void
 PreView::populate(const int start, const int end)
 {
-//    qDebug() << "PreView::populate, rootindex is valid:" << m_rootIndex.isValid() << start << end;
     if ( !m_rootIndex.isValid() )
         return;
 
     for ( int i = start; i <= end; i++ )
-    {
-        const QModelIndex &index = m_model->index(i, 0, m_rootIndex);
-        if ( !index.isValid() )
-            continue;
-//        qDebug() << "PreView::populate, inserting items..." << i;
         m_items.insert(i, new PixmapItem(m_scene, m_rootItem));
-    }
-    QModelIndex index = m_model->index(m_centerFile);
+
+    QModelIndex index;
+    if ( QFileInfo(m_centerFile).exists() )
+        index = m_model->index(m_centerFile);
     if ( !index.isValid() )
         index = m_model->index(validate(m_savedRow), 0, m_rootIndex);
 

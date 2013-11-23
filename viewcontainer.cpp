@@ -52,7 +52,6 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     , m_detailsView(new DetailsView(this))
     , m_flowView(new FlowView(this))
     , m_breadCrumbs(new BreadCrumbs(this, m_model))
-    , m_fsWatcher(new QFileSystemWatcher(this))
 
 {
     m_breadCrumbs->setVisible(Store::settings()->value("pathVisible", true).toBool());
@@ -66,7 +65,6 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     setModel(m_model);
     setSelectionModel(new QItemSelectionModel(m_model));
 
-    connect( m_fsWatcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)) );
     connect( m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(setRootPath(QString)) );
     connect( m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)) );
 //    connect( m_model, SIGNAL(rootPathAboutToChange(QString)), this, SLOT(rootPathChanged(QString)) );
@@ -106,17 +104,23 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
 void
 ViewContainer::modelSort(const int column, const int order)
 {
-    m_detailsView->header()->blockSignals(true);
-    m_detailsView->header()->setSortIndicator(column, (Qt::SortOrder)order);
-    m_detailsView->header()->blockSignals(false);
-    m_flowView->detailsView()->header()->blockSignals(true);
-    m_flowView->detailsView()->header()->setSortIndicator(column, (Qt::SortOrder)order);
-    m_flowView->detailsView()->header()->blockSignals(false);
+//    m_detailsView->header()->blockSignals(true);
+//    m_detailsView->header()->setSortIndicator(column, (Qt::SortOrder)order);
+//    m_detailsView->header()->blockSignals(false);
+//    m_flowView->detailsView()->header()->blockSignals(true);
+//    m_flowView->detailsView()->header()->setSortIndicator(column, (Qt::SortOrder)order);
+//    m_flowView->detailsView()->header()->blockSignals(false);
 }
 
 PathNavigator *ViewContainer::pathNav() { return m_breadCrumbs->pathNav(); }
 
 void ViewContainer::setModel(QAbstractItemModel *model) { VIEWS(setModel(model)); }
+
+QList<QAbstractItemView *>
+ViewContainer::views()
+{
+    return QList<QAbstractItemView *>() << m_iconView << m_detailsView << m_columnsWidget->currentView() << m_flowView->detailsView();
+}
 
 void
 ViewContainer::setSelectionModel(QItemSelectionModel *selectionModel)
@@ -245,8 +249,13 @@ ViewContainer::setRootPath(const QString &path)
             }
             settings.endGroup();
         }
-        setRootIndex(rootIndex);
+        m_detailsView->setRootIsDecorated(false);
+        m_detailsView->setItemsExpandable(false);
+        for ( int i = 0; i < views().count(); ++i )
+            if ( views().at(i) )
+                views().at(i)->setMouseTracking(false);
         m_selectModel->clearSelection();
+        setRootIndex(rootIndex);
         if (!m_back && (m_backList.isEmpty() || m_backList.count() &&  path != m_backList.last()))
             m_backList.append(path);
         emit rootPathChanged(path);
@@ -257,13 +266,12 @@ ViewContainer::setRootPath(const QString &path)
 void
 ViewContainer::dirLoaded(const QString &path)
 {
-}
+    for ( int i = 0; i < views().count(); ++i )
+        if ( views().at(i) )
+            views().at(i)->setMouseTracking(true);
 
-void
-ViewContainer::dirChanged(const QString &path)
-{
-//    if ( !QFileInfo(path).exists() )
-//        m_model->setPath(path.mid(0, path.lastIndexOf(QDir::separator())));
+    m_detailsView->setRootIsDecorated(true);
+    m_detailsView->setItemsExpandable(true);
 }
 
 void
@@ -297,11 +305,7 @@ ViewContainer::goUp()
 
 void ViewContainer::goHome() { m_model->setPath(QDir::homePath()); }
 
-void
-ViewContainer::refresh()
-{
-    m_model->refresh();
-}
+void ViewContainer::refresh() { m_model->refresh(); }
 
 void
 ViewContainer::rename()

@@ -64,18 +64,11 @@ private:
     QStringList m_historyList;
 };
 
-class FileIconProvider : public QObject, public QFileIconProvider
+class FileIconProvider : public QFileIconProvider
 {
-    Q_OBJECT
 public:
-    FileIconProvider(FileSystemModel *model = 0);
+    inline explicit FileIconProvider(FileSystemModel *model = 0) : QFileIconProvider(), m_fsModel(model){}
     QIcon icon(const QFileInfo &info) const;
-
-public slots:
-    void loadThemedFolders(const QString &path);
-
-signals:
-    void dataChanged(const QModelIndex &f, const QModelIndex &e);
 
 private:
     FileSystemModel *m_fsModel;
@@ -94,7 +87,7 @@ public:
     class Node
     {
     public:
-        enum Children { Visible = 0, Hidden = 1, Filtered = 2 };
+        enum Children { Visible = 0, Hidden = 1, Filtered = 2, Deleted = 3 };
         ~Node();
         void insertChild(Node *node);
         inline QString filePath() { return m_filePath; }
@@ -111,6 +104,7 @@ public:
         QString name();
         inline Node *parent() const { return m_parent; }
         inline bool isPopulated() const { return m_isPopulated; }
+        inline bool isDir() const { return m_fi.isDir(); }
         inline void refresh() { m_fi.refresh(); }
         bool rename(const QString &newName);
         QVariant data(const int column);
@@ -135,7 +129,7 @@ public:
     private:
         bool m_isPopulated, m_isLocked;
         Node *m_parent;
-        Nodes m_children[Filtered+1];
+        Nodes m_children[Deleted+1];
         QFileInfo m_fi;
         QString m_filePath, m_filter, m_name;
         FileSystemModel *m_model;
@@ -189,10 +183,11 @@ public:
     inline QFileInfo fileInfo(const QModelIndex &index) const { return index.isValid()?fromIndex(index)->fileInfo():QFileInfo(); }
     QModelIndex mkdir(const QModelIndex &parent, const QString &name);
     inline DataGatherer *dataGatherer() { return m_dataGatherer; }
+    inline ThumbsLoader *thumbsLoader() { return m_thumbsLoader; }
     inline QFileSystemWatcher *dirWatcher() { return m_watcher; }
     void setSort(const int sortColumn, const int sortOrder);
-    void startPopulating() { m_isPopulating = true; }
-    void endPopulating() { m_isPopulating = false; }
+    void startPopulating();
+    void endPopulating();
     bool isPopulating() const { return m_isPopulating; }
 
 public slots:
@@ -200,7 +195,7 @@ public slots:
     void refresh();
 
 private slots:
-    void thumbFor( const QString &file );
+    void thumbFor( const QString &file, const QString &iconName );
     void flowDataAvailable( const QString &file );
     void dirChanged( const QString &path );
     void emitRootPathLater() { emit rootPathChanged(rootPath()); }

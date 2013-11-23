@@ -24,7 +24,6 @@
 
 #include <QStackedWidget>
 #include <QComboBox>
-#include <QSortFilterProxyModel>
 #include <QLineEdit>
 
 #include "iconview.h"
@@ -54,6 +53,7 @@ public:
     FileSystemModel *model();
     void setView(View view, bool store = true);
     QAbstractItemView *currentView() const;
+    QList<QAbstractItemView *> views();
     View currentViewType() const { return m_myView; }
     DetailsView *detailsView() { return m_detailsView; }
     void setPathEditable(bool editable);
@@ -111,7 +111,6 @@ private slots:
     void genNewTabRequest(QModelIndex index);
     void customActionTriggered();
     void scriptTriggered();
-    void dirChanged(const QString &path);
     void dirLoaded(const QString &path);
     void modelSort(const int column, const int order);
 
@@ -124,7 +123,6 @@ private:
     ColumnsWidget *m_columnsWidget;
     FlowView *m_flowView;
     FileSystemModel *m_model;
-    QFileSystemWatcher *m_fsWatcher;
     QStackedWidget *m_viewStack;
     QStringList m_backList;
     QStringList m_forwardList;

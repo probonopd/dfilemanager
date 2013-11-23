@@ -107,46 +107,20 @@ public:
 
         painter->save();
         painter->setRenderHint( QPainter::Antialiasing );
-//        painter->setFont(qvariant_cast<QFont>(m_model->data(index, Qt::FontRole)));
 
         const bool selected = option.state & QStyle::State_Selected;
         const int step = selected ? 8 : ViewAnimator::hoverLevel(m_iv, index);
 
-        QString et = textData(option, index, Text).value<QString>();
-        QRect tr = textData(option, index, TextRect).value<QRect>();
-
-//        const QStyleOptionViewItem &copy = option;
-//        const_cast<QStyleOptionViewItem *>(&copy)->rect = tr;
-
-//        if ( step )
-//        {
-//            const_cast<QStyleOptionViewItem *>(&copy)->state |= QStyle::State_MouseOver; //grrrrr, must trick styles....
-//            painter->setOpacity((1.0f/8.0f)*step);
-//            QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, painter, m_iv);
-//            painter->setOpacity(1);
-//        }
-//        const_cast<QStyleOptionViewItem *>(&copy)->rect = saved;
         if ( step )
         {
-            painter->save();
-            QRect decoRect = RECT;
-            decoRect.setBottom(tr.top()-3);
-            const int roundness = option.fontMetrics.height()/2;
-            painter->setPen(Qt::NoPen);
-            painter->setOpacity((1.0f/8.0f)*step);
-            const QColor &h = selected?PAL.color(QPalette::Highlight):Ops::colorMid(PAL.color(QPalette::Highlight), PAL.color(QPalette::Base));
-            QColor frame = PAL.color(QPalette::Text);
-            frame.setAlpha(48);
-            painter->setBrush(frame);
-            painter->drawRoundedRect(decoRect, 4, 4);
-            painter->setBrush(h);
-            painter->drawRoundedRect(tr, roundness, roundness);
-            painter->restore();
+            QColor h = selected?PAL.color(QPalette::Highlight):Ops::colorMid(PAL.color(QPalette::Highlight), PAL.color(QPalette::Base));
+            h.setAlpha(255/8*step);
+            painter->fillRect(RECT.adjusted(1, 1, 0, 0), h);
         }
         const QColor &high(selected ? PAL.color(QPalette::HighlightedText) : PAL.color(QPalette::Text));
         QPen pen = painter->pen();
         painter->setPen(high);
-        painter->drawText(tr, Qt::AlignCenter, et);
+        painter->drawText(RECT.adjusted(0, DECOSIZE.height()+4, 0, 0), Qt::AlignTop|Qt::AlignHCenter, text(option, index));
         painter->setPen(pen);
 //        QApplication::style()->drawItemText(painter, tr.adjusted(-2, 0, 2, 0), Qt::AlignCenter, PAL, option.state & QStyle::State_Enabled, et, high);
 
@@ -175,7 +149,7 @@ public:
         else if ( isThumb && pixmap.width() > pixmap.height() )
             pixmap = icon.pixmap( qMin<int>(RECT.width()-4, ((float)DECOSIZE.height()*((float)pixmap.width()/(float)pixmap.height()))-4 ));
         QRect theRect = pixmap.rect();
-        theRect.moveCenter( QPoint( RECT.center().x(), RECT.y()+( DECOSIZE.height()/2 ) ) );
+        theRect.moveCenter( QPoint( RECT.center().x(), RECT.y()+2+( DECOSIZE.height()/2 ) ) );
         if ( isThumb )
         {
             const int d = ( m_shadowData[TopLeft].width()/2 )+1;
@@ -191,31 +165,26 @@ public:
 protected:
     QSize sizeHint( const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
-        return textData(option, index, Size).toSize();
+        return m_iv->gridSize();
     }
-    QVariant textData( const QStyleOptionViewItem &option, const QModelIndex &index, const Role role, QPainter *p = 0 ) const
+    QString text( const QStyleOptionViewItem &option, const QModelIndex &index, QPainter *p = 0 ) const
     {
         if ( !index.isValid() )
-            return QVariant();
-        QFont font( index.model()->data(index, Qt::FontRole).value<QFont>() );
-        QFontMetrics fm( font );
+            return QString();
+        QFontMetrics fm( option.fontMetrics );
 
         QString spaces(TEXT.replace(".", QString(" ")));
         spaces = spaces.replace("_", QString(" "));
         QString theText;
 
-        QTextLayout textLayout(spaces, font);
-        int lineCount = -1, leading = fm.leading();
+        QTextLayout textLayout(spaces, option.font);
+        int lineCount = -1;
         QTextOption opt;
         opt.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
         textLayout.setTextOption(opt);
 
         const int w = DECOSIZE.height()+Store::config.views.iconView.textWidth*2;
-        const int top = RECT.top()+DECOSIZE.height();
-        int textW = 0;
 
-//        QPainterPath path;
-        qreal height = 0;
         textLayout.beginLayout();
         while (++lineCount < Store::config.views.iconView.lineCount)
         {
@@ -225,60 +194,37 @@ protected:
 
             line.setLineWidth(w);
             QString actualText;
-//            if ( role != Size )
-//            {
+            actualText = TEXT.mid(line.textStart(), qMin(line.textLength(), TEXT.count()));
+            if ( line.lineNumber() == Store::config.views.iconView.lineCount-1 )
+                actualText = fm.elidedText(TEXT.mid(line.textStart(), TEXT.count()), Qt::ElideRight, w);
+
+            //this should only happen if there
+            //are actual dots or underscores...
+            //so width should always be > oldw
+            //we do this only cause QTextLayout
+            //doesnt think that dots or underscores
+            //are actual wordseparators
+            if ( fm.boundingRect(actualText).width() > w )
+            {
+                int width = 0;
+                if ( actualText.contains(".") )
+                    width += fm.boundingRect(".").width()*actualText.count(".");
+                if ( actualText.contains("_") )
+                    width += fm.boundingRect("_").width()*actualText.count("_");
+
+                int oldw = fm.boundingRect(" ").width()*actualText.count(" ");
+                int diff = width - oldw;
+
+                line.setLineWidth(w-diff);
                 actualText = TEXT.mid(line.textStart(), qMin(line.textLength(), TEXT.count()));
                 if ( line.lineNumber() == Store::config.views.iconView.lineCount-1 )
                     actualText = fm.elidedText(TEXT.mid(line.textStart(), TEXT.count()), Qt::ElideRight, w);
+            }
 
-                //this should only happen if there
-                //are actual dots or underscores...
-                //so width should always be > oldw
-                //we do this only cause QTextLayout
-                //doesnt think that dots or underscores
-                //are actual wordseparators
-                if ( fm.boundingRect(actualText).width() > w )
-                {
-                    int width = 0;
-                    if ( actualText.contains(".") )
-                        width += fm.boundingRect(".").width()*actualText.count(".");
-                    if ( actualText.contains("_") )
-                        width += fm.boundingRect("_").width()*actualText.count("_");
-
-                    int oldw = fm.boundingRect(" ").width()*actualText.count(" ");
-                    int diff = width - oldw;
-
-                    line.setLineWidth(w-diff);
-                    actualText = TEXT.mid(line.textStart(), qMin(line.textLength(), TEXT.count()));
-                    if ( line.lineNumber() == Store::config.views.iconView.lineCount-1 )
-                        actualText = fm.elidedText(TEXT.mid(line.textStart(), TEXT.count()), Qt::ElideRight, w);
-                }
-
-                theText.append(QString("%1\n").arg(actualText));
-//            }
-            textW = qMax(fm.boundingRect(actualText).width(), textW);
-//            if ( role == Shape || role == Rect )
-//            {
-//                QRect r(fm.boundingRect(actualText));
-//                r.moveTo(RECT.left()+(qRound((float)w/2.0f)-qRound((float)r.width()/2.0f)), top+height);
-//                QPainterPath rp; rp.addRect(r);
-//                path = rp.united(path);
-//                path.addText(r.left(), r.top()+r.height()*0.75, font, actualText);
-//            }
-            height += leading;
-            height += line.height();
+            theText.append(QString("%1\n").arg(actualText));
         }
         textLayout.endLayout();
-        textW = qMin(textW+8, w);
-
-        switch ( role )
-        {
-        case Text: return theText; break;
-        case Size: return QSize(w/*qMax(DECOSIZE.width(), textW)*/, DECOSIZE.height()+qRound(height+4)); break;
-        case TextRect: return QRect(RECT.left()+((float)w/2.0f-(float)textW/2.0f), top+4, textW, height); break;
-//        case Shape: return QVariant::fromValue(path); break;
-        default: return QVariant();
-        }
+        return theText;
     }
     static inline int textFlags() { return Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap; }
 private:
@@ -299,6 +245,7 @@ IconView::IconView( QWidget *parent )
 {
     setItemDelegate( new IconDelegate( this ) );
     ViewAnimator::manage(this);
+    setUniformItemSizes(true);
     setMovement( QListView::Snap );
     const int iSize = Store::config.views.iconView.iconSize*16;
     setGridHeight(iSize);
@@ -316,9 +263,10 @@ IconView::IconView( QWidget *parent )
     viewport()->setAcceptDrops( true );
     setDragEnabled( true );
     setViewMode( QListView::IconMode );
-    setAttribute( Qt::WA_Hover );
-    setMouseTracking( true );
+//    setAttribute( Qt::WA_Hover );
+//    setMouseTracking( true );
     setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
 
     connect( m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollEvent()) );
     connect( this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)) );
@@ -535,18 +483,16 @@ IconView::correctLayout()
 void
 IconView::updateLayout()
 {
-    int horMargin = style()->pixelMetric( QStyle::PM_ScrollBarExtent, 0, horizontalScrollBar() ) + qMax( 1, style()->pixelMetric( QStyle::PM_DefaultFrameWidth )*3 );
-    int contentsWidth = viewport()->width() - horMargin;
-    int horItemCount = contentsWidth/( iconSize().width() + Store::config.views.iconView.textWidth*2 );
-    if ( horItemCount == 0 || contentsWidth == 0 )
-    {
-        QTimer::singleShot( 200, this, SLOT( updateLayout() ) );  //try again later
+    if ( !isVisible() )
         return;
-    }
-    if ( rootIndex().isValid() && model()->rowCount( rootIndex() ) < horItemCount && model()->rowCount( rootIndex() ) > 1 )
+    const int horMargin = verticalScrollBar()->width() + qMax( 2, style()->pixelMetric( QStyle::PM_DefaultFrameWidth ) );
+    int contentsWidth = width()-horMargin;
+
+    int horItemCount = contentsWidth/( iconSize().width() + Store::config.views.iconView.textWidth*2 );
+    if ( model()->rowCount( rootIndex() ) < horItemCount && model()->rowCount( rootIndex() ) > 1 )
         horItemCount = model()->rowCount( rootIndex() );
 
-    setGridSize( QSize( contentsWidth/horItemCount, m_gridHeight ) );
+    setGridSize( QSize( qRound(contentsWidth/horItemCount), m_gridHeight ) );
 }
 
 void
