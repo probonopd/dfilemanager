@@ -19,6 +19,7 @@
 ***************************************************************************/
 
 #include <QImageReader>
+#include <QDirIterator>
 
 #include "filesystemmodel.h"
 #include "iojob.h"
@@ -109,6 +110,7 @@ FileSystemModel::Node::Node(FileSystemModel *model, const QString &path, Node *p
     , m_model(model)
     , m_filePath(path)
     , m_isLocked(false)
+    , m_isChildLocked(false)
     , m_filter(QString(""))
 {
     if ( !m_parent )
@@ -121,7 +123,7 @@ FileSystemModel::Node::Node(FileSystemModel *model, const QString &path, Node *p
         m_parent->insertChild(this);
 }
 
-FileSystemModel::Node::~Node() { for (int i = 0; i<Filtered+1; ++i ) qDeleteAll(m_children[i]); }
+FileSystemModel::Node::~Node() { for (int i = 0; i<Deleted+1; ++i ) qDeleteAll(m_children[i]); }
 
 int FileSystemModel::Node::row() { return parent()?parent()->children().contains(this)?parent()->children().indexOf(this):0:0; }
 
@@ -129,7 +131,16 @@ int FileSystemModel::Node::childCount() { return children().count(); }
 
 bool FileSystemModel::Node::hasChild(const int child) { return child>-1&&child<children().count(); }
 
-FileSystemModel::Node *FileSystemModel::Node::child(const int c) { return hasChild(c)?children().at(c):0; }
+FileSystemModel::Node
+*FileSystemModel::Node::child(const int c)
+{
+    blockChildren(true);
+    Node *n = 0;
+    if ( hasChild(c) )
+        n = children().at(c);
+    blockChildren(false);
+    return n;
+}
 
 QString FileSystemModel::Node::name() { return m_name; }
 
@@ -139,11 +150,36 @@ bool FileSystemModel::Node::isHidden() { return fileInfo().isHidden()&&!isLocked
 
 FileSystemModel *FileSystemModel::Node::model() { return m_model; }
 
+void FileSystemModel::Node::blockChildren(bool p) { model()->dataGatherer()->pause(p); }
+
+void FileSystemModel::Node::pause() { model()->dataGatherer()->pause(); }
+
+void
+FileSystemModel::Node::insertChild(Node *node)
+{
+    if ( node->isHidden() && !showHidden() )
+        m_children[Hidden] << node;
+    else
+    {
+        int a = -1;
+        int z = m_children[Visible].count();
+        while ( ++a < z )
+            if ( !lessThen(m_children[Visible].at(a), node) )
+                break;
+
+        model()->beginInsertRows(model()->index(filePath()), a, a);
+        pause();
+        m_children[Visible].insert(a, node);
+        model()->endInsertRows();
+    }
+}
+
 void
 FileSystemModel::Node::setFilter(const QString &filter)
 {
     if ( filter == m_filter )
         return;
+    blockChildren(true);
 
     m_filter = filter;
     emit model()->layoutAboutToBeChanged();
@@ -169,25 +205,7 @@ FileSystemModel::Node::setFilter(const QString &filter)
     if ( m_children[Visible].count() > 1 )
         sort(&m_children[Visible]);
     emit model()->layoutChanged();
-}
-
-void
-FileSystemModel::Node::insertChild(Node *node)
-{
-    if ( node->isHidden() && !showHidden() )
-        m_children[Hidden] << node;
-    else
-    {
-        int a = -1;
-        int z = m_children[Visible].count();
-        while ( ++a < z )
-            if ( !lessThen(m_children[Visible].at(a), node) )
-                break;
-
-        model()->beginInsertRows(model()->index(filePath()), a, a);
-        m_children[Visible].insert(a, node);
-        model()->endInsertRows();
-    }
+    blockChildren(false);
 }
 
 bool
@@ -243,7 +261,7 @@ FileSystemModel::Node
             populate();
     }
 
-    for ( int i = 0; i < Filtered+1; ++i )
+    for ( int i = 0; i < Deleted; ++i )
     {
         int c = m_children[i].count();
         while ( --c > -1 )
@@ -418,6 +436,7 @@ FileSystemModel::Node::sort(Nodes *nodes)
 void
 FileSystemModel::Node::setHiddenVisible(bool visible)
 {
+    blockChildren(true);
     const QModelIndex &idx = model()->index(filePath());
     if ( visible )
     {
@@ -442,6 +461,7 @@ FileSystemModel::Node::setHiddenVisible(bool visible)
     while ( --i > -1 )
         if ( m_children[Visible].at(i)->isPopulated() )
             m_children[Visible].at(i)->setHiddenVisible(visible);
+    blockChildren(false);
 //    i = m_children[Hidden].count();
 //    while ( --i > -1 )
 //        if ( m_children[Hidden].at(i)->isPopulated() )
@@ -653,8 +673,6 @@ FileSystemModel::dirChanged(const QString &path)
 Qt::ItemFlags
 FileSystemModel::flags(const QModelIndex &index) const
 {
-    if ( isPopulating() )
-        return 0;
     Node *node = fromIndex(index);
     node->refresh();
     Qt::ItemFlags flags = QAbstractItemModel::flags(index);
@@ -1013,11 +1031,11 @@ FileSystemModel::filePath(const QModelIndex &index) const
 void
 FileSystemModel::startPopulating()
 {
-    dataGatherer()->m_mutex.lock(); m_isPopulating = true;
+    m_isPopulating = true;
 }
 
 void
 FileSystemModel::endPopulating()
 {
-    dataGatherer()->m_mutex.unlock(); m_isPopulating = false;
+    m_isPopulating = false;
 }

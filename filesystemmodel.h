@@ -22,7 +22,6 @@
 #ifndef FILESYSTEMMODEL_H
 #define FILESYSTEMMODEL_H
 
-#include <QFileSystemModel>
 #include <QFileIconProvider>
 #include <QPainter>
 #include <QAbstractItemView>
@@ -36,10 +35,10 @@
 #include <QLabel>
 #include <QDebug>
 #include <QMap>
-#include <QSortFilterProxyModel>
 #include "thumbsloader.h"
 #include "viewcontainer.h"
 
+#include <QWaitCondition>
 #include <QAbstractItemModel>
 #include <QMutex>
 
@@ -108,26 +107,37 @@ public:
         inline void refresh() { m_fi.refresh(); }
         bool rename(const QString &newName);
         QVariant data(const int column);
+
         void sort(int column, Qt::SortOrder order);
         static void sort(Nodes *nodes);
         inline int sortColumn() { return model()->sortColumn(); }
         inline Qt::SortOrder sortOrder() { return model()->sortOrder(); }
+
+        void setHiddenVisible(bool visible);
         inline bool showHidden() { return model()->showHidden(); }
         bool isHidden();
-        FileSystemModel *model();
-        void setHiddenVisible(bool visible);
+
         inline void setLocked(bool lock) { m_isLocked = lock; }
         inline bool isLocked() { return m_isLocked; }
+
+        inline void lockChildren(bool lock) { m_isChildLocked = lock; }
+        inline bool childrenLock() { return m_isChildLocked; }
+
         void setFilter(const QString &filter);
         inline QString filter() const { return m_filter; }
+
+        void blockChildren(bool p);
+        void pause();
+
         Node *node(const QString &path, bool checkOnly = true);
+        FileSystemModel *model();
 
     protected:
         Node *nodeFromPath(const QString &path, bool checkOnly = true);
         Node(FileSystemModel *model = 0, const QString &path = QString(), Node *parent = 0);
 
     private:
-        bool m_isPopulated, m_isLocked;
+        bool m_isPopulated, m_isLocked, m_isChildLocked;
         Node *m_parent;
         Nodes m_children[Deleted+1];
         QFileInfo m_fi;
@@ -230,9 +240,11 @@ class DataGatherer : public QThread
     Q_OBJECT
 public:
     enum Task { Populate = 0, Generate = 1 };
-    explicit DataGatherer(QObject *parent = 0):QThread(parent), m_node(0), m_model(static_cast<FileSystemModel *>(parent)){}
+    explicit DataGatherer(QObject *parent = 0):QThread(parent), m_node(0), m_model(static_cast<FileSystemModel *>(parent)),m_paused(false){}
     void populateNode(FileSystemModel::Node *node);
     void generateNode(const QString &path, FileSystemModel::Node *node);
+    inline void pause(bool p) { m_mutex.lock(); m_paused = p; m_mutex.unlock(); if ( !p ) m_pause.wakeAll(); }
+    inline void pause() { m_mutex.lock(); if ( m_paused ) m_pause.wait(&m_mutex); m_mutex.unlock(); }
 
 protected:
     void run();
@@ -244,8 +256,10 @@ private:
     FileSystemModel::Node *m_node, *m_result;
     FileSystemModel *m_model;
     QMutex m_mutex;
+    QWaitCondition m_pause;
     Task m_task;
     QString m_path;
+    bool m_paused;
     friend class FileSystemModel::Node;
     friend class FileSystemModel;
 };

@@ -249,7 +249,7 @@ ViewContainer::setRootPath(const QString &path)
             }
             settings.endGroup();
         }
-        m_detailsView->setRootIsDecorated(false);
+//        m_detailsView->setRootIsDecorated(false);
         m_detailsView->setItemsExpandable(false);
         for ( int i = 0; i < views().count(); ++i )
             if ( views().at(i) )
@@ -270,7 +270,7 @@ ViewContainer::dirLoaded(const QString &path)
         if ( views().at(i) )
             views().at(i)->setMouseTracking(true);
 
-    m_detailsView->setRootIsDecorated(true);
+//    m_detailsView->setRootIsDecorated(true);
     m_detailsView->setItemsExpandable(true);
 }
 
