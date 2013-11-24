@@ -485,9 +485,11 @@ IconView::updateLayout()
 {
     if ( !isVisible() )
         return;
-    const int horMargin = style()->pixelMetric(QStyle::PM_ScrollBarExtent) + qMax( 1, style()->pixelMetric(QStyle::PM_DefaultFrameWidth)*3 );
-    int contentsWidth = width()-horMargin;
 
+    QStyleOptionFrame opt;
+    opt.initFrom(viewport());
+    int horMargin = (width()-viewport()->width())+style()->pixelMetric(QStyle::PM_DefaultFrameWidth, &opt, viewport());
+    int contentsWidth = width()-horMargin;
     int horItemCount = contentsWidth/( iconSize().width() + Store::config.views.iconView.textWidth*2 );
     if ( model()->rowCount( rootIndex() ) < horItemCount && model()->rowCount( rootIndex() ) > 1 )
         horItemCount = model()->rowCount( rootIndex() );

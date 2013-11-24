@@ -125,7 +125,15 @@ FileSystemModel::Node::Node(FileSystemModel *model, const QString &path, Node *p
 
 FileSystemModel::Node::~Node() { for (int i = 0; i<Deleted+1; ++i ) qDeleteAll(m_children[i]); }
 
-int FileSystemModel::Node::row() { return parent()?parent()->children().contains(this)?parent()->children().indexOf(this):0:0; }
+int FileSystemModel::Node::row()
+{
+    if ( !parent() )
+        return 0;
+    parent()->lockChildren(true);
+    const int row = parent()->children().contains(this)?parent()->children().indexOf(this):0;
+    parent()->lockChildren(false);
+    return row;
+}
 
 int FileSystemModel::Node::childCount() { return children().count(); }
 
@@ -299,8 +307,14 @@ FileSystemModel::Node
 
     Node *node = model()->rootNode();
 
+    if ( checkOnly )
+        blockChildren(true);
+
     while ( !paths.isEmpty() && node )
         node = node->nodeFromPath(paths.takeFirst(), checkOnly);
+
+    if ( checkOnly )
+        blockChildren(false);
 
     if ( node && node->filePath() == path )
         return node;
@@ -333,7 +347,6 @@ FileSystemModel::Node::populate()
 
     if ( filePath() == model()->rootPath() )
         emit model()->directoryLoaded(filePath());
-//    model()->iconProvider()->loadThemedFolders(filePath());
 }
 
 void
@@ -357,7 +370,7 @@ FileSystemModel::Node::rePopulate()
         return;
     }
 
-    for ( int i = 0; i < Filtered+1; ++i )
+    for ( int i = 0; i < Deleted; ++i )
     {
         int c = m_children[i].count();
         while ( --c > -1 )
@@ -367,6 +380,7 @@ FileSystemModel::Node::rePopulate()
             if ( !node->fileInfo().exists() )
             {
                 model()->beginRemoveRows(model()->index(filePath()), c, c);
+                pause();
                 m_children[Deleted] << m_children[i].takeAt(c);
                 model()->endRemoveRows();
             }
@@ -392,17 +406,23 @@ FileSystemModel::Node::rePopulate()
 bool
 FileSystemModel::Node::hasChild(const QString &name)
 {
-    for ( int i = 0; i < Filtered+1; ++i )
+    bool hasChild = false;
+    blockChildren(true);
+    for ( int i = 0; i < Deleted; ++i )
     {
         FileSystemModel::Nodes::const_iterator start = m_children[i].constBegin(), end = m_children[i].constEnd();
         while ( start != end )
         {
             if ( (*start)->name() == name )
-                return true;
+            {
+                hasChild = true;
+                break;
+            }
             ++start;
         }
     }
-    return false;
+    blockChildren(false);
+    return hasChild;
 }
 
 void

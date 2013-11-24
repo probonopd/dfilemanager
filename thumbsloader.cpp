@@ -132,7 +132,10 @@ ThumbsLoader::genThumb( const QString &path )
         for ( int i = 0; i<APP->plugins().count(); ++i )
             if( ThumbInterface *ti = qobject_cast<ThumbInterface *>(APP->plugins().at(i)) )
                 if ( ti->canRead(path) )
+                {
                     image = ti->thumb(path, m_extent);
+                    break;
+                }
 
     if ( !image.isNull() )
     {
