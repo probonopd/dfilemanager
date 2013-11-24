@@ -167,7 +167,7 @@ protected:
     {
         return m_iv->gridSize();
     }
-    QString text( const QStyleOptionViewItem &option, const QModelIndex &index, QPainter *p = 0 ) const
+    QString text( const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
         if ( !index.isValid() )
             return QString();
@@ -331,6 +331,13 @@ IconView::wheelEvent( QWheelEvent * event )
 }
 
 void
+IconView::showEvent(QShowEvent *e)
+{
+    QListView::showEvent(e);
+    updateLayout();
+}
+
+void
 IconView::scrollEvent()
 {
     if ( m_delta > 360 )
@@ -370,7 +377,8 @@ void
 IconView::resizeEvent( QResizeEvent *e )
 {
     QListView::resizeEvent( e );
-    updateLayout();
+    if ( e->size().width() != e->oldSize().width() )
+        updateLayout();
 }
 
 void
@@ -538,6 +546,7 @@ IconView::setModel( QAbstractItemModel *model )
     if ( m_model = qobject_cast<FileSystemModel *>( model ) )
     {
         connect( m_model, SIGNAL( directoryLoaded(QString)), this, SLOT( rootPathChanged( QString ) ) );
+        connect( m_model, SIGNAL( rootPathChanged(QString)), this, SLOT( rootPathChanged( QString ) ) );
         static_cast<IconDelegate*>( itemDelegate() )->setModel( m_model );
     }
 }

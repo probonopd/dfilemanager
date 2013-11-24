@@ -74,6 +74,7 @@ protected:
     void mousePressEvent(QMouseEvent *event);
     void paintEvent(QPaintEvent *e);
     void keyPressEvent(QKeyEvent *e);
+    void showEvent(QShowEvent *e);
     void setIconWidth(const int width);
     QModelIndex firstValidIndex();
     inline int iconWidth() const { return iconSize().width(); }

@@ -249,11 +249,13 @@ ViewContainer::setRootPath(const QString &path)
             }
             settings.endGroup();
         }
-//        m_detailsView->setRootIsDecorated(false);
         m_detailsView->setItemsExpandable(false);
         for ( int i = 0; i < views().count(); ++i )
             if ( views().at(i) )
+            {
+                views().at(i)->setAttribute(Qt::WA_Hover, false);
                 views().at(i)->setMouseTracking(false);
+            }
         m_selectModel->clearSelection();
         setRootIndex(rootIndex);
         if (!m_back && (m_backList.isEmpty() || m_backList.count() &&  path != m_backList.last()))
@@ -268,9 +270,11 @@ ViewContainer::dirLoaded(const QString &path)
 {
     for ( int i = 0; i < views().count(); ++i )
         if ( views().at(i) )
+        {
+            views().at(i)->setAttribute(Qt::WA_Hover, true);
             views().at(i)->setMouseTracking(true);
+        }
 
-//    m_detailsView->setRootIsDecorated(true);
     m_detailsView->setItemsExpandable(true);
 }
 

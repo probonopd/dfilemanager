@@ -137,7 +137,7 @@ int FileSystemModel::Node::row()
 
 int FileSystemModel::Node::childCount() { return children().count(); }
 
-bool FileSystemModel::Node::hasChild(const int child) { return child>-1&&child<children().count(); }
+bool FileSystemModel::Node::hasChild(const int child) { return bool(child>-1&&child<children().count()); }
 
 FileSystemModel::Node
 *FileSystemModel::Node::child(const int c)
@@ -175,8 +175,8 @@ FileSystemModel::Node::insertChild(Node *node)
             if ( !lessThen(m_children[Visible].at(a), node) )
                 break;
 
-        model()->beginInsertRows(model()->index(filePath()), a, a);
         pause();
+        model()->beginInsertRows(model()->index(filePath()), a, a);
         m_children[Visible].insert(a, node);
         model()->endInsertRows();
     }
@@ -741,9 +741,10 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         return QVariant();
 
     Node *node = fromIndex(index);
+    const int col = index.column();
     if ( node == m_rootNode )
         return QVariant();
-    if ( role == Qt::DecorationRole && index.column() > 0 )
+    if ( role == Qt::DecorationRole && col > 0 )
         return QVariant();
     if ( role == FileNameRole )
         return node->name();
@@ -751,7 +752,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         return node->filePath();
 
     if ( role == Qt::TextAlignmentRole )
-    if ( index.column() == 1 )
+    if ( col == 1 )
         return int(Qt::AlignVCenter|Qt::AlignRight);
     else
         return int(Qt::AlignLeft|Qt::AlignVCenter);
@@ -759,7 +760,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     const QString &file = node->filePath();
     const bool customIcon = Store::config.icons.customIcons.contains(file);
 
-    if ( index.column() == 0 && role == Qt::DecorationRole && customIcon )
+    if ( col == 0 && role == Qt::DecorationRole && customIcon )
         return QIcon(Store::config.icons.customIcons.value(file));
 
     if ( role == Qt::DecorationRole )
@@ -801,7 +802,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     if (role != Qt::DisplayRole && role != Qt::EditRole)
         return QVariant();
 
-    return node->data(index.column());
+    return node->data(col);
 }
 
 bool
@@ -866,11 +867,12 @@ FileSystemModel::rowCount(const QModelIndex &parent) const
     return fromIndex(parent)->childCount();
 }
 
+#include <typeinfo>
 FileSystemModel::Node
 *FileSystemModel::fromIndex(const QModelIndex &index) const
 {
-    Node *node = static_cast<Node *>(index.internalPointer());
-    if ( index.isValid() )
+    Node *node = (Node *)index.internalPointer();
+    if ( index.isValid() && node )
         return node;
     return m_rootNode;
 }
@@ -882,8 +884,6 @@ FileSystemModel::index(int row, int column, const QModelIndex &parent) const
         return QModelIndex();
 
     Node *parentNode = fromIndex(parent);
-    if ( !parentNode )
-        return QModelIndex();
     Node *childNode = parentNode->child(row);
 
     if (childNode)
