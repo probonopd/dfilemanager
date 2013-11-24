@@ -243,7 +243,7 @@ public:
     explicit DataGatherer(QObject *parent = 0):QThread(parent), m_node(0), m_model(static_cast<FileSystemModel *>(parent)),m_paused(false){}
     void populateNode(FileSystemModel::Node *node);
     void generateNode(const QString &path, FileSystemModel::Node *node);
-    inline void pause(bool p) { m_mutex.lock(); m_paused = p; m_mutex.unlock(); if ( !p ) m_pause.wakeAll(); }
+    inline void pause(bool p) { if (m_paused=p) return; m_mutex.lock(); m_paused = p; m_mutex.unlock(); if ( !p ) m_pause.wakeAll(); }
     inline void pause() { m_mutex.lock(); if ( m_paused ) m_pause.wait(&m_mutex); m_mutex.unlock(); }
 
 protected:
