@@ -141,20 +141,6 @@ Application::loadPlugins()
     }
 }
 
-bool
-Application::notify(QObject *receiver, QEvent *event)
-{
-    try
-    {
-        return QApplication::notify(receiver, event);
-    }
-    catch (std::exception& e)
-    {
-        qCritical() << "Exception thrown:" << e.what();
-    }
-    return false;
-}
-
 #ifdef Q_WS_X11
 #if 0
 

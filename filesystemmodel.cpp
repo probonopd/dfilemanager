@@ -128,25 +128,21 @@ FileSystemModel::Node::~Node() { for (int i = 0; i<Deleted+1; ++i ) qDeleteAll(m
 int FileSystemModel::Node::row()
 {
     if ( !parent() )
-        return 0;
-    parent()->lockChildren(true);
-    const int row = parent()->children().contains(this)?parent()->children().indexOf(this):0;
-    parent()->lockChildren(false);
-    return row;
+        return -1;
+
+    return parent()->children().indexOf(this);
 }
 
-int FileSystemModel::Node::childCount() { return children().count(); }
+int FileSystemModel::Node::childCount() { return m_children[Visible].size(); }
 
 bool FileSystemModel::Node::hasChild(const int child) { return bool(child>-1&&child<children().count()); }
 
 FileSystemModel::Node
 *FileSystemModel::Node::child(const int c)
 {
-    blockChildren(true);
     Node *n = 0;
-    if ( hasChild(c) )
-        n = children().at(c);
-    blockChildren(false);
+    if ( c >= 0 && c < m_children[Visible].size() )
+        n = m_children[Visible].at(c);
     return n;
 }
 
@@ -175,8 +171,9 @@ FileSystemModel::Node::insertChild(Node *node)
             if ( !lessThen(m_children[Visible].at(a), node) )
                 break;
 
-        pause();
-        model()->beginInsertRows(model()->index(filePath()), a, a);
+        const QModelIndex &index = model()->index(filePath());
+        a = qBound(0, a, m_children[Visible].size());
+        model()->beginInsertRows(index, a, a);
         m_children[Visible].insert(a, node);
         model()->endInsertRows();
     }
@@ -187,7 +184,6 @@ FileSystemModel::Node::setFilter(const QString &filter)
 {
     if ( filter == m_filter )
         return;
-    blockChildren(true);
 
     m_filter = filter;
     emit model()->layoutAboutToBeChanged();
@@ -213,7 +209,6 @@ FileSystemModel::Node::setFilter(const QString &filter)
     if ( m_children[Visible].count() > 1 )
         sort(&m_children[Visible]);
     emit model()->layoutChanged();
-    blockChildren(false);
 }
 
 bool
@@ -307,14 +302,8 @@ FileSystemModel::Node
 
     Node *node = model()->rootNode();
 
-    if ( checkOnly )
-        blockChildren(true);
-
     while ( !paths.isEmpty() && node )
         node = node->nodeFromPath(paths.takeFirst(), checkOnly);
-
-    if ( checkOnly )
-        blockChildren(false);
 
     if ( node && node->filePath() == path )
         return node;
@@ -335,16 +324,21 @@ FileSystemModel::Node::populate()
     if ( this == model()->rootNode() )
     {
         for ( int i = 0; i < QDir::drives().count(); ++i )
-            new Node(model(), QDir::drives().at(i).filePath(), this);
+            new DirNode(model(), QDir::drives().at(i).filePath(), this);
     }
     else if ( fileInfo().isDir() && fileInfo().isAbsolute() )
     {
         refresh();
         QDirIterator it(filePath(), filters);
         while ( it.hasNext() )
-            new Node(model(), it.next(), this);
+        {
+            const QString &file(it.next());
+            if ( QFileInfo(file).isDir() )
+                new DirNode(model(), file, this);
+            else
+                new FileNode(model(), file, this);
+        }
     }
-
     if ( filePath() == model()->rootPath() )
         emit model()->directoryLoaded(filePath());
 }
@@ -380,7 +374,6 @@ FileSystemModel::Node::rePopulate()
             if ( !node->fileInfo().exists() )
             {
                 model()->beginRemoveRows(model()->index(filePath()), c, c);
-                pause();
                 m_children[Deleted] << m_children[i].takeAt(c);
                 model()->endRemoveRows();
             }
@@ -388,11 +381,20 @@ FileSystemModel::Node::rePopulate()
     }
 
     const QDir dir(filePath());
-    const QStringList entries = dir.entryList(filters);
     if ( dir.isAbsolute() )
-        for ( int i = 0; i < entries.count(); ++i )
-            if ( !hasChild(entries.at(i)) )
-                new Node(m_model, dir.filePath(entries.at(i)), this);
+    {
+        QDirIterator it(filePath(), filters);
+        while ( it.hasNext() )
+        {
+            const QFileInfo file(it.next());
+            if ( hasChild(file.fileName()) )
+                continue;
+            if ( file.isDir() )
+                new DirNode(model(), file.filePath(), this);
+            else
+                new FileNode(model(), file.filePath(), this);
+        }
+    }
 
     model()->endPopulating();
     if ( filePath() == model()->rootPath() )
@@ -407,7 +409,6 @@ bool
 FileSystemModel::Node::hasChild(const QString &name)
 {
     bool hasChild = false;
-    blockChildren(true);
     for ( int i = 0; i < Deleted; ++i )
     {
         FileSystemModel::Nodes::const_iterator start = m_children[i].constBegin(), end = m_children[i].constEnd();
@@ -421,7 +422,6 @@ FileSystemModel::Node::hasChild(const QString &name)
             ++start;
         }
     }
-    blockChildren(false);
     return hasChild;
 }
 
@@ -456,7 +456,6 @@ FileSystemModel::Node::sort(Nodes *nodes)
 void
 FileSystemModel::Node::setHiddenVisible(bool visible)
 {
-    blockChildren(true);
     const QModelIndex &idx = model()->index(filePath());
     if ( visible )
     {
@@ -481,7 +480,6 @@ FileSystemModel::Node::setHiddenVisible(bool visible)
     while ( --i > -1 )
         if ( m_children[Visible].at(i)->isPopulated() )
             m_children[Visible].at(i)->setHiddenVisible(visible);
-    blockChildren(false);
 //    i = m_children[Hidden].count();
 //    while ( --i > -1 )
 //        if ( m_children[Hidden].at(i)->isPopulated() )
@@ -564,6 +562,12 @@ DataGatherer::run()
             emit nodeGenerated(m_path, m_result);
         break;
     }
+    case GetData:
+    {
+        QDirIterator it(m_path, filters);
+        while ( it.hasNext() )
+            emit fileFound(it.next());
+    }
     default:
         break;
     }
@@ -587,6 +591,18 @@ DataGatherer::generateNode(const QString &path, FileSystemModel::Node *node)
     m_task = Generate;
     m_path = path;
     m_node = node;
+    m_result = 0;
+    start();
+}
+
+void
+DataGatherer::getItems(const QString &dirPath)
+{
+    if ( isRunning() )
+        return;
+    m_task = GetData;
+    m_path = dirPath;
+    m_node = 0;
     m_result = 0;
     start();
 }
@@ -616,6 +632,7 @@ FileSystemModel::FileSystemModel(QObject *parent)
     connect ( this, SIGNAL(rootPathChanged(QString)), m_it, SLOT(clearData()) );
     connect ( m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)) );
     connect ( m_dataGatherer, SIGNAL(nodeGenerated(QString,FileSystemModel::Node*)), this, SLOT(nodeGenerated(QString,FileSystemModel::Node*)) );
+//    connect ( m_dataGatherer, SIGNAL(fileFound(QString)), this, SLOT(addFile(QString)) );
 }
 
 FileSystemModel::~FileSystemModel()
@@ -644,7 +661,11 @@ FileSystemModel::nodeGenerated(const QString &path, FileSystemModel::Node *node)
         return;
 
     emit rootPathChanged(rootPath());
-    dataGatherer()->populateNode(node);
+//    m_current = node;
+//    if ( node->isPopulated() )
+        dataGatherer()->populateNode(node);
+//    else
+//        dataGatherer()->getItems(path);
 }
 
 void
@@ -658,6 +679,12 @@ FileSystemModel::setRootPath(const QString &path)
         dataGatherer()->generateNode(path, rootNode());
     else
         nodeGenerated(path, node);
+}
+
+void
+FileSystemModel::addFile(const QString &path)
+{
+//    new Node(this, path, m_current);
 }
 
 void
@@ -741,6 +768,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         return QVariant();
 
     Node *node = fromIndex(index);
+    const QString &file = node->filePath();
     const int col = index.column();
     if ( node == m_rootNode )
         return QVariant();
@@ -757,7 +785,6 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     else
         return int(Qt::AlignLeft|Qt::AlignVCenter);
 
-    const QString &file = node->filePath();
     const bool customIcon = Store::config.icons.customIcons.contains(file);
 
     if ( col == 0 && role == Qt::DecorationRole && customIcon )
@@ -864,15 +891,16 @@ FileSystemModel::rowCount(const QModelIndex &parent) const
     if (parent.column() > 0 || !parent.isValid())
         return 0;
 
-    return fromIndex(parent)->childCount();
+    if ( DirNode *dn = dynamic_cast<DirNode *>(fromIndex(parent)) )
+        return dn->childCount();
+    return 0;
 }
 
-#include <typeinfo>
 FileSystemModel::Node
 *FileSystemModel::fromIndex(const QModelIndex &index) const
 {
-    Node *node = (Node *)index.internalPointer();
-    if ( index.isValid() && node )
+    Node *node = static_cast<Node *>(index.internalPointer());
+    if (index.isValid() && dynamic_cast<FileNode *>(node))
         return node;
     return m_rootNode;
 }
@@ -919,13 +947,13 @@ FileSystemModel::parent(const QModelIndex &child) const
 bool
 FileSystemModel::hasChildren(const QModelIndex &parent) const
 {
-    return fromIndex(parent)->isDir();
+    return dynamic_cast<DirNode *>(fromIndex(parent))||fromIndex(parent)==m_rootNode;
 }
 
 bool
 FileSystemModel::canFetchMore(const QModelIndex &parent) const
 {
-    return fromIndex(parent)->isDir();
+    return dynamic_cast<DirNode *>(fromIndex(parent))||fromIndex(parent)==m_rootNode;
 }
 
 void

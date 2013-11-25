@@ -87,7 +87,7 @@ public:
     {
     public:
         enum Children { Visible = 0, Hidden = 1, Filtered = 2, Deleted = 3 };
-        ~Node();
+        virtual ~Node();
         void insertChild(Node *node);
         inline QString filePath() { return m_filePath; }
         inline QFileInfo fileInfo() { return m_fi; }
@@ -146,6 +146,22 @@ public:
         friend class FileSystemModel;
         friend class DataGatherer;
     };
+    class FileNode : public Node
+    {
+    public:
+        FileNode(FileSystemModel *model = 0, const QString &path = QString(), Node *parent = 0) : Node(model, path, parent){}
+        ~FileNode(){}
+    };
+    class DirNode : public FileNode
+    {
+    public:
+        DirNode(FileSystemModel *model = 0, const QString &path = QString(), Node *parent = 0) : FileNode(model, path, parent), m_dir(path){}
+        ~DirNode(){}
+        QDir dir() { return m_dir; }
+    private:
+        QDir m_dir;
+    };
+
     enum Roles
     {
         FileIconRole = Qt::DecorationRole,
@@ -210,6 +226,7 @@ private slots:
     void dirChanged( const QString &path );
     void emitRootPathLater() { emit rootPathChanged(rootPath()); }
     void nodeGenerated(const QString &path, FileSystemModel::Node *node);
+    void addFile(const QString &path);
 
 signals:
     void flowDataChanged( const QModelIndex &start, const QModelIndex &end );
@@ -220,7 +237,7 @@ signals:
     void sortingChanged(const int sortCol, const int order);
 
 private:
-    Node *m_rootNode;
+    Node *m_rootNode, *m_current;
     QAbstractItemView *m_view;
     bool m_showHidden, m_isPopulating;
     QString m_rootPath;
@@ -233,17 +250,19 @@ private:
     QFileSystemWatcher *m_watcher;
     DataGatherer *m_dataGatherer;
     friend class ImagesThread;
+    friend class Node;
 };
 
 class DataGatherer : public QThread
 {
     Q_OBJECT
 public:
-    enum Task { Populate = 0, Generate = 1 };
+    enum Task { Populate = 0, Generate = 1, GetData = 2 };
     explicit DataGatherer(QObject *parent = 0):QThread(parent), m_node(0), m_model(static_cast<FileSystemModel *>(parent)),m_paused(false){}
     void populateNode(FileSystemModel::Node *node);
     void generateNode(const QString &path, FileSystemModel::Node *node);
-    inline void pause(bool p) { if (m_paused=p) return; m_mutex.lock(); m_paused = p; m_mutex.unlock(); if ( !p ) m_pause.wakeAll(); }
+    void getItems(const QString &dirPath);
+    inline void pause(bool p) { if (m_paused=p) { qDebug() << "tried to deadlock"; return;} m_mutex.lock(); m_paused = p; m_mutex.unlock(); if ( !p ) m_pause.wakeAll(); }
     inline void pause() { m_mutex.lock(); if ( m_paused ) m_pause.wait(&m_mutex); m_mutex.unlock(); }
 
 protected:
@@ -251,6 +270,7 @@ protected:
 
 signals:
     void nodeGenerated(const QString &path, FileSystemModel::Node *node);
+    void fileFound(const QString &path);
 
 private:
     FileSystemModel::Node *m_node, *m_result;

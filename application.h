@@ -52,7 +52,7 @@ public:
     bool setMessage(const QStringList &message);
     QObjectList plugins() { return m_plugins; }
     void loadPlugins();
-    bool notify(QObject * receiver, QEvent * event);
+//    bool notify(QObject * receiver, QEvent * event);
 
 signals:
     void lastMessage( const QStringList &message );

@@ -400,6 +400,7 @@ PreView::setCenterIndex(const QModelIndex &index)
 {
     if ( !index.isValid() )
         return;
+    const QString &name = index.data().toString();
 
     if ( index.row() )
     {
@@ -418,9 +419,7 @@ PreView::setCenterIndex(const QModelIndex &index)
     m_centerIndex = index;
     m_nextRow = m_row;
     m_row = qMin(index.row(), m_items.count()-1);
-    if ( !m_textItem || !m_gfxProxy )
-        return;
-    m_textItem->setText(index.data().toString());
+    m_textItem->setText(name);
     m_textItem->setZValue(m_items.count()+2);
     m_gfxProxy->setZValue(m_items.count()+2);
     m_textItem->setPos(m_x-m_textItem->boundingRect().width()/2.0f, rect().bottom()-(bMargin+m_scrollBar->height()+m_textItem->boundingRect().height()));

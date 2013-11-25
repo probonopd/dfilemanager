@@ -135,7 +135,8 @@ public:
             for ( int i = 0; i < icon.availableSizes().count(); ++i )
                 il << icon.availableSizes().at(i).height();
 
-            qSort(il);
+            if ( il.count() > 1 )
+                qSort(il);
 
             int i = -1;
 
