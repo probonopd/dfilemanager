@@ -166,16 +166,19 @@ FileSystemModel::Node::insertChild(Node *node)
     else
     {
         int a = -1;
-        int z = m_children[Visible].count();
+        int z = m_children[Visible].size();
         while ( ++a < z )
             if ( !lessThen(m_children[Visible].at(a), node) )
                 break;
 
         const QModelIndex &index = model()->index(filePath());
-        a = qBound(0, a, m_children[Visible].size());
-        model()->beginInsertRows(index, a, a);
         m_children[Visible].insert(a, node);
-        model()->endInsertRows();
+        if ( model()->hasIndex(a, 0, index) )
+        {
+            model()->beginInsertRows(index, a, a);
+            model()->endInsertRows();
+        }
+
     }
 }
 
@@ -321,12 +324,13 @@ FileSystemModel::Node::populate()
     if ( isPopulated() )
         return;
     m_isPopulated = true;
+
     if ( this == model()->rootNode() )
     {
         for ( int i = 0; i < QDir::drives().count(); ++i )
             new DirNode(model(), QDir::drives().at(i).filePath(), this);
     }
-    else if ( fileInfo().isDir() && fileInfo().isAbsolute() )
+    else if ( isDir() && fileInfo().isAbsolute() )
     {
         refresh();
         QDirIterator it(filePath(), filters);
@@ -373,9 +377,11 @@ FileSystemModel::Node::rePopulate()
             node->refresh();
             if ( !node->fileInfo().exists() )
             {
-                model()->beginRemoveRows(model()->index(filePath()), c, c);
+                if ( !i )
+                    model()->beginRemoveRows(model()->index(filePath()), c, c);
                 m_children[Deleted] << m_children[i].takeAt(c);
-                model()->endRemoveRows();
+                if ( !i )
+                    model()->endRemoveRows();
             }
         }
     }
@@ -551,7 +557,8 @@ DataGatherer::run()
             node->setLocked(true);
             node = node->parent();
         }
-        watcher->addPaths(newPaths);
+        if ( !newPaths.isEmpty() )
+            watcher->addPaths(newPaths);
         break;
     }
     case Generate:
@@ -562,12 +569,6 @@ DataGatherer::run()
             emit nodeGenerated(m_path, m_result);
         break;
     }
-    case GetData:
-    {
-        QDirIterator it(m_path, filters);
-        while ( it.hasNext() )
-            emit fileFound(it.next());
-    }
     default:
         break;
     }
@@ -576,7 +577,7 @@ DataGatherer::run()
 void
 DataGatherer::populateNode(FileSystemModel::Node *node)
 {
-    if ( isRunning() )
+    if ( isRunning() || node == m_model->rootNode() )
         return;
     m_task = Populate;
     m_node = node;
@@ -591,18 +592,6 @@ DataGatherer::generateNode(const QString &path, FileSystemModel::Node *node)
     m_task = Generate;
     m_path = path;
     m_node = node;
-    m_result = 0;
-    start();
-}
-
-void
-DataGatherer::getItems(const QString &dirPath)
-{
-    if ( isRunning() )
-        return;
-    m_task = GetData;
-    m_path = dirPath;
-    m_node = 0;
     m_result = 0;
     start();
 }
@@ -661,17 +650,13 @@ FileSystemModel::nodeGenerated(const QString &path, FileSystemModel::Node *node)
         return;
 
     emit rootPathChanged(rootPath());
-//    m_current = node;
-//    if ( node->isPopulated() )
-        dataGatherer()->populateNode(node);
-//    else
-//        dataGatherer()->getItems(path);
+    dataGatherer()->populateNode(node);
 }
 
 void
 FileSystemModel::setRootPath(const QString &path)
 {
-    if ( rootPath() == path )
+    if ( rootPath() == path || path.isEmpty() )
         return;
     m_rootPath = path;
     Node *node = rootNode()->node(path);
@@ -679,12 +664,6 @@ FileSystemModel::setRootPath(const QString &path)
         dataGatherer()->generateNode(path, rootNode());
     else
         nodeGenerated(path, node);
-}
-
-void
-FileSystemModel::addFile(const QString &path)
-{
-//    new Node(this, path, m_current);
 }
 
 void
