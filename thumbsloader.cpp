@@ -218,9 +218,12 @@ operations:
         genNameIconsFor(m_nameQueue.keys().first());
     while ( !m_imgQueue.isEmpty() )
         genImagesFor(m_imgQueue.keys().first());
-    setPause(!m_quit);
-    pause();
-    goto operations;
+    if ( !m_quit )
+    {
+        setPause(true);
+        pause();
+        goto operations;
+    }
 }
 
 QImage
