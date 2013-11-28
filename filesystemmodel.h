@@ -83,17 +83,14 @@ class FileSystemModel : public QAbstractItemModel
 public:
     class Node;
     typedef QList<FileSystemModel::Node *> Nodes;
-    class Node
+    class Node : public QFileInfo
     {
     public:
         enum Children { Visible = 0, Hidden = 1, Filtered = 2, Deleted = 3 };
         virtual ~Node();
         void insertChild(Node *node);
         inline QString filePath() { return m_filePath; }
-        inline QFileInfo fileInfo() { return m_fi; }
-        void populate();
         void rePopulate();
-        bool hasChild( const int child );
         bool hasChild( const QString &name );
         inline bool hasChildren() { return !m_children[Visible].isEmpty(); }
         Nodes children();
@@ -103,19 +100,17 @@ public:
         QString name();
         inline Node *parent() const { return m_parent; }
         inline bool isPopulated() const { return m_isPopulated; }
-        inline bool isDir() const { return m_fi.isDir(); }
-        inline void refresh() { m_fi.refresh(); }
         bool rename(const QString &newName);
         QVariant data(const int column);
 
-        void sort(int column, Qt::SortOrder order);
+        void sort();
         static void sort(Nodes *nodes);
         inline int sortColumn() { return model()->sortColumn(); }
         inline Qt::SortOrder sortOrder() { return model()->sortOrder(); }
 
         void setHiddenVisible(bool visible);
         inline bool showHidden() { return model()->showHidden(); }
-        bool isHidden();
+        bool hidden();
 
         inline void setLocked(bool lock) { m_isLocked = lock; }
         inline bool isLocked() { return m_isLocked; }
@@ -140,28 +135,11 @@ public:
         bool m_isPopulated, m_isLocked, m_isChildLocked;
         Node *m_parent;
         Nodes m_children[Deleted+1];
-        QFileInfo m_fi;
         QString m_filePath, m_filter, m_name;
         FileSystemModel *m_model;
         friend class FileSystemModel;
         friend class DataGatherer;
     };
-    class FileNode : public Node
-    {
-    public:
-        FileNode(FileSystemModel *model = 0, const QString &path = QString(), Node *parent = 0) : Node(model, path, parent){}
-        ~FileNode(){}
-    };
-    class DirNode : public FileNode
-    {
-    public:
-        DirNode(FileSystemModel *model = 0, const QString &path = QString(), Node *parent = 0) : FileNode(model, path, parent), m_dir(path){}
-        ~DirNode(){}
-        QDir dir() { return m_dir; }
-    private:
-        QDir m_dir;
-    };
-
     enum Roles
     {
         FileIconRole = Qt::DecorationRole,
@@ -196,6 +174,7 @@ public:
     inline Node *rootNode() { return m_rootNode; }
     bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
     QMimeData *mimeData(const QModelIndexList &indexes) const;
+    QStringList mimeTypes() const { return QStringList() << "text/uri-list"; }
     inline FileIconProvider *ip() { return m_ip; }
     inline QIcon fileIcon(const QModelIndex &index) const { return bool(index.column()==0)?data(index, Qt::DecorationRole).value<QIcon>():QIcon(); }
     inline QString fileName(const QModelIndex &index) const { return index.isValid()?fromIndex(index)->name():QString(); }
@@ -205,8 +184,8 @@ public:
     inline QString rootPath() const { return m_rootPath; }
     inline QDir rootDirectory() const { return QDir(m_rootPath); }
     inline FileIconProvider *iconProvider() { return m_ip; }
-    inline bool isDir(const QModelIndex &index) const { return index.isValid()?fromIndex(index)->fileInfo().isDir():false; }
-    inline QFileInfo fileInfo(const QModelIndex &index) const { return index.isValid()?fromIndex(index)->fileInfo():QFileInfo(); }
+    inline bool isDir(const QModelIndex &index) const { return index.isValid()?fromIndex(index)->isDir():false; }
+    inline QFileInfo fileInfo(const QModelIndex &index) const { return index.isValid()?*fromIndex(index):QFileInfo(); }
     QModelIndex mkdir(const QModelIndex &parent, const QString &name);
     inline DataGatherer *dataGatherer() { return m_dataGatherer; }
     inline ThumbsLoader *thumbsLoader() { return m_thumbsLoader; }
@@ -259,7 +238,7 @@ public:
     enum Task { Populate = 0, Generate = 1, GetData = 2 };
     explicit DataGatherer(QObject *parent = 0):QThread(parent), m_node(0), m_model(static_cast<FileSystemModel *>(parent)),m_paused(false){}
     void populateNode(FileSystemModel::Node *node);
-    void generateNode(const QString &path, FileSystemModel::Node *node);
+    void generateNode(const QString &path);
     inline void pause(bool p) { if (m_paused=p) { qDebug() << "tried to deadlock"; return;} m_mutex.lock(); m_paused = p; m_mutex.unlock(); if ( !p ) m_pause.wakeAll(); }
     inline void pause() { m_mutex.lock(); if ( m_paused ) m_pause.wait(&m_mutex); m_mutex.unlock(); }
 
