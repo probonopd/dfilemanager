@@ -87,7 +87,7 @@ public:
     {
     public:
         enum Children { Visible = 0, Hidden = 1, Filtered = 2, Deleted = 3 };
-        virtual ~Node();
+        ~Node();
         void insertChild(Node *node);
         inline QString filePath() { return m_filePath; }
         void rePopulate();

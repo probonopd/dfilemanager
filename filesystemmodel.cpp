@@ -571,7 +571,7 @@ FileSystemModel::~FileSystemModel()
 {
     delete m_rootNode;
     m_thumbsLoader->clearQueue();
-    m_it->clearQueue();
+    m_it->discontinue();
     while ( m_thumbsLoader->isRunning() )
         m_thumbsLoader->wait();
     while ( m_it->isRunning() )

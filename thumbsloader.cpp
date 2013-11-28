@@ -90,7 +90,10 @@ ThumbsLoader::queueFile(const QString &file)
         return;
 
     m_queue << file;
-    start();
+    if ( m_pause )
+        setPause(false);
+    if ( !isRunning() )
+        start();
 }
 
 QImage
@@ -155,7 +158,14 @@ void
 ThumbsLoader::run()
 {
     while ( !m_queue.isEmpty() )
+    {
         genThumb(m_queue.takeFirst());
+        if ( m_queue.isEmpty() )
+        {
+            setPause(true);
+            pause();
+        }
+    }
 }
 
 
@@ -164,9 +174,8 @@ static QHash<QString, QImage> s_themeIcons[2];
 ImagesThread::ImagesThread(QObject *parent)
     : QThread(parent)
     , m_fsModel(static_cast<FileSystemModel *>(parent))
+    , m_quit(false)
 {}
-
-void ImagesThread::clearQueue() { m_imgQueue.clear(); }
 
 void
 ImagesThread::removeData(const QString &file)
@@ -204,10 +213,14 @@ ImagesThread::genNameIconsFor(const QString &name)
 
 void ImagesThread::run()
 {
+operations:
     while ( !m_nameQueue.isEmpty() )
         genNameIconsFor(m_nameQueue.keys().first());
     while ( !m_imgQueue.isEmpty() )
         genImagesFor(m_imgQueue.keys().first());
+    setPause(!m_quit);
+    pause();
+    goto operations;
 }
 
 QImage
@@ -246,7 +259,10 @@ ImagesThread::queueName(const QIcon &icon)
 
     const QImage &source = icon.pixmap(SIZE).toImage();
     m_nameQueue.insert(icon.name(), source);
-    start();
+    if ( m_pause )
+        setPause(false);
+    if ( !isRunning() )
+        start();
 }
 
 void
@@ -256,5 +272,8 @@ ImagesThread::queueFile(const QString &file, const QImage &source, const bool fo
         return;
 
     m_imgQueue.insert(file, source);
-    start();
+    if ( m_pause )
+        setPause(false);
+    if ( !isRunning() )
+        start();
 }

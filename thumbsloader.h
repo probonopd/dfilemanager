@@ -33,16 +33,25 @@
 #include <QDir>
 #include <QEvent>
 #include <QFileSystemWatcher>
+#include <QWaitCondition>
+#include <QMutex>
 #include "filesystemmodel.h"
 #include "interfaces.h"
 
 namespace DFM
 {
 
+#define PAUSING inline void setPause(bool p) {m_mutex.lock(); m_pause=p; m_mutex.unlock(); if (!p) m_pauseCond.wakeAll();}\
+    inline void pause() { m_mutex.lock(); if (m_pause) m_pauseCond.wait(&m_mutex); m_mutex.unlock(); }\
+    bool m_pause;\
+    QMutex m_mutex;\
+    QWaitCondition m_pauseCond;
+
 class FileSystemModel;
 class ThumbsLoader : public QThread
 {
     Q_OBJECT
+    PAUSING
 public:
     explicit ThumbsLoader(QObject *parent = 0);
     enum Type { Thumb = 0, FlowPic, Reflection, FallBackRefl };
@@ -73,6 +82,7 @@ private:
 class ImagesThread : public QThread
 {
     Q_OBJECT
+    PAUSING
 public:
     explicit ImagesThread(QObject *parent = 0);
     void queueFile( const QString &file, const QImage &source, const bool force = false );
@@ -83,7 +93,7 @@ public:
     bool hasNameData( const QString &name );
     void removeData( const QString &file );
     inline bool hasFileInQueue( const QString &file ) { return m_imgQueue.contains(file); }
-    void clearQueue();
+    inline void discontinue() { m_mutex.lock(); m_imgQueue.clear(); m_quit=true; m_mutex.unlock(); }
 
 public slots:
     inline void clearData() { for (int i=0; i<2; ++i) m_images[i].clear(); }
@@ -97,6 +107,7 @@ protected:
     void run();
 
 private:
+    bool m_quit;
     QMap<QString, QImage> m_imgQueue;
     QMap<QString, QImage> m_names[2];
     QMap<QString, QImage> m_images[2];
