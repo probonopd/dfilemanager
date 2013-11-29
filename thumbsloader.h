@@ -60,6 +60,7 @@ public:
     bool hasIcon(const QString &dir) const;
     QImage thumb(const QString &file) const;
     QString icon(const QString &dir) const;
+    inline void discontinue() { m_mutex.lock(); m_queue.clear(); m_quit=true; m_mutex.unlock(); setPause(false); }
 
 public slots:
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
@@ -74,6 +75,7 @@ protected:
     void genThumb(const QString &path);
 
 private:
+    bool m_quit;
     QStringList m_queue, m_tried;
     FileSystemModel *m_fsModel;
     int m_extent;
@@ -93,7 +95,7 @@ public:
     bool hasNameData( const QString &name );
     void removeData( const QString &file );
     inline bool hasFileInQueue( const QString &file ) { return m_imgQueue.contains(file); }
-    inline void discontinue() { m_mutex.lock(); m_imgQueue.clear(); m_quit=true; m_mutex.unlock(); }
+    inline void discontinue() { m_mutex.lock(); m_imgQueue.clear(); m_quit=true; m_mutex.unlock(); setPause(false); }
 
 public slots:
     inline void clearData() { for (int i=0; i<2; ++i) m_images[i].clear(); }

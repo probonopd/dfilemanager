@@ -39,7 +39,8 @@ static QHash<QString, QString> s_icons;
 ThumbsLoader::ThumbsLoader(QObject *parent) :
     QThread(parent),
     m_extent(256),
-    m_fsModel(static_cast<DFM::FileSystemModel *>(parent))
+    m_fsModel(static_cast<DFM::FileSystemModel *>(parent)),
+    m_quit(false)
 {
     connect(m_fsModel, SIGNAL(fileRenamed(QString,QString,QString)), this, SLOT(fileRenamed(QString,QString,QString)));
     connect(m_fsModel, SIGNAL(modelAboutToBeReset()), this, SLOT(clearQueue()));
@@ -152,19 +153,17 @@ ThumbsLoader::genThumb( const QString &path )
     m_tried << path;
 }
 
-void ThumbsLoader::clearQueue() { m_queue.clear(); }
+void ThumbsLoader::clearQueue() {  }
 
 void
 ThumbsLoader::run()
 {
-    while ( !m_queue.isEmpty() )
+    while (!m_quit)
     {
-        genThumb(m_queue.takeFirst());
-        if ( m_queue.isEmpty() )
-        {
-            setPause(true);
-            pause();
-        }
+        while ( !m_queue.isEmpty() )
+            genThumb(m_queue.takeFirst());
+        setPause(!m_quit);
+        pause();
     }
 }
 
@@ -213,16 +212,15 @@ ImagesThread::genNameIconsFor(const QString &name)
 
 void ImagesThread::run()
 {
-operations:
-    while ( !m_nameQueue.isEmpty() )
-        genNameIconsFor(m_nameQueue.keys().first());
-    while ( !m_imgQueue.isEmpty() )
-        genImagesFor(m_imgQueue.keys().first());
-    if ( !m_quit )
+    while ( !m_quit )
     {
-        setPause(true);
+        while ( !m_nameQueue.isEmpty() )
+            genNameIconsFor(m_nameQueue.keys().first());
+        while ( !m_imgQueue.isEmpty() )
+            genImagesFor(m_imgQueue.keys().first());
+
+        setPause(!m_quit);
         pause();
-        goto operations;
     }
 }
 

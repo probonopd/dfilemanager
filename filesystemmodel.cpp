@@ -115,6 +115,8 @@ FileSystemModel::Node::~Node()
 void
 FileSystemModel::Node::insertChild(Node *node)
 {
+    QMutex mutex;
+    mutex.lock();
     if ( node->hidden() && !showHidden() )
         m_children[Hidden] << node;
     else
@@ -134,6 +136,7 @@ FileSystemModel::Node::insertChild(Node *node)
         }
 
     }
+    mutex.unlock();
 }
 
 int FileSystemModel::Node::row()
@@ -150,8 +153,11 @@ FileSystemModel::Node
 *FileSystemModel::Node::child(const int c)
 {
     Node *n = 0;
+    QMutex mutex;
+    mutex.lock();
     if ( c >= 0 && c < m_children[Visible].size() )
         n = m_children[Visible].at(c);
+    mutex.unlock();
     return n;
 }
 
@@ -170,6 +176,8 @@ void FileSystemModel::Node::pause() { model()->dataGatherer()->pause(); }
 void
 FileSystemModel::Node::setFilter(const QString &filter)
 {
+    QMutex mutex;
+    mutex.lock();
     if ( filter == m_filter )
         return;
 
@@ -197,6 +205,7 @@ FileSystemModel::Node::setFilter(const QString &filter)
     if ( m_children[Visible].count() > 1 )
         sort(&m_children[Visible]);
     emit model()->layoutChanged();
+    mutex.unlock();
 }
 
 bool
@@ -250,7 +259,8 @@ FileSystemModel::Node
         else
             rePopulate();
     }
-
+    QMutex mutex;
+    mutex.lock();
     for ( int i = 0; i < Deleted; ++i )
     {
         int c = m_children[i].count();
@@ -261,10 +271,12 @@ FileSystemModel::Node
             {
                 if ( i )
                     m_children[Visible] << m_children[i].takeAt(c);
+                mutex.unlock();
                 return node;
             }
         }
     }
+    mutex.unlock();
     return 0;
 }
 
@@ -315,6 +327,8 @@ FileSystemModel::Node::rePopulate()
         if ( sc != model()->sortColumn() || so != model()->sortOrder() )
             model()->setSort(sc, so);
     }
+    QMutex mutex;
+    mutex.lock();
     for ( int i = 0; i < Deleted; ++i )
     {
         int c = m_children[i].count();
@@ -332,6 +346,7 @@ FileSystemModel::Node::rePopulate()
             }
         }
     }
+    mutex.unlock();
     const QDir dir(filePath());
     if ( this == model()->rootNode() )
     {
@@ -570,7 +585,7 @@ FileSystemModel::FileSystemModel(QObject *parent)
 FileSystemModel::~FileSystemModel()
 {
     delete m_rootNode;
-    m_thumbsLoader->clearQueue();
+    m_thumbsLoader->discontinue();
     m_it->discontinue();
     while ( m_thumbsLoader->isRunning() )
         m_thumbsLoader->wait();
@@ -589,7 +604,7 @@ FileSystemModel::setSort(const int sortColumn, const int sortOrder)
 void
 FileSystemModel::nodeGenerated(const QString &path, FileSystemModel::Node *node)
 {
-    if ( path != rootPath() )
+    if ( path != rootPath() || node == m_rootNode )
         return;
 
     emit rootPathChanged(rootPath());
