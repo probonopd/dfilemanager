@@ -86,7 +86,6 @@ public:
     class Node : public QFileInfo
     {
     public:
-        int m_test = 128;
         enum Children { Visible = 0, Hidden = 1, Filtered = 2, Deleted = 3 };
         ~Node();
         void insertChild(Node *node);
