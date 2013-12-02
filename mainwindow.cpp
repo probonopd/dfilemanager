@@ -643,6 +643,8 @@ MainWindow::setActions()
 void
 MainWindow::viewItemHovered( const QModelIndex &index )
 {
+    if ( m_model->isPopulating() || !index.isValid() || index.row() > 100000 || index.column() > 3 )
+        return;
     const QString &file = m_model->filePath(index);
     m_statusBar->showMessage( file );
 }

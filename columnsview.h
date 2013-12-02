@@ -64,14 +64,12 @@ signals:
     void expandRequest(const QModelIndex &index);
 
 protected:
-    void rowsInserted(const QModelIndex &parent, int start, int end);
     void contextMenuEvent(QContextMenuEvent *event);
     void mouseReleaseEvent(QMouseEvent *e);
     void keyPressEvent(QKeyEvent *);
     void mousePressEvent(QMouseEvent *event) { QListView::mousePressEvent(event); m_pressPos = event->pos(); emit focusRequest(this); }
     void focusInEvent(QFocusEvent *event) { QListView::focusInEvent(event); emit focusRequest(this); /*viewport()->update();*/ }
 //    void focusOutEvent(QFocusEvent *event) { QListView::focusOutEvent(event); viewport()->update(); }
-    void paintEvent(QPaintEvent *e);
     void wheelEvent(QWheelEvent *e);
     bool eventFilter(QObject *o, QEvent *e);
     bool sanityCheckForDir();
@@ -84,7 +82,6 @@ private:
     QPoint m_pressPos;
     QString m_activeFile, m_rootPath;
     int m_width;
-    bool m_isSorted;
 };
 
 }

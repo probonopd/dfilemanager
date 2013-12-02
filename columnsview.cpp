@@ -85,7 +85,6 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QStri
     , m_rootPath(QString())
     , m_model(0)
     , m_width(0)
-    , m_isSorted(false)
     , m_fsWatcher(new QFileSystemWatcher(this))
     , m_sortModel(0)
 {
@@ -154,7 +153,6 @@ ColumnsView::setRootIndex(const QModelIndex &index)
         m_fsWatcher->removePaths(m_fsWatcher->directories());
     if ( m_model )
     {
-        m_isSorted = index == m_model->index(m_model->rootPath());
         m_rootPath = m_model->filePath(index);
         if ( !sanityCheckForDir() )
             return;
@@ -267,49 +265,11 @@ ColumnsView::mouseReleaseEvent(QMouseEvent *e)
 }
 
 void
-ColumnsView::paintEvent(QPaintEvent *e)
-{
-    QListView::paintEvent(e);
-//    if ( m_parent->currentView() && m_parent->currentView() == this )
-//    {
-//        QPainter p(viewport());
-//        p.setPen(QPen(palette().color(QPalette::Highlight), 3.0f));
-//        p.drawRect(viewport()->rect().adjusted(0,0,-1,-1));
-//        p.end();
-//    }
-}
-
-void
 ColumnsView::setModel(QAbstractItemModel *model)
 {
     QListView::setModel(model);
     m_model = qobject_cast<FileSystemModel *>(model);
     setItemDelegate(new ColumnsDelegate(this));
-}
-
-void
-ColumnsView::rowsInserted(const QModelIndex &parent, int start, int end)
-{
-    QListView::rowsInserted(parent, start, end);
-    if ( parent != rootIndex() )
-        return;
-//    int wbefore = m_width;
-//    for ( int i = start; i<=end; ++i )
-//    {
-//        const QModelIndex &index = m_model->index(i, 0, parent);
-//        if ( !index.isValid() )
-//            continue;
-//        const int W =  fontMetrics().boundingRect( index.data().toString() ).width();
-//        if ( W > m_width )
-//            m_width = W;
-//    }
-//    if ( m_width > wbefore )
-//    {
-//        int w = m_width;
-//        w+=40; //icon && expanders...
-//        w+=style()->pixelMetric(QStyle::PM_ScrollBarExtent, 0, this);
-//        setFixedWidth(w);
-//    }
 }
 
 void
@@ -327,14 +287,6 @@ ColumnsView::rowsRemoved(const QModelIndex &parent, int start, int end)
 void
 ColumnsView::dirLoaded(const QString &dir)
 {
-    if ( !sanityCheckForDir() )
-        return;
-    if ( (dir != m_rootPath || m_isSorted) && sender()!=m_fsWatcher )
-        return;
-
-    m_isSorted = true;
-//    m_parent->container()->sort(m_model->sortingColumn(), m_model->sortingOrder(), m_rootPath);
-//    viewport()->update();
 }
 
 void

@@ -309,11 +309,20 @@ PreView::animStep(const qreal value)
     rotate = ANGLE-rotate;
     m_items.at(m_nextRow)->transform(goingUp ? rotate : -rotate, Qt::YAxis, f, f);
 
+//    if ( m_items.count() > 1 )
+//        correctItemsPos(m_row-1, m_row+1 );
+
+
+
+
+#define UP m_items.at(i)->savedX()-s
+#define DOWN m_items.at(i)->savedX()+s
+
     int i = m_items.count();
     while ( --i > -1 )
     {
         if ( i != m_row && i != m_nextRow )
-            m_items.at(i)->setX( goingUp ? m_items.at(i)->savedX()-s : m_items.at(i)->savedX()+s );
+            m_items.at(i)->setX( goingUp ? UP : DOWN );
         if ( !m_hasZUpdate )
             m_items.at(i)->setZValue( i>=m_nextRow ? m_items.at(qMin(m_items.count()-1, i+1))->zValue()+1 : m_items.at(qMax(0, i-1))->zValue()-1 );
     }
@@ -533,7 +542,7 @@ PreView::setRootIndex(const QModelIndex &rootIndex)
 void
 PreView::rowsInserted(const QModelIndex &parent, int start, int end)
 {
-    if ( !parent.isValid() || m_rootIndex != parent )
+    if ( !parent.isValid() || m_rootIndex != parent || m_model->isPopulating() )
         return;
 
     populate(start, end);
@@ -587,6 +596,7 @@ PreView::correctItemsPos(const int leftStart, const int rightStart)
     int z = m_items.count()-1;
     PixmapItem *p = 0;
     QList<PixmapItem *>::iterator i = m_items.begin()+rightStart;
+//    int hideAfter = 100, current = 0;
     if ( i < m_items.end() )
     {
         p = *i;
@@ -598,15 +608,24 @@ PreView::correctItemsPos(const int leftStart, const int rightStart)
         {
             --z;
             p = *i;
+//            if ( current > hideAfter )
+//            {
+//                p->setVisible(false);
+//                continue;
+//            }
+//            else
+//                p->setVisible(true);
             p->setPos(m_xpos+=space, m_y);
             p->transform(ANGLE, Qt::YAxis, SCALE, SCALE);
             p->setZValue(z);
+//            ++current;
         }
     }
 
     m_xpos = 0.0f;
     z = m_items.count()-1;
     i = m_items.begin()+leftStart;
+//    current = 0;
     if ( i > m_items.begin()-1 )
     {
         p = *i;
@@ -619,9 +638,17 @@ PreView::correctItemsPos(const int leftStart, const int rightStart)
         {
             --z;
             p = *i;
+//            if ( current > hideAfter )
+//            {
+//                p->setVisible(false);
+//                continue;
+//            }
+//            else
+//                p->setVisible(true);
             p->setPos(m_xpos-=space, m_y);
             p->transform(-ANGLE, Qt::YAxis, SCALE, SCALE);
             p->setZValue(z);
+//            ++current;
         }
     }
     p = 0;

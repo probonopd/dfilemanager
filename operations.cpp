@@ -154,17 +154,17 @@ QString
 Ops::prettySize(quint64 bytes)
 {
   if (bytes & (0x3fff<<50))
-     return QString::number( (bytes>>50) + ((bytes>>40) & (0x3ff)) / 1024.0, 'f', 2 ) + " PiB";
+     return QString::number( (bytes>>50) + ((bytes>>40) & (0x3ff)) / 1024.0, 'f', 2 ) + " PB";
   else if (bytes & (0x3ff<<40))
-     return QString::number( (bytes>>40) + ((bytes>>30) & (0x3ff)) / 1024.0, 'f', 2 ) + " TiB";
+     return QString::number( (bytes>>40) + ((bytes>>30) & (0x3ff)) / 1024.0, 'f', 2 ) + " TB";
   else if (bytes & (0x3ff<<30))
-     return QString::number( (bytes>>30) + ((bytes>>20) & (0x3ff)) / 1024.0, 'f', 2 ) + " GiB";
+     return QString::number( (bytes>>30) + ((bytes>>20) & (0x3ff)) / 1024.0, 'f', 2 ) + " GB";
   else if (bytes & (0x3ff<<20))
-     return QString::number( (bytes>>20) + ((bytes>>10) & (0x3ff)) / 1024.0, 'f', 2 ) + " MiB";
+     return QString::number( (bytes>>20) + ((bytes>>10) & (0x3ff)) / 1024.0, 'f', 2 ) + " MB";
   else if (bytes & (0x3ff<<10))
-     return QString::number( (bytes>>10) + ((bytes) & (0x3ff)) / 1024.0, 'f', 2 ) + " KiB";
+     return QString::number( (bytes>>10) + ((bytes) & (0x3ff)) / 1024.0, 'f', 2 ) + " kB";
   else
-     return QString::number( bytes, 'f', 0 ) + " Bytes";
+     return QString::number( bytes, 'f', 0 ) + " B ";
 }
 
 /* blurring function below from:

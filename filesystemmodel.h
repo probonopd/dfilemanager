@@ -86,14 +86,13 @@ public:
     class Node : public QFileInfo
     {
     public:
+        int m_test = 128;
         enum Children { Visible = 0, Hidden = 1, Filtered = 2, Deleted = 3 };
         ~Node();
         void insertChild(Node *node);
         inline QString filePath() { return m_filePath; }
         void rePopulate();
         bool hasChild( const QString &name );
-        inline bool hasChildren() { return !m_children[Visible].isEmpty(); }
-        Nodes children();
         int childCount();
         int row();
         Node *child(const int c);
@@ -104,7 +103,6 @@ public:
         QVariant data(const int column);
 
         void sort();
-        static void sort(Nodes *nodes);
         inline int sortColumn() { return model()->sortColumn(); }
         inline Qt::SortOrder sortOrder() { return model()->sortOrder(); }
 
@@ -115,19 +113,20 @@ public:
         inline void setLocked(bool lock) { m_isLocked = lock; }
         inline bool isLocked() { return m_isLocked; }
 
+        inline void lockMutex() { m_mutex.lock(); }
+        inline void unLockMutex() { m_mutex.unlock(); }
+
         inline void lockChildren(bool lock) { m_isChildLocked = lock; }
         inline bool childrenLock() { return m_isChildLocked; }
 
         void setFilter(const QString &filter);
         inline QString filter() const { return m_filter; }
 
-        void blockChildren(bool p);
-        void pause();
-
         Node *node(const QString &path, bool checkOnly = true);
         FileSystemModel *model();
 
     protected:
+        int rowFor(Node *child);
         Node *nodeFromPath(const QString &path, bool checkOnly = true);
         Node(FileSystemModel *model = 0, const QString &path = QString(), Node *parent = 0);
 
@@ -137,6 +136,7 @@ public:
         Nodes m_children[Deleted+1];
         QString m_filePath, m_filter, m_name;
         FileSystemModel *m_model;
+        QMutex m_mutex;
         friend class FileSystemModel;
         friend class DataGatherer;
     };
