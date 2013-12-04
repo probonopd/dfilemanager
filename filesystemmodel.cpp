@@ -118,14 +118,15 @@ FileSystemModel::Node::insertChild(Node *node)
         m_children[Hidden] << node;
     else
     {
-        int z = m_children[Visible].size(), a = 0;
-        for ( a; a < z; ++a )
-            if ( !lessThen(m_children[Visible].at(a), node) )
+        int z = m_children[Visible].size(), i = -1;
+        while ( ++i < z )
+            if ( !lessThen(m_children[Visible].at(i), node) )
                 break;
 
-        model()->beginInsertRows(model()->index(filePath()), z, z);
+        Q_ASSERT(i<=m_children[Visible].size());
+        model()->beginInsertRows(model()->index(filePath()), i, i);
         m_mutex.lock();
-        m_children[Visible].insert(a, node);
+        m_children[Visible].insert(i, node);
         m_mutex.unlock();
         model()->endInsertRows();
     }
@@ -143,21 +144,17 @@ FileSystemModel::Node::row()
 int
 FileSystemModel::Node::childCount()
 {
-    m_mutex.lock();
-    int count = m_children[Visible].size();
-    m_mutex.unlock();
-    return count;
+    QMutexLocker locker(&m_mutex);
+    return m_children[Visible].size();
 }
 
 FileSystemModel::Node
 *FileSystemModel::Node::child(const int c)
 {
-    Node *n = 0;
-    m_mutex.lock();
+    QMutexLocker locker(&m_mutex);
     if ( c > -1 && c < m_children[Visible].size() )
-        n = m_children[Visible].at(c);
-    m_mutex.unlock();
-    return n;
+        return m_children[Visible].at(c);
+    return 0;
 }
 
 QString FileSystemModel::Node::name() { return m_name; }
@@ -165,10 +162,8 @@ QString FileSystemModel::Node::name() { return m_name; }
 int
 FileSystemModel::Node::rowFor(Node *child)
 {
-    m_mutex.lock();
-    int row = m_children[Visible].indexOf(child);
-    m_mutex.unlock();
-    return row;
+    QMutexLocker locker(&m_mutex);
+    return m_children[Visible].indexOf(child);
 }
 
 bool FileSystemModel::Node::hidden() { return isHidden()&&!isLocked(); }
@@ -369,6 +364,7 @@ FileSystemModel::Node::rePopulate()
             const QFileInfo file(it.next());
             if ( hasChild(file.fileName()) )
                 continue;
+
             insertChild(new Node(model(), file.filePath(), this));
         }
     }
@@ -648,12 +644,12 @@ Qt::ItemFlags
 FileSystemModel::flags(const QModelIndex &index) const
 {
     Node *node = fromIndex(index);
-    Qt::ItemFlags flags = QAbstractItemModel::flags(index);
+    Qt::ItemFlags flags /*= QAbstractItemModel::flags(index)*/=Qt::ItemIsEnabled;
     if ( node->isWritable() )
         flags |= Qt::ItemIsEditable;
     if ( node->isDir() )
         flags |= Qt::ItemIsDropEnabled;
-    if ( node->isReadable() )
+    if ( node->isReadable() && !isPopulating() )
         flags |= Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
     return flags;
 }

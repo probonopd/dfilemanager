@@ -81,6 +81,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
         connect( v, SIGNAL(entered(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
         connect( v, SIGNAL(viewportEntered()), this, SIGNAL(viewportEntered()));
         connect( v, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( m_model, SIGNAL(paintRequest()), v->viewport(), SLOT(update()) );
     }
 
     m_viewStack->addWidget(m_iconView);

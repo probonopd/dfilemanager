@@ -90,15 +90,20 @@ public:
         ~Node();
         void insertChild(Node *node);
         inline QString filePath() { return m_filePath; }
-        void rePopulate();
+
         bool hasChild( const QString &name );
         int childCount();
         int row();
+
         Node *child(const int c);
-        QString name();
         inline Node *parent() const { return m_parent; }
+
+        void rePopulate();
         inline bool isPopulated() const { return m_isPopulated; }
+
+        QString name();
         bool rename(const QString &newName);
+
         QVariant data(const int column);
 
         void sort();
@@ -135,7 +140,7 @@ public:
         Nodes m_children[Deleted+1];
         QString m_filePath, m_filter, m_name;
         FileSystemModel *m_model;
-        QMutex m_mutex;
+        mutable QMutex m_mutex;
         friend class FileSystemModel;
         friend class DataGatherer;
     };
@@ -212,6 +217,7 @@ signals:
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
     void hiddenVisibilityChanged(bool visible);
     void sortingChanged(const int sortCol, const int order);
+    void paintRequest();
 
 private:
     Node *m_rootNode, *m_current;

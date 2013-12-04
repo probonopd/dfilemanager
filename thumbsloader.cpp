@@ -29,6 +29,7 @@
 #include "application.h"
 #include <QBitmap>
 #include <QAbstractItemModel>
+#include <QMutexLocker>
 
 using namespace DFM;
 
@@ -87,6 +88,7 @@ ThumbsLoader::hasThumb(const QString &file) const
 void
 ThumbsLoader::queueFile(const QString &file)
 {
+    QMutexLocker locker(&m_listMutex);
     if ( m_queue.contains(file) || hasThumb(file) || hasIcon(file) || m_tried.contains(file) )
         return;
 
@@ -125,7 +127,6 @@ ThumbsLoader::genThumb( const QString &path )
             if ( !hasIcon(dirFile) )
         {
             s_icons.insert(dirFile, iconName);
-            const QModelIndex &index = m_fsModel->index(dirFile);
             emit thumbFor(path, iconName);
         }
         return;
@@ -150,7 +151,9 @@ ThumbsLoader::genThumb( const QString &path )
         emit thumbFor(path, QString());
         return;
     }
+    m_listMutex.lock();
     m_tried << path;
+    m_listMutex.unlock();
 }
 
 void ThumbsLoader::clearQueue() {  }
@@ -161,12 +164,18 @@ ThumbsLoader::run()
     while (!m_quit)
     {
         while ( !m_queue.isEmpty() )
-            genThumb(m_queue.takeFirst());
+        {
+            m_listMutex.lock();
+            const QString &file = m_queue.takeFirst();
+            m_listMutex.unlock();
+            genThumb(file);
+        }
         setPause(!m_quit);
         pause();
     }
 }
 
+///////////////////////////////////////////////////////////////////////
 
 static QHash<QString, QImage> s_themeIcons[2];
 

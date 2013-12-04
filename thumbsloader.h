@@ -76,6 +76,7 @@ protected:
 
 private:
     bool m_quit;
+    mutable QMutex m_listMutex;
     QStringList m_queue, m_tried;
     FileSystemModel *m_fsModel;
     int m_extent;

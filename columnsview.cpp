@@ -270,6 +270,7 @@ ColumnsView::setModel(QAbstractItemModel *model)
     QListView::setModel(model);
     m_model = qobject_cast<FileSystemModel *>(model);
     setItemDelegate(new ColumnsDelegate(this));
+    connect(m_model, SIGNAL(paintRequest()), viewport(), SLOT(update()));
 }
 
 void
