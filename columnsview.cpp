@@ -39,9 +39,24 @@ public:
         , m_model(static_cast<FileSystemModel *>(m_view->model())){}
     QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        QTextEdit *editor = new QTextEdit(parent);
-        editor->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        return editor;
+        return new QTextEdit(parent);
+    }
+    void setEditorData(QWidget *editor, const QModelIndex &index) const
+    {
+        QTextEdit *edit = qobject_cast<QTextEdit *>(editor);
+        if (!edit)
+            return;
+
+        edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        const QString &oldName = index.data(Qt::EditRole).toString();
+        edit->setText(oldName);
+
+        if ( oldName.contains(".") )
+        {
+            QTextCursor tc = edit->textCursor();
+            tc.setPosition(oldName.lastIndexOf("."), QTextCursor::KeepAnchor);
+            edit->setTextCursor(tc);
+        }
     }
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
     {

@@ -33,6 +33,8 @@
 #include <qmath.h>
 #include <QTextEdit>
 #include <QMessageBox>
+#include <QTextCursor>
+#include <QTextFormat>
 
 #define TEXT index.data().toString()
 #define RECT option.rect
@@ -113,7 +115,16 @@ public:
             return;
 
         edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        edit->setText(index.data(Qt::EditRole).toString());
+        const QString &oldName = index.data(Qt::EditRole).toString();
+        edit->setText(oldName);
+
+        if ( oldName.contains(".") )
+        {
+            QTextCursor tc = edit->textCursor();
+            tc.setPosition(oldName.lastIndexOf("."), QTextCursor::KeepAnchor);
+            edit->setTextCursor(tc);
+        }
+
         edit->setAlignment(Qt::AlignCenter);
     }
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
