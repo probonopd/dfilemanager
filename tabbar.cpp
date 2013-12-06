@@ -167,12 +167,12 @@ FooBar::FooBar(QWidget *parent)
 }
 
 int
-FooBar::headHeight()
+FooBar::headHeight(MainWindow *win)
 {
     int h = 0;
-    if ( FooBar *foo = MainWindow::currentWindow()->findChild<FooBar *>() )
+    if ( FooBar *foo = win->findChild<FooBar *>() )
         h += foo->height();
-    if ( QToolBar *bar = MainWindow::currentWindow()->toolBar() )
+    if ( QToolBar *bar = win->toolBar() )
         if ( bar->isVisible() )
             h += bar->height();
     return h;
@@ -318,12 +318,12 @@ FooBar::shape()
 }
 
 QLinearGradient
-FooBar::headGrad()
+FooBar::headGrad(MainWindow *win)
 {
     QWidget *w = MainWindow::currentWindow();
     QColor topMid(Ops::colorMid(Qt::white, bg, 1, 4));
     QColor bottomMid(Ops::colorMid(Qt::black, bg, 1, 4));
-    QLinearGradient lg(0, 0, 0, headHeight());
+    QLinearGradient lg(0, 0, 0, headHeight(win));
     lg.setColorAt(0.0f, topMid);
     lg.setColorAt(1.0f, bottomMid);
     return lg;
@@ -389,7 +389,7 @@ FooBar::eventFilter(QObject *o, QEvent *e)
     {
         QPainter p(m_toolBar);
         p.setBrushOrigin(0, -m_tabBar->height());
-        p.fillRect(m_toolBar->rect(), headGrad());
+        p.fillRect(m_toolBar->rect(), headGrad(MainWindow::window(m_toolBar)));
         p.end();
         return true;
     }
@@ -532,7 +532,11 @@ DropIndicator::paintEvent(QPaintEvent *)
     p.end();
 }
 
-TabBar::TabBar(QWidget *parent) : QTabBar(parent), m_addButton(0), m_hasPress(false), m_dropIndicator(new DropIndicator(this))
+TabBar::TabBar(QWidget *parent)
+    : QTabBar(parent)
+    , m_addButton(0)
+    , m_hasPress(false)
+    , m_dropIndicator(new DropIndicator(this))
 {
     setSelectionBehaviorOnRemove(QTabBar::SelectPreviousTab);
     setDocumentMode(true);
@@ -579,7 +583,7 @@ TabBar::dragEnterEvent(QDragEnterEvent *e)
 void
 TabBar::dragMoveEvent(QDragMoveEvent *e)
 {
-    if ( e->source() == this && e->mimeData()->property("tab").isValid() && tabAt(e->pos()) != -1 )
+    if ( e->mimeData()->property("tab").isValid() && tabAt(e->pos()) != -1 )
     {
         QRect r = tabRect(tabAt(e->pos()));
         m_dropIndicator->setVisible(true);
@@ -600,34 +604,46 @@ TabBar::dropEvent(QDropEvent *e)
     m_hasPress = false;
     MainWindow *w = MainWindow::window(this);
     int tab = tabAt(e->pos());
-    if ( e->source() == this && e->mimeData()->property("tab").isValid() ) //dragging a tab inside tabbar
-        if ( tab != -1 )
+    QRect r = tabRect(tab);
+    if ( e->mimeData()->property("tab").isValid() ) //dragging a tab
+    {
+        if ( e->source() == this && r.isValid() ) //dragging a tab inside tabbar
         {
-            QRect r = tabRect(tab);
             int fromTab = e->mimeData()->property("tab").toInt();
             int toTab = tab;
             if ( tab > fromTab && e->pos().x() < r.center().x() )
                 --toTab;
             else if ( tab < fromTab && e->pos().x() > r.center().x() )
                 ++toTab;
-            if ( fromTab == toTab )
-                return;
-
-            moveTab(fromTab, toTab);
-            return;
+            if ( fromTab != toTab )
+                moveTab(fromTab, toTab);
         }
-    if ( tab != -1 )
-    {
-        const QString &dest = w->containerForTab(tab)->model()->rootPath();
-        IO::Job::copy(e->mimeData()->urls(), dest, true, true);
+        else if (e->source() != this) //from a tabbar in another window
+        {
+            int toTab = r.isValid()?tab:count();
+            if ( r.isValid() && e->pos().x() > r.center().x() )
+                ++toTab;
+            MainWindow *sourceWin = MainWindow::window(e->source());
+            ViewContainer *container = sourceWin->takeContainer(e->mimeData()->property("tab").toInt());
+            w->addTab(container, toTab);
+        }
     }
     else
     {
-        if ( e->mimeData()->urls().count() == 1 || QMessageBox::question(w, tr("Are you sure?"), QString(tr("You are about to open %1 tabs").arg(e->mimeData()->urls().count())), QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes )
-            foreach ( const QUrl &file, e->mimeData()->urls() )
-                if ( QFileInfo(file.toLocalFile()).isDir() )
-                    w->addTab(file.toLocalFile());
+        if ( r.isValid() )
+        {
+            const QString &dest = w->containerForTab(tab)->model()->rootPath();
+            IO::Job::copy(e->mimeData()->urls(), dest, true, true);
+        }
+        else
+        {
+            if ( e->mimeData()->urls().count() == 1 || QMessageBox::question(w, tr("Are you sure?"), QString(tr("You are about to open %1 tabs").arg(e->mimeData()->urls().count())), QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes )
+                foreach ( const QUrl &file, e->mimeData()->urls() )
+                    if ( QFileInfo(file.toLocalFile()).isDir() )
+                        w->addTab(file.toLocalFile());
+        }
     }
+    e->accept();
 }
 
 void
@@ -664,6 +680,17 @@ TabBar::mousePressEvent(QMouseEvent *e)
 }
 
 void
+TabBar::newWindowTab(int tab)
+{
+    ViewContainer *container = MainWindow::window(this)->takeContainer(tab);
+    if (!container)
+        return;
+    MainWindow *win = new MainWindow(QStringList(), false);
+    win->addTab(container);
+    win->show();
+}
+
+void
 TabBar::mouseMoveEvent(QMouseEvent *e)
 {
     QTabBar::mouseMoveEvent(e);
@@ -679,8 +706,10 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
     if ( m_hasPress && tabAt(e->pos()) != -1 )
     {
         QDrag *drag = new QDrag(this);
+        connect(drag, SIGNAL(destroyed()), m_dropIndicator, SLOT(hide()));
         QMimeData *data = new QMimeData();
-        data->setUrls(QList<QUrl>() << QUrl(MainWindow::window(this)->containerForTab(tabAt(e->pos()))->model()->rootPath()));
+        m_lastDraggedFile = MainWindow::window(this)->containerForTab(tabAt(e->pos()))->model()->rootPath();
+        data->setUrls(QList<QUrl>() << QUrl::fromLocalFile(m_lastDraggedFile));
         data->setProperty("tab", tabAt(e->pos()));
         drag->setMimeData(data);
         QWidget *w = MainWindow::currentWindow()->containerForTab(tabAt(e->pos()));
@@ -690,8 +719,9 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
         w->render(&pix);
         pix = pix.scaledToHeight(128);
         drag->setPixmap(pix);
-        drag->exec();
-        connect(drag, SIGNAL(destroyed()), m_dropIndicator, SLOT(hide()));
+        if (!drag->exec(Qt::CopyAction|Qt::MoveAction))
+            if (count() > 1)
+                newWindowTab(data->property("tab").toInt());
     }
     if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
         QCoreApplication::sendEvent(bar, e);
@@ -759,9 +789,9 @@ TabBar::drawTab(QPainter *p, int index)
     {
         p->setPen(high);
         p->drawLine(rect().bottomLeft(), rect().bottomRight());
-        p->setPen(QPen(FooBar::headGrad(), 1.0f));
+        p->setPen(QPen(FooBar::headGrad(MainWindow::window(this)), 1.0f));
         p->drawLine(shape.bottomLeft(), shape.bottomRight());
-        p->setBrush(FooBar::headGrad());
+        p->setBrush(FooBar::headGrad(MainWindow::window(this)));
 
         QLinearGradient hg(shape.topLeft(), shape.bottomLeft());
         hg.setColorAt(0.0f, Ops::colorMid(high, Qt::white));

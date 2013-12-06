@@ -887,7 +887,8 @@ PlacesView::updateAllWindows()
 void
 PlacesView::populate()
 {
-    m_model->clear();
+    if (m_model)
+        m_model->clear();
     m_devManager = 0L;
 #ifdef Q_WS_X11
     QSettings s("dfm", "bookmarks");

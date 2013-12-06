@@ -44,6 +44,7 @@ ThumbsLoader::ThumbsLoader(QObject *parent) :
     m_quit(false)
 {
     connect(m_fsModel, SIGNAL(fileRenamed(QString,QString,QString)), this, SLOT(fileRenamed(QString,QString,QString)));
+    connect(m_fsModel, SIGNAL(rootPathChanged(QString)), this, SLOT(clearQueue()));
     connect(m_fsModel, SIGNAL(modelAboutToBeReset()), this, SLOT(clearQueue()));
     connect(m_fsModel, SIGNAL(layoutAboutToBeChanged()), this, SLOT(clearQueue()));
 }

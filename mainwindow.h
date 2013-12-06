@@ -49,13 +49,13 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    explicit MainWindow( QStringList arguments = QStringList() );
+    MainWindow( const QStringList &arguments = QStringList(), bool autoTab = true );
     inline ViewContainer *activeContainer() { return m_activeContainer; }
     inline PlacesView *placesView() { return m_placesView; }
     inline QToolBar *toolBar() { return m_toolBar; }
     static ViewContainer *currentContainer();
     static MainWindow *currentWindow();
-    static MainWindow *window( QWidget *w ) { QWidget *p = w; while ( p->parentWidget() ) p = p->parentWidget(); return static_cast<MainWindow *>(p); }
+    static MainWindow *window( QWidget *w ) { QWidget *p = w; while ( p->parentWidget() ) p = p->parentWidget(); return qobject_cast<MainWindow *>(p); }
     static PlacesView *places();
     static QList<MainWindow *> openWindows();
     inline ViewContainer *containerForTab( int tab ) { return static_cast<ViewContainer *>(m_stackedWidget->widget(tab)); }
@@ -63,11 +63,13 @@ public:
     inline QList<QAction *> acts() const { return m_actions; }
     inline QMenu *mainMenu() { return m_mainMenu; }
     inline QSlider *iconSizeSlider() { return m_iconSizeSlider; }
+    ViewContainer *takeContainer(int tab);
     void updateConfig();
     void createMenus();
 
 public slots:
     void addTab(const QString &path = QDir::homePath());
+    void addTab(ViewContainer *container, int index = -1);
     void receiveMessage(const QStringList &message);
     inline void setRootPath( const QString &path ) { m_model->setPath(path); }
 

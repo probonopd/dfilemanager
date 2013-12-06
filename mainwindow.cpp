@@ -37,7 +37,7 @@ using namespace DFM;
 static MainWindow *s_currentWindow = 0;
 static QList<MainWindow *> s_openWindows;
 
-MainWindow::MainWindow(QStringList arguments)
+MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     : QMainWindow()
     , m_sortButton(0)
 { 
@@ -126,7 +126,8 @@ MainWindow::MainWindow(QStringList arguments)
         else if (arguments.count() > 1 && QFileInfo(arguments.at(1)).isDir())
             startPath = arguments.at(1);
     }
-    addTab(startPath);
+    if ( autoTab )
+        addTab(startPath);
 
     QVBoxLayout *vBox = new QVBoxLayout();
     vBox->setMargin(0);
@@ -150,17 +151,10 @@ MainWindow::MainWindow(QStringList arguments)
     hidePath();
 
     m_placesView->installEventFilter(this);
-    m_activeContainer->setFocus();
+    if ( m_activeContainer )
+        m_activeContainer->setFocus();
     m_statusBar->setVisible(m_statAct->isChecked());
     QTimer::singleShot(200, m_toolBar, SLOT(update())); //should be superfluos but make sure toolbar is painted correctly....
-
-#if 0
-
-    QTreeView *view = new QTreeView();
-    FileSystemModel *ftm = new FileSystemModel(view);
-    view->setSortingEnabled(true);
-    view->show();
-#endif
 }
 
 void
@@ -565,9 +559,49 @@ MainWindow::addTab(const QString &path)
 }
 
 void
+MainWindow::addTab(ViewContainer *container, int index)
+{
+    if ( index == -1 )
+        index = m_stackedWidget->count();
+    container->installEventFilter(this);
+    connect( container->model(), SIGNAL(directoryLoaded(QString)), this, SLOT(rootPathChanged(QString)));
+    connect( container->model(), SIGNAL(directoryLoaded(QString)), m_recentFoldersView, SLOT(folderEntered(QString)));
+    connect( container, SIGNAL(viewChanged()), this, SLOT(checkViewAct()));
+    connect( container->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(mainSelectionChanged(QItemSelection,QItemSelection)));
+    connect( container, SIGNAL(iconSizeChanged(int)), this, SLOT(setSliderPos(int)));
+    connect( container, SIGNAL(viewportEntered()), this, SLOT(viewClearHover()));
+    connect( container, SIGNAL(leftView()), this, SLOT(viewClearHover()));
+    connect( container, SIGNAL(newTabRequest(QString)), this, SLOT(addTab(QString)));
+    connect( container, SIGNAL(entered(QModelIndex)), m_infoWidget, SLOT(hovered(QModelIndex)));
+    connect( container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
+    connect( container, SIGNAL(sortingChanged(int,int)), this, SLOT(sortingChanged(int,int)));
+    connect( container->model(), SIGNAL(hiddenVisibilityChanged(bool)), m_showHiddenAct, SLOT(setChecked(bool)) );
+
+    QList<QAction *> actList;
+    actList << m_openInTabAct << m_mkDirAct << m_pasteAct << m_copyAct << m_cutAct
+            << m_delCurrentSelectionAct << m_renameAct << m_cstCmdAct << m_goUpAct
+            << m_goBackAct << m_goForwardAct << m_propertiesAct;
+
+    container->addActions(actList);
+    m_stackedWidget->insertWidget(index, container);
+    if (!m_model)
+        m_model = container->model();
+    if (!m_activeContainer)
+        m_activeContainer = container;
+
+    if ( Store::config.behaviour.gayWindow )
+        m_tabBar->insertTab(index, m_model->iconProvider()->icon(QFileInfo(container->model()->rootPath())), QFileInfo(container->model()->rootPath()).fileName());
+    else
+        m_tabBar->insertTab(index, QFileInfo(container->model()->rootPath()).fileName());
+
+    if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
+        m_tabBar->setVisible(m_tabBar->count() > 1);
+}
+
+void
 MainWindow::tabChanged(int currentIndex)
 {
-    if ( currentIndex < 0 )
+    if ( currentIndex < 0 || !m_stackedWidget->count() )
         return;
 
     m_stackedWidget->setCurrentIndex(currentIndex);
@@ -631,6 +665,36 @@ MainWindow::newTab()
     addTab(rootPath);
 }
 
+ViewContainer
+*MainWindow::takeContainer(int tab)
+{
+    ViewContainer *container = qobject_cast<ViewContainer *>(m_stackedWidget->widget(tab));
+    if (!container)
+        return 0;
+
+    if (m_activeContainer == container)
+    {
+        m_activeContainer = 0;
+        m_model = 0;
+    }
+    m_stackedWidget->removeWidget(container);
+    m_tabBar->removeTab(tab);
+
+    container->removeEventFilter(this);
+    container->disconnect(this);
+    container->model()->disconnect(this);
+    container->selectionModel()->disconnect(this);
+    foreach (QAction *a, container->actions())
+        container->removeAction(a);
+
+    if ( !m_stackedWidget->count() )
+    {
+        hide();
+        QTimer::singleShot(1000, this, SLOT(deleteLater()));
+    }
+    return container;
+}
+
 void
 MainWindow::setActions()
 {
@@ -652,6 +716,8 @@ MainWindow::viewItemHovered( const QModelIndex &index )
 void
 MainWindow::viewClearHover()
 {
+    if (!m_activeContainer)
+        return;
     QString newMessage = ( m_activeContainer->selectionModel()->selection().isEmpty()
                            ||  m_activeContainer->selectionModel()->currentIndex().parent() != m_model->index(m_model->rootPath()))
             ? m_statusMessage : m_statusMessage + m_slctnMessage;
@@ -744,7 +810,8 @@ MainWindow::windowActivationChange(bool wasActive)
     if ( !wasActive )
     {
         s_currentWindow = this;
-        emit viewChanged(m_activeContainer->currentView());
+        if ( m_activeContainer )
+            emit viewChanged(m_activeContainer->currentView());
     }
     if ( s_currentWindow )
         connect(APP, SIGNAL(lastMessage(QStringList)), s_currentWindow, SLOT(receiveMessage(QStringList)));

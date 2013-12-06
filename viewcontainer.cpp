@@ -237,6 +237,7 @@ ViewContainer::setRootPath(const QString &path)
     const QModelIndex &rootIndex = m_model->index(path);
     if ( rootIndex.isValid() )
     {
+        setRootIndex(rootIndex);
         if ( Store::config.views.dirSettings )
         {
             const QDir dir(path);
@@ -258,7 +259,6 @@ ViewContainer::setRootPath(const QString &path)
                 views().at(i)->setMouseTracking(false);
             }
         m_selectModel->clearSelection();
-        setRootIndex(rootIndex);
         if (!m_back && (m_backList.isEmpty() || m_backList.count() &&  path != m_backList.last()))
             m_backList.append(path);
         emit rootPathChanged(path);

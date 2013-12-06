@@ -25,19 +25,40 @@
 #include "filesystemmodel.h"
 #include "operations.h"
 #include <QPainter>
+#include <QTextEdit>
+#include <QMessageBox>
 
 using namespace DFM;
 
 class ColumnsDelegate : public QStyledItemDelegate
 {
 public:
-    explicit ColumnsDelegate(QWidget *parent = 0)
+    explicit ColumnsDelegate(ColumnsView *parent = 0)
         : QStyledItemDelegate(parent)
-        , m_view(static_cast<ColumnsView *>(parent))
+        , m_view(parent)
         , m_model(static_cast<FileSystemModel *>(m_view->model())){}
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+    {
+        QTextEdit *editor = new QTextEdit(parent);
+        editor->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        return editor;
+    }
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+    {
+        QTextEdit *edit = qobject_cast<QTextEdit *>(editor);
+        FileSystemModel *fsModel = static_cast<FileSystemModel *>(model);
+        if ( !edit||!fsModel )
+            return;
+        FileSystemModel::Node *node = fsModel->fromIndex(index);
+        const QString &newName = edit->toPlainText();
+        if ( node->name() == newName )
+            return;
+        if ( !node->rename(newName) )
+            QMessageBox::warning(MainWindow::window(edit), "Failed to rename", QString("%1 to %2").arg(node->name(), newName));
+    }
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        if ( !index.data().isValid() )
+        if ( !index.data().isValid()||!option.rect.isValid() )
             return;
         if ( index.data().toString() == m_view->activeFileName() )
         {
@@ -90,7 +111,6 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QStri
 {
     setViewMode(QListView::ListMode);
     setResizeMode(QListView::Adjust);
-//    setLayoutMode(QListView::Batched);
     setIconSize(QSize(16, 16));
     setUniformItemSizes(true);
     setDragDropMode(QAbstractItemView::DragDrop);

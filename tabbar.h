@@ -26,6 +26,7 @@
 #include <QToolBar>
 #include <QWidget>
 #include <QMouseEvent>
+#include <QDrag>
 
 #include "mainwindow.h"
 
@@ -76,8 +77,8 @@ public:
     enum TabShape { Standard = 0, Chrome };
     explicit FooBar(QWidget *parent = 0);
     void setTabBar(TabBar *tabBar);
-    static int headHeight();
-    static QLinearGradient headGrad();
+    static int headHeight(MainWindow *win);
+    static QLinearGradient headGrad(MainWindow *win);
     static QPainterPath tab( const QRect &r, int round = 4, TabShape shape = Standard );
 
 protected:
@@ -156,6 +157,7 @@ protected:
 
 private slots:
     void tabCloseRequest();
+    void newWindowTab(int tab);
 
 private:
     void genNewTabButton();
@@ -164,6 +166,7 @@ private:
     bool m_hasPress;
     QWidget *m_addButton;
     DropIndicator *m_dropIndicator;
+    QString m_lastDraggedFile;
 };
 
 }

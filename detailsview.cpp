@@ -24,12 +24,33 @@
 #include "filesystemmodel.h"
 #include "mainwindow.h"
 #include <qmath.h>
+#include <QTextEdit>
+#include <QMessageBox>
 
 using namespace DFM;
 
 class DetailsDelegate : public QStyledItemDelegate
 {
-protected:
+public:
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+    {
+        QTextEdit *editor = new QTextEdit(parent);
+        editor->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        return editor;
+    }
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+    {
+        QTextEdit *edit = qobject_cast<QTextEdit *>(editor);
+        FileSystemModel *fsModel = static_cast<FileSystemModel *>(model);
+        if ( !edit||!fsModel )
+            return;
+        FileSystemModel::Node *node = fsModel->fromIndex(index);
+        const QString &newName = edit->toPlainText();
+        if ( node->name() == newName )
+            return;
+        if ( !node->rename(newName) )
+            QMessageBox::warning(MainWindow::window(edit), "Failed to rename", QString("%1 to %2").arg(node->name(), newName));
+    }
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
         if ( !index.data().isValid() )

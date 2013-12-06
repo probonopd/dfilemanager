@@ -31,6 +31,8 @@
 #include <QTextLayout>
 #include <QRect>
 #include <qmath.h>
+#include <QTextEdit>
+#include <QMessageBox>
 
 #define TEXT index.data().toString()
 #define RECT option.rect
@@ -99,6 +101,33 @@ public:
         painter->drawTiledPixmap( QRect( QPoint( x, b-m_size ), m_shadowData[BottomLeft].size() ), m_shadowData[BottomLeft] );
         painter->drawTiledPixmap( QRect( QPoint( x+m_size, b-m_size ), QSize( w-( m_size*2+1 ), m_shadowData[Bottom].height() ) ), m_shadowData[Bottom] );
         painter->drawTiledPixmap( QRect( QPoint( r-m_size, b-m_size ), m_shadowData[BottomRight].size() ), m_shadowData[BottomRight] );
+    }
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+    {
+        return new QTextEdit(parent);
+    }
+    void setEditorData(QWidget *editor, const QModelIndex &index) const
+    {
+        QTextEdit *edit = qobject_cast<QTextEdit *>(editor);
+        if (!edit)
+            return;
+
+        edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        edit->setText(index.data(Qt::EditRole).toString());
+        edit->setAlignment(Qt::AlignCenter);
+    }
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+    {
+        QTextEdit *edit = qobject_cast<QTextEdit *>(editor);
+        FileSystemModel *fsModel = static_cast<FileSystemModel *>(model);
+        if ( !edit||!fsModel )
+            return;
+        FileSystemModel::Node *node = fsModel->fromIndex(index);
+        const QString &newName = edit->toPlainText();
+        if ( node->name() == newName )
+            return;
+        if ( !node->rename(newName) )
+            QMessageBox::warning(MainWindow::window(edit), "Failed to rename", QString("%1 to %2").arg(node->name(), newName));
     }
     void paint( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
