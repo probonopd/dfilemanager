@@ -602,6 +602,7 @@ TabBar::dropEvent(QDropEvent *e)
 {
     m_dropIndicator->setVisible(false);
     m_hasPress = false;
+    QApplication::restoreOverrideCursor();
     MainWindow *w = MainWindow::window(this);
     int tab = tabAt(e->pos());
     QRect r = tabRect(tab);

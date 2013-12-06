@@ -111,19 +111,18 @@ public:
     void setEditorData(QWidget *editor, const QModelIndex &index) const
     {
         QTextEdit *edit = qobject_cast<QTextEdit *>(editor);
-        if (!edit)
+        if (!edit||!index.isValid())
             return;
 
         edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         const QString &oldName = index.data(Qt::EditRole).toString();
         edit->setText(oldName);
 
-        if ( oldName.contains(".") )
-        {
-            QTextCursor tc = edit->textCursor();
-            tc.setPosition(oldName.lastIndexOf("."), QTextCursor::KeepAnchor);
-            edit->setTextCursor(tc);
-        }
+        const bool isDir = static_cast<const FileSystemModel *>(index.model())->isDir(index);
+        QTextCursor tc = edit->textCursor();
+        const int last = (isDir||!oldName.contains("."))?oldName.size():oldName.lastIndexOf(".");
+        tc.setPosition(last, QTextCursor::KeepAnchor);
+        edit->setTextCursor(tc);
 
         edit->setAlignment(Qt::AlignCenter);
     }
@@ -542,8 +541,8 @@ IconView::updateLayout()
     int horItemCount = contentsWidth/( iconSize().width() + Store::config.views.iconView.textWidth*2 );
     if ( model()->rowCount( rootIndex() ) < horItemCount && model()->rowCount( rootIndex() ) > 1 )
         horItemCount = model()->rowCount( rootIndex() );
-
-    setGridSize( QSize( qRound(contentsWidth/horItemCount), m_gridHeight ) );
+    if ( contentsWidth && horItemCount )
+        setGridSize( QSize( qRound(contentsWidth/horItemCount), m_gridHeight ) );
 }
 
 void

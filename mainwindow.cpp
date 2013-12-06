@@ -684,13 +684,14 @@ ViewContainer
     container->disconnect(this);
     container->model()->disconnect(this);
     container->selectionModel()->disconnect(this);
+    container->setParent(0);
     foreach (QAction *a, container->actions())
         container->removeAction(a);
 
     if ( !m_stackedWidget->count() )
     {
         hide();
-        QTimer::singleShot(1000, this, SLOT(deleteLater()));
+        QTimer::singleShot(250, this, SLOT(deleteLater()));
     }
     return container;
 }
@@ -707,6 +708,8 @@ MainWindow::setActions()
 void
 MainWindow::viewItemHovered( const QModelIndex &index )
 {
+    if ( !m_model )
+        return;
     if ( m_model->isPopulating() || !index.isValid() || index.row() > 100000 || index.column() > 3 )
         return;
     const QString &file = m_model->filePath(index);
