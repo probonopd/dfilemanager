@@ -35,6 +35,7 @@
 #include <QMessageBox>
 #include <QTextCursor>
 #include <QTextFormat>
+#include <QDesktopServices>
 
 #define TEXT index.data().toString()
 #define RECT option.rect
@@ -296,15 +297,12 @@ IconView::IconView( QWidget *parent )
     setWrapping( true );
     setEditTriggers( QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed );
     setSelectionRectVisible( true );
-//    setLayoutMode( QListView::Batched );
     setDragDropMode( QAbstractItemView::DragDrop );
     setDropIndicatorShown( true );
     setDefaultDropAction( Qt::MoveAction );
     viewport()->setAcceptDrops( true );
     setDragEnabled( true );
     setViewMode( QListView::IconMode );
-//    setAttribute( Qt::WA_Hover );
-//    setMouseTracking( true );
     setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
 
@@ -318,6 +316,10 @@ IconView::IconView( QWidget *parent )
 
     for ( int i = 16; i <= 256; i+=16 )
         m_allowedSizes << i;
+
+//    QDir storage(QDesktopServices::storageLocation(QDesktopServices::DataLocation));
+//    if ( storage.exists() && storage.isAbsolute() )
+//        m_homePix.load(storage.absoluteFilePath("home.png"));
 }
 
 void
@@ -497,6 +499,22 @@ IconView::mouseReleaseEvent( QMouseEvent *e )
 void
 IconView::paintEvent( QPaintEvent *e )
 {
+#if 0
+    if ( !m_bgPix[0].isNull() )
+    {
+        QPainter p(viewport());
+        p.setOpacity(0.5);
+        QRect pixrect = m_bgPix[0].rect();
+        pixrect.moveBottomRight(viewport()->rect().bottomRight());
+        pixrect.moveRight(pixrect.right()+16);
+        p.drawTiledPixmap(pixrect, m_bgPix[1]);
+
+        pixrect.moveBottomLeft(viewport()->rect().bottomLeft());
+        pixrect.moveLeft(pixrect.left()-16);
+        p.drawTiledPixmap(pixrect, m_bgPix[0]);
+        p.end();
+    }
+#endif
     QListView::paintEvent( e );
     if ( m_slide )
     {
@@ -595,6 +613,33 @@ void
 IconView::rootPathChanged( QString path )
 {
     updateLayout();
+#if 0
+    QIcon icon = m_model->fileIcon(m_model->index(path));
+    if ( icon.name() != "inode-directory" )
+    {
+        m_bgPix[0] = icon.pixmap(256);
+        m_bgPix[1] = icon.pixmap(256);
+        QTransform r;
+        r.translate(m_bgPix[1].width()/2, m_bgPix[1].height()/3);
+        r.rotate(75, Qt::YAxis);
+        r.scale(2.0, 1.0);
+        r.translate(-m_bgPix[1].width()/2, -m_bgPix[1].height()/3);
+        m_bgPix[1] = m_bgPix[1].transformed(r, Qt::SmoothTransformation);
+
+
+        QTransform l;
+        l.translate(m_bgPix[0].width()/2, m_bgPix[0].height()/3);
+        l.rotate(-75, Qt::YAxis);
+        l.scale(2.0, 1.0);
+        l.translate(-m_bgPix[0].width()/2, -m_bgPix[0].height()/3);
+        m_bgPix[0] = m_bgPix[0].transformed(l, Qt::SmoothTransformation);
+    }
+    else
+    {
+        m_bgPix[0] = QPixmap();
+        m_bgPix[1] = QPixmap();
+    }
+#endif
 }
 
 QModelIndex

@@ -155,15 +155,13 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
         painter->setOpacity(1);
     }
 
-#ifdef Q_WS_X11
     if ( Store::config.behaviour.devUsage )
         if ( DeviceItem *d = m_placesView->itemFromIndex<DeviceItem *>(index) )
-            if ( d->isMounted() )
+            if ( d->isMounted() && d->totalBytes() )
                 drawDeviceUsage(d->used(), painter, option);
     if ( DeviceItem *d = m_placesView->itemFromIndex<DeviceItem *>(index) )
         if ( d->isHidden() )
             painter->setOpacity(0.5f);
-#endif
 
     fg=!selected?PAL.color(QPalette::Text):PAL.color(QPalette::HighlightedText);
     const QColor &bg = selected?PAL.color( QPalette::Highlight ):PAL.color(QPalette::Base);
@@ -225,7 +223,6 @@ PlacesViewDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, con
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef Q_WS_X11
 
 static inline QPixmap mountIcon( bool mounted, int size, QColor col )
 {
@@ -244,13 +241,13 @@ static inline QPixmap mountIcon( bool mounted, int size, QColor col )
     return pix;
 }
 
-DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Solid::Device solid )
+DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev )
     : Place(QStringList())
+    , m_device(dev)
     , m_view(view)
     , m_manager(parentItem)
     , m_tb(new QToolButton(m_view))
     , m_timer(new QTimer(this))
-    , m_solid(solid)
     , m_isVisible(true)
     , m_isHidden(false)
 {
@@ -263,7 +260,7 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Solid::Devic
     connect (m_tb, SIGNAL(clicked()), this, SLOT(toggleMount()));
     connect (m_timer, SIGNAL(timeout()), this, SLOT(updateSpace()));
     m_timer->start(1000);
-    connect (m_solid.as<Solid::StorageAccess>(), SIGNAL(accessibilityChanged(bool, const QString &)), this, SLOT(changeState()));
+    connect (m_device, SIGNAL(accessibilityChanged(bool, const QString &)), this, SLOT(changeState()));
     updateSpace();
     setDragEnabled(false);
     connect( m_view, SIGNAL(expanded(QModelIndex)), this, SLOT(updateTb()) );
@@ -336,18 +333,6 @@ DeviceItem::setHidden()
 bool DeviceItem::isHidden() const { return m_view->hiddenDevices().contains(devPath()); }
 
 void
-DeviceItem::setMounted( const bool mount )
-{
-    if ( !m_solid.isValid() )
-        return;
-
-    if ( mount )
-        m_solid.as<Solid::StorageAccess>()->setup();
-    else
-        m_solid.as<Solid::StorageAccess>()->teardown();
-}
-
-void
 DeviceItem::updateSpace()
 {
     if ( isMounted() )
@@ -373,19 +358,19 @@ DeviceItem::changeState()
 
 DeviceManager::DeviceManager(const QStringList &texts, QObject *parent)
     : Container(QString("Devices"))
-    , QObject(parent)
+    , Devices(parent)
     , m_view(static_cast<PlacesView *>(parent))
 {
-    connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceAdded(QString)), this, SLOT(deviceAdded(QString)));
-    connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceRemoved(QString)), this, SLOT(deviceRemoved(QString)));
-    populate();
     setDragEnabled(false);
     setDropEnabled(false);
     setEditable(false);
     QAction *as = new QAction(tr("show hidden devices"), this);
     as->setCheckable(true);
     connect( as, SIGNAL(triggered()), this, SLOT(showHiddenDevices()) );
+    connect( this, SIGNAL(deviceAdded(Device*)), this, SLOT(devAdded(Device*)) );
+    connect( this, SIGNAL(deviceRemoved(Device*)), this, SLOT(devRemoved(Device*)) );
     m_actions << as;
+    addDevs();
 }
 
 void
@@ -399,35 +384,31 @@ DeviceManager::showHiddenDevices()
 }
 
 void
-DeviceManager::deviceAdded(const QString &dev)
+DeviceManager::devAdded(Device *dev)
 {
-    Solid::Device device = Solid::Device(dev);
-    if ( device.is<Solid::StorageAccess>() )
-    {
-        DeviceItem *d = new DeviceItem(this, m_view, device);
-        appendRow(d);
-        m_items.insert(dev, d);
-    }
+    DeviceItem *d = new DeviceItem(this, m_view, dev);
+    appendRow(d);
+    m_items.insert(dev, d);
 }
 
 void
-DeviceManager::deviceRemoved(const QString &dev)
+DeviceManager::devRemoved(Device *dev)
 {
     if ( m_items.contains(dev) )
     {
-        QStandardItem *i = m_items.take(dev);
-        removeRow(i->row());
+        DeviceItem *d = m_items.take(dev);
+        removeRow(d->row());
     }
 }
 
 void
-DeviceManager::populate()
+DeviceManager::addDevs()
 {
-    foreach ( Solid::Device dev, Solid::Device::listFromType(Solid::DeviceInterface::StorageAccess) )
+    foreach ( Device *dev, devices() )
     {
         DeviceItem *d = new DeviceItem( this, m_view, dev );
         appendRow(d);
-        m_items.insert(dev.udi(), d);
+        m_items.insert(dev, d);
     }
 }
 
@@ -440,7 +421,7 @@ DeviceItem
             return item;
     return deviceItemForFile(s.mid(0, s.lastIndexOf("/")));
 }
-#endif
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 QVariant
@@ -568,7 +549,6 @@ PlacesView::dropEvent( QDropEvent *event )
         RETURN;
     }
 
-#ifdef Q_WS_X11
     if ( itemAt<DeviceItem *>(event->pos())
          ||  ( m_lastClicked && dynamic_cast<DeviceItem *>(m_lastClicked)
                && dropIndicatorPosition() != OnItem
@@ -579,7 +559,6 @@ PlacesView::dropEvent( QDropEvent *event )
     {
         RETURN;
     }
-#endif
 
     const bool below = bool(dropIndicatorPosition() == BelowItem);
 
@@ -723,10 +702,8 @@ void
 PlacesView::removePlace()
 {
     if ( currentItem() )
-#ifdef Q_WS_X11
         if ( currentItem() != m_devManager
              && !m_devManager->isDevice(currentItem()))
-#endif
     {
             delete currentItem();
             if ( currentItem()->parent() )
@@ -816,23 +793,19 @@ PlacesView::activateAppropriatePlace( const QString &path )
 void
 PlacesView::showHiddenDevices()
 {
-#ifdef Q_WS_X11
     m_hiddenDevices.removeDuplicates();
     foreach ( DeviceItem *d, deviceManager()->deviceItems() )
         if ( d->isHidden() )
             d->show();
-#endif
 }
 
 void
 PlacesView::hideHiddenDevices()
 {
-#ifdef Q_WS_X11
     m_hiddenDevices.removeDuplicates();
     foreach ( DeviceItem *d, deviceManager()->deviceItems() )
         if ( d->isHidden() )
             d->hide();
-#endif
 }
 
 void
@@ -843,13 +816,11 @@ PlacesView::contextMenuEvent( QContextMenuEvent *event )
 
     QMenu popupMenu;
 
-#ifdef Q_WS_X11
     if ( DeviceItem *d = itemAt<DeviceItem *>(event->pos()) )
         popupMenu.addActions(d->actions());
     else if ( DeviceManager *dm = itemAt<DeviceManager *>(event->pos()) )
         popupMenu.addActions(dm->actions());
     else
-#endif
         popupMenu.addActions( actions() );
     popupMenu.exec( event->globalPos() );
 }
@@ -890,7 +861,7 @@ PlacesView::populate()
     if (m_model)
         m_model->clear();
     m_devManager = 0L;
-#ifdef Q_WS_X11
+#ifdef Q_OS_UNIX
     QSettings s("dfm", "bookmarks");
 #else
     QSettings s(QSettings::IniFormat, QSettings::UserScope, "dfm", "bookmarks");
@@ -911,7 +882,7 @@ PlacesView::populate()
         s.endGroup();
         s.endGroup();
     }
-#ifdef Q_WS_X11
+
     m_model->appendRow(m_devManager = new DeviceManager(QStringList() << tr("Devices"), this));
     expand(m_devManager->index());
 
@@ -921,14 +892,12 @@ PlacesView::populate()
         m_hiddenDevices = hiddenDevices;
         hideHiddenDevices();
     }
-
-#endif
 }
 
 void
 PlacesView::store()
 {
-#ifdef Q_WS_X11
+#ifdef Q_OS_UNIX
     QSettings s("dfm", "bookmarks");
 #else
     QSettings s(QSettings::IniFormat, QSettings::UserScope, "dfm", "bookmarks");
@@ -953,9 +922,7 @@ PlacesView::store()
         }
         s.endGroup();
     }
-#ifdef Q_WS_X11
     s.setValue("hiddenDevices", m_hiddenDevices);
-#endif
     m_timer->start();
 }
 
@@ -1004,52 +971,29 @@ PlacesView::drawBranches( QPainter *painter,
 #endif
 }
 
-#if 0
-void
-PlacesView::mtabChanged( QString mtabPath )
+bool
+PlacesView::getKdePlaces()
 {
-    takeTopLevelItem( topLevelItemCount()-1 );
-    QFile mtab( mtabPath );
-    mtab.open( QFile::ReadOnly );
-    QStringList mtabCont;
-    QTextStream stream( &mtab );
-    do mtabCont.append( stream.readLine() );
-    while ( !stream.atEnd() );
-    mtab.close();
-
-    QFileSystemWatcher *fsWatcher = new QFileSystemWatcher( QStringList() << "/etc/mtab", this );
-    connect( fsWatcher, SIGNAL( fileChanged( QString ) ), this, SLOT( mtabChanged( QString ) ) );
-
-    QTreeWidgetItem *item = new QTreeWidgetItem( this );
-    item->setText( 0, tr( "Devices" ) );
-
-    foreach( QString deviceString, mtabCont )
-        if ( deviceString[0] == '/' )
-        {
-            const QString ds = deviceString;
-            QString devString = ds.split( " " ).at( 1 ); //split the string on " ", which makes in this case about 6 strings, the second is the path, it's what we use.
-            QTreeWidgetItem *device = new QTreeWidgetItem( item );
-            device->setText( 0, devString );
-            device->setText( 1, devString );
-            device->setText( 2, "Devices" );
-            device->setText( 3, ds.split( " " ).at( 0 ) );  //store the devicepath /dev/sdX here
-            device->setIcon( 0, QIcon::fromTheme( "inode-directory" ) );
-        }
-    item->setExpanded( true );
-}
-
-QList<QStringList> getKdePlaces()
-{
-    QFile* file = new QFile( QDir::homePath() + QDir::separator() + ".kde4/share/apps/kfileplaces/bookmarks.xml" );
-
-    QList<QStringList> tmp;
+    QFile* file = new QFile(QString("%1/.kde4/share/apps/kfileplaces/bookmarks.xml").arg(QDir::homePath()));
     if ( !file->open( QIODevice::ReadOnly | QIODevice::Text ) )
-        return tmp;
+        return false;
 
     QDomDocument doc( "places" );
     if ( !doc.setContent( file ) )
-        return tmp;
+    {
+        file->close();
+        return false;
+    }
 
+    foreach ( Container *c, containers() )
+        if ( c->name() == "KDEPlaces" )
+        {
+            file->close();
+            return false;
+        }
+
+    Container *kdePlaces = new Container("KDEPlaces");
+    m_model->insertRow(qMax(0, m_model->rowCount()-1), kdePlaces);
     QDomNodeList nodeList = doc.documentElement().childNodes();
     for( int i = 0;i < nodeList.count(); i++ )
     {
@@ -1065,9 +1009,16 @@ QList<QStringList> getKdePlaces()
             QDomElement metadata = info.elementsByTagName( "metadata" ).at( 0 ).toElement();
             QDomElement eleIcon = metadata.elementsByTagName( "bookmark:icon" ).at( 0 ).toElement();
             values << eleIcon.attributeNode( "name" ).value();
-            tmp << values;
+
+            const QString &file = QUrl(values.at(0)).toLocalFile();
+            if ( file.isEmpty() || !QFileInfo(file).exists() )
+                continue;
+
+            const QString &icon = QIcon::hasThemeIcon(values[2])?values[2]:"inode-directory";
+            kdePlaces->appendRow(new Place(values[1], file, icon));
         }
     }
-    return tmp;
+    expand(kdePlaces->index());
+    file->close();
+    return true;
 }
-#endif

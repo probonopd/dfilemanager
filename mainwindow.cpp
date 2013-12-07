@@ -167,6 +167,11 @@ MainWindow::receiveMessage(const QStringList &message)
             addTab(msg);
             m_tabBar->setCurrentIndex(m_tabBar->count()-1);
         }
+        else if ( msg == "--getKdePlaces" )
+        {
+            if ( !m_placesView->getKdePlaces() )
+                QMessageBox::warning(this, "Getting places from kde Failed!", "was unable to load kde places... sry.");
+        }
 }
 
 void

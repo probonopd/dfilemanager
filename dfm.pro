@@ -27,7 +27,8 @@ HEADERS = mainwindow.h \
     thumbsloader.h \
     preview.h \
     columnswidget.h \
-    interfaces.h
+    interfaces.h \
+    devices.h
 SOURCES = main.cpp \
     mainwindow.cpp \
     iconview.cpp \
@@ -56,7 +57,8 @@ SOURCES = main.cpp \
     thumbsloader.cpp \
     preview.cpp \
     config.cpp \
-    columnswidget.cpp
+    columnswidget.cpp \
+    devices.cpp
 #RESOURCES = resources.qrc
 TARGET = dfm
 

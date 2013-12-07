@@ -570,13 +570,13 @@ FileSystemModel::FileSystemModel(QObject *parent)
 
 FileSystemModel::~FileSystemModel()
 {
-    delete m_rootNode;
     m_thumbsLoader->discontinue();
     m_it->discontinue();
-    while ( m_thumbsLoader->isRunning() )
+    if ( m_thumbsLoader->isRunning() )
         m_thumbsLoader->wait();
-    while ( m_it->isRunning() )
+    if ( m_it->isRunning() )
         m_it->wait();
+    delete m_rootNode;
 }
 
 void

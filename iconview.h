@@ -101,6 +101,7 @@ private:
     FileSystemModel *m_model;
     QTimer *m_scrollTimer, *m_sizeTimer;
     QModelIndex m_firstIndex;
+    QPixmap m_homePix, m_bgPix[2];
     int m_delta, m_newSize, m_gridHeight;
 };
 
