@@ -624,7 +624,7 @@ TabBar::dropEvent(QDropEvent *e)
             int toTab = r.isValid()?tab:count();
             if ( r.isValid() && e->pos().x() > r.center().x() )
                 ++toTab;
-            MainWindow *sourceWin = MainWindow::window(e->source());
+            MainWindow *sourceWin = MainWindow::window(static_cast<QWidget *>(e->source()));
             ViewContainer *container = sourceWin->takeContainer(e->mimeData()->property("tab").toInt());
             w->addTab(container, toTab);
         }

@@ -974,9 +974,13 @@ PlacesView::drawBranches( QPainter *painter,
 bool
 PlacesView::getKdePlaces()
 {
-    QFile* file = new QFile(QString("%1/.kde4/share/apps/kfileplaces/bookmarks.xml").arg(QDir::homePath()));
+    QFile *file = new QFile(QString("%1/.kde4/share/apps/kfileplaces/bookmarks.xml").arg(QDir::homePath()));
     if ( !file->open( QIODevice::ReadOnly | QIODevice::Text ) )
-        return false;
+    {
+        file->setFileName(QString("%1/.kde/share/apps/kfileplaces/bookmarks.xml").arg(QDir::homePath()));
+        if ( !file->open( QIODevice::ReadOnly | QIODevice::Text ) )
+            return false;
+    }
 
     QDomDocument doc( "places" );
     if ( !doc.setContent( file ) )
@@ -1010,12 +1014,12 @@ PlacesView::getKdePlaces()
             QDomElement eleIcon = metadata.elementsByTagName( "bookmark:icon" ).at( 0 ).toElement();
             values << eleIcon.attributeNode( "name" ).value();
 
-            const QString &file = QUrl(values.at(0)).toLocalFile();
-            if ( file.isEmpty() || !QFileInfo(file).exists() )
+            const QString &path = QUrl(values.at(0)).toLocalFile();
+            if ( path.isEmpty() || !QFileInfo(path).exists() )
                 continue;
 
             const QString &icon = QIcon::hasThemeIcon(values[2])?values[2]:"inode-directory";
-            kdePlaces->appendRow(new Place(values[1], file, icon));
+            kdePlaces->appendRow(new Place(values[1], path, icon));
         }
     }
     expand(kdePlaces->index());

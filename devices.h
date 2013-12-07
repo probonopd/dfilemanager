@@ -83,8 +83,10 @@ signals:
 
 private slots:
     void populate();
+#ifdef Q_OS_UNIX
     void deviceAdded( const QString &dev );
     void deviceRemoved( const QString &dev );
+#endif
 
 private:
     QMap<QString, Device *> m_devices;

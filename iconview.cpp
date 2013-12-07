@@ -166,7 +166,7 @@ public:
 
         QIcon icon = m_model->fileIcon(index);
 
-        const bool isThumb = icon.name().isEmpty();
+        const bool isThumb = m_model->hasThumb(m_model->filePath(index));
 
         int newSize = icon.actualSize(DECOSIZE).height();
         if ( !isThumb && icon.actualSize(DECOSIZE).height() < DECOSIZE.height() )
@@ -560,7 +560,7 @@ IconView::updateLayout()
     if ( model()->rowCount( rootIndex() ) < horItemCount && model()->rowCount( rootIndex() ) > 1 )
         horItemCount = model()->rowCount( rootIndex() );
     if ( contentsWidth && horItemCount )
-        setGridSize( QSize( qRound(contentsWidth/horItemCount), m_gridHeight ) );
+        setGridSize( QSize( contentsWidth/horItemCount, m_gridHeight ) );
 }
 
 void

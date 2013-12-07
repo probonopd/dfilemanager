@@ -28,6 +28,10 @@
 #include <QDesktopServices>
 #include <QPluginLoader>
 
+#if QT_VERSION >= 0x050000
+#include <QStandardPaths>
+#endif
+
 #ifdef Q_WS_X11
 #if 0
 #include <X11/Xlib.h>
@@ -44,7 +48,11 @@ Application::Application(int &argc, char *argv[], const QString &key)
     , m_key(key)
     , m_fsWatcher(0)
 {
+#if QT_VERSION < 0x050000
     const QString &dirPath(QDesktopServices::storageLocation(QDesktopServices::TempLocation));
+#else
+    const QString &dirPath(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
+#endif
     if ( !QFileInfo(dirPath).exists() )
         QDir::root().mkpath(dirPath);
 

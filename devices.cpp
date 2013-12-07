@@ -25,18 +25,13 @@
 using namespace DFM;
 
 #ifdef Q_OS_UNIX
-Device::Device(Solid::Device solid)
-    :m_solid(solid)
+Device::Device(Solid::Device solid):m_solid(solid)
 {
     connect (m_solid.as<Solid::StorageAccess>(), SIGNAL(accessibilityChanged(bool, const QString &)), this, SIGNAL(accessibilityChanged(bool, const QString &)));
 }
 #endif
 
-Device::Device(const QFileInfo &dev)
-    :m_fileInfo(dev)
-{
-
-}
+Device::Device(const QFileInfo &dev):m_fileInfo(dev){}
 
 bool
 Device::isMounted() const
@@ -158,6 +153,7 @@ Devices::Devices(QObject *parent)
     populate();
 }
 
+#ifdef Q_OS_UNIX
 void
 Devices::deviceAdded(const QString &dev)
 {
@@ -179,6 +175,7 @@ Devices::deviceRemoved(const QString &dev)
         emit deviceRemoved(d);
     }
 }
+#endif
 
 void
 Devices::populate()
