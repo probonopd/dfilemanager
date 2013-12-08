@@ -4,5 +4,10 @@
  HEADERS        += thumbspdf.h
  SOURCES        += thumbspdf.cpp
  TARGET          = $$qtLibraryTarget(thumbspdfplugin)
- DESTDIR         = ./plugins
  LIBS           += -lGraphicsMagick++
+ 
+  unix {
+    target.path = /usr/lib/dfm
+    INSTALLS += target
+  }
+

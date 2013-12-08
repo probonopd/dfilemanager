@@ -4,5 +4,9 @@
  HEADERS        += thumbsvideos.h
  SOURCES        += thumbsvideos.cpp
  TARGET          = $$qtLibraryTarget(thumbsvideosplugin)
- DESTDIR         = ./plugins
  LIBS           += -lffmpegthumbnailer
+
+  unix {
+    target.path = /usr/lib/dfm
+    INSTALLS += target
+  }

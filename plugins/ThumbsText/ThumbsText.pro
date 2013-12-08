@@ -4,5 +4,9 @@
  HEADERS        += thumbstext.h
  SOURCES        += thumbstext.cpp
  TARGET          = $$qtLibraryTarget(thumbstextplugin)
- DESTDIR         = ./plugins
  LIBS           += -lmagic
+
+  unix {
+    target.path = /usr/lib/dfm
+    INSTALLS += target
+  }

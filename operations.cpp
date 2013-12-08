@@ -63,9 +63,9 @@ Ops::getMimeType(const QString &file)
     if ( !f.isReadable() || !instance() )
         return QString();
 
-    if ( f.isSymLink())
+    if (f.isSymLink())
         return "inode/symlink";
-    if ( f.isDir() )
+    if (f.isDir())
         return "inode/directory";
 #ifdef Q_OS_UNIX
     return QString( magic_file( s_magicMime, file.toStdString().c_str() ) );;
@@ -132,12 +132,10 @@ Ops::customActionTriggered()
 
     if ( isModel->hasSelection() )
     {
-        if ( isModel->selectedRows().count() )
-            foreach ( const QModelIndex &index, isModel->selectedRows() )
-                QProcess::startDetached(app, QStringList() << action << fsModel->filePath( index ));
-        else if ( isModel->selectedIndexes().count() )
+        if ( isModel->selectedIndexes().count() )
             foreach ( const QModelIndex &index, isModel->selectedIndexes() )
-                QProcess::startDetached(app, QStringList() << action << fsModel->filePath( index ));
+                if ( !index.column() )
+                    QProcess::startDetached(app, QStringList() << action << fsModel->filePath( index ));
     }
     else
     {

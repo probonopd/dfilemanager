@@ -4,4 +4,8 @@
  HEADERS        += thumbsimages.h
  SOURCES        += thumbsimages.cpp
  TARGET          = $$qtLibraryTarget(thumbsimageplugin)
- DESTDIR         = ./plugins
+ 
+ unix {
+    target.path = /usr/lib/dfm
+    INSTALLS += target
+  }

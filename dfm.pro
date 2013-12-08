@@ -68,6 +68,7 @@ INSTALLS += target
 
 QT += gui xml opengl
 CONFIG += qt thread debug staticlib
+SUBDIRS += plugins
 
 #libmagic needed for mimetypes and fileinfo
 #libsolid needed for devicehandling
