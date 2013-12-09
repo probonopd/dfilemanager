@@ -97,12 +97,13 @@ private slots:
 
 private:
     friend class SettingsDialog;
-    QCheckBox *m_smoothScroll, *m_showThumbs, *m_singleClick, *m_dirSettings;
+    QCheckBox *m_smoothScroll, *m_singleClick, *m_dirSettings;
     QSlider *m_iconWidth, *m_iconSlider;
     QString m_iconWidthStr;
     QLabel *m_width, *m_size;
     QSpinBox *m_rowPadding, *m_lineCount;
     QComboBox *m_viewBox;
+    QGroupBox *m_showThumbs;
 };
 
 class SettingsDialog : public QDialog

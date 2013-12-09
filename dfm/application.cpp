@@ -21,7 +21,6 @@
 
 #include "application.h"
 #include "mainwindow.h"
-#include "interfaces.h"
 #include "config.h"
 #include <QSharedMemory>
 #include <QDebug>
@@ -78,6 +77,7 @@ Application::Application(int &argc, char *argv[], const QString &key)
         m_fsWatcher->addPath(m_filePath);
 
         connect(m_fsWatcher, SIGNAL(fileChanged(QString)), this, SLOT(fileChanged(QString)));
+        DFM::Store::readConfig();
     }
 #ifdef Q_WS_X11
 #if 0
@@ -135,10 +135,8 @@ Application::loadPlugins()
         appDir.cdUp();
         appDir.cd("plugins");
         foreach ( const QFileInfo &file, appDir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot) )
-        {
             if ( file.isDir() )
                 loadPluginsFromDir(QDir(file.absoluteFilePath()));
-        }
         return;
     }
 #else
@@ -154,15 +152,49 @@ Application::loadPluginsFromDir(const QDir dir)
     {
         QPluginLoader loader(dir.absoluteFilePath(fileName));
         QObject *plugin = loader.instance();
-        if (plugin)
+        if ( ThumbInterface *it = qobject_cast<ThumbInterface *>(plugin) )
         {
-            if ( ThumbInterface *it = qobject_cast<ThumbInterface *>(plugin) )
-            {
-                qDebug() << "initializing plugin" << it->name();
-                qDebug() << "plugin description:" << it->description();
-                it->init();
-            }
-            m_plugins << plugin;
+            it->init();
+            if ( DFM::Store::config.views.activeThumbIfaces.contains(it->name()) )
+                m_thumbIfaces.insert(it->name(), it);
+            m_allThumbIfaces << it;
+        }
+    }
+}
+
+void
+Application::activateThumbInterface(const QString &name)
+{
+    if ( m_thumbIfaces.contains(name) ) //already active
+        return;
+
+    if ( !DFM::Store::config.views.activeThumbIfaces.contains(name) )
+        DFM::Store::config.views.activeThumbIfaces << name;
+    for ( int i = 0; i < m_allThumbIfaces.count(); ++i )
+    {
+        ThumbInterface *ti = m_allThumbIfaces.at(i);
+        if ( ti->name() == name )
+        {
+            activateThumbInterface(ti);
+            return;
+        }
+    }
+}
+
+void
+Application::deActivateThumbInterface(const QString &name)
+{
+    if ( !m_thumbIfaces.contains(name) ) //already inactive
+        return;
+    if ( DFM::Store::config.views.activeThumbIfaces.contains(name) )
+        DFM::Store::config.views.activeThumbIfaces.removeOne(name);
+    for ( int i = 0; i < m_allThumbIfaces.count(); ++i )
+    {
+        ThumbInterface *ti = m_allThumbIfaces.at(i);
+        if ( ti->name() == name )
+        {
+            deActivateThumbInterface(ti);
+            return;
         }
     }
 }

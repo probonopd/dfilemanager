@@ -56,6 +56,7 @@ typedef struct Config
     {
         QByteArray flowSize;
         bool showThumbs, singleClick, dirSettings;
+        QStringList activeThumbIfaces;
         struct iconView
         {
             bool smoothScroll;

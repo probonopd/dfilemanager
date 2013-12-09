@@ -65,6 +65,7 @@ Store::readConfiguration()
 
 
     config.views.showThumbs = settings()->value("showThumbs", false).toBool();
+    config.views.activeThumbIfaces = settings()->value("activeThumbIfaces", QStringList()).toStringList();
     config.views.singleClick = settings()->value("views.singleClick", false).toBool();
     config.views.flowSize = settings()->value("flowSize", QByteArray()).toByteArray();
     config.views.detailsView.rowPadding = settings()->value("detailsView.rowPadding", 0).toInt();
@@ -177,6 +178,8 @@ Store::writeConfiguration()
     settings()->setValue("behaviour.invActBookmark", config.behaviour.invActBookmark);
 
     settings()->setValue("pluginPath", config.pluginPath);
+
+    settings()->setValue("activeThumbIfaces", config.views.activeThumbIfaces);
 
 //    settings()->setValue("behaviour.gayWindow", config.behaviour.gayWindow);
 //    settings()->setValue("behaviour.gayWindow.tabShape", config.behaviour.tabShape);

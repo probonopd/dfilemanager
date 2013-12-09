@@ -27,6 +27,7 @@
 #include <QFileSystemWatcher>
 #include <QFile>
 #include <QDir>
+#include <QMap>
 #if 0
 #include <QMainWindow>
 #include "dockwidget.h"
@@ -37,6 +38,8 @@
 #ifdef Q_WS_X11
 #include <QX11Info>
 #endif
+
+#include "interfaces.h"
 
 //#include <GL/glut.h>
 
@@ -51,7 +54,14 @@ public:
     explicit Application(int &argc, char *argv[], const QString &key = "dfmkey"); /*: QApplication(argc, argv) {}*/
     inline bool isRunning() { return m_isRunning; }
     bool setMessage(const QStringList &message);
-    QObjectList plugins() { return m_plugins; }
+    QList<ThumbInterface *> thumbIfaces() { return m_allThumbIfaces; }
+    QList<ThumbInterface *> activeThumbIfaces() { return m_thumbIfaces.values(); }
+    inline bool hasThumbIfaces() { return !m_allThumbIfaces.isEmpty(); }
+    inline bool isActive(ThumbInterface *ti) { return m_thumbIfaces.contains(ti->name()); }
+    inline void activateThumbInterface(ThumbInterface *ti) { m_thumbIfaces.insert(ti->name(), ti); }
+    void activateThumbInterface(const QString &name);
+    inline void deActivateThumbInterface(ThumbInterface *ti) { m_thumbIfaces.remove(ti->name()); }
+    void deActivateThumbInterface(const QString &name);
     void loadPlugins();
     void loadPluginsFromDir(const QDir dir);
 //    bool notify(QObject * receiver, QEvent * event);
@@ -83,7 +93,8 @@ private:
     QString m_key;
     QString m_filePath;
     QFile m_file;
-    QObjectList m_plugins;
+    QMap<QString, ThumbInterface *> m_thumbIfaces;
+    QList<ThumbInterface *> m_allThumbIfaces;
 #if 0
     QList<DFM::Docks::DockWidget *> m_docks;
     QMainWindow *m_mainWindow;

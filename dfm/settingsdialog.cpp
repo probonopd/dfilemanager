@@ -22,6 +22,8 @@
 #include "settingsdialog.h"
 #include "config.h"
 #include "mainwindow.h"
+#include "application.h"
+#include "interfaces.h"
 #include <QGroupBox>
 #include <QFileDialog>
 
@@ -207,7 +209,7 @@ StartupWidget::getStartPath()
 ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
   , m_iconWidth( new QSlider( Qt::Horizontal, this ) )
   , m_width( new QLabel(this) )
-  , m_showThumbs( new QCheckBox(tr("Show thumbnails of supported pictures"), this) )
+  , m_showThumbs( new QGroupBox(tr("Show thumbnails"), this) )
   , m_smoothScroll( new QCheckBox(tr("Smooth scrolling"), this) )
   , m_rowPadding( new QSpinBox(this) )
   , m_iconSlider( new QSlider( Qt::Horizontal, this ) )
@@ -221,6 +223,19 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     m_showThumbs->setChecked(Store::config.views.showThumbs);
     m_singleClick->setChecked(Store::config.views.singleClick);
     m_dirSettings->setChecked(Store::config.views.dirSettings);
+    m_showThumbs->setEnabled(APP->hasThumbIfaces());
+    m_showThumbs->setCheckable(true);
+
+    QVBoxLayout *tL = new QVBoxLayout(m_showThumbs);
+    if ( APP->hasThumbIfaces() )
+    {
+        foreach ( ThumbInterface *plugin, APP->thumbIfaces() )
+        {
+            QCheckBox *box = new QCheckBox(plugin->name(), m_showThumbs);
+            box->setChecked(APP->isActive(plugin));
+            tL->addWidget(box);
+        }
+    }
 
     //IconView
     m_iconSlider->setRange(1, 16);
@@ -346,6 +361,14 @@ SettingsDialog::accept()
     {
         Store::config.styleSheet = QString();
         qApp->setStyleSheet(QString());
+    }
+
+    foreach ( QCheckBox *box, m_viewWidget->m_showThumbs->findChildren<QCheckBox *>() )
+    {
+        if ( box->isChecked() )
+            APP->activateThumbInterface(box->text());
+        else
+            APP->deActivateThumbInterface(box->text());
     }
 
     Store::config.behaviour.hideTabBarWhenOnlyOneTab = m_behWidget->m_hideTabBar->isChecked();

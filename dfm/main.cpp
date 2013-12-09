@@ -42,8 +42,6 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    DFM::Store::readConfig();
-
     if ( app.font().pointSize() < DFM::Store::config.behaviour.minFontSize )
     {
         QFont font = app.font();
