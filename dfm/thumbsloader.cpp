@@ -199,8 +199,6 @@ ImagesThread::removeData(const QString &file)
 void
 ImagesThread::genImagesFor(const QString &file)
 {
-    if ( !QFileInfo(file).isReadable() )
-        return;
     const QImage &source = m_imgQueue.take(file);
     if ( !source.isNull() )
     {
