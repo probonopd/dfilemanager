@@ -707,6 +707,22 @@ FileSystemModel::data(const QModelIndex &index, int role) const
     else
         return int(Qt::AlignLeft|Qt::AlignVCenter);
 
+    if ( role == Qt::FontRole && !col )
+    {
+        QFont f(qApp->font());
+        if ( node->isSymLink() )
+        {
+            f.setItalic(true);
+            return f;
+        }
+        if ( !node->isDir() && node->isExecutable() && (node->suffix().isEmpty()||node->suffix()=="sh"||node->suffix()=="exe") )
+        {
+            f.setBold(true);
+            return f;
+        }
+    }
+
+
     const bool customIcon = Store::config.icons.customIcons.contains(file);
 
     if ( col == 0 && role == Qt::DecorationRole && customIcon )

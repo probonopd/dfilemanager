@@ -1,7 +1,7 @@
 #ifndef THUMBSVIDEOS_H
 #define THUMBSVIDEOS_H
 
-#include <../../interfaces.h>
+#include <../../dfm/interfaces.h>
 #include <QStringList>
 #include <QImage>
 #include <libffmpegthumbnailer/videothumbnailer.h>

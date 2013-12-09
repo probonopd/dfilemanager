@@ -1,6 +1,6 @@
  TEMPLATE        = lib
  CONFIG         += plugin
- INCLUDEPATH    += ../../ /usr/include/GraphicsMagick
+ INCLUDEPATH    += ../../dfm/ /usr/include/GraphicsMagick
  HEADERS        += thumbspdf.h
  SOURCES        += thumbspdf.cpp
  TARGET          = $$qtLibraryTarget(thumbspdfplugin)

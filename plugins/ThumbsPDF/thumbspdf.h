@@ -1,7 +1,7 @@
 #ifndef THUMBSPDF_H
 #define THUMBSPDF_H
 
-#include <../../interfaces.h>
+#include <../../dfm/interfaces.h>
 #include <QStringList>
 #include <QImage>
 #include <QFileInfo>

@@ -160,6 +160,7 @@ public:
         const QColor &high(selected ? PAL.color(QPalette::HighlightedText) : PAL.color(QPalette::Text));
         QPen pen = painter->pen();
         painter->setPen(high);
+        painter->setFont(index.data(Qt::FontRole).value<QFont>());
         painter->drawText(RECT.adjusted(0, DECOSIZE.height()+4, 0, 0), Qt::AlignTop|Qt::AlignHCenter, text(option, index));
         painter->setPen(pen);
 //        QApplication::style()->drawItemText(painter, tr.adjusted(-2, 0, 2, 0), Qt::AlignCenter, PAL, option.state & QStyle::State_Enabled, et, high);

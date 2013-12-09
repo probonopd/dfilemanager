@@ -1,6 +1,6 @@
  TEMPLATE        = lib
  CONFIG         += plugin
- INCLUDEPATH    += ../../
+ INCLUDEPATH    += ../../dfm/
  HEADERS        += thumbstext.h
  SOURCES        += thumbstext.cpp
  TARGET          = $$qtLibraryTarget(thumbstextplugin)

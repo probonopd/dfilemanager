@@ -1,7 +1,7 @@
 #ifndef THUMBSTEXT_H
 #define THUMBSTEXT_H
 
-#include <../../interfaces.h>
+#include <../../dfm/interfaces.h>
 #include <QStringList>
 #include <QImage>
 

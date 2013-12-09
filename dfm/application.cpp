@@ -127,13 +127,32 @@ Application::setMessage(const QStringList &message)
 void
 Application::loadPlugins()
 {
-    if (DFM::Store::config.pluginPath.isEmpty())
-        return;
-    QDir pluginsDir = QDir(DFM::Store::config.pluginPath);
-    QStringList pluginFileNames;
-    foreach (QString fileName, pluginsDir.entryList(QDir::Files))
+#ifdef Q_OS_UNIX
+    QDir pluginsDir("/usr/lib/dfm");
+    if ( !pluginsDir.exists() )
     {
-        QPluginLoader loader(pluginsDir.absoluteFilePath(fileName));
+        QDir appDir = applicationDirPath();
+        appDir.cdUp();
+        appDir.cd("plugins");
+        foreach ( const QFileInfo &file, appDir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot) )
+        {
+            if ( file.isDir() )
+                loadPluginsFromDir(QDir(file.absoluteFilePath()));
+        }
+        return;
+    }
+#else
+    QDir pluginsDir(applicationDirPath());
+#endif
+    loadPluginsFromDir(pluginsDir);
+}
+
+void
+Application::loadPluginsFromDir(const QDir dir)
+{
+    foreach (QString fileName, dir.entryList(QDir::Files))
+    {
+        QPluginLoader loader(dir.absoluteFilePath(fileName));
         QObject *plugin = loader.instance();
         if (plugin)
         {
@@ -144,7 +163,6 @@ Application::loadPlugins()
                 it->init();
             }
             m_plugins << plugin;
-            pluginFileNames += fileName;
         }
     }
 }

@@ -26,6 +26,7 @@
 #include <QSharedMemory>
 #include <QFileSystemWatcher>
 #include <QFile>
+#include <QDir>
 #if 0
 #include <QMainWindow>
 #include "dockwidget.h"
@@ -52,6 +53,7 @@ public:
     bool setMessage(const QStringList &message);
     QObjectList plugins() { return m_plugins; }
     void loadPlugins();
+    void loadPluginsFromDir(const QDir dir);
 //    bool notify(QObject * receiver, QEvent * event);
 
 signals:
