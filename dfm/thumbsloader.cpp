@@ -201,26 +201,24 @@ ImagesThread::genImagesFor(const QString &file)
 {
     if ( !QFileInfo(file).isReadable() )
         return;
-    const QImage &source = m_imgQueue.value(file);
+    const QImage &source = m_imgQueue.take(file);
     if ( !source.isNull() )
     {
         m_images[0].insert(file, Ops::flowImg(source));
         m_images[1].insert(file, Ops::reflection(source));
         emit imagesReady(file);
     }
-    m_imgQueue.remove(file);
 }
 
 void
 ImagesThread::genNameIconsFor(const QString &name)
 {
-    const QImage &source = m_nameQueue.value(name);
-    if ( source.isNull() )
-        return;
-
-    s_themeIcons[0].insert(name, Ops::flowImg(source));
-    s_themeIcons[1].insert(name, Ops::reflection(source));
-    m_nameQueue.remove(name);
+    const QImage &source = m_nameQueue.take(name);
+    if ( !source.isNull() )
+    {
+        s_themeIcons[0].insert(name, Ops::flowImg(source));
+        s_themeIcons[1].insert(name, Ops::reflection(source));
+    }
 }
 
 void ImagesThread::run()
