@@ -65,6 +65,17 @@ public:
         if ( !node->rename(newName) )
             QMessageBox::warning(MainWindow::window(edit), "Failed to rename", QString("%1 to %2").arg(node->name(), newName));
     }
+    bool eventFilter(QObject *object, QEvent *event)
+    {
+        QWidget *editor = qobject_cast<QWidget *>(object);
+        if (editor && event->type() == QEvent::KeyPress)
+            if (static_cast<QKeyEvent *>(event)->key()==Qt::Key_Return)
+            {
+                emit commitData(editor);
+                emit closeEditor(editor, QAbstractItemDelegate::NoHint);
+            }
+        return QStyledItemDelegate::eventFilter(object, event);
+    }
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
         if ( !index.data().isValid() )
@@ -77,7 +88,6 @@ public:
         QStyledItemDelegate::paint(painter, option, index);
         painter->restore();
     }
-
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
         return QStyledItemDelegate::sizeHint(option, index) + QSize(0, Store::config.views.detailsView.rowPadding*2);

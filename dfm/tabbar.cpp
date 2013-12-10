@@ -706,6 +706,7 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
     }
     if ( m_hasPress && tabAt(e->pos()) != -1 )
     {
+        m_dragCancelled = false;
         QDrag *drag = new QDrag(this);
         connect(drag, SIGNAL(destroyed()), m_dropIndicator, SLOT(hide()));
         QMimeData *data = new QMimeData();
@@ -720,9 +721,11 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
         w->render(&pix);
         pix = pix.scaledToHeight(128);
         drag->setPixmap(pix);
+        grabKeyboard();
         if (!drag->exec(Qt::CopyAction|Qt::MoveAction))
-            if (count() > 1)
+            if (count() > 1 && !m_dragCancelled) //no idea how to actually get the dragcancel 'event'
                 newWindowTab(data->property("tab").toInt());
+        releaseKeyboard();
     }
     if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
         QCoreApplication::sendEvent(bar, e);

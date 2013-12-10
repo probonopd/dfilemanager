@@ -70,6 +70,17 @@ public:
         if ( !node->rename(newName) )
             QMessageBox::warning(MainWindow::window(edit), "Failed to rename", QString("%1 to %2").arg(node->name(), newName));
     }
+    bool eventFilter(QObject *object, QEvent *event)
+    {
+        QWidget *editor = qobject_cast<QWidget *>(object);
+        if (editor && event->type() == QEvent::KeyPress)
+            if (static_cast<QKeyEvent *>(event)->key()==Qt::Key_Return)
+            {
+                emit commitData(editor);
+                emit closeEditor(editor, QAbstractItemDelegate::NoHint);
+            }
+        return QStyledItemDelegate::eventFilter(object, event);
+    }
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
         if ( !index.data().isValid()||!option.rect.isValid() )
@@ -141,6 +152,7 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QStri
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setTextElideMode(Qt::ElideNone);
     setFrameStyle(0);
+    setSelectionBehavior(QAbstractItemView::SelectRows);
 //    connect( m_parent, SIGNAL(currentViewChagned(ColumnsView*)), viewport(), SLOT(update()) );
     if ( FileSystemModel *fsModel = qobject_cast<FileSystemModel *>(model) )
     {

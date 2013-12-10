@@ -163,7 +163,7 @@ private:
     void genNewTabButton();
     friend class FooBar;
     int m_hoveredTab;
-    bool m_hasPress;
+    bool m_hasPress, m_dragCancelled;
     QWidget *m_addButton;
     DropIndicator *m_dropIndicator;
     QString m_lastDraggedFile;

@@ -26,6 +26,8 @@
 #include <QColor>
 #include <QFileInfo>
 #include <QWidget>
+#include <QTextEdit>
+#include <QStyledItemDelegate>
 
 #ifdef Q_WS_X11
 #include <magic.h>

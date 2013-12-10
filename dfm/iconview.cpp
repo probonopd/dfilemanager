@@ -140,6 +140,17 @@ public:
         if ( !node->rename(newName) )
             QMessageBox::warning(MainWindow::window(edit), "Failed to rename", QString("%1 to %2").arg(node->name(), newName));
     }
+    bool eventFilter(QObject *object, QEvent *event)
+    {
+        QWidget *editor = qobject_cast<QWidget *>(object);
+        if (editor && event->type() == QEvent::KeyPress)
+            if (static_cast<QKeyEvent *>(event)->key()==Qt::Key_Return)
+            {
+                emit commitData(editor);
+                emit closeEditor(editor, QAbstractItemDelegate::NoHint);
+            }
+        return QStyledItemDelegate::eventFilter(object, event);
+    }
     void paint( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
         if ( !m_model || !index.isValid() || !option.rect.isValid() )
@@ -155,7 +166,10 @@ public:
         {
             QColor h = selected?PAL.color(QPalette::Highlight):Ops::colorMid(PAL.color(QPalette::Highlight), PAL.color(QPalette::Base));
             h.setAlpha(255/8*step);
-            painter->fillRect(RECT.adjusted(1, 1, 0, 0), h);
+//            painter->fillRect(RECT.adjusted(1, 1, 0, 0), h);
+            painter->setPen(Qt::NoPen);
+            painter->setBrush(h);
+            painter->drawRoundedRect(RECT.adjusted(1, 1, 0, 0), 3, 3);
         }
         const QColor &high(selected ? PAL.color(QPalette::HighlightedText) : PAL.color(QPalette::Text));
         QPen pen = painter->pen();
@@ -225,7 +239,7 @@ protected:
         opt.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
         textLayout.setTextOption(opt);
 
-        const int w = DECOSIZE.height()+Store::config.views.iconView.textWidth*2;
+        const int w = RECT.width();
 
         textLayout.beginLayout();
         while (++lineCount < Store::config.views.iconView.lineCount)
@@ -306,6 +320,7 @@ IconView::IconView( QWidget *parent )
     setViewMode( QListView::IconMode );
     setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
+    setSelectionBehavior(QAbstractItemView::SelectRows);
 
     connect( m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollEvent()) );
     connect( this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)) );
