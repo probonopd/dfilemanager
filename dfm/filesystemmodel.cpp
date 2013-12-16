@@ -175,10 +175,12 @@ FileSystemModel::Node::rowFor(Node *child) const
 QString
 FileSystemModel::Node::category()
 {
+    if (isHidden())
+        return QString(isDir()?"HIDDEN (DIRECTORY)":"HIDDEN (FILE)");
     switch (sortColumn())
     {
-    case 0: return isDir()?QString("DIRECTORY"):name().at(0).toUpper(); break;
-    case 1: return QString(isDir()?"DIRECTORY":size()<1048576?"SMALL":size()<1073741824?"MEDIUM":"LARGE"); break;
+    case 0: return isDir()?tr("DIRECTORY"):name().at(0).toUpper(); break;
+    case 1: return tr(isDir()?"DIRECTORY":size()<1048576?"SMALL":size()<1073741824?"MEDIUM":"LARGE"); break;
     case 2: return data(2).toString().toUpper(); break;
     case 3:
     {

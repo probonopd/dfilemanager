@@ -142,14 +142,15 @@ public:
 
 
         QPixmap pixmap = pix(option, index);
+
         QRect theRect = pixmap.rect();
-        theRect.moveCenter( QPoint( RECT.center().x(), RECT.y()+2+( DECOSIZE.height()/2 ) ) );
-        if ( isThumb )
+        theRect.moveCenter(QRect(RECT.topLeft(), QSize(RECT.width(), DECOSIZE.height()+2)).center());
+        if (isThumb)
         {
-            const int d = ( m_shadowData[TopLeft].width()/2 )+1;
-            const QRect r( theRect.adjusted( -d, -d, d+1, ( d*2 )-1 ) );
+            const int d = 4;
+            const QRect r( theRect.adjusted( -d, -d, d+1, d+2 ) );
             renderShadow( r, painter );
-            painter->fillRect( theRect/*.adjusted( -1, -1, 1, 1 )*/, PAL.color( QPalette::Base ) );
+            painter->fillRect( theRect.adjusted(-2, -2, 2, 2), PAL.color( QPalette::Base ) );
         }
         QApplication::style()->drawItemPixmap(painter, theRect, Qt::AlignCenter, pixmap);
         painter->restore();
@@ -197,10 +198,18 @@ protected:
         }
 
         QPixmap pixmap = icon.pixmap(newSize);
-        if ( pixmap.height() > DECOSIZE.height() && !isThumb )
+        if (!isThumb && pixmap.height() > DECOSIZE.height())
             pixmap = pixmap.scaledToHeight(DECOSIZE.height(), Qt::SmoothTransformation);
-        else if ( isThumb && pixmap.width() > pixmap.height() )
-            pixmap = icon.pixmap( qMin<int>(RECT.width()-4, ((float)DECOSIZE.height()*((float)pixmap.width()/(float)pixmap.height()))-4 ));
+        else if (isThumb)
+        {
+            int s = 0, m = 16;
+            if (pixmap.width() > pixmap.height())
+                s = qMin<int>(RECT.width()-m, ((float)DECOSIZE.height()*((float)pixmap.width()/(float)pixmap.height()))-m );
+            else
+                s = qMin<int>((DECOSIZE.height()+2)-m, ((float)DECOSIZE.width()*((float)pixmap.height()/(float)pixmap.width()))-m );
+            pixmap = icon.pixmap(s);
+        }
+
         m_pixData.insert(index.internalPointer(), pixmap);
         return pixmap;
     }
@@ -420,10 +429,7 @@ IconView::resizeEvent( QResizeEvent *e )
 {
     QAbstractItemView::resizeEvent( e );
     if ( e->size().width() != e->oldSize().width() )
-    {
         updateLayout();
-        calculateRects();
-    }
     if (m_contentsHeight>viewport()->height())
         verticalScrollBar()->setRange(0, m_contentsHeight-viewport()->height());
     else
@@ -552,7 +558,7 @@ IconView::paintEvent( QPaintEvent *e )
             p.setPen(Ops::colorMid(palette().color(QPalette::Base), palette().color(QPalette::Text)));
             p.save();
             p.setFont(f);
-            p.drawText(QRect(catRect.adjusted(2,0,0,0).topLeft(), fm.boundingRect(category).size()), category);
+            p.drawText(fm.boundingRect(2, catRect.top(), width(), height(), 0, category, category.size()), category);
             p.restore();
             const QModelIndexList &block(m_model->category(category));
             for (int i = 0; i < block.count(); ++i)
@@ -638,6 +644,7 @@ IconView::updateLayout()
         horItemCount = model()->rowCount( rootIndex() );
     if ( contentsWidth && horItemCount )
         setGridSize( QSize( contentsWidth/horItemCount, m_gridHeight ) );
+    calculateRects();
 }
 
 void
@@ -668,10 +675,11 @@ IconView::setModel( QAbstractItemModel *model )
     QAbstractItemView::setModel( model );
     if ( m_model = qobject_cast<FileSystemModel *>( model ) )
     {
-        connect( m_model, SIGNAL( directoryLoaded(QString)), this, SLOT( rootPathChanged( QString ) ) );
-        connect( m_model, SIGNAL( rootPathChanged(QString)), this, SLOT( rootPathChanged( QString ) ) );
-        connect( m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(calculateRects()) );
-        connect( m_model, SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(clear(QModelIndex,QModelIndex)) );
+        connect(m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(rootPathChanged(QString)));
+        connect(m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)));
+        connect(m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(calculateRects()));
+        connect(m_model, SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(clear(QModelIndex,QModelIndex)));
+        connect(m_model, SIGNAL(hiddenVisibilityChanged(bool)), this, SLOT(updateLayout()));
         static_cast<IconDelegate*>( itemDelegate() )->setModel( m_model );
     }
 }
