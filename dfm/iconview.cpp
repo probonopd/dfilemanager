@@ -552,7 +552,7 @@ IconView::paintEvent( QPaintEvent *e )
             p.setPen(Ops::colorMid(palette().color(QPalette::Base), palette().color(QPalette::Text)));
             p.save();
             p.setFont(f);
-            p.drawText(QRect(catRect.topLeft(), fm.boundingRect(category).size()), category);
+            p.drawText(QRect(catRect.adjusted(2,0,0,0).topLeft(), fm.boundingRect(category).size()), category);
             p.restore();
             const QModelIndexList &block(m_model->category(category));
             for (int i = 0; i < block.count(); ++i)
