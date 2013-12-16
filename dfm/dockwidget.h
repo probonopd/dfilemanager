@@ -57,15 +57,15 @@ public slots:
             return;
         if ( locked )
         {
-            static QLabel *w = 0;
-            if (!w)
-                w = new QLabel(this);
+            QLabel *w = new QLabel(this);
             w->setContentsMargins(0, -w->fontMetrics().height(),0,-w->fontMetrics().height());
             setTitleBarWidget( w );
             m_isLocked = true;
         }
         else
         {
+            if (QWidget *w = titleBarWidget())
+                delete w;
             setTitleBarWidget( 0 );
             m_isLocked = false;
         }
