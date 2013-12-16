@@ -138,6 +138,44 @@ public:
         painter->setPen(pen);
 //        QApplication::style()->drawItemText(painter, tr.adjusted(-2, 0, 2, 0), Qt::AlignCenter, PAL, option.state & QStyle::State_Enabled, et, high);
 
+        const bool isThumb = m_model->hasThumb(m_model->filePath(index));
+
+
+        QPixmap pixmap = pix(option, index);
+        QRect theRect = pixmap.rect();
+        theRect.moveCenter( QPoint( RECT.center().x(), RECT.y()+2+( DECOSIZE.height()/2 ) ) );
+        if ( isThumb )
+        {
+            const int d = ( m_shadowData[TopLeft].width()/2 )+1;
+            const QRect r( theRect.adjusted( -d, -d, d+1, ( d*2 )-1 ) );
+            renderShadow( r, painter );
+            painter->fillRect( theRect/*.adjusted( -1, -1, 1, 1 )*/, PAL.color( QPalette::Base ) );
+        }
+        QApplication::style()->drawItemPixmap(painter, theRect, Qt::AlignCenter, pixmap);
+        painter->restore();
+    }
+    inline void setModel( FileSystemModel *fsModel ) { m_model = fsModel; }
+    QSize sizeHint( const QStyleOptionViewItem &option, const QModelIndex &index ) const
+    {
+        return m_iv->gridSize();
+    }
+    void clearData() { m_textData.clear(); m_pixData.clear(); }
+    void clear(const QModelIndex &index)
+    {
+        if (m_pixData.contains(index.internalPointer()))
+            m_pixData.remove(index.internalPointer());
+        if (m_textData.contains(index.internalPointer()))
+            m_textData.remove(index.internalPointer());
+    }
+protected:
+    QPixmap pix( const QStyleOptionViewItem &option, const QModelIndex &index ) const
+    {
+        if ( !index.isValid()||!index.internalPointer() )
+            return QPixmap();
+
+        if (m_pixData.contains(index.internalPointer()))
+            return m_pixData.value(index.internalPointer());
+
         QIcon icon = m_model->fileIcon(index);
 
         const bool isThumb = m_model->hasThumb(m_model->filePath(index));
@@ -163,29 +201,16 @@ public:
             pixmap = pixmap.scaledToHeight(DECOSIZE.height(), Qt::SmoothTransformation);
         else if ( isThumb && pixmap.width() > pixmap.height() )
             pixmap = icon.pixmap( qMin<int>(RECT.width()-4, ((float)DECOSIZE.height()*((float)pixmap.width()/(float)pixmap.height()))-4 ));
-        QRect theRect = pixmap.rect();
-        theRect.moveCenter( QPoint( RECT.center().x(), RECT.y()+2+( DECOSIZE.height()/2 ) ) );
-        if ( isThumb )
-        {
-            const int d = ( m_shadowData[TopLeft].width()/2 )+1;
-            const QRect r( theRect.adjusted( -d, -d, d+1, ( d*2 )-1 ) );
-            renderShadow( r, painter );
-            painter->fillRect( theRect/*.adjusted( -1, -1, 1, 1 )*/, PAL.color( QPalette::Base ) );
-        }
-        QApplication::style()->drawItemPixmap(painter, theRect, Qt::AlignCenter, pixmap);
-
-        painter->restore();
-    }
-    inline void setModel( FileSystemModel *fsModel ) { m_model = fsModel; }
-protected:
-    QSize sizeHint( const QStyleOptionViewItem &option, const QModelIndex &index ) const
-    {
-        return m_iv->gridSize();
+        m_pixData.insert(index.internalPointer(), pixmap);
+        return pixmap;
     }
     QString text( const QStyleOptionViewItem &option, const QModelIndex &index ) const
     {
-        if ( !index.isValid() )
+        if ( !index.isValid()||!index.internalPointer() )
             return QString();
+
+        if (m_textData.contains(index.internalPointer()))
+            return m_textData.value(index.internalPointer());
         QFontMetrics fm( option.fontMetrics );
 
         QString spaces(TEXT.replace(".", QString(" ")));
@@ -239,6 +264,7 @@ protected:
             theText.append(QString("%1\n").arg(actualText));
         }
         textLayout.endLayout();
+        m_textData.insert(index.internalPointer(), theText);
         return theText;
     }
     static inline int textFlags() { return Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap; }
@@ -246,6 +272,8 @@ private:
     QPixmap m_shadowData[9];
     int m_size;
     IconView *m_iv;
+    mutable QHash<void *, QString> m_textData;
+    mutable QHash<void *, QPixmap> m_pixData;
     FileSystemModel *m_model;
 };
 
@@ -260,36 +288,27 @@ IconView::IconView( QWidget *parent )
     , m_layTimer(new QTimer(this))
 {
     setItemDelegate( new IconDelegate( this ) );
-//    setUniformItemSizes(true);
-//    setMovement( QAbstractItemView::Snap );
     const int iSize = Store::config.views.iconView.iconSize*16;
     setGridHeight(iSize);
     setSelectionMode( QAbstractItemView::ExtendedSelection );
-//    setResizeMode( QAbstractItemView::Adjust );
     setIconSize( QSize( iSize, iSize ) );
     updateLayout();
-//    setWrapping( true );
     setEditTriggers( QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed );
-//    setSelectionRectVisible( true );
     setDragDropMode( QAbstractItemView::DragDrop );
     setDropIndicatorShown( true );
     setDefaultDropAction( Qt::MoveAction );
     viewport()->setAcceptDrops( true );
     setDragEnabled( true );
-//    setViewMode( QAbstractItemView::IconMode );
     setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
     setSelectionBehavior(QAbstractItemView::SelectRows);
 
     ViewAnimator::manage(this);
     connect( verticalScrollBar(), SIGNAL(valueChanged(int)), viewport(), SLOT(update()) );
-//    connect( ViewAnimator::manage(this), SIGNAL(animation()), verticalScrollBar(), SLOT(update()) );
-
     connect( m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollEvent()) );
     connect( this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)) );
     connect( MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(correctLayout()) );
     connect( m_sizeTimer, SIGNAL(timeout()), this, SLOT(updateIconSize()) );
-
     connect( m_layTimer, SIGNAL(timeout()), this, SLOT(calculateRects()) );
 
     m_slide = false;
@@ -401,10 +420,14 @@ IconView::resizeEvent( QResizeEvent *e )
 {
     QAbstractItemView::resizeEvent( e );
     if ( e->size().width() != e->oldSize().width() )
+    {
         updateLayout();
-    calculateRects();
-//    verticalScrollBar()->resize(12, height());
-//    verticalScrollBar()->move(width()-12, 0);
+        calculateRects();
+    }
+    if (m_contentsHeight>viewport()->height())
+        verticalScrollBar()->setRange(0, m_contentsHeight-viewport()->height());
+    else
+        verticalScrollBar()->setRange(0, -1);
     verticalScrollBar()->setPageStep(viewport()->height());
 }
 
@@ -431,6 +454,7 @@ void
 IconView::mousePressEvent( QMouseEvent *event )
 {
     m_pressPos = event->pos();
+    m_pressedIndex = indexAt(m_pressPos);
     QAbstractItemView::mousePressEvent( event );
 
     if (!selectionModel() || (state() == EditingState))
@@ -438,7 +462,7 @@ IconView::mousePressEvent( QMouseEvent *event )
 
     if ( event->button() == Qt::MiddleButton )
     {
-         m_startPos = event->pos();
+        m_startPos = event->pos();
         m_startSlide = true;
         setDragEnabled( false );   //we will likely not want to drag items around at this point...
         event->accept();
@@ -450,13 +474,12 @@ IconView::mousePressEvent( QMouseEvent *event )
 void
 IconView::mouseReleaseEvent( QMouseEvent *e )
 {
-    m_pressPos = QPoint();
     const QModelIndex &index = indexAt(e->pos());
-
+    m_pressPos = QPoint();
     if ( Store::config.views.singleClick
          && !e->modifiers()
          && e->button() == Qt::LeftButton
-         && m_startPos == e->pos()
+         && index == m_pressedIndex
          && state() == NoState )
     {
         emit activated(index);
@@ -509,15 +532,18 @@ void
 IconView::paintEvent( QPaintEvent *e )
 {
     QPainter p(viewport());
+    p.setClipRect(e->rect());
     if (isCategorized())
     {
-        const QStringList &categories(m_model->categories());
         QFont f(font());
         f.setBold(true);
         QFontMetrics fm(f);
-        for (int cat = 0; cat < categories.count(); ++cat)
+        for (int cat = 0; cat < m_categories.count(); ++cat)
         {
-            const QRect catRect = visualRect(categories.at(cat));
+            const QString &category(m_categories.at(cat));
+            const QRect catRect = visualRect(category);
+            if (!viewport()->rect().intersects(catRect))
+                continue;
             p.fillRect(catRect, QColor(0,0,0,cat&1?32:16));
             p.setPen(QColor(255,255,255,64));
             p.drawLine(catRect.topLeft(), catRect.topRight());
@@ -526,9 +552,9 @@ IconView::paintEvent( QPaintEvent *e )
             p.setPen(Ops::colorMid(palette().color(QPalette::Base), palette().color(QPalette::Text)));
             p.save();
             p.setFont(f);
-            p.drawText(QRect(catRect.topLeft(), fm.boundingRect(categories.at(cat)).size()), categories.at(cat));
+            p.drawText(QRect(catRect.topLeft(), fm.boundingRect(category).size()), category);
             p.restore();
-            const QModelIndexList &block(m_model->category(categories.at(cat)));
+            const QModelIndexList &block(m_model->category(category));
             for (int i = 0; i < block.count(); ++i)
             {
                 const QModelIndex &index(block.at(i));
@@ -645,6 +671,7 @@ IconView::setModel( QAbstractItemModel *model )
         connect( m_model, SIGNAL( directoryLoaded(QString)), this, SLOT( rootPathChanged( QString ) ) );
         connect( m_model, SIGNAL( rootPathChanged(QString)), this, SLOT( rootPathChanged( QString ) ) );
         connect( m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(calculateRects()) );
+        connect( m_model, SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(clear(QModelIndex,QModelIndex)) );
         static_cast<IconDelegate*>( itemDelegate() )->setModel( m_model );
     }
 }
@@ -732,8 +759,14 @@ IconView::indexAt(const QPoint &p) const
     if (m_scrollTimer->isActive()||m_sizeTimer->isActive()||m_layTimer->isActive())
         return QModelIndex();
     for (int i = 0; i < m_model->rowCount(rootIndex()); ++i)
-        if (visualRect(m_model->index(i, 0, rootIndex())).contains(p))
-            return m_model->index(i, 0, rootIndex());
+    {
+        const QModelIndex &index(m_model->index(i, 0, rootIndex()));
+        const QRect r(visualRect(index));
+        if (!viewport()->rect().intersects(r))
+            continue;
+        if (r.contains(p))
+            return index;
+    }
     return QModelIndex();
 }
 
@@ -772,38 +805,39 @@ IconView::calculateRects()
 {
     m_rects.clear();
     m_catRects.clear();
+    static_cast<IconDelegate *>(itemDelegate())->clearData();
     const int hsz = gridSize().width();
     const int vsz = gridSize().height();
-    int h = -vsz;
+    m_contentsHeight = -vsz;
 
     if (isCategorized())
     {
-        const QStringList &categories(m_model->categories());
+        m_categories = m_model->categories();
         QFont f(font());
         f.setBold(true);
         QFontMetrics fm(f);
-        for (int cat = 0; cat < categories.count(); ++cat)
+        for (int cat = 0; cat < m_categories.count(); ++cat)
         {
-            h+=vsz;
-            int starth = h;
+            m_contentsHeight+=vsz;
+            int starth = m_contentsHeight;
 
-            h+=fm.boundingRect(categories.at(cat)).height();
+            m_contentsHeight+=fm.boundingRect(m_categories.at(cat)).height();
             int row = -1;
-            const QModelIndexList &block(m_model->category(categories.at(cat)));
+            const QModelIndexList &block(m_model->category(m_categories.at(cat)));
             for (int i = 0; i < block.count(); ++i)
             {
                 if (row+1==m_horItems)
                 {
-                    h+=vsz;
+                    m_contentsHeight+=vsz;
                     row=0;
                 }
                 else
                     ++row;
                 const QModelIndex &index(block.at(i));
                 if (index.isValid()&&index.internalPointer())
-                    m_rects.insert(index.internalPointer(), QRect(hsz*row, h, hsz, vsz));
+                    m_rects.insert(index.internalPointer(), QRect(hsz*row, m_contentsHeight, hsz, vsz));
             }
-            m_catRects.insert(categories.at(cat), QRect(0, starth, viewport()->width(), (h+vsz)-starth));
+            m_catRects.insert(m_categories.at(cat), QRect(0, starth, viewport()->width(), (m_contentsHeight+vsz)-starth));
         }
     }
     else
@@ -812,43 +846,88 @@ IconView::calculateRects()
         {
             const QModelIndex &index(m_model->index(i, 0, rootIndex()));
             const int col = i % m_horItems;
-            h = vsz * (i / m_horItems);
+            m_contentsHeight = vsz * (i / m_horItems);
             if (index.isValid()&&index.internalPointer())
-                m_rects.insert(index.internalPointer(), QRect(hsz*col, h, hsz, vsz));
+                m_rects.insert(index.internalPointer(), QRect(hsz*col, m_contentsHeight, hsz, vsz));
         }
     }
-    h+=vsz;
-    if (h>viewport()->height())
-    {
-//        verticalScrollBar()->show();
-        verticalScrollBar()->setRange(0, h-viewport()->height());
-    }
+    m_contentsHeight+=vsz;
+    if (m_contentsHeight>viewport()->height())
+        verticalScrollBar()->setRange(0, m_contentsHeight-viewport()->height());
     else
-    {
         verticalScrollBar()->setRange(0, -1);
-//        verticalScrollBar()->hide();
-    }
     viewport()->update();
     if (!m_model->isPopulating())
         m_layTimer->stop();
 }
 
-int
-IconView::horizontalOffset() const
-{
-    return 0;
-}
-
-bool
-IconView::isIndexHidden(const QModelIndex & index) const
-{
-    return false;
-}
+//These two not needed at all for this?
+int IconView::horizontalOffset() const { return 0; }
+bool IconView::isIndexHidden(const QModelIndex & index) const { return false; }
 
 QModelIndex
 IconView::moveCursor(CursorAction cursorAction, Qt::KeyboardModifiers modifiers)
 {
-    //TODO ..or not?
+    const QRect r(visualRect(currentIndex()));
+
+    switch (cursorAction)
+    {
+    case MoveUp:
+    {
+        QPoint p(r.center().x(), r.y()-1);
+        while (p.y()>viewport()->rect().y())
+        {
+            const QModelIndex &index(indexAt(p));
+            if (index.isValid())
+                return index;
+            --p.ry();
+        }
+        break;
+    }
+    case MoveDown:
+    {
+        QPoint p(r.center().x(), r.bottom()+1);
+        while (p.y()<viewport()->rect().bottom())
+        {
+            const QModelIndex &index(indexAt(p));
+            if (index.isValid())
+                return index;
+            ++p.ry();
+        }
+        break;
+    }
+    case MoveLeft:
+    {
+        QPoint p(r.x()-1, r.center().y());
+        while (p.x()>viewport()->rect().x())
+        {
+            const QModelIndex &index(indexAt(p));
+            if (index.isValid())
+                return index;
+            --p.rx();
+        }
+        break;
+    }
+    case MoveRight:
+    {
+        QPoint p(r.right()+1, r.center().y());
+        while (p.x()<viewport()->rect().right())
+        {
+            const QModelIndex &index(indexAt(p));
+            if (index.isValid())
+                return index;
+            ++p.rx();
+        }
+        break;
+    }
+    case MoveHome: break;
+    case MoveEnd: break;
+    case MovePageUp: break;
+    case MovePageDown: break;
+    case MoveNext: break;
+    case MovePrevious: break;
+    default: break;
+    }
     return QModelIndex();
 }
 
@@ -875,46 +954,15 @@ IconView::verticalOffset() const
 QRegion
 IconView::visualRegionForSelection(const QItemSelection &selection) const
 {
+    // when is this needed anyway?
     QRegion region;
     foreach (const QModelIndex &index, selection.indexes())
         region += visualRect(index);
     return region;
 }
 
-
-
-
-//------------------------------------------------------------------------------------------------------------
-
-GayBar::GayBar(const Qt::Orientation ori, QWidget *parent, QWidget *vp)
-    :QScrollBar(ori, parent)
-    ,m_viewport(vp)
-    ,m_iv(static_cast<IconView *>(parent)){}
-
 void
-GayBar::paintEvent(QPaintEvent *)
+IconView::clear(const QModelIndex &first, const QModelIndex &last)
 {
-    return;
-    setAttribute(Qt::WA_TranslucentBackground);
-//    QPixmap pix(rect().size());
-//    pix.fill(Qt::transparent);
-
-//    m_viewport->render(this);
-    QPainter p(this);
-    p.drawTiledPixmap(rect(), m_iv->bgPix(), QPoint(-(m_viewport->width()-12), 0));
-//    m_viewport->render(&pix, QPoint(), QRegion(m_viewport->width()-12, 0, 12, m_viewport->height()), QWidget::DrawWindowBackground);
-//    p.drawTiledPixmap(rect(), pix);
-    QStyleOptionSlider opt;
-    initStyleOption(&opt);
-
-//    const QRect &groove = style()->subControlRect(QStyle::CC_ScrollBar, &opt, QStyle::SC_ScrollBarGroove, this);
-    const QRect &slider = style()->subControlRect(QStyle::CC_ScrollBar, &opt, QStyle::SC_ScrollBarSlider, this).adjusted(1, 1, -1, -1);
-
-    const int r = qCeil(slider.width()/2.0f);
-    p.setRenderHint(QPainter::Antialiasing);
-    p.setPen(Qt::NoPen);
-    p.setBrush(palette().color(QPalette::Text));
-    p.setOpacity(0.5f);
-    p.drawRoundedRect(slider,r,r);
-    p.end();
+    static_cast<IconDelegate *>(itemDelegate())->clear(first);
 }

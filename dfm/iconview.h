@@ -35,38 +35,6 @@
 
 namespace DFM
 {
-#if 0
-class Overlay : public QWidget
-{
-    Q_OBJECT
-public:
-    Overlay(QWidget *parent) : QWidget(parent){}
-
-protected:
-    inline virtual void paintEvent(QPaintEvent *)
-    {
-        QPainter p(this);
-        setAttribute(Qt::WA_TransparentForMouseEvents);
-        QPixmap turnone(":/turnfinder.png");
-        QRect rect(turnone.rect());
-        p.drawTiledPixmap(rect,turnone);
-        p.end();
-    }
-};
-#endif
-class IconView;
-class GayBar : public QScrollBar
-{
-    Q_OBJECT
-public:
-    GayBar(const Qt::Orientation ori = Qt::Vertical, QWidget *parent = 0, QWidget *vp = 0);
-protected:
-    void paintEvent(QPaintEvent *);
-private:
-    QWidget *m_viewport;
-    IconView *m_iv;
-};
-
 class FileSystemModel;
 class ViewContainer;
 class IconView : public QAbstractItemView
@@ -95,6 +63,8 @@ protected:
     QRect visualRect(const QString &cat) const;
     QModelIndex indexAt(const QPoint &p) const;
     void rowsInserted(const QModelIndex &parent, int start, int end);
+    void focusOutEvent(QFocusEvent *event) {m_pressPos=QPoint(); QAbstractItemView::focusOutEvent(event);}
+    void dragMoveEvent(QDragMoveEvent *event) {m_pressPos=QPoint(); QAbstractItemView::dragMoveEvent(event);}
     void setIconWidth(const int width);
     QModelIndex firstValidIndex();
     inline int iconWidth() const { return iconSize().width(); }
@@ -123,12 +93,13 @@ private slots:
     void setGridHeight(int gh);
     void updateIconSize();
     void calculateRects();
+    void clear(const QModelIndex &first, const QModelIndex &last);
 
 private:
     QPixmap m_pix;
     QSize m_gridSize;
     ViewContainer *m_container;
-//    GayBar *m_gayBar;
+    QStringList m_categories;
     QPoint m_startPos, m_pressPos;
     QList<int> m_allowedSizes;
     QHash<void *, QRect> m_rects;
@@ -136,11 +107,10 @@ private:
     bool m_slide, m_startSlide;
     FileSystemModel *m_model;
     QTimer *m_scrollTimer, *m_sizeTimer, *m_layTimer;
-    QModelIndex m_firstIndex;
+    QModelIndex m_firstIndex, m_pressedIndex;
     QPixmap m_homePix, m_bgPix[2];
-    int m_delta, m_newSize, m_gridHeight, m_horItems;
+    int m_delta, m_newSize, m_gridHeight, m_horItems, m_contentsHeight;
 };
-
 }
 
 #endif // ICONVIEW_H

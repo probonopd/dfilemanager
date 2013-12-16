@@ -80,7 +80,12 @@ static bool lessThen(FileSystemModel::Node *n1, FileSystemModel::Node *n2)
     {
     case 0: lt = n1->name().toLower()<n2->name().toLower(); break; //name
     case 1: lt = n1->size()<n2->size(); break; //size
-    case 2: lt = n1->suffix()<n2->suffix(); break; //type
+    case 2: //type
+        if (n1->suffix().toLower()==n2->suffix().toLower())
+            lt = n1->name().toLower()<n2->name().toLower();
+        else
+            lt = n1->suffix().toLower()<n2->suffix().toLower();
+        break;
     case 3: lt = n1->lastModified()<n2->lastModified(); break; //lastModified
     case 4: lt = n1->permissions()<n2->permissions(); break; //permissions
     default: break;
@@ -175,7 +180,13 @@ FileSystemModel::Node::category()
     case 0: return isDir()?QString("DIRECTORY"):name().at(0).toUpper(); break;
     case 1: return QString(isDir()?"DIRECTORY":size()<1048576?"SMALL":size()<1073741824?"MEDIUM":"LARGE"); break;
     case 2: return data(2).toString().toUpper(); break;
-    case 3: return lastModified().date().toString().toUpper(); break;
+    case 3:
+    {
+        int y,m,d;
+        lastModified().date().getDate(&y, &m, &d);
+        return QString("%1 %2").arg(QString::number(y), QString::number(m));
+        break;
+    }
     default: return QString("-"); break;
     }
     return QString();
