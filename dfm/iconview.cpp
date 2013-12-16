@@ -138,19 +138,18 @@ public:
         painter->setPen(pen);
 //        QApplication::style()->drawItemText(painter, tr.adjusted(-2, 0, 2, 0), Qt::AlignCenter, PAL, option.state & QStyle::State_Enabled, et, high);
 
-        const bool isThumb = m_model->hasThumb(m_model->filePath(index));
-
-
         QPixmap pixmap = pix(option, index);
 
         QRect theRect = pixmap.rect();
         theRect.moveCenter(QRect(RECT.topLeft(), QSize(RECT.width(), DECOSIZE.height()+2)).center());
-        if (isThumb)
+        if (m_model->hasThumb(m_model->filePath(index)))
         {
             const int d = 4;
             const QRect r( theRect.adjusted( -d, -d, d+1, d+2 ) );
             renderShadow( r, painter );
+
             painter->fillRect( theRect.adjusted(-2, -2, 2, 2), PAL.color( QPalette::Base ) );
+            painter->fillRect( theRect.adjusted(-1, -1, 1, 1), QColor(0, 0, 0, 64) );
         }
         QApplication::style()->drawItemPixmap(painter, theRect, Qt::AlignCenter, pixmap);
         painter->restore();
@@ -335,7 +334,6 @@ void
 IconView::setNewSize(const int size)
 {
     m_newSize = size;
-    m_firstIndex = firstValidIndex();
     if ( !m_sizeTimer->isActive() )
         m_sizeTimer->start(25);
 }
@@ -718,16 +716,6 @@ IconView::rootPathChanged( const QString &path )
 #endif
 }
 
-QModelIndex
-IconView::firstValidIndex()
-{
-    int i = iconSize().width()/2;
-    QModelIndex index;
-    while ( !index.isValid() && ++i < qMin(width(), height()) )
-        index = indexAt(QPoint(i, i));
-    return index;
-}
-
 void
 IconView::setIconWidth( const int width )
 {
@@ -737,8 +725,8 @@ IconView::setIconWidth( const int width )
     QAbstractItemView::setIconSize( QSize( width, width ) );
     setGridHeight(width);
     setGridSize( QSize( gridSize().width(), m_gridHeight ) );
-    if ( m_firstIndex.isValid() /*&& width == m_newSize */)
-        scrollTo(m_firstIndex, QAbstractItemView::PositionAtTop);
+//    if ( m_firstIndex.isValid() /*&& width == m_newSize */)
+//        scrollTo(m_firstIndex, QAbstractItemView::PositionAtTop);
 //    if ( val && verticalScrollBar()->isVisible() )
 //        verticalScrollBar()->setValue(verticalScrollBar()->maximum()*val);
 

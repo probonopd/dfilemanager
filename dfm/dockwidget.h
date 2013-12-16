@@ -57,7 +57,9 @@ public slots:
             return;
         if ( locked )
         {
-            QLabel *w = new QLabel(this);
+            static QLabel *w = 0;
+            if (!w)
+                w = new QLabel(this);
             w->setContentsMargins(0, -w->fontMetrics().height(),0,-w->fontMetrics().height());
             setTitleBarWidget( w );
             m_isLocked = true;

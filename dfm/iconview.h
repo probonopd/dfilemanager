@@ -66,7 +66,6 @@ protected:
     void focusOutEvent(QFocusEvent *event) {m_pressPos=QPoint(); QAbstractItemView::focusOutEvent(event);}
     void dragMoveEvent(QDragMoveEvent *event) {m_pressPos=QPoint(); QAbstractItemView::dragMoveEvent(event);}
     void setIconWidth(const int width);
-    QModelIndex firstValidIndex();
     inline int iconWidth() const { return iconSize().width(); }
     bool isCategorized() const;
     QStyleOptionViewItem viewOptions() const;

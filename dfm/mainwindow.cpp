@@ -34,8 +34,8 @@
 
 using namespace DFM;
 
-static MainWindow *s_currentWindow = 0;
-static QList<MainWindow *> s_openWindows;
+MainWindow *MainWindow::s_currentWindow = 0;
+QList<MainWindow *> MainWindow::s_openWindows;
 
 MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     : QMainWindow()
@@ -872,10 +872,11 @@ MainWindow::updateIcons()
     m_showHiddenAct->setIcon(IconProvider::icon(IconProvider::Hidden, tbis, tbfgc, Store::config.behaviour.systemIcons));
     if ( m_sortButton )
     {
+        m_sortButton->setMinimumWidth(32);
         m_sortButton->setIcon(IconProvider::icon(IconProvider::Sort, tbis, tbfgc, false));
-        m_toolBar->widgetForAction(m_showHiddenAct)->setMinimumWidth(m_sortButton->width());
-        m_toolBar->widgetForAction(m_homeAct)->setMinimumWidth(m_sortButton->width());
-        m_toolBar->widgetForAction(m_configureAct)->setMinimumWidth(m_sortButton->width());
+        m_toolBar->widgetForAction(m_showHiddenAct)->setMinimumWidth(32);
+        m_toolBar->widgetForAction(m_homeAct)->setMinimumWidth(32);
+        m_toolBar->widgetForAction(m_configureAct)->setMinimumWidth(32);
     }
 }
 

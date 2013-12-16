@@ -43,7 +43,6 @@
 
 namespace DFM
 {
-
 class TabBar;
 class MainWindow : public QMainWindow
 {
@@ -174,6 +173,8 @@ private:
     QActionGroup *m_sortActs;
 
     bool m_cut;
+    static MainWindow *s_currentWindow;
+    static QList<MainWindow *> s_openWindows;
 };
 
 }
