@@ -25,6 +25,8 @@
 #include <QStackedWidget>
 #include <QComboBox>
 #include <QLineEdit>
+#include <QMessageBox>
+#include <QStyledItemDelegate>
 
 #include "iconview.h"
 #include "detailsview.h"
@@ -35,6 +37,7 @@
 
 namespace DFM
 {
+
 class ColumnsWidget;
 class IconView;
 class DetailsView;
@@ -128,6 +131,17 @@ private:
     QStringList m_forwardList;
     QItemSelectionModel *m_selectModel;
     BreadCrumbs *m_breadCrumbs;
+};
+
+class FileItemDelegate : public QStyledItemDelegate
+{
+    Q_OBJECT
+public:
+    FileItemDelegate(QObject *parent = 0):QStyledItemDelegate(parent){}
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    void setEditorData(QWidget *editor, const QModelIndex &index) const;
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
+    bool eventFilter(QObject *object, QEvent *event);
 };
 
 }

@@ -97,7 +97,7 @@ private slots:
 
 private:
     friend class SettingsDialog;
-    QCheckBox *m_smoothScroll, *m_singleClick, *m_dirSettings;
+    QCheckBox *m_smoothScroll, *m_singleClick, *m_dirSettings, *m_categorized;
     QSlider *m_iconWidth, *m_iconSlider;
     QString m_iconWidthStr;
     QLabel *m_width, *m_size;

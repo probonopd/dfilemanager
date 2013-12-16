@@ -113,6 +113,7 @@ ViewAnimator::animEvent()
     }
     if ( !m_totalIndex )
         m_animTimer->stop();
+    emit animation();
 }
 
 bool
@@ -123,10 +124,10 @@ ViewAnimator::eventFilter(QObject *obj, QEvent *ev)
     return false;
 }
 
-void
-ViewAnimator::manage(QAbstractItemView *view)
+ViewAnimator
+*ViewAnimator::manage(QAbstractItemView *view)
 {
-    if ( view->findChild<ViewAnimator*>() )
-        return;
-    new ViewAnimator(view);
+    if ( ViewAnimator *anim = view->findChild<ViewAnimator*>() )
+        return anim;
+    return new ViewAnimator(view);
 }

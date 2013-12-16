@@ -145,7 +145,7 @@ InfoWidget::hovered(const QModelIndex &index)
 
     m_lastMod[1]->setText(fsModel->fileInfo(index).lastModified().toString());
     const QString &s(fsModel->data(fsModel->index(index.row(), 4, index.parent())).toString());
-    m_perm[1]->setText(s.mid(0, s.lastIndexOf(",")));
+    m_perm[1]->setText(s);
 
     m_sizeLbl->setText(dir ? "--" : Ops::prettySize(fsModel->fileInfo(index).size()));
 }

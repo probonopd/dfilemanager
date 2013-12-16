@@ -152,19 +152,25 @@ protected:
     void dragLeaveEvent(QDragLeaveEvent *e);
     void dragMoveEvent(QDragMoveEvent *e);
     void dropEvent(QDropEvent *e);
+#if 0
+    bool eventFilter(QObject *, QEvent *);
+#endif
     void correctAddButtonPos();
     void drawTab( QPainter *p, int index );
 
 private slots:
     void tabCloseRequest();
     void newWindowTab(int tab);
+#if 0
+    void drag() { if (mouseGrabber()&&!m_mouseGrabber) {m_mouseGrabber=mouseGrabber();m_mouseGrabber->installEventFilter(this);}}
+#endif
 
 private:
     void genNewTabButton();
     friend class FooBar;
     int m_hoveredTab;
     bool m_hasPress, m_dragCancelled;
-    QWidget *m_addButton;
+    QWidget *m_addButton, *m_mouseGrabber;
     DropIndicator *m_dropIndicator;
     QString m_lastDraggedFile;
 };

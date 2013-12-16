@@ -29,53 +29,9 @@
 
 using namespace DFM;
 
-class DetailsDelegate : public QStyledItemDelegate
+class DetailsDelegate : public FileItemDelegate
 {
 public:
-    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
-    {
-        return new QTextEdit(parent);
-    }
-    void setEditorData(QWidget *editor, const QModelIndex &index) const
-    {
-        QTextEdit *edit = qobject_cast<QTextEdit *>(editor);
-        if (!edit||!index.isValid())
-            return;
-
-        edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        const QString &oldName = index.data(Qt::EditRole).toString();
-        edit->setText(oldName);
-
-        const bool isDir = static_cast<const FileSystemModel *>(index.model())->isDir(index);
-        QTextCursor tc = edit->textCursor();
-        const int last = (isDir||!oldName.contains("."))?oldName.size():oldName.lastIndexOf(".");
-        tc.setPosition(last, QTextCursor::KeepAnchor);
-        edit->setTextCursor(tc);
-    }
-    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
-    {
-        QTextEdit *edit = qobject_cast<QTextEdit *>(editor);
-        FileSystemModel *fsModel = static_cast<FileSystemModel *>(model);
-        if ( !edit||!fsModel )
-            return;
-        FileSystemModel::Node *node = fsModel->fromIndex(index);
-        const QString &newName = edit->toPlainText();
-        if ( node->name() == newName )
-            return;
-        if ( !node->rename(newName) )
-            QMessageBox::warning(MainWindow::window(edit), "Failed to rename", QString("%1 to %2").arg(node->name(), newName));
-    }
-    bool eventFilter(QObject *object, QEvent *event)
-    {
-        QWidget *editor = qobject_cast<QWidget *>(object);
-        if (editor && event->type() == QEvent::KeyPress)
-            if (static_cast<QKeyEvent *>(event)->key()==Qt::Key_Return)
-            {
-                emit commitData(editor);
-                emit closeEditor(editor, QAbstractItemDelegate::NoHint);
-            }
-        return QStyledItemDelegate::eventFilter(object, event);
-    }
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
         if ( !index.data().isValid() )
@@ -85,12 +41,12 @@ public:
         const bool isSelected = option.state & QStyle::State_Selected;
         if ( index.column() > 0 &&  !isHovered && !isSelected )
             painter->setOpacity(0.66);
-        QStyledItemDelegate::paint(painter, option, index);
+        FileItemDelegate::paint(painter, option, index);
         painter->restore();
     }
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        return QStyledItemDelegate::sizeHint(option, index) + QSize(0, Store::config.views.detailsView.rowPadding*2);
+        return FileItemDelegate::sizeHint(option, index) + QSize(0, Store::config.views.detailsView.rowPadding*2);
     }
 };
 

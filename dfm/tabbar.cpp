@@ -537,6 +537,7 @@ TabBar::TabBar(QWidget *parent)
     , m_addButton(0)
     , m_hasPress(false)
     , m_dropIndicator(new DropIndicator(this))
+    , m_mouseGrabber(0)
 {
     setSelectionBehaviorOnRemove(QTabBar::SelectPreviousTab);
     setDocumentMode(true);
@@ -691,6 +692,17 @@ TabBar::newWindowTab(int tab)
     win->show();
 }
 
+#if 0
+bool
+TabBar::eventFilter(QObject *o, QEvent *e)
+{
+    if (e->type()==QEvent::KeyPress)
+        if (static_cast<QKeyEvent *>(e)->key()==Qt::Key_Escape)
+            m_dragCancelled=true;
+    return QTabBar::eventFilter(o, e);
+}
+#endif
+
 void
 TabBar::mouseMoveEvent(QMouseEvent *e)
 {
@@ -709,6 +721,7 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
         m_dragCancelled = false;
         QDrag *drag = new QDrag(this);
         connect(drag, SIGNAL(destroyed()), m_dropIndicator, SLOT(hide()));
+//        connect(drag, SIGNAL(targetChanged(QWidget*)), this, SLOT(drag()));
         QMimeData *data = new QMimeData();
         m_lastDraggedFile = MainWindow::window(this)->containerForTab(tabAt(e->pos()))->model()->rootPath();
         data->setUrls(QList<QUrl>() << QUrl::fromLocalFile(m_lastDraggedFile));
@@ -721,11 +734,9 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
         w->render(&pix);
         pix = pix.scaledToHeight(128);
         drag->setPixmap(pix);
-        grabKeyboard();
         if (!drag->exec(Qt::CopyAction|Qt::MoveAction))
             if (count() > 1 && !m_dragCancelled) //no idea how to actually get the dragcancel 'event'
                 newWindowTab(data->property("tab").toInt());
-        releaseKeyboard();
     }
     if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
         QCoreApplication::sendEvent(bar, e);

@@ -260,7 +260,8 @@ PathNavigator::genNavFromPath( const QString &path )
     for ( int i = 0; i < m_pathList.count(); ++i )
     {
         const QString &newPath = m_pathList.at(i);
-        QString buttonText( QFileInfo( newPath ).fileName().isEmpty() ? "/." : QFileInfo( newPath ).fileName() );
+        const QFileInfo fi(newPath);
+        const QString buttonText( fi.fileName().isEmpty() ? fi.filePath() : fi.fileName() );
         NavButton *nb = new NavButton( this, newPath, buttonText );
 
         QFont f(font());
@@ -285,12 +286,12 @@ PathNavigator::genNavFromPath( const QString &path )
     m_bc->pathBox()->setEditText(path);
 }
 
-BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel) : QStackedWidget(parent)
+BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
+    : QStackedWidget(parent)
+    , m_pathNav(new PathNavigator(this, fsModel))
+    , m_pathBox(new PathBox(this))
+    , m_fsModel(fsModel)
 {
-    m_pathNav = new PathNavigator(this, fsModel);
-    m_pathBox = new PathBox(this);
-    m_fsModel = fsModel;
-
     addWidget(m_pathNav);
     addWidget(m_pathBox);
 

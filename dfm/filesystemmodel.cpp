@@ -82,6 +82,7 @@ static bool lessThen(FileSystemModel::Node *n1, FileSystemModel::Node *n2)
     case 1: lt = n1->size()<n2->size(); break; //size
     case 2: lt = n1->suffix()<n2->suffix(); break; //type
     case 3: lt = n1->lastModified()<n2->lastModified(); break; //lastModified
+    case 4: lt = n1->permissions()<n2->permissions(); break; //permissions
     default: break;
     }
     return desc?!lt:lt;
@@ -142,7 +143,7 @@ FileSystemModel::Node::row()
 }
 
 int
-FileSystemModel::Node::childCount()
+FileSystemModel::Node::childCount() const
 {
     QMutexLocker locker(&m_mutex);
     return m_children[Visible].size();
@@ -160,10 +161,24 @@ FileSystemModel::Node
 QString FileSystemModel::Node::name() { return m_name; }
 
 int
-FileSystemModel::Node::rowFor(Node *child)
+FileSystemModel::Node::rowFor(Node *child) const
 {
     QMutexLocker locker(&m_mutex);
     return m_children[Visible].indexOf(child);
+}
+
+QString
+FileSystemModel::Node::category()
+{
+    switch (sortColumn())
+    {
+    case 0: return isDir()?QString("DIRECTORY"):name().at(0).toUpper(); break;
+    case 1: return QString(isDir()?"DIRECTORY":size()<1048576?"SMALL":size()<1073741824?"MEDIUM":"LARGE"); break;
+    case 2: return data(2).toString().toUpper(); break;
+    case 3: return lastModified().date().toString().toUpper(); break;
+    default: return QString("-"); break;
+    }
+    return QString();
 }
 
 bool FileSystemModel::Node::hidden() { return isHidden()&&!isLocked(); }
@@ -239,6 +254,15 @@ FileSystemModel::Node::data(const int column)
         break;
     }
     case 3: return lastModified(); break;
+    case 4:
+    {
+        const QFile::Permissions p = permissions();
+        QString perm;
+        perm.append(p.testFlag(QFile::ReadUser)?"R, ":"-, ");
+        perm.append(p.testFlag(QFile::WriteUser)?"W, ":"-, ");
+        perm.append(p.testFlag(QFile::ExeUser)?"X":"-");
+        return perm;
+    }
     default: return QString("--");
     }
 }
@@ -686,7 +710,7 @@ bool FileSystemModel::hasThumb(const QString &file) const { return m_thumbsLoade
 QVariant
 FileSystemModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid())
+    if (!index.isValid()||index.column()>4||index.row()>100000)
         return QVariant();
 
     Node *node = fromIndex(index);
@@ -717,7 +741,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         }
         if ( !node->isDir() && node->isExecutable() && (node->suffix().isEmpty()||node->suffix()=="sh"||node->suffix()=="exe") )
         {
-            f.setBold(true);
+            f.setUnderline(true);
             return f;
         }
     }
@@ -740,7 +764,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         }
     }
 
-    if ( role >= FlowImg )
+    if ( role >= FlowImg && role != Category )
     {
         const QIcon &icon = customIcon ? QIcon(Store::config.icons.customIcons.value(file)) : m_ip->icon(*node);
 
@@ -763,6 +787,9 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
         return icon.pixmap(SIZE);
     }
+
+    if (role == Category)
+        return node->category();
 
     if (role != Qt::DisplayRole && role != Qt::EditRole)
         return QVariant();
@@ -792,6 +819,8 @@ FileSystemModel::setData(const QModelIndex &index, const QVariant &value, int ro
 QVariant
 FileSystemModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
+    if ( orientation != Qt::Horizontal )
+        return QVariant();
     if ( role == Qt::DisplayRole )
         switch ( section )
         {
@@ -799,6 +828,7 @@ FileSystemModel::headerData(int section, Qt::Orientation orientation, int role) 
         case 1: return tr("Size"); break;
         case 2: return tr("Type"); break;
         case 3: return tr("Last Modified"); break;
+        case 4: return tr("Permissions"); break;
         default: break;
         }
     else if ( role == Qt::TextAlignmentRole )
@@ -833,12 +863,8 @@ FileSystemModel::Node
 *FileSystemModel::fromIndex(const QModelIndex &index) const
 {
     Node *node = static_cast<Node *>(index.internalPointer());
-    if (index.isValid() && index.row() < 100000 && index.column() < 4 && node)
-    {
-//        Node n = *node;
-//        if ( n.m_test == 128 )
-            return node;
-    }
+    if (index.isValid() && index.row() < 100000 && index.column() < 5 && node)
+        return node;
     return m_rootNode;
 }
 
@@ -1011,11 +1037,69 @@ FileSystemModel::filePath(const QModelIndex &index) const
 void
 FileSystemModel::startPopulating()
 {
+    QMutexLocker locker(&m_mutex);
     m_isPopulating = true;
 }
 
 void
 FileSystemModel::endPopulating()
 {
+    QMutexLocker locker(&m_mutex);
     m_isPopulating = false;
+}
+
+QModelIndexList
+FileSystemModel::category(const QString &cat)
+{
+    QModelIndexList categ;
+    const QModelIndex &parent = index(m_rootPath);
+    if ( !parent.isValid() )
+        return categ;
+    const int count = rowCount(parent);
+    for ( int i = 0; i<count; ++i )
+    {
+        const QModelIndex &child = index(i, 0, parent);
+        if ( !child.isValid() )
+            continue;
+        if ( fromIndex(child)->category() == cat )
+            categ << child;
+    }
+    return categ;
+}
+
+QModelIndexList
+FileSystemModel::category(const QModelIndex &fromCat)
+{
+    return category(fromIndex(fromCat)->category());
+}
+
+QModelIndex
+FileSystemModel::first(const QString &cat)
+{
+    category(cat).first();
+}
+
+QModelIndex
+FileSystemModel::last(const QString &cat)
+{
+    category(cat).last();
+}
+
+QStringList
+FileSystemModel::categories()
+{
+    const QModelIndex &parent = index(m_rootPath);
+    if ( !parent.isValid() )
+        return QStringList();
+    const int count = rowCount(parent);
+    QStringList cats;
+    for ( int i = 0; i<count; ++i )
+    {
+        const QModelIndex &child = index(i, 0, parent);
+        if ( !child.isValid() )
+            continue;
+        if ( !cats.contains(fromIndex(child)->category()) )
+            cats << fromIndex(child)->category();
+    }
+    return cats;
 }

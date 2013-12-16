@@ -73,6 +73,7 @@ Store::readConfiguration()
     config.views.iconView.textWidth = settings()->value("textWidth", 16).toInt();
     config.views.iconView.iconSize = settings()->value("iconView.iconSize", 3).toInt();
     config.views.iconView.lineCount = settings()->value("iconView.lineCount", 3).toInt();
+    config.views.iconView.categorized = settings()->value("iconView.categorized", false).toBool();
 
     config.behaviour.gayWindow = settings()->value("behaviour.gayWindow", false).toBool();
     config.behaviour.tabShape = settings()->value("behaviour.gayWindow.tabShape", 0).toInt();
@@ -161,6 +162,7 @@ Store::writeConfiguration()
     settings()->setValue("start.view", config.behaviour.view);
     settings()->setValue("iconView.iconSize", config.views.iconView.iconSize);
     settings()->setValue("iconView.lineCount", config.views.iconView.lineCount);
+    settings()->setValue("iconView.categorized", config.views.iconView.categorized);
     settings()->setValue("flowSize", config.views.flowSize);
     settings()->setValue("behaviour.capsContainers", config.behaviour.capsContainers);
 

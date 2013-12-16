@@ -89,10 +89,10 @@ public:
         enum Children { Visible = 0, Hidden = 1, Filtered = 2, Deleted = 3 };
         ~Node();
         void insertChild(Node *node);
-        inline QString filePath() { return m_filePath; }
+        inline QString filePath() const { return m_filePath; }
 
         bool hasChild( const QString &name );
-        int childCount();
+        int childCount() const;
         int row();
 
         Node *child(const int c);
@@ -105,6 +105,8 @@ public:
         bool rename(const QString &newName);
 
         QVariant data(const int column);
+
+        QString category();
 
         void sort();
         inline int sortColumn() { return model()->sortColumn(); }
@@ -120,9 +122,6 @@ public:
         inline void lockMutex() { m_mutex.lock(); }
         inline void unLockMutex() { m_mutex.unlock(); }
 
-        inline void lockChildren(bool lock) { m_isChildLocked = lock; }
-        inline bool childrenLock() { return m_isChildLocked; }
-
         void setFilter(const QString &filter);
         inline QString filter() const { return m_filter; }
 
@@ -130,7 +129,7 @@ public:
         FileSystemModel *model();
 
     protected:
-        int rowFor(Node *child);
+        int rowFor(Node *child) const;
         Node *nodeFromPath(const QString &path, bool checkOnly = true);
         Node(FileSystemModel *model = 0, const QString &path = QString(), Node *parent = 0);
 
@@ -152,7 +151,8 @@ public:
         FilePermissions = Qt::UserRole + 3,
         FlowImg = Qt::UserRole +4,
         FlowRefl = Qt::UserRole +5,
-        FlowShape = Qt::UserRole +6
+        FlowShape = Qt::UserRole +6,
+        Category = Qt::UserRole +7
     };
     explicit FileSystemModel(QObject *parent = 0);
     ~FileSystemModel();
@@ -161,11 +161,18 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int role);
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     int rowCount(const QModelIndex &parent) const;
-    int columnCount(const QModelIndex &parent) const { return 4; }
+    int columnCount(const QModelIndex &parent) const { return 5; }
     Node *fromIndex(const QModelIndex &index) const;
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
     QModelIndex parent(const QModelIndex &child) const;
     QModelIndex index(const QString &path) const;
+
+    QModelIndexList category(const QString &cat);
+    QModelIndexList category(const QModelIndex &fromCat);
+    QModelIndex first(const QString &cat);
+    QModelIndex last(const QString &cat);
+    QStringList categories();
+
     void fetchMore(const QModelIndex &parent);
     bool canFetchMore(const QModelIndex &parent) const;
     void setRootPath(const QString &path);
@@ -197,7 +204,7 @@ public:
     void setSort(const int sortColumn, const int sortOrder);
     void startPopulating();
     void endPopulating();
-    bool isPopulating() const { return m_isPopulating; }
+    bool isPopulating() const { QMutexLocker locker(&m_mutex); return m_isPopulating; }
 
 public slots:
     inline void setPath(const QString &path) { setRootPath(path); }
@@ -234,6 +241,7 @@ private:
     DataGatherer *m_dataGatherer;
     friend class ImagesThread;
     friend class Node;
+    mutable QMutex m_mutex;
 };
 
 class DataGatherer : public QThread
@@ -241,11 +249,9 @@ class DataGatherer : public QThread
     Q_OBJECT
 public:
     enum Task { Populate = 0, Generate = 1, GetData = 2 };
-    explicit DataGatherer(QObject *parent = 0):QThread(parent), m_node(0), m_model(static_cast<FileSystemModel *>(parent)),m_paused(false){}
+    explicit DataGatherer(QObject *parent = 0):QThread(parent), m_node(0), m_model(static_cast<FileSystemModel *>(parent)){}
     void populateNode(FileSystemModel::Node *node);
     void generateNode(const QString &path);
-    inline void pause(bool p) { if (m_paused=p) { qDebug() << "tried to deadlock"; return;} m_mutex.lock(); m_paused = p; m_mutex.unlock(); if ( !p ) m_pause.wakeAll(); }
-    inline void pause() { m_mutex.lock(); if ( m_paused ) m_pause.wait(&m_mutex); m_mutex.unlock(); }
 
 protected:
     void run();
@@ -256,11 +262,8 @@ signals:
 private:
     FileSystemModel::Node *m_node, *m_result;
     FileSystemModel *m_model;
-    QMutex m_mutex;
-    QWaitCondition m_pause;
     Task m_task;
     QString m_path;
-    bool m_paused;
     friend class FileSystemModel::Node;
     friend class FileSystemModel;
 };

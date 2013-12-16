@@ -22,7 +22,7 @@
 #ifndef ICONVIEW_H
 #define ICONVIEW_H
 
-#include <QListView>
+#include <QAbstractItemView>
 #include <QApplication>
 #include <QWheelEvent>
 #include <QScrollBar>
@@ -54,16 +54,31 @@ protected:
     }
 };
 #endif
+class IconView;
+class GayBar : public QScrollBar
+{
+    Q_OBJECT
+public:
+    GayBar(const Qt::Orientation ori = Qt::Vertical, QWidget *parent = 0, QWidget *vp = 0);
+protected:
+    void paintEvent(QPaintEvent *);
+private:
+    QWidget *m_viewport;
+    IconView *m_iv;
+};
+
 class FileSystemModel;
 class ViewContainer;
-class IconView : public QListView
+class IconView : public QAbstractItemView
 {
     Q_OBJECT
 public:
     explicit IconView(QWidget *parent = 0);
-    void setFilter(QString filter);
     void setNewSize( const int size );
     void setModel(QAbstractItemModel *model);
+    inline QSize gridSize() const { return m_gridSize; }
+    void scrollTo(const QModelIndex &index, ScrollHint hint = EnsureVisible);
+    inline QPixmap bgPix() const { return m_pix; }
 
 protected:
     void wheelEvent(QWheelEvent *);
@@ -72,37 +87,58 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event);
     void mouseReleaseEvent(QMouseEvent *e);
     void mousePressEvent(QMouseEvent *event);
+    void mouseDoubleClickEvent(QMouseEvent *event);
     void paintEvent(QPaintEvent *e);
     void keyPressEvent(QKeyEvent *e);
     void showEvent(QShowEvent *e);
+    QRect visualRect(const QModelIndex &index) const;
+    QRect visualRect(const QString &cat) const;
+    QModelIndex indexAt(const QPoint &p) const;
+    void rowsInserted(const QModelIndex &parent, int start, int end);
     void setIconWidth(const int width);
     QModelIndex firstValidIndex();
     inline int iconWidth() const { return iconSize().width(); }
+    bool isCategorized() const;
+    QStyleOptionViewItem viewOptions() const;
+
+    int horizontalOffset() const;
+    bool isIndexHidden(const QModelIndex & index) const;
+    QModelIndex moveCursor(CursorAction cursorAction, Qt::KeyboardModifiers modifiers);
+    void setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags);
+    int verticalOffset() const;
+    QRegion visualRegionForSelection(const QItemSelection &selection) const;
 
 public slots:
     void updateLayout();
     void correctLayout();
+    inline void setGridSize(const QSize &gridSize) { m_gridSize = gridSize; calculateRects(); }
 
 signals:
-    void iconSizeChanged(int size);
-    void newTabRequest(QModelIndex path);
+    void iconSizeChanged(const int size);
+    void newTabRequest(const QModelIndex &path);
     
 private slots:
-    void rootPathChanged(QString path);
+    void rootPathChanged(const QString &path);
     void scrollEvent();
     void setGridHeight(int gh);
     void updateIconSize();
+    void calculateRects();
 
 private:
+    QPixmap m_pix;
+    QSize m_gridSize;
     ViewContainer *m_container;
-    QPoint m_startPos;
+//    GayBar *m_gayBar;
+    QPoint m_startPos, m_pressPos;
     QList<int> m_allowedSizes;
+    QHash<void *, QRect> m_rects;
+    QHash<QString, QRect> m_catRects;
     bool m_slide, m_startSlide;
     FileSystemModel *m_model;
-    QTimer *m_scrollTimer, *m_sizeTimer;
+    QTimer *m_scrollTimer, *m_sizeTimer, *m_layTimer;
     QModelIndex m_firstIndex;
     QPixmap m_homePix, m_bgPix[2];
-    int m_delta, m_newSize, m_gridHeight;
+    int m_delta, m_newSize, m_gridHeight, m_horItems;
 };
 
 }

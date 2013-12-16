@@ -31,7 +31,7 @@ class ViewAnimator : public QObject
 {
     Q_OBJECT
 public:
-    static void manage(QAbstractItemView *view);
+    static ViewAnimator *manage(QAbstractItemView *view);
     static inline int hoverLevel(QAbstractItemView *view, const QModelIndex &index) { return view->findChild<ViewAnimator*>()->hoverLevelForIndex(index); }
 
 protected:
@@ -45,6 +45,9 @@ public slots:
     void animEvent();
     void rowsRemoved( const QModelIndex & parent, int start, int end );
     inline void clear() { m_hoverLevel.clear(); }
+
+signals:
+    void animation();
 
 private:
     QMap<QModelIndex, int> m_hoverLevel;
