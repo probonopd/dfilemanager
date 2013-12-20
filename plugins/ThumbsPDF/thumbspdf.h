@@ -20,7 +20,7 @@ public:
     QString description() const { return tr("Thumbs generator for pdf files using graphicsmagick"); }
 
     bool canRead(const QString &file) const { return QFileInfo(file).suffix() == "pdf"; }
-    QImage thumb(const QString &file, const int size = 256);
+    bool thumb(const QString &file, const int size, QImage &thumb);
 
 private:
     Magick::Image m_image;

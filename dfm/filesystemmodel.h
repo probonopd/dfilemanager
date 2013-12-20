@@ -190,7 +190,7 @@ public:
     inline QIcon fileIcon(const QModelIndex &index) const { return bool(index.column()==0)?data(index, Qt::DecorationRole).value<QIcon>():QIcon(); }
     inline QString fileName(const QModelIndex &index) const { return index.isValid()?fromIndex(index)->name():QString(); }
     QString filePath(const QModelIndex &index) const;
-    bool hasThumb(const QString &file) const;
+    static bool hasThumb(const QString &file);
     void forceEmitDataChangedFor(const QString &file);
     inline QString rootPath() const { return m_rootPath; }
     inline QDir rootDirectory() const { return QDir(m_rootPath); }
@@ -199,7 +199,7 @@ public:
     inline QFileInfo fileInfo(const QModelIndex &index) const { return index.isValid()?*fromIndex(index):QFileInfo(); }
     QModelIndex mkdir(const QModelIndex &parent, const QString &name);
     inline DataGatherer *dataGatherer() { return m_dataGatherer; }
-    inline ThumbsLoader *thumbsLoader() { return m_thumbsLoader; }
+    static ThumbsLoader *thumbsLoader();
     inline QFileSystemWatcher *dirWatcher() { return m_watcher; }
     void setSort(const int sortColumn, const int sortOrder);
     void startPopulating();
@@ -235,7 +235,6 @@ private:
     int m_sortColumn;
     Qt::SortOrder m_sortOrder;
     ImagesThread *m_it;
-    ThumbsLoader *m_thumbsLoader;
     ViewContainer *m_container;
     QFileSystemWatcher *m_watcher;
     DataGatherer *m_dataGatherer;

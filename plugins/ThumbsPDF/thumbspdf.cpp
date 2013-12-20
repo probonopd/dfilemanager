@@ -16,12 +16,11 @@ ThumbsPDF::init()
     Magick::InitializeMagick(QDir::homePath().toLocal8Bit().data());
 }
 
-QImage
-ThumbsPDF::thumb(const QString &file, const int size)
+bool
+ThumbsPDF::thumb(const QString &file, const int size, QImage &thumb)
 {   
-    if ( QFileInfo(file).size() > maxSize )
-        return QImage();
-
+    if ( QFileInfo(file).size() > maxSize || !canRead(file) )
+        return false;
 
     try
     {
@@ -29,15 +28,13 @@ ThumbsPDF::thumb(const QString &file, const int size)
         Magick::Blob blob;
         m_image.magick( "PNG" );
         m_image.write( &blob );
-        QImage img;
-        if ( img.loadFromData((uchar*)blob.data(), blob.length(), "PNG") )
-            return img.scaled(QSize(size, size), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        if ( thumb.loadFromData((uchar*)blob.data(), blob.length(), "PNG") )
+            return true;
     }
     catch ( Magick::Exception &error )
     {
         qDebug() << error.what();
-        return QImage();
+        return false;
     }
-
-    return QImage();
+    return false;
 }

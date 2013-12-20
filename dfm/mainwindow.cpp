@@ -117,17 +117,23 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     m_tabBar->setDocumentMode(true);
     m_tabWin->setCentralWidget(m_stackedWidget);
 
-    QString startPath = Store::config.startPath;
-    if ( !arguments.isEmpty() )
+    bool needTab = true;
+    if (autoTab)
     {
-        m_appPath = arguments[0];
-        if ( QFileInfo(arguments.at(0)).isDir() )
-            startPath = arguments.at(0);
-        else if (arguments.count() > 1 && QFileInfo(arguments.at(1)).isDir())
-            startPath = arguments.at(1);
+        for (int i = 0; i<arguments.count(); ++i)
+        {
+            const QString &argument(arguments.at(i));
+            if (argument == Application::applicationFilePath())
+                continue;
+            if (QFileInfo(Ops::sanityChecked(argument)).isDir())
+            {
+                addTab(argument);
+                needTab = false;
+            }
+        }
     }
-    if ( autoTab )
-        addTab(startPath);
+    if (autoTab&&needTab)
+        addTab(Store::config.startPath);
 
     QVBoxLayout *vBox = new QVBoxLayout();
     vBox->setMargin(0);

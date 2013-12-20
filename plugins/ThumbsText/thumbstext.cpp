@@ -36,12 +36,12 @@ ThumbsText::canRead(const QString &file) const
     return getMimeType(file).startsWith("text", Qt::CaseInsensitive);
 }
 
-QImage
-ThumbsText::thumb(const QString &file, const int size)
+bool
+ThumbsText::thumb(const QString &file, const int size, QImage &thumb)
 {
     QFile f(file);
-    if ( !f.open(QFile::ReadOnly|QIODevice::Text) )
-        return QImage();
+    if ( !f.open(QFile::ReadOnly|QIODevice::Text) || !canRead(file) )
+        return false;
 
     QImage img(QSize(size, size), QImage::Format_RGB32);
     img.fill(Qt::white);
@@ -59,5 +59,6 @@ ThumbsText::thumb(const QString &file, const int size)
     }
     p.end();
     f.close();
-    return img;
+    thumb = img;
+    return !thumb.isNull();
 }

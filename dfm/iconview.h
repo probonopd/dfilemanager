@@ -80,19 +80,20 @@ protected:
 public slots:
     void updateLayout();
     void correctLayout();
-    inline void setGridSize(const QSize &gridSize) { m_gridSize = gridSize; calculateRects(); }
+    inline void setGridSize(const QSize &gridSize) { m_gridSize = gridSize; }
 
 signals:
     void iconSizeChanged(const int size);
     void newTabRequest(const QModelIndex &path);
     
 private slots:
-    void rootPathChanged(const QString &path);
     void scrollEvent();
     void setGridHeight(int gh);
     void updateIconSize();
     void calculateRects();
     void clear(const QModelIndex &first, const QModelIndex &last);
+    void animatedScrollTo(const int pos);
+    void scrollAnimation();
 
 private:
     QPixmap m_pix;
@@ -105,10 +106,11 @@ private:
     QHash<QString, QRect> m_catRects;
     bool m_slide, m_startSlide;
     FileSystemModel *m_model;
-    QTimer *m_scrollTimer, *m_sizeTimer, *m_layTimer;
+    QTimer *m_wheelTimer, *m_sizeTimer, *m_layTimer, *m_scrollTimer;
     QModelIndex m_firstIndex, m_pressedIndex;
     QPixmap m_homePix, m_bgPix[2];
-    int m_delta, m_newSize, m_gridHeight, m_horItems, m_contentsHeight;
+    int m_delta, m_newSize, m_gridHeight, m_horItems, m_contentsHeight, m_currentPos;
+    QList<int> m_scrollValues;
 };
 }
 

@@ -24,10 +24,13 @@
 
 
 #include <QtPlugin>
+#include <QImage>
 
 class QImage;
 class QString;
 class QStringList;
+
+static QImage img = QImage();
 
 class ThumbInterface
 {
@@ -38,7 +41,7 @@ public:
     virtual void init() = 0;
     virtual QString name() const = 0;
     virtual QString description() const = 0;
-    virtual QImage thumb(const QString &file, const int size = 256) = 0;
+    virtual bool thumb(const QString &file, const int size = 256, QImage &thumb = img) = 0;
 };
 
 Q_DECLARE_INTERFACE(ThumbInterface, "dfm.ThumbInterface/0.01")

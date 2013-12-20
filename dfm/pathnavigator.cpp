@@ -324,7 +324,7 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
     setCurrentWidget(m_pathNav);
 }
 
-void BreadCrumbs::setRootPath( const QString &rootPath ) { m_fsModel->setPath( rootPath ); setEditable(false); }
+void BreadCrumbs::setRootPath( const QString &rootPath ) { m_fsModel->setPath( Ops::sanityChecked(rootPath) ); setEditable(false); }
 
 void
 BreadCrumbs::pathChanged(const QString &path)
@@ -334,11 +334,9 @@ BreadCrumbs::pathChanged(const QString &path)
     if ( path.isNull() || path.isEmpty() || path != m_fsModel->rootPath() )
         return;
     bool exists = false;
-    for (int i = 0; i < m_pathBox->count();i++)
-    {
-        if(m_pathBox->itemText(i) == path)
+    for (int i = 0; i < m_pathBox->count(); i++)
+        if (m_pathBox->itemText(i) == path)
             exists = true;
-    }
     if (!exists && m_fsModel->index(path).isValid())
         m_pathBox->addItem(path);
 

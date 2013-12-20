@@ -235,6 +235,7 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
         {
             QCheckBox *box = new QCheckBox(plugin->name(), m_showThumbs);
             box->setChecked(APP->isActive(plugin));
+            box->setToolTip(plugin->description());
             tL->addWidget(box);
         }
     }

@@ -154,7 +154,6 @@ Application::loadPluginsFromDir(const QDir dir)
         QObject *plugin = loader.instance();
         if ( ThumbInterface *it = qobject_cast<ThumbInterface *>(plugin) )
         {
-            it->init();
             if ( DFM::Store::config.views.activeThumbIfaces.contains(it->name()) )
                 m_thumbIfaces.insert(it->name(), it);
             m_allThumbIfaces << it;

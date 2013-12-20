@@ -17,7 +17,7 @@ public:
     QString name() const;
     QString description() const;
     bool canRead(const QString &file) const;
-    QImage thumb(const QString &file, const int size = 256);
+    bool thumb(const QString &file, const int size, QImage &thumb);
 };
 
 

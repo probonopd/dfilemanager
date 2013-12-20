@@ -55,6 +55,7 @@ class ThumbsLoader : public QThread
 public:
     explicit ThumbsLoader(QObject *parent = 0);
     enum Type { Thumb = 0, FlowPic, Reflection, FallBackRefl };
+    static ThumbsLoader *instance();
     void queueFile(const QString &file);
     bool hasThumb(const QString &file) const;
     bool hasIcon(const QString &dir) const;
@@ -78,8 +79,8 @@ private:
     bool m_quit;
     mutable QMutex m_listMutex;
     QStringList m_queue, m_tried;
-    FileSystemModel *m_fsModel;
     int m_extent;
+    static ThumbsLoader *m_instance;
 };
 
 class ImagesThread : public QThread
@@ -115,7 +116,6 @@ private:
     QMap<QString, QImage> m_names[2];
     QMap<QString, QImage> m_images[2];
     QMap<QString, QImage> m_nameQueue;
-    FileSystemModel *m_fsModel;
 };
 
 }

@@ -9,23 +9,25 @@ ThumbsVideos::init()
     m_vt.setThumbnailSize(256);
 }
 
-QImage
-ThumbsVideos::thumb(const QString &file, const int size)
+bool
+ThumbsVideos::thumb(const QString &file, const int size, QImage &thumb)
 {
+    if ( !canRead(file) )
+        return false;
     try
     {
         std::vector<uint8_t> pixels;
         m_vt.generateThumbnail(file.toStdString(), Png, pixels);
-        QImage img;
-        if ( img.loadFromData(pixels.data(), pixels.size(), "PNG") )
-            return img;
+        if ( thumb.loadFromData(pixels.data(), pixels.size(), "PNG") )
+            return true;
     }
     catch ( std::exception &e )
     {
         qDebug() << e.what();
+        return false;
     }
 
-    return QImage();
+    return false;
 }
 
 #define END(_SUFFIX_) file.endsWith(_SUFFIX_, Qt::CaseInsensitive)

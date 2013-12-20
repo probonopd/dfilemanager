@@ -303,3 +303,23 @@ Ops::getSorting(const QString &file, int *sortCol, Qt::SortOrder *order)
     settings.endGroup();
 }
 
+static QStringList check = QStringList() << "~" << "$HOME";
+static QStringList replace = QStringList() << QDir::homePath() << QDir::homePath();
+
+QString
+Ops::sanityChecked(const QString &file)
+{
+    if (QFileInfo(file).exists())
+        return file;
+
+    QString newFile = file;
+    for (int i=0; i<check.count(); ++i)
+        if (newFile.contains(check.at(i), Qt::CaseInsensitive))
+        {
+            newFile.replace(check.at(i), replace.at(i), Qt::CaseInsensitive);
+            if (QFileInfo(newFile).exists())
+                return newFile;
+        }
+    return newFile;
+}
+

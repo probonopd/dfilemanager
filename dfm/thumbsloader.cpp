@@ -37,16 +37,19 @@ static QHash<QString, QImage> s_thumbs;
 static QHash<QString, QString> s_dateCheck;
 static QHash<QString, QString> s_icons;
 
+ThumbsLoader *ThumbsLoader::m_instance = new ThumbsLoader(APP);
+
 ThumbsLoader::ThumbsLoader(QObject *parent) :
     QThread(parent),
     m_extent(256),
-    m_fsModel(static_cast<DFM::FileSystemModel *>(parent)),
     m_quit(false)
 {
-    connect(m_fsModel, SIGNAL(fileRenamed(QString,QString,QString)), this, SLOT(fileRenamed(QString,QString,QString)));
-    connect(m_fsModel, SIGNAL(rootPathChanged(QString)), this, SLOT(clearQueue()));
-    connect(m_fsModel, SIGNAL(modelAboutToBeReset()), this, SLOT(clearQueue()));
-    connect(m_fsModel, SIGNAL(layoutAboutToBeChanged()), this, SLOT(clearQueue()));
+}
+
+ThumbsLoader
+*ThumbsLoader::instance()
+{
+    return m_instance;
 }
 
 void
@@ -90,7 +93,7 @@ void
 ThumbsLoader::queueFile(const QString &file)
 {
     QMutexLocker locker(&m_listMutex);
-    if ( m_queue.contains(file) || hasThumb(file) || hasIcon(file) || m_tried.contains(file) )
+    if ( m_queue.contains(file) || hasThumb(file) || hasIcon(file) /*|| m_tried.contains(file)*/ )
         return;
 
     m_queue << file;
@@ -133,37 +136,36 @@ ThumbsLoader::genThumb( const QString &path )
         return;
     }
 
-    QImage image;
     if ( !APP )
         return;
     if ( !APP->activeThumbIfaces().isEmpty() )
         for ( int i = 0; i<APP->activeThumbIfaces().count(); ++i )
         {
             ThumbInterface *ti = APP->activeThumbIfaces().at(i);
-            if ( ti->canRead(path) )
+            QImage image;
+            if (ti->thumb(path, m_extent, image) )
             {
-                image = ti->thumb(path, m_extent);
-                break;
+                s_dateCheck.insert(path, fi.lastModified().toString());
+                s_thumbs.insert(path, image);
+                emit thumbFor(path, QString());
+                return;
             }
         }
-
-    if ( !image.isNull() )
-    {
-        s_dateCheck.insert(path, fi.lastModified().toString());
-        s_thumbs.insert(path, image);
-        emit thumbFor(path, QString());
-        return;
-    }
-    m_listMutex.lock();
-    m_tried << path;
-    m_listMutex.unlock();
 }
 
 void ThumbsLoader::clearQueue() {  }
 
+static bool s_pluginsInited = false;
+
 void
 ThumbsLoader::run()
 {
+    if (!s_pluginsInited)
+    {
+        foreach (ThumbInterface *ti, APP->thumbIfaces())
+            ti->init();
+        s_pluginsInited = true;
+    }
     while (!m_quit)
     {
         while ( !m_queue.isEmpty() )
@@ -184,7 +186,6 @@ static QHash<QString, QImage> s_themeIcons[2];
 
 ImagesThread::ImagesThread(QObject *parent)
     : QThread(parent)
-    , m_fsModel(static_cast<FileSystemModel *>(parent))
     , m_quit(false)
 {}
 

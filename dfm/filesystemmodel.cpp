@@ -141,7 +141,7 @@ FileSystemModel::Node::insertChild(Node *node)
 int
 FileSystemModel::Node::row()
 {
-    if ( !parent() )
+    if (!parent())
         -1;
 
     return parent()->rowFor(this);
@@ -158,7 +158,7 @@ FileSystemModel::Node
 *FileSystemModel::Node::child(const int c)
 {
     QMutexLocker locker(&m_mutex);
-    if ( c > -1 && c < m_children[Visible].size() )
+    if (c > -1 && c < m_children[Visible].size())
         return m_children[Visible].at(c);
     return 0;
 }
@@ -201,7 +201,7 @@ FileSystemModel *FileSystemModel::Node::model() { return m_model; }
 void
 FileSystemModel::Node::setFilter(const QString &filter)
 {
-    if ( filter == m_filter || model()->isPopulating() )
+    if (filter == m_filter || model()->isPopulating())
         return;
 
     m_filter = filter;
@@ -589,7 +589,6 @@ FileSystemModel::FileSystemModel(QObject *parent)
     , m_sortOrder(Qt::AscendingOrder)
     , m_sortColumn(0)
     , m_it(new ImagesThread(this))
-    , m_thumbsLoader(new ThumbsLoader(this))
     , m_watcher(new QFileSystemWatcher(this))
     , m_container(0)
     , m_dataGatherer(new DataGatherer(this))
@@ -598,19 +597,24 @@ FileSystemModel::FileSystemModel(QObject *parent)
     if ( ViewContainer *vc = qobject_cast<ViewContainer *>(parent) )
         m_container = vc;
 
-    connect ( m_thumbsLoader, SIGNAL(thumbFor(QString,QString)), this, SLOT(thumbFor(QString,QString)) );
+    connect ( thumbsLoader(), SIGNAL(thumbFor(QString,QString)), this, SLOT(thumbFor(QString,QString)) );
     connect ( m_it, SIGNAL(imagesReady(QString)), this, SLOT(flowDataAvailable(QString)) );
     connect ( this, SIGNAL(rootPathChanged(QString)), m_it, SLOT(clearData()) );
     connect ( m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)) );
     connect ( m_dataGatherer, SIGNAL(nodeGenerated(QString,FileSystemModel::Node*)), this, SLOT(nodeGenerated(QString,FileSystemModel::Node*)) );
+
+    connect(this, SIGNAL(fileRenamed(QString,QString,QString)), ThumbsLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
+    connect(this, SIGNAL(rootPathChanged(QString)), ThumbsLoader::instance(), SLOT(clearQueue()));
+    connect(this, SIGNAL(modelAboutToBeReset()), ThumbsLoader::instance(), SLOT(clearQueue()));
+    connect(this, SIGNAL(layoutAboutToBeChanged()), ThumbsLoader::instance(), SLOT(clearQueue()));
 }
 
 FileSystemModel::~FileSystemModel()
 {
-    m_thumbsLoader->discontinue();
+    thumbsLoader()->discontinue();
     m_it->discontinue();
-    if ( m_thumbsLoader->isRunning() )
-        m_thumbsLoader->wait();
+    if ( thumbsLoader()->isRunning() )
+        thumbsLoader()->wait();
     if ( m_it->isRunning() )
         m_it->wait();
     delete m_rootNode;
@@ -713,12 +717,12 @@ FileSystemModel::thumbFor(const QString &file, const QString &iconName)
     emit dataChanged(idx, idx);
     if ( m_container->currentViewType() == ViewContainer::Flow )
         if ( !QFileInfo(file).isDir() )
-            m_it->queueFile(file, m_thumbsLoader->thumb(file), true);
+            m_it->queueFile(file, thumbsLoader()->thumb(file), true);
         else if ( !iconName.isNull() )
             m_it->queueName(QIcon::fromTheme(iconName));
 }
 
-bool FileSystemModel::hasThumb(const QString &file) const { return m_thumbsLoader->hasThumb(file); }
+bool FileSystemModel::hasThumb(const QString &file) { return ThumbsLoader::instance()->hasThumb(file); }
 
 QVariant
 FileSystemModel::data(const QModelIndex &index, int role) const
@@ -767,12 +771,12 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
     if ( role == Qt::DecorationRole )
     {
-        if ( m_thumbsLoader->hasThumb(file) )
-            return QIcon(QPixmap::fromImage(m_thumbsLoader->thumb(file)));
+        if ( thumbsLoader()->hasThumb(file) )
+            return QIcon(QPixmap::fromImage(thumbsLoader()->thumb(file)));
         else
         {
             if ( (Store::config.views.showThumbs || node->isDir()) && !isPopulating() )
-                m_thumbsLoader->queueFile(file);
+                thumbsLoader()->queueFile(file);
             return m_ip->icon(*node);
         }
     }
@@ -784,11 +788,11 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         if ( m_it->hasData(file) )
             return QPixmap::fromImage(m_it->flowData(file, role == FlowRefl));
 
-        if ( !m_thumbsLoader->hasThumb(file) && Store::config.views.showThumbs )
-            m_thumbsLoader->queueFile(file);
+        if ( !thumbsLoader()->hasThumb(file) && Store::config.views.showThumbs )
+            thumbsLoader()->queueFile(file);
 
-        if ( (m_thumbsLoader->hasThumb(file) && !m_it->hasData(file) && Store::config.views.showThumbs) && !isPopulating() )
-            m_it->queueFile(file, m_thumbsLoader->thumb(file));
+        if ( (thumbsLoader()->hasThumb(file) && !m_it->hasData(file) && Store::config.views.showThumbs) && !isPopulating() )
+            m_it->queueFile(file, thumbsLoader()->thumb(file));
 
         if ( m_it->hasNameData(icon.name()) )
             return QPixmap::fromImage(m_it->flowNameData(icon.name(), role == FlowRefl));
@@ -1116,3 +1120,6 @@ FileSystemModel::categories()
     }
     return cats;
 }
+
+ThumbsLoader
+*FileSystemModel::thumbsLoader() { return ThumbsLoader::instance(); }

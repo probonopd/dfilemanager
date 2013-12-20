@@ -287,13 +287,16 @@ private:
 
 IconView::IconView( QWidget *parent )
     : QAbstractItemView( parent )
-    , m_scrollTimer( new QTimer(this) )
+    , m_wheelTimer( new QTimer(this) )
     , m_delta(0)
     , m_newSize(0)
     , m_sizeTimer(new QTimer(this))
     , m_gridHeight(0)
     , m_container(static_cast<ViewContainer *>(parent))
     , m_layTimer(new QTimer(this))
+    , m_model(0)
+    , m_currentPos(0)
+    , m_scrollTimer(new QTimer(this))
 {
     setItemDelegate( new IconDelegate( this ) );
     const int iSize = Store::config.views.iconView.iconSize*16;
@@ -308,16 +311,18 @@ IconView::IconView( QWidget *parent )
     viewport()->setAcceptDrops( true );
     setDragEnabled( true );
     setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-    setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
+//    setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
     setSelectionBehavior(QAbstractItemView::SelectRows);
 
     ViewAnimator::manage(this);
     connect( verticalScrollBar(), SIGNAL(valueChanged(int)), viewport(), SLOT(update()) );
-    connect( m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollEvent()) );
+    connect( m_wheelTimer, SIGNAL(timeout()), this, SLOT(scrollEvent()) );
     connect( this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)) );
     connect( MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(correctLayout()) );
     connect( m_sizeTimer, SIGNAL(timeout()), this, SLOT(updateIconSize()) );
     connect( m_layTimer, SIGNAL(timeout()), this, SLOT(calculateRects()) );
+
+    connect( m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollAnimation()) );
 
     m_slide = false;
     m_startSlide = false;
@@ -369,8 +374,8 @@ IconView::wheelEvent( QWheelEvent * event )
             if ( Store::config.views.iconView.smoothScroll )
             {
                 m_delta += numDegrees;
-                if ( !m_scrollTimer->isActive() )
-                    m_scrollTimer->start( 25 );
+                if ( !m_wheelTimer->isActive() )
+                    m_wheelTimer->start( 25 );
             }
             else
                 verticalScrollBar()->setValue( verticalScrollBar()->value()-( numDegrees ) );
@@ -386,13 +391,15 @@ IconView::showEvent(QShowEvent *e)
     updateLayout();
 }
 
+#define MAX 480
+
 void
 IconView::scrollEvent()
 {
-    if ( m_delta > 360 )
-        m_delta = 360;
-    else if ( m_delta < -360 )
-        m_delta = -360;
+    if ( m_delta > MAX )
+        m_delta = MAX;
+    else if ( m_delta < -MAX )
+        m_delta = -MAX;
     if ( m_delta != 0 )
         verticalScrollBar()->setValue( verticalScrollBar()->value()-( m_delta/8 ) );
     if ( m_delta > 0 ) //upwards
@@ -400,8 +407,10 @@ IconView::scrollEvent()
     else if ( m_delta < 0 ) //downwards
         m_delta += 30;
     else
-        m_scrollTimer->stop();
+        m_wheelTimer->stop();
 }
+
+#undef MAX
 
 void
 IconView::keyPressEvent(QKeyEvent *event)
@@ -630,15 +639,12 @@ IconView::correctLayout()
 void
 IconView::updateLayout()
 {
-    if ( !isVisible() )
+    if ( !isVisible()||!m_model||!rootIndex().isValid() )
         return;
 
-    QStyleOptionFrame opt;
-    opt.initFrom(viewport());
-    int horMargin = (width()-viewport()->width())+style()->pixelMetric(QStyle::PM_DefaultFrameWidth, &opt, viewport());
-    int contentsWidth = width()-horMargin;
+    int contentsWidth = viewport()->width();
     int horItemCount = m_horItems = contentsWidth/( iconSize().width() + Store::config.views.iconView.textWidth*2 );
-    if ( model()->rowCount( rootIndex() ) < horItemCount && model()->rowCount( rootIndex() ) > 1 && !isCategorized() )
+    if ( m_model->rowCount( rootIndex() ) < horItemCount && m_model->rowCount( rootIndex() ) > 1 && !isCategorized() )
         horItemCount = model()->rowCount( rootIndex() );
     if ( contentsWidth && horItemCount )
         setGridSize( QSize( contentsWidth/horItemCount, m_gridHeight ) );
@@ -673,47 +679,15 @@ IconView::setModel( QAbstractItemModel *model )
     QAbstractItemView::setModel( model );
     if ( m_model = qobject_cast<FileSystemModel *>( model ) )
     {
-        connect(m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(rootPathChanged(QString)));
-        connect(m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(rootPathChanged(QString)));
+        m_layTimer->setInterval(20);
+        connect(m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(updateLayout()));
+        connect(m_model, SIGNAL(rootPathChanged(QString)), m_layTimer, SLOT(start()));
         connect(m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(calculateRects()));
         connect(m_model, SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(clear(QModelIndex,QModelIndex)));
-        connect(m_model, SIGNAL(hiddenVisibilityChanged(bool)), this, SLOT(updateLayout()));
+//        connect(m_model, SIGNAL(hiddenVisibilityChanged(bool)), this, SLOT(updateLayout()));
+        connect(m_model, SIGNAL(layoutChanged()), this, SLOT(updateLayout()));
         static_cast<IconDelegate*>( itemDelegate() )->setModel( m_model );
     }
-}
-
-void
-IconView::rootPathChanged( const QString &path )
-{
-    m_layTimer->start(20);
-    updateLayout();
-#if 0
-    QIcon icon = m_model->fileIcon(m_model->index(path));
-    if ( icon.name() != "inode-directory" )
-    {
-        m_bgPix[0] = icon.pixmap(256);
-        m_bgPix[1] = icon.pixmap(256);
-        QTransform r;
-        r.translate(m_bgPix[1].width()/2, m_bgPix[1].height()/3);
-        r.rotate(75, Qt::YAxis);
-        r.scale(2.0, 1.0);
-        r.translate(-m_bgPix[1].width()/2, -m_bgPix[1].height()/3);
-        m_bgPix[1] = m_bgPix[1].transformed(r, Qt::SmoothTransformation);
-
-
-        QTransform l;
-        l.translate(m_bgPix[0].width()/2, m_bgPix[0].height()/3);
-        l.rotate(-75, Qt::YAxis);
-        l.scale(2.0, 1.0);
-        l.translate(-m_bgPix[0].width()/2, -m_bgPix[0].height()/3);
-        m_bgPix[0] = m_bgPix[0].transformed(l, Qt::SmoothTransformation);
-    }
-    else
-    {
-        m_bgPix[0] = QPixmap();
-        m_bgPix[1] = QPixmap();
-    }
-#endif
 }
 
 void
@@ -752,7 +726,7 @@ IconView::visualRect(const QString &cat) const
 QModelIndex
 IconView::indexAt(const QPoint &p) const
 {
-    if (m_scrollTimer->isActive()||m_sizeTimer->isActive()||m_layTimer->isActive())
+    if (m_wheelTimer->isActive()||m_sizeTimer->isActive()||m_layTimer->isActive())
         return QModelIndex();
     for (int i = 0; i < m_model->rowCount(rootIndex()); ++i)
     {
@@ -769,17 +743,58 @@ IconView::indexAt(const QPoint &p) const
 void
 IconView::scrollTo(const QModelIndex &index, ScrollHint hint)
 {
-    if (!index.isValid())
+    if (!index.isValid()||!verticalScrollBar()->isEnabled())
         return;
     const QRect r(visualRect(index));
     if (viewport()->rect().intersects(r)&&hint==QAbstractItemView::EnsureVisible)
         return;
-    if (hint==QAbstractItemView::PositionAtTop)
-        verticalScrollBar()->setValue(r.top());
-    else if (hint==QAbstractItemView::PositionAtBottom)
-        verticalScrollBar()->setValue(r.top()+(viewport()->height()-r.height()));
-    else if (hint==QAbstractItemView::PositionAtCenter)
-        verticalScrollBar()->setValue(r.top()+(viewport()->height()/2-r.height()));
+
+    const bool goUp = r.top()<viewport()->rect().top();
+    const int h = viewport()->height();
+    int v = -1;
+    switch (hint)
+    {
+    case QAbstractItemView::EnsureVisible:
+        if (goUp)
+            v = r.top()+verticalOffset();
+        else
+            v = r.bottom()+verticalOffset()-h;
+        break;
+    case QAbstractItemView::PositionAtTop:
+        v = r.top()+verticalOffset();
+        break;
+    case QAbstractItemView::PositionAtBottom:
+        v = r.bottom()+verticalOffset()-h;
+        break;
+    case QAbstractItemView::PositionAtCenter:
+        v = ((r.top()+verticalOffset())-h/2)-r.height()/2;
+        break;
+    default: break;
+    }
+    if (v>-1)
+        animatedScrollTo(v);
+}
+
+void
+IconView::animatedScrollTo(const int pos)
+{
+    int start = verticalOffset();
+    int range = pos-start;
+    int block = qCeil((float)range/10.0f);
+
+    m_scrollValues.clear();
+    for (int i=1; i<=10; ++i)
+        m_scrollValues << (start+=block);
+    m_scrollTimer->start(20);
+}
+
+void
+IconView::scrollAnimation()
+{
+    if (m_scrollValues.isEmpty())
+        m_scrollTimer->stop();
+    else
+        verticalScrollBar()->setValue(m_scrollValues.takeFirst());
 }
 
 bool

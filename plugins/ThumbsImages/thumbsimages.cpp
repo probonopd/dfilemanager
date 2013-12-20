@@ -16,12 +16,12 @@ ThumbsImages::~ThumbsImages()
     //destructor
 }
 
-QImage
-ThumbsImages::thumb(const QString &file, const int size)
+bool
+ThumbsImages::thumb(const QString &file, const int size, QImage &thumb)
 {
     QImageReader ir(file);
-    if ( !ir.canRead() )
-        return QImage();
+    if ( !ir.canRead()||!canRead(file) )
+        return false;
 
     //sometimes ir.size() doesnt return a valid size,
     //this is at least true for xcf images,
@@ -42,8 +42,8 @@ ThumbsImages::thumb(const QString &file, const int size)
         sz.scale( size, size, Qt::KeepAspectRatio );
         img = img.scaled(sz, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     }
-
-    return img;
+    thumb = img;
+    return !thumb.isNull();
 }
 
 static QStringList suf;

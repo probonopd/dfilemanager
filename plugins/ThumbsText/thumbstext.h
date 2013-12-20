@@ -15,7 +15,7 @@ public:
     ~ThumbsText(){}
 
     bool canRead(const QString &file) const;
-    QImage thumb(const QString &file, const int size = 256);
+    bool thumb(const QString &file, const int size, QImage &thumb);
 
     QString name() const { return tr("TextThumbs"); }
     QString description() const { return tr("plugin for generating thumbs for text files"); }
