@@ -295,7 +295,7 @@ IconView::IconView( QWidget *parent )
     , m_container(static_cast<ViewContainer *>(parent))
     , m_layTimer(new QTimer(this))
     , m_model(0)
-    , m_currentPos(0)
+    , m_oldSliderVal(0)
     , m_scrollTimer(new QTimer(this))
 {
     setItemDelegate( new IconDelegate( this ) );
@@ -324,6 +324,8 @@ IconView::IconView( QWidget *parent )
 
     connect( m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollAnimation()) );
 
+    connect( verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(sliderSlided(int)) );
+
     m_slide = false;
     m_startSlide = false;
 
@@ -333,6 +335,14 @@ IconView::IconView( QWidget *parent )
 //    QDir storage(QDesktopServices::storageLocation(QDesktopServices::DataLocation));
 //    if ( storage.exists() && storage.isAbsolute() )
 //        m_homePix.load(storage.absoluteFilePath("home.png"));
+}
+
+void
+IconView::sliderSlided(int value)
+{
+    if (m_pressPos!=QPoint())
+        m_pressPos.setY(m_pressPos.y()+(m_oldSliderVal-value));
+    m_oldSliderVal=value;
 }
 
 void
@@ -932,10 +942,14 @@ IconView::moveCursor(CursorAction cursorAction, Qt::KeyboardModifiers modifiers)
         }
         break;
     }
-    case MoveHome: break;
-    case MoveEnd: break;
-    case MovePageUp: break;
-    case MovePageDown: break;
+    case MoveHome:
+        return m_model->index(0, 0, rootIndex());
+    case MoveEnd:
+        return m_model->index(m_model->rowCount(rootIndex())-1, 0, rootIndex());
+    case MovePageUp:
+        return indexAt(r.center()-QPoint(0, viewport()->height()));
+    case MovePageDown:
+        return indexAt(r.center()+QPoint(0, viewport()->height()));
     case MoveNext: break;
     case MovePrevious: break;
     default: break;

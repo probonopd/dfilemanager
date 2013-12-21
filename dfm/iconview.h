@@ -94,6 +94,7 @@ private slots:
     void clear(const QModelIndex &first, const QModelIndex &last);
     void animatedScrollTo(const int pos);
     void scrollAnimation();
+    void sliderSlided(int value);
 
 private:
     QPixmap m_pix;
@@ -109,7 +110,7 @@ private:
     QTimer *m_wheelTimer, *m_sizeTimer, *m_layTimer, *m_scrollTimer;
     QModelIndex m_firstIndex, m_pressedIndex;
     QPixmap m_homePix, m_bgPix[2];
-    int m_delta, m_newSize, m_gridHeight, m_horItems, m_contentsHeight, m_currentPos;
+    int m_delta, m_newSize, m_gridHeight, m_horItems, m_contentsHeight, m_oldSliderVal;
     QList<int> m_scrollValues;
 };
 }
