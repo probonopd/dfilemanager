@@ -602,19 +602,11 @@ FileSystemModel::FileSystemModel(QObject *parent)
     connect ( this, SIGNAL(rootPathChanged(QString)), m_it, SLOT(clearData()) );
     connect ( m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)) );
     connect ( m_dataGatherer, SIGNAL(nodeGenerated(QString,FileSystemModel::Node*)), this, SLOT(nodeGenerated(QString,FileSystemModel::Node*)) );
-
     connect(this, SIGNAL(fileRenamed(QString,QString,QString)), ThumbsLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
-    connect(this, SIGNAL(rootPathChanged(QString)), ThumbsLoader::instance(), SLOT(clearQueue()));
-    connect(this, SIGNAL(modelAboutToBeReset()), ThumbsLoader::instance(), SLOT(clearQueue()));
-    connect(this, SIGNAL(layoutAboutToBeChanged()), ThumbsLoader::instance(), SLOT(clearQueue()));
 }
 
 FileSystemModel::~FileSystemModel()
 {
-    thumbsLoader()->discontinue();
-    m_it->discontinue();
-    if ( thumbsLoader()->isRunning() )
-        thumbsLoader()->wait();
     if ( m_it->isRunning() )
         m_it->wait();
     delete m_rootNode;
@@ -643,6 +635,7 @@ FileSystemModel::setRootPath(const QString &path)
 {
     if ( rootPath() == path || path.isEmpty() )
         return;
+    ThumbsLoader::clearQueue();
     m_rootPath = path;
     Node *node = rootNode()->node(path);
     if ( !node )

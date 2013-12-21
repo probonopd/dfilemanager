@@ -732,8 +732,8 @@ IconView::indexAt(const QPoint &p) const
     {
         const QModelIndex &index(m_model->index(i, 0, rootIndex()));
         const QRect r(visualRect(index));
-        if (!viewport()->rect().intersects(r))
-            continue;
+//        if (!viewport()->rect().intersects(r))
+//            continue;
         if (r.contains(p))
             return index;
     }
@@ -886,7 +886,7 @@ IconView::moveCursor(CursorAction cursorAction, Qt::KeyboardModifiers modifiers)
     case MoveUp:
     {
         QPoint p(r.center().x(), r.y()-1);
-        while (p.y()>viewport()->rect().y())
+        while (p.y()>-verticalOffset())
         {
             const QModelIndex &index(indexAt(p));
             if (index.isValid())
@@ -898,8 +898,9 @@ IconView::moveCursor(CursorAction cursorAction, Qt::KeyboardModifiers modifiers)
     case MoveDown:
     {
         QPoint p(r.center().x(), r.bottom()+1);
-        while (p.y()<viewport()->rect().bottom())
+        while (p.y()<m_contentsHeight-verticalOffset())
         {
+
             const QModelIndex &index(indexAt(p));
             if (index.isValid())
                 return index;

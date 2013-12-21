@@ -56,17 +56,17 @@ public:
     explicit ThumbsLoader(QObject *parent = 0);
     enum Type { Thumb = 0, FlowPic, Reflection, FallBackRefl };
     static ThumbsLoader *instance();
+    static inline void clearQueue() { instance()->clearQ(); }
     void queueFile(const QString &file);
     bool hasThumb(const QString &file) const;
     bool hasIcon(const QString &dir) const;
     QImage thumb(const QString &file) const;
     QString icon(const QString &dir) const;
-    inline void discontinue() { m_mutex.lock(); m_queue.clear(); m_quit=true; m_mutex.unlock(); setPause(false); }
 
 public slots:
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
     void removeThumb(const QString &file);
-    void clearQueue();
+    inline void discontinue() { m_mutex.lock(); m_queue.clear(); m_quit=true; m_mutex.unlock(); setPause(false); }
     
 signals:
     void thumbFor(const QString &file, const QString &name);
@@ -74,8 +74,12 @@ signals:
 protected:
     void run();
     void genThumb(const QString &path);
+    void clearQ();
 
 private:
+    QHash<QString, QImage> m_thumbs;
+    QHash<QString, QString> m_dateCheck;
+    QHash<QString, QString> m_icons;
     bool m_quit;
     mutable QMutex m_listMutex;
     QStringList m_queue, m_tried;

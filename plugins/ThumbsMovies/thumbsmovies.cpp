@@ -1,17 +1,20 @@
 #include "thumbsmovies.h"
 #include <QApplication>
-#include <QDebug>
-#include <QTimer>
 
 Q_EXPORT_PLUGIN2(thumbsmovies, ThumbsMovies)
 
+ThumbsMovies::ThumbsMovies():m_mc(0),m_loopTimer(0),m_evLoop(0)
+{
+    connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(deleteLater()));
+}
 
 void
 ThumbsMovies::init()
 {
     m_mc = new MovieClient();
     m_evLoop = new QEventLoop();
-    m_loopTimer = new QTimer(this);
+    m_loopTimer = new QTimer();
+    m_loopTimer->setSingleShot(true);
     connect(m_mc, SIGNAL(slotPosterFinished(QImage)), this, SLOT(image(QImage)));
     connect(m_loopTimer, SIGNAL(timeout()), m_evLoop, SLOT(quit()));
 }
@@ -21,6 +24,10 @@ ThumbsMovies::thumb(const QString &file, const int size, QImage &thumb)
 {
     if (!canRead(file))
         return false;
+//    if (!m_mc)
+//    {
+
+//    }
     m_image = QImage();
     m_mc->addSearch(file);
     m_loopTimer->start(50);

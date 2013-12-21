@@ -6,6 +6,8 @@
 #include <QImage>
 #include <movieclient.h>
 #include <QEventLoop>
+#include <QTimer>
+#include <QDebug>
 
 class ThumbsMovies : public QObject, ThumbInterface
 {
@@ -13,8 +15,9 @@ class ThumbsMovies : public QObject, ThumbInterface
     Q_INTERFACES(ThumbInterface)
 
 public:
+    ThumbsMovies();
     void init();
-    ~ThumbsMovies(){delete m_mc; delete m_evLoop;}
+    ~ThumbsMovies(){m_loopTimer->deleteLater();m_evLoop->deleteLater();m_mc->deleteLater();}
 
     bool canRead(const QString &file) const;
     bool thumb(const QString &file, const int size, QImage &thumb);

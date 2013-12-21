@@ -33,22 +33,22 @@
 
 using namespace DFM;
 
-static QHash<QString, QImage> s_thumbs;
-static QHash<QString, QString> s_dateCheck;
-static QHash<QString, QString> s_icons;
-
-ThumbsLoader *ThumbsLoader::m_instance = new ThumbsLoader(APP);
+ThumbsLoader *ThumbsLoader::m_instance = 0;
 
 ThumbsLoader::ThumbsLoader(QObject *parent) :
     QThread(parent),
     m_extent(256),
     m_quit(false)
 {
+    connect(APP,SIGNAL(aboutToQuit()),this,SLOT(discontinue()));
+    start();
 }
 
 ThumbsLoader
 *ThumbsLoader::instance()
 {
+    if (!m_instance)
+        m_instance = new ThumbsLoader(APP);
     return m_instance;
 }
 
@@ -62,31 +62,38 @@ ThumbsLoader::fileRenamed(const QString &path, const QString &oldName, const QSt
 void
 ThumbsLoader::removeThumb(const QString &file)
 {
-    if ( s_thumbs.contains(file) )
+    if ( m_thumbs.contains(file) )
     {
-        s_thumbs.remove(file);
-        s_dateCheck.remove(file);
+        m_thumbs.remove(file);
+        m_dateCheck.remove(file);
     }
 }
 
 bool
 ThumbsLoader::hasIcon(const QString &dir) const
 {
-    return s_icons.contains(dir);
+    return m_icons.contains(dir);
 }
 
 QString
 ThumbsLoader::icon(const QString &dir) const
 {
     if ( hasIcon(dir) )
-        return s_icons.value(dir);
+        return m_icons.value(dir);
     return QString();
 }
 
 bool
 ThumbsLoader::hasThumb(const QString &file) const
 {
-    return s_thumbs.contains(file) && s_dateCheck.value(file) == QFileInfo(file).lastModified().toString();
+    return m_thumbs.contains(file) && m_dateCheck.value(file) == QFileInfo(file).lastModified().toString();
+}
+
+void
+ThumbsLoader::clearQ()
+{
+    QMutexLocker locker(&m_listMutex);
+    m_queue.clear();
 }
 
 void
@@ -99,15 +106,13 @@ ThumbsLoader::queueFile(const QString &file)
     m_queue << file;
     if ( m_pause )
         setPause(false);
-    if ( !isRunning() )
-        start();
 }
 
 QImage
 ThumbsLoader::thumb(const QString &file) const
 {
     if ( hasThumb(file) )
-        return s_thumbs.value(file);
+        return m_thumbs.value(file);
     return QImage();
 }
 
@@ -130,42 +135,29 @@ ThumbsLoader::genThumb( const QString &path )
         if ( !iconName.isEmpty() )
             if ( !hasIcon(dirFile) )
         {
-            s_icons.insert(dirFile, iconName);
+            m_icons.insert(dirFile, iconName);
             emit thumbFor(path, iconName);
         }
         return;
     }
-
-    if ( !APP )
-        return;
+    QImage image;
     if ( !APP->activeThumbIfaces().isEmpty() )
         for ( int i = 0; i<APP->activeThumbIfaces().count(); ++i )
-        {
-            ThumbInterface *ti = APP->activeThumbIfaces().at(i);
-            QImage image;
-            if (ti->thumb(path, m_extent, image) )
+            if (APP->activeThumbIfaces().at(i)->thumb(path, m_extent, image) )
             {
-                s_dateCheck.insert(path, fi.lastModified().toString());
-                s_thumbs.insert(path, image);
+                m_dateCheck.insert(path, fi.lastModified().toString());
+                m_thumbs.insert(path, image);
                 emit thumbFor(path, QString());
                 return;
             }
-        }
 }
-
-void ThumbsLoader::clearQueue() {  }
-
-static bool s_pluginsInited = false;
 
 void
 ThumbsLoader::run()
 {
-    if (!s_pluginsInited)
-    {
-        foreach (ThumbInterface *ti, APP->thumbIfaces())
-            ti->init();
-        s_pluginsInited = true;
-    }
+    foreach (ThumbInterface *ti, APP->thumbIfaces())
+        ti->init();
+
     while (!m_quit)
     {
         while ( !m_queue.isEmpty() )
