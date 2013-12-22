@@ -756,6 +756,24 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         }
     }
 
+    if (role == Qt::ToolTipRole)
+    {
+        if (node->isSymLink())
+            return QString("Points to %1").arg(node->symLinkTarget());
+        QImageReader ir(file);
+        if (ir.canRead())
+        {
+            const QSize &sz(ir.size());
+            return QString("Width: %1, Height: %2").arg(QString::number(sz.width()), QString::number(sz.height()));
+        }
+    }
+
+//    if (node->isDir() && !col && role == Qt::ForegroundRole)
+//    {
+//        const QPalette &p(qApp->palette());
+//        const QColor &fg = Ops::colorMid(p.color(QPalette::Highlight), Ops::colorMid(p.color(QPalette::Text), p.color(QPalette::Base)));
+//        return fg;
+//    }
 
     const bool customIcon = Store::config.icons.customIcons.contains(file);
 

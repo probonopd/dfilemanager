@@ -130,7 +130,7 @@ public:
             painter->setBrush(h);
             painter->drawRoundedRect(RECT.adjusted(1, 1, 0, 0), 3, 3);
         }
-        const QColor &high(selected ? PAL.color(QPalette::HighlightedText) : PAL.color(QPalette::Text));
+        const QColor &high(selected ? PAL.color(QPalette::HighlightedText) : m_model->data(index, Qt::ForegroundRole).value<QColor>());
         QPen pen = painter->pen();
         painter->setPen(high);
         painter->setFont(index.data(Qt::FontRole).value<QFont>());
@@ -297,6 +297,7 @@ IconView::IconView( QWidget *parent )
     , m_model(0)
     , m_oldSliderVal(0)
     , m_scrollTimer(new QTimer(this))
+    , m_hadSelection(false)
 {
     setItemDelegate( new IconDelegate( this ) );
     const int iSize = Store::config.views.iconView.iconSize*16;
@@ -467,8 +468,33 @@ IconView::mouseMoveEvent( QMouseEvent *event )
         emit iconSizeChanged( newVal );
         m_startPos = event->pos();
     }
-
-    QAbstractItemView::mouseMoveEvent( event );
+    if ((event->buttons() & Qt::LeftButton) && selectionModel() && !indexAt(m_pressPos).isValid())
+    {
+        setState(DragSelectingState);
+        const QRect selectRect(event->pos(), m_pressPos);
+        bool hasCount = false;
+        for (int i = 0; i<model()->rowCount(rootIndex()); ++i)
+        {
+            const QModelIndex &index(model()->index(i, 0, rootIndex()));
+            const QRect vr(visualRect(index));
+            if (!selectRect.intersects(vr))
+                continue;
+            hasCount = true;
+            m_hadSelection = false;
+            QItemSelectionModel::SelectionFlags command = selectionCommand(index, event);
+//            if (command.testFlag(QItemSelectionModel::Toggle))
+//            {
+//                command &= ~QItemSelectionModel::Toggle;
+//            }
+            setSelection(selectRect, command);
+            if (index.isValid() && (index != selectionModel()->currentIndex()))
+                selectionModel()->setCurrentIndex(index, QItemSelectionModel::NoUpdate);
+        }
+        if (!hasCount && !m_hadSelection)
+            selectionModel()->clearSelection();
+    }
+    else
+        QAbstractItemView::mouseMoveEvent( event );
     if (m_pressPos != QPoint())
         viewport()->update();
 }
@@ -478,6 +504,7 @@ IconView::mousePressEvent( QMouseEvent *event )
 {
     m_pressPos = event->pos();
     m_pressedIndex = indexAt(m_pressPos);
+    m_hadSelection = selectionModel()->hasSelection();
     QAbstractItemView::mousePressEvent( event );
 
     if (!selectionModel() || (state() == EditingState))

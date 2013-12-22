@@ -105,7 +105,7 @@ private:
     QList<int> m_allowedSizes;
     QHash<void *, QRect> m_rects;
     QHash<QString, QRect> m_catRects;
-    bool m_slide, m_startSlide;
+    bool m_slide, m_startSlide, m_hadSelection;
     FileSystemModel *m_model;
     QTimer *m_wheelTimer, *m_sizeTimer, *m_layTimer, *m_scrollTimer;
     QModelIndex m_firstIndex, m_pressedIndex;

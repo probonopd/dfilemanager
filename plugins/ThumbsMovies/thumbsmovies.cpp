@@ -1,4 +1,5 @@
 #include "thumbsmovies.h"
+#include <QFileInfo>
 #include <QApplication>
 
 Q_EXPORT_PLUGIN2(thumbsmovies, ThumbsMovies)
@@ -24,10 +25,6 @@ ThumbsMovies::thumb(const QString &file, const int size, QImage &thumb)
 {
     if (!canRead(file))
         return false;
-//    if (!m_mc)
-//    {
-
-//    }
     m_image = QImage();
     m_mc->addSearch(file);
     m_loopTimer->start(50);
@@ -53,7 +50,7 @@ ThumbsMovies::image(const QImage &img)
 bool
 ThumbsMovies::canRead(const QString &file) const
 {
-    return END("mkv")||END("avi")||END("mp4")||END("mpg");
+    return END("mkv")||END("avi")||END("mp4")||END("mpg")||QFileInfo(file).isDir();
 }
 
 #undef END

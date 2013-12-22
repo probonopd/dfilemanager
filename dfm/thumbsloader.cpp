@@ -136,7 +136,7 @@ ThumbsLoader::genThumb( const QString &path )
             if ( !hasIcon(dirFile) )
         {
             m_icons.insert(dirFile, iconName);
-            emit thumbFor(path, iconName);
+            emit thumbFor(path, iconName); 
         }
         return;
     }
