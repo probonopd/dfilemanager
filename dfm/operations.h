@@ -37,6 +37,9 @@
 #include <sys/statvfs.h>
 #endif
 
+static int defaultSort = 0;
+static Qt::SortOrder defaultOrder = Qt::AscendingOrder;
+
 namespace DFM
 {
 
@@ -53,7 +56,7 @@ public:
     static QImage reflection( const QImage &img = QImage() );
     static QImage flowImg( const QImage &img = QImage() );
     static QImage blurred( const QImage& image, const QRect& rect, int radius, bool alphaOnly = false );
-    static void getSorting(const QString &file, int *sortCol, Qt::SortOrder *order);
+    static void getSorting(const QString &file, int &sortCol = defaultSort, Qt::SortOrder &order = defaultOrder);
     static QString sanityChecked(const QString &file);
 
     template<typename T> static inline T absWinFor( QWidget *w )

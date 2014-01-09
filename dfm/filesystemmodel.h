@@ -86,14 +86,19 @@ public:
     class Node : public QFileInfo
     {
     public:
-        enum Children { Visible = 0, Hidden = 1, Filtered = 2, Deleted = 3 };
+        enum Children { Visible = 0, Hidden = 1, Filtered = 2, Deleted = 3, Files = 4, HiddenFiles = 5 };
+        enum Type { FSNode = 0, SearchResult = 1 };
         ~Node();
         void insertChild(Node *node);
         inline QString filePath() const { return m_filePath; }
 
+        inline bool isSearchResult() { return m_type == SearchResult; }
+
         bool hasChild( const QString &name );
         int childCount() const;
         int row();
+
+        Type type() { return m_type; }
 
         Node *child(const int c);
         inline Node *parent() const { return m_parent; }
@@ -119,9 +124,6 @@ public:
         inline void setLocked(bool lock) { m_isLocked = lock; }
         inline bool isLocked() { return m_isLocked; }
 
-        inline void lockMutex() { m_mutex.lock(); }
-        inline void unLockMutex() { m_mutex.unlock(); }
-
         void setFilter(const QString &filter);
         inline QString filter() const { return m_filter; }
 
@@ -130,15 +132,18 @@ public:
 
     protected:
         int rowFor(Node *child) const;
+        void search(const QString &fileName);
+        void endSearch();
         Node *nodeFromPath(const QString &path, bool checkOnly = true);
-        Node(FileSystemModel *model = 0, const QString &path = QString(), Node *parent = 0);
+        Node(FileSystemModel *model = 0, const QString &path = QString(), Node *parent = 0, const Type &t = FSNode);
 
     private:
         bool m_isPopulated, m_isLocked, m_isChildLocked;
         Node *m_parent;
-        Nodes m_children[Deleted+1];
+        Nodes m_children[HiddenFiles+1];
         QString m_filePath, m_filter, m_name;
         FileSystemModel *m_model;
+        Type m_type;
         mutable QMutex m_mutex;
         friend class FileSystemModel;
         friend class DataGatherer;
@@ -160,7 +165,7 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
     bool setData(const QModelIndex &index, const QVariant &value, int role);
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
-    int rowCount(const QModelIndex &parent) const;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const;
     int columnCount(const QModelIndex &parent) const { return 5; }
     Node *fromIndex(const QModelIndex &index) const;
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
@@ -199,16 +204,19 @@ public:
     inline QFileInfo fileInfo(const QModelIndex &index) const { return index.isValid()?*fromIndex(index):QFileInfo(); }
     QModelIndex mkdir(const QModelIndex &parent, const QString &name);
     inline DataGatherer *dataGatherer() { return m_dataGatherer; }
-    static ThumbsLoader *thumbsLoader();
     inline QFileSystemWatcher *dirWatcher() { return m_watcher; }
     void setSort(const int sortColumn, const int sortOrder);
     void startPopulating();
     void endPopulating();
     bool isPopulating() const { QMutexLocker locker(&m_mutex); return m_isPopulating; }
+    void search(const QString &fileName);
+    QString currentSearchString();
 
 public slots:
     inline void setPath(const QString &path) { setRootPath(path); }
     void refresh();
+    void endSearch();
+    void cancelSearch();
 
 private slots:
     void thumbFor( const QString &file, const QString &iconName );
@@ -225,6 +233,7 @@ signals:
     void hiddenVisibilityChanged(bool visible);
     void sortingChanged(const int sortCol, const int order);
     void paintRequest();
+    void searchFinished();
 
 private:
     Node *m_rootNode, *m_current;
@@ -240,6 +249,7 @@ private:
     DataGatherer *m_dataGatherer;
     friend class ImagesThread;
     friend class Node;
+    friend class DataGatherer;
     mutable QMutex m_mutex;
 };
 
@@ -247,10 +257,13 @@ class DataGatherer : public QThread
 {
     Q_OBJECT
 public:
-    enum Task { Populate = 0, Generate = 1, GetData = 2 };
-    explicit DataGatherer(QObject *parent = 0):QThread(parent), m_node(0), m_model(static_cast<FileSystemModel *>(parent)){}
+    enum Task { Populate = 0, Generate = 1, Search = 2 };
+    explicit DataGatherer(QObject *parent = 0):QThread(parent), m_node(0), m_model(static_cast<FileSystemModel *>(parent)),m_isCancelled(false){}
     void populateNode(FileSystemModel::Node *node);
     void generateNode(const QString &path);
+    void search(const QString &name, FileSystemModel::Node *node);
+    void cancel() { m_mutex.lock(); m_isCancelled=true; m_mutex.unlock(); }
+    bool isCancelled() { QMutexLocker locker(&m_mutex); return m_isCancelled; }
 
 protected:
     void run();
@@ -262,7 +275,9 @@ private:
     FileSystemModel::Node *m_node, *m_result;
     FileSystemModel *m_model;
     Task m_task;
-    QString m_path;
+    QString m_path, m_searchPath, m_searchName;
+    bool m_isCancelled;
+    QMutex m_mutex;
     friend class FileSystemModel::Node;
     friend class FileSystemModel;
 };

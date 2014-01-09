@@ -81,7 +81,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
         connect( v, SIGNAL(entered(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
         connect( v, SIGNAL(viewportEntered()), this, SIGNAL(viewportEntered()));
         connect( v, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
-        connect( m_model, SIGNAL(paintRequest()), v->viewport(), SLOT(update()) );
+//        connect( m_model, SIGNAL(paintRequest()), v->viewport(), SLOT(update()) );
     }
 
     m_viewStack->addWidget(m_iconView);
@@ -235,34 +235,31 @@ void
 ViewContainer::setRootPath(const QString &path)
 {
     const QModelIndex &rootIndex = m_model->index(path);
-    if ( rootIndex.isValid() )
+    setRootIndex(rootIndex);
+    if ( Store::config.views.dirSettings )
     {
-        setRootIndex(rootIndex);
-        if ( Store::config.views.dirSettings )
+        const QDir dir(path);
+        QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
+        settings.beginGroup("DFM");
+        QVariant var = settings.value("view");
+        if ( var.isValid() )
         {
-            const QDir dir(path);
-            QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
-            settings.beginGroup("DFM");
-            QVariant var = settings.value("view");
-            if ( var.isValid() )
-            {
-                View view = (View)var.value<int>();
-                setView(view, false);
-            }
-            settings.endGroup();
+            View view = (View)var.value<int>();
+            setView(view, false);
         }
-        m_detailsView->setItemsExpandable(false);
-        for ( int i = 0; i < views().count(); ++i )
-            if ( views().at(i) )
-            {
-                views().at(i)->setAttribute(Qt::WA_Hover, false);
-                views().at(i)->setMouseTracking(false);
-            }
-        m_selectModel->clearSelection();
-        if (!m_back && (m_backList.isEmpty() || m_backList.count() &&  path != m_backList.last()))
-            m_backList.append(path);
-        emit rootPathChanged(path);
+        settings.endGroup();
     }
+    m_detailsView->setItemsExpandable(false);
+    for ( int i = 0; i < views().count(); ++i )
+        if ( views().at(i) )
+        {
+            views().at(i)->setAttribute(Qt::WA_Hover, false);
+            views().at(i)->setMouseTracking(false);
+        }
+    m_selectModel->clearSelection();
+    if (!m_back && QFileInfo(path).isDir() && (m_backList.isEmpty() || m_backList.count() &&  path != m_backList.last()))
+        m_backList.append(path);
+    emit rootPathChanged(path);
     m_back = false;
 }
 

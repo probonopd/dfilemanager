@@ -70,21 +70,21 @@ ThumbsLoader::removeThumb(const QString &file)
 }
 
 bool
-ThumbsLoader::hasIcon(const QString &dir) const
+ThumbsLoader::_hasIcon(const QString &dir) const
 {
     return m_icons.contains(dir);
 }
 
 QString
-ThumbsLoader::icon(const QString &dir) const
+ThumbsLoader::_icon(const QString &dir) const
 {
-    if ( hasIcon(dir) )
+    if ( _hasIcon(dir) )
         return m_icons.value(dir);
     return QString();
 }
 
 bool
-ThumbsLoader::hasThumb(const QString &file) const
+ThumbsLoader::_hasThumb(const QString &file) const
 {
     return m_thumbs.contains(file) && m_dateCheck.value(file) == QFileInfo(file).lastModified().toString();
 }
@@ -97,10 +97,10 @@ ThumbsLoader::clearQ()
 }
 
 void
-ThumbsLoader::queueFile(const QString &file)
+ThumbsLoader::_queueFile(const QString &file)
 {
     QMutexLocker locker(&m_listMutex);
-    if ( m_queue.contains(file) || hasThumb(file) || hasIcon(file) /*|| m_tried.contains(file)*/ )
+    if ( m_queue.contains(file) || _hasThumb(file) || _hasIcon(file) /*|| m_tried.contains(file)*/ )
         return;
 
     m_queue << file;
@@ -109,9 +109,9 @@ ThumbsLoader::queueFile(const QString &file)
 }
 
 QImage
-ThumbsLoader::thumb(const QString &file) const
+ThumbsLoader::_thumb(const QString &file) const
 {
-    if ( hasThumb(file) )
+    if ( _hasThumb(file) )
         return m_thumbs.value(file);
     return QImage();
 }

@@ -27,45 +27,110 @@
 using namespace DFM;
 
 
-IconWidget::IconWidget(QWidget *parent)
-    : QWidget(parent)
-    , m_opacity(0.5)
-    , m_type(false)
+SearchTypeSelector::SearchTypeSelector(QWidget *parent) : QToolButton(parent)
 {
+    setIconSize(QSize(16, 16));
     setFixedSize(16, 16);
     setCursor(Qt::PointingHandCursor);
     setAttribute(Qt::WA_Hover);
-    m_pix[0] = IconProvider::icon(IconProvider::Search, 16, palette().color(foregroundRole()), Store::config.behaviour.systemIcons).pixmap(16);
-    m_pix[1] = IconProvider::icon(IconProvider::Clear, 16, palette().color(foregroundRole()), Store::config.behaviour.systemIcons).pixmap(16);
+    setPopupMode(QToolButton::InstantPopup);
+    setToolButtonStyle(Qt::ToolButtonIconOnly);
+    QMenu *m = new QMenu(this);
+    m->setSeparatorsCollapsible(false);
+    m->addSeparator()->setText(tr("Searching Options:"));
+    QAction *filter = m->addAction(tr("Filter quickly by name"));
+    QAction *search = m->addAction(tr("Search recursively in current path"));
+    m->addSeparator();
+    QAction *cancel = m->addAction(tr("Cancel Search"));
+    QAction *close = m->addAction(tr("Close Search"));
+
+    connect(filter, SIGNAL(triggered()), this, SLOT(filter()));
+    connect(search, SIGNAL(triggered()), this, SLOT(search()));
+    connect(cancel, SIGNAL(triggered()), this, SLOT(cancel()));
+    connect(close, SIGNAL(triggered()), this, SLOT(closeSearch()));
+    setMenu(m);
+    setIcon(IconProvider::icon(IconProvider::Search, 16, palette().color(foregroundRole()), Store::config.behaviour.systemIcons));
 }
 
 void
-IconWidget::paintEvent(QPaintEvent *)
+SearchTypeSelector::cancel()
 {
-    QPainter p(this);
-    p.setOpacity(m_opacity);
-    p.drawTiledPixmap(rect(), m_pix[m_type]);
-    p.end();
+    MainWindow *mw = MainWindow::window(this);
+    mw->currentContainer()->model()->cancelSearch();
 }
+
+void
+SearchTypeSelector::closeSearch()
+{
+    MainWindow *mw = MainWindow::window(this);
+    mw->currentContainer()->model()->endSearch();
+}
+
+//--------------------------------------------------------------------------
+
+ClearSearch::ClearSearch(QWidget *parent) : QToolButton(parent)
+{
+    setIconSize(QSize(16, 16));
+    setFixedSize(16, 16);
+    setCursor(Qt::PointingHandCursor);
+    setAttribute(Qt::WA_Hover);
+    setToolButtonStyle(Qt::ToolButtonIconOnly);
+    setIcon(IconProvider::icon(IconProvider::Clear, 16, palette().color(foregroundRole()), Store::config.behaviour.systemIcons));
+
+}
+
+//--------------------------------------------------------------------------
 
 SearchBox::SearchBox(QWidget *parent)
     : QLineEdit(parent)
     , m_margin(4)
-    , m_iconWidget(new IconWidget(this))
+    , m_selector(new SearchTypeSelector(this))
+    , m_clearSearch(new ClearSearch(this))
+    , m_mode(Filter)
 {
     setPlaceholderText("Filter By Name");
-    setTextMargins(m_iconWidget->rect().width()+m_margin, 0, 0, 0);
+
     setSizePolicy( QSizePolicy::Expanding, QSizePolicy::Fixed );
     setMaximumWidth(222);
     setMouseTracking(true);
 
-    connect( this, SIGNAL(textChanged(QString)), this, SLOT(setClearButtonEnabled(QString)));
-    connect( m_iconWidget, SIGNAL(clicked()), this, SLOT(clear()));
+    connect(this, SIGNAL(textChanged(QString)), this, SLOT(setClearButtonEnabled(QString)));
+    connect(m_clearSearch, SIGNAL(clicked()), this, SLOT(clear()));
+    connect(m_selector, SIGNAL(modeChanged(SearchMode)), this, SLOT(setMode(SearchMode)));
+    connect(this, SIGNAL(returnPressed()), this, SLOT(search()));
+    m_clearSearch->setVisible(false);
 }
 
 void
 SearchBox::resizeEvent(QResizeEvent *event)
 {
     QLineEdit::resizeEvent(event);
-    m_iconWidget->move(rect().left() + m_margin, (rect().bottom()-m_iconWidget->rect().bottom())/2);
+    setTextMargins(m_selector->rect().width()+m_margin, 0, m_clearSearch->width()+m_margin, 0);
+    m_selector->move(rect().left() + m_margin, (rect().bottom()-m_selector->rect().bottom())>>1);
+    m_clearSearch->move(rect().right()-(m_margin+m_clearSearch->width()), (rect().bottom()-m_clearSearch->rect().bottom())>>1);
+}
+
+void
+SearchBox::setMode(const SearchMode mode)
+{
+    if (mode==Filter)
+        setPlaceholderText("Filter by name");
+    else if (mode==Search)
+        setPlaceholderText("Search...");
+    if (m_mode != mode)
+    {
+        MainWindow *mw = MainWindow::window(this);
+        mw->currentContainer()->model()->refresh();
+    }
+    m_mode = mode;
+}
+
+void
+SearchBox::search()
+{
+    if (text().isEmpty()||m_mode == Filter)
+        return;
+
+    MainWindow *mw = MainWindow::window(this);
+    mw->currentContainer()->model()->search(text());
 }

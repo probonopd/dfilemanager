@@ -288,7 +288,7 @@ Ops::reflection( const QImage &img )
 }
 
 void
-Ops::getSorting(const QString &file, int *sortCol, Qt::SortOrder *order)
+Ops::getSorting(const QString &file, int &sortCol, Qt::SortOrder &order)
 {
     const QDir dir(file);
     QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
@@ -297,8 +297,8 @@ Ops::getSorting(const QString &file, int *sortCol, Qt::SortOrder *order)
     QVariant varOrd = settings.value("sortOrd");
     if ( varCol.isValid() && varOrd.isValid() )
     {
-        *sortCol = varCol.value<int>();
-        *order = (Qt::SortOrder)varOrd.value<int>();
+        sortCol = varCol.value<int>();
+        order = (Qt::SortOrder)varOrd.value<int>();
     }
     settings.endGroup();
 }
@@ -312,7 +312,7 @@ Ops::sanityChecked(const QString &file)
     if (QFileInfo(file).exists())
         return file;
 
-    QString newFile = file;
+    QString newFile = QDir::fromNativeSeparators(file);
     for (int i=0; i<check.count(); ++i)
         if (newFile.contains(check.at(i), Qt::CaseInsensitive))
         {

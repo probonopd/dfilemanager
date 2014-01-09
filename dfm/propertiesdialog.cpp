@@ -24,6 +24,7 @@
 #include "placesview.h"
 #include "mainwindow.h"
 #include "icondialog.h"
+#include "thumbsloader.h"
 #include <QDateTime>
 #include <QGroupBox>
 #include <QProgressBar>
@@ -194,14 +195,10 @@ GeneralInfo::setIcon()
         settings.setValue("Desktop Entry/Icon", i.name());
         tb->setIcon(i);
 
-//        qDebug() << file << i.name() << settings.value("Desktop Entry/Icon");
-
-        DFM::FileSystemModel *fsModel = DFM::MainWindow::currentContainer()->model();
         qDebug() << QFileInfo(file).path();
-        fsModel->thumbsLoader()->queueFile(file);
+        DFM::ThumbsLoader::queueFile(file);
     }
 }
-
 
 Rights::Rights(QWidget *parent, const QStringList &files)
     : QGroupBox(parent)
@@ -312,7 +309,6 @@ PropertiesDialog::PropertiesDialog(QWidget *parent, const QStringList &files)
     }
     vbox->addLayout(btns);
 }
-
 
 void
 PropertiesDialog::accept()

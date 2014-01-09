@@ -57,11 +57,11 @@ public:
     enum Type { Thumb = 0, FlowPic, Reflection, FallBackRefl };
     static ThumbsLoader *instance();
     static inline void clearQueue() { instance()->clearQ(); }
-    void queueFile(const QString &file);
-    bool hasThumb(const QString &file) const;
-    bool hasIcon(const QString &dir) const;
-    QImage thumb(const QString &file) const;
-    QString icon(const QString &dir) const;
+    static inline bool hasIcon(const QString &dir) { return instance()->_hasIcon(dir); }
+    static inline bool hasThumb(const QString &file) { return instance()->_hasThumb(file); }
+    static inline QImage thumb(const QString &file) { return instance()->_thumb(file); }
+    static inline QString icon(const QString &dir) { return instance()->_icon(dir); }
+    static inline void queueFile(const QString &file) { instance()->_queueFile(file); }
 
 public slots:
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
@@ -75,6 +75,11 @@ protected:
     void run();
     void genThumb(const QString &path);
     void clearQ();
+    bool _hasIcon(const QString &dir) const;
+    bool _hasThumb(const QString &file) const;
+    QImage _thumb(const QString &file) const;
+    QString _icon(const QString &dir) const;
+    void _queueFile(const QString &file);
 
 private:
     QHash<QString, QImage> m_thumbs;

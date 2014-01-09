@@ -25,30 +25,35 @@
 #include <QLineEdit>
 #include <QPixmap>
 #include <QDebug>
+#include <QToolButton>
 
 namespace DFM
 {
 
-class IconWidget : public QWidget
+enum SearchMode { Filter = 0, Search = 1 };
+
+class SearchBox;
+class SearchTypeSelector : public QToolButton
 {
     Q_OBJECT
 public:
-    explicit IconWidget(QWidget *parent = 0);
-    void setPix(bool clear) { m_type = clear; }
-    void setOpacity(float opacity) { m_opacity = opacity; }
+    explicit SearchTypeSelector(QWidget *parent = 0);
 
 signals:
-    void clicked();
-protected:
-    void mouseReleaseEvent(QMouseEvent *) { emit clicked(); }
-    void paintEvent(QPaintEvent *);
-    void enterEvent(QEvent *) { setOpacity( 1.0 ); }
-    void leaveEvent(QEvent *) { setOpacity( 0.5 ); }
+    void modeChanged(const SearchMode mode);
 
-private:
-    QPixmap m_pix[2];
-    bool m_type;
-    float m_opacity;
+private slots:
+    inline void filter() { emit modeChanged(Filter); }
+    inline void search() { emit modeChanged(Search); }
+    void cancel();
+    void closeSearch();
+};
+
+class ClearSearch : public QToolButton
+{
+    Q_OBJECT
+public:
+    explicit ClearSearch(QWidget *parent = 0);
 };
 
 class SearchBox : public QLineEdit
@@ -56,16 +61,23 @@ class SearchBox : public QLineEdit
     Q_OBJECT
 public:
     explicit SearchBox(QWidget *parent = 0);
+    inline SearchMode mode() { return m_mode; }
+
+public slots:
+    void setMode(const SearchMode mode);
 
 protected:
     void resizeEvent(QResizeEvent *);
 
 private slots:
-    void setClearButtonEnabled(QString filter) { m_iconWidget->setPix(!filter.isEmpty()); }
+    void setClearButtonEnabled(QString filter) { m_clearSearch->setVisible(!filter.isEmpty()); }
+    void search();
 
 private:
-    IconWidget *m_iconWidget;
+    SearchTypeSelector *m_selector;
+    ClearSearch *m_clearSearch;
     int m_margin;
+    SearchMode m_mode;
 };
 
 }

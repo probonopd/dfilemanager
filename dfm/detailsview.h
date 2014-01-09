@@ -42,7 +42,6 @@ public:
     ~DetailsView(){}
     void setFilter(QString filter);
     void setModel(QAbstractItemModel *model);
-    void setRootIndex(const QModelIndex &index) { QTreeView::setRootIndex(index); m_detailsWidth = 0; }
     ViewContainer *container();
 
 protected:
@@ -51,7 +50,6 @@ protected:
     void mousePressEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *);
     void resizeEvent(QResizeEvent *event);
-    void drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const;
 
 signals:
     void newTabRequest(const QModelIndex &path);
@@ -63,9 +61,8 @@ private slots:
 
 private:
     FileSystemModel *m_model;
-    int m_detailsWidth;
     QPoint m_pressPos;
-    QModelIndex m_pressedIndex;
+    void *m_pressedIndex;
 };
 
 }

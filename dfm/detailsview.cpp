@@ -54,22 +54,22 @@ DetailsView::DetailsView(QWidget *parent)
     : QTreeView(parent)
     , m_model(0)
     , m_pressPos(QPoint())
-    , m_pressedIndex(QModelIndex())
+    , m_pressedIndex(0)
 {
     setItemDelegate(new DetailsDelegate());
     header()->setStretchLastSection(false);
     setUniformRowHeights(true);
-    setSelectionMode(QAbstractItemView::ExtendedSelection);
+    setSelectionMode(ExtendedSelection);
     setSortingEnabled(true);
     sortByColumn(0, Qt::AscendingOrder);
-    setEditTriggers(QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
+    setEditTriggers(SelectedClicked | EditKeyPressed);
     setExpandsOnDoubleClick(false);
-    setDragDropMode(QAbstractItemView::DragDrop);
+    setDragDropMode(DragDrop);
     setDropIndicatorShown(true);
     setDefaultDropAction(Qt::MoveAction);
     setAcceptDrops(true);
     setDragEnabled(true);
-    setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    setVerticalScrollMode(ScrollPerPixel);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     connect(this, SIGNAL(sortIndicatorChanged(int,int)), container(), SIGNAL(sortingChanged(int,int)));
@@ -99,14 +99,6 @@ DetailsView::sortingChanged(const int column, const int order)
         header()->setSortIndicator(column, (Qt::SortOrder)order);
         header()->blockSignals(false);
     }
-}
-
-void
-DetailsView::drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const
-{
-    if ( !index.data().isValid() )
-        return;
-    QTreeView::drawBranches(painter, rect, index);
 }
 
 void
@@ -185,7 +177,7 @@ DetailsView::mouseReleaseEvent(QMouseEvent *e)
     if ( Store::config.views.singleClick
          && !e->modifiers()
          && e->button() == Qt::LeftButton
-         && m_pressedIndex == index
+         && m_pressedIndex == index.internalPointer()
          && visualRect(index).contains(e->pos())
          && !state() )
     {
@@ -211,7 +203,7 @@ DetailsView::mousePressEvent(QMouseEvent *event)
 {
     if (event->modifiers() == Qt::MetaModifier)
         setDragEnabled(false);
-    m_pressedIndex = indexAt(event->pos());
+    m_pressedIndex = indexAt(event->pos()).internalPointer();
     m_pressPos = event->pos();
     QTreeView::mousePressEvent(event);
 }

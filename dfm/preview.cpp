@@ -415,7 +415,7 @@ PreView::setCenterIndex(const QModelIndex &index)
     {
         m_savedRow = index.row();
         m_savedCenter = index;
-        m_centerFile = m_model->filePath(index);
+
     }
     else if ( m_items.count() <= 1 )
     {
@@ -423,7 +423,7 @@ PreView::setCenterIndex(const QModelIndex &index)
         m_nextRow = 0;
         m_row = 0;
     }
-
+    m_centerFile = m_model->filePath(index);
     m_prevCenter = m_centerIndex;
     m_centerIndex = index;
     m_nextRow = m_row;
@@ -455,31 +455,37 @@ PreView::reset()
 }
 
 void
-PreView::showEvent(QShowEvent *event)
-{
-    QGraphicsView::showEvent(event);
-    const float bottom = bMargin+m_scrollBar->height()+m_textItem->boundingRect().height();
-    m_y = (rect().size().height()/2.0f-SIZE/2.0f)-bottom;
-    m_x = rect().size().width()/2.0f;
-    if ( m_items.count() > m_row && m_row > -1 )
-        m_items.at(m_row)->updatePixmaps();
-    updateItemsPos();
-}
-
-void
 PreView::resizeEvent(QResizeEvent *event)
 {
     QGraphicsView::resizeEvent(event);
-    m_scene->setSceneRect(QRect(QPoint(0, 0), event->size()));
+    updateScene();
+}
+
+void
+PreView::showEvent(QShowEvent *event)
+{
+    QGraphicsView::showEvent(event);
+    updateScene();
+}
+
+void
+PreView::updateScene()
+{
+    if (!m_textItem)
+        return;
+
+    if (m_textItem->text().isEmpty())
+        m_textItem->setText(m_centerFile);
+    m_scene->setSceneRect(QRect(QPoint(0, 0), size()));
     const float bottom = bMargin+m_scrollBar->height()+m_textItem->boundingRect().height();
-    m_y = (event->size().height()/2.0f-SIZE/2.0f)-bottom;
-    m_x = event->size().width()/2.0f;
+    m_y = (height()/2.0f-SIZE/2.0f)-bottom;
+    m_x = width()/2.0f;
     m_rootItem->update();
     updateItemsPos();
-    m_scrollBar->resize(event->size().width()*0.66f, m_scrollBar->height());
+    m_scrollBar->resize(width()*0.66f, m_scrollBar->height());
     const float y = m_y+SIZE;
-    const float scale = qMin<float>(1.0f, ((float)rect().height()/SIZE)*0.8);
-    m_textItem->setPos(m_x-m_textItem->boundingRect().width()/2.0f, rect().bottom()-(bMargin+m_scrollBar->height()+m_textItem->boundingRect().height()));
+    const float scale = qMin<float>(1.0f, ((float)height()/SIZE)*0.8);
+    m_textItem->setPos(qMax<float>(0.0f, m_x-m_textItem->boundingRect().width()/2.0f), rect().bottom()-(bMargin+m_scrollBar->height()+m_textItem->boundingRect().height()));
     m_textItem->setZValue(m_items.count()+2);
     m_gfxProxy->setPos(m_x-m_gfxProxy->boundingRect().width()/2.0f, rect().bottom()-(bMargin+m_scrollBar->height()));
     m_rootItem->setTransformOriginPoint(rect().center());
@@ -759,7 +765,7 @@ PreView::clear()
     m_savedRow = 0;
     while ( !m_items.isEmpty() )
         delete m_items.takeFirst();
-    m_textItem->setText(QString());
+    m_textItem->setText(QString("--"));
     m_scrollBar->setValue(0);
     m_scrollBar->setRange(0, 0);
 }

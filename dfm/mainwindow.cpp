@@ -167,8 +167,13 @@ void
 MainWindow::receiveMessage(const QStringList &message)
 {
     setWindowState(windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
+    bool isSearchPar = false;
     foreach ( const QString &msg, message )
-        if ( QFileInfo(msg).isDir() )
+        if (isSearchPar)
+        {
+            m_model->search(msg);
+        }
+        else if ( QFileInfo(msg).isDir() )
         {
             addTab(msg);
             m_tabBar->setCurrentIndex(m_tabBar->count()-1);
@@ -178,12 +183,15 @@ MainWindow::receiveMessage(const QStringList &message)
             if ( !m_placesView->getKdePlaces() )
                 QMessageBox::warning(this, "Getting places from kde Failed!", "was unable to load kde places... sry.");
         }
+        else if ( msg == "--search" )
+            isSearchPar = true;
 }
 
 void
 MainWindow::filterCurrentDir(const QString &filter)
 {
-    m_activeContainer->setFilter(filter);
+    if (m_filterBox->mode() == Filter)
+        m_activeContainer->setFilter(filter);
 }
 
 void
@@ -316,8 +324,11 @@ void
 MainWindow::rootPathChanged(const QString &path)
 {
     setWindowTitle(m_model->rootDirectory().dirName());
-    m_filterBox->clear();
-    m_activeContainer->setFilter("");
+    if (m_filterBox->mode() == Filter)
+    {
+        m_filterBox->clear();
+        m_activeContainer->setFilter("");
+    }
     m_placesView->activateAppropriatePlace(path);
     m_tabBar->setTabText(m_tabBar->currentIndex(), m_model->rootDirectory().dirName());
     if ( Store::config.behaviour.gayWindow )
@@ -548,6 +559,7 @@ MainWindow::addTab(const QString &path)
     connect( container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
     connect( container, SIGNAL(sortingChanged(int,int)), this, SLOT(sortingChanged(int,int)));
     connect( container->model(), SIGNAL(hiddenVisibilityChanged(bool)), m_showHiddenAct, SLOT(setChecked(bool)) );
+    connect( container->model(), SIGNAL(searchFinished()), this, SLOT(finishedSearching()));
 
     QList<QAction *> actList;
     actList << m_openInTabAct << m_mkDirAct << m_pasteAct << m_copyAct << m_cutAct
@@ -577,6 +589,7 @@ MainWindow::addTab(ViewContainer *container, int index)
     container->installEventFilter(this);
     connect( container->model(), SIGNAL(directoryLoaded(QString)), this, SLOT(rootPathChanged(QString)));
     connect( container->model(), SIGNAL(directoryLoaded(QString)), m_recentFoldersView, SLOT(folderEntered(QString)));
+    connect( container->model(), SIGNAL(searchFinished()), this, SLOT(finishedSearching()));
     connect( container, SIGNAL(viewChanged()), this, SLOT(checkViewAct()));
     connect( container->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(mainSelectionChanged(QItemSelection,QItemSelection)));
     connect( container, SIGNAL(iconSizeChanged(int)), this, SLOT(setSliderPos(int)));
@@ -610,6 +623,12 @@ MainWindow::addTab(ViewContainer *container, int index)
 }
 
 void
+MainWindow::finishedSearching()
+{
+    m_filterBox->setMode(m_filterBox->mode());
+}
+
+void
 MainWindow::tabChanged(int currentIndex)
 {
     if ( currentIndex < 0 || !m_stackedWidget->count() )
@@ -628,7 +647,7 @@ MainWindow::tabChanged(int currentIndex)
     m_iconSizeSlider->setToolTip("Size: " + QString::number(m_activeContainer->iconSize().width()) + " px");
     m_placesView->activateAppropriatePlace(m_model->rootPath());
     updateStatusBar(m_model->rootPath());
-    m_filterBox->setText(m_activeContainer->currentFilter());
+    m_filterBox->setText(m_model->currentSearchString());
     m_showHiddenAct->setChecked(m_model->showHidden());
     setActions();
 }
@@ -798,7 +817,7 @@ void
 MainWindow::stackChanged(int)
 {
     if ( m_activeContainer )
-        m_filterBox->setText(m_activeContainer->currentFilter());
+        m_filterBox->setText(m_model->currentSearchString());
 }
 
 void

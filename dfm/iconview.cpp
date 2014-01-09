@@ -138,7 +138,7 @@ public:
         painter->setPen(pen);
 //        QApplication::style()->drawItemText(painter, tr.adjusted(-2, 0, 2, 0), Qt::AlignCenter, PAL, option.state & QStyle::State_Enabled, et, high);
 
-        QPixmap pixmap = pix(option, index);
+        const QPixmap &pixmap = pix(option, index);
 
         QRect theRect = pixmap.rect();
         theRect.moveCenter(QRect(RECT.topLeft(), QSize(RECT.width(), DECOSIZE.height()+2)).center());
@@ -298,6 +298,7 @@ IconView::IconView( QWidget *parent )
     , m_oldSliderVal(0)
     , m_scrollTimer(new QTimer(this))
     , m_hadSelection(false)
+    , m_horItems(0)
 {
     setItemDelegate( new IconDelegate( this ) );
     const int iSize = Store::config.views.iconView.iconSize*16;
@@ -676,7 +677,7 @@ IconView::correctLayout()
 void
 IconView::updateLayout()
 {
-    if ( !isVisible()||!m_model||!rootIndex().isValid() )
+    if ( !isVisible()||!m_model )
         return;
 
     int contentsWidth = viewport()->width();
@@ -723,6 +724,7 @@ IconView::setModel( QAbstractItemModel *model )
         connect(m_model, SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(clear(QModelIndex,QModelIndex)));
 //        connect(m_model, SIGNAL(hiddenVisibilityChanged(bool)), this, SLOT(updateLayout()));
         connect(m_model, SIGNAL(layoutChanged()), this, SLOT(updateLayout()));
+        connect(m_model, SIGNAL(modelReset()), this, SLOT(updateLayout()));
         static_cast<IconDelegate*>( itemDelegate() )->setModel( m_model );
     }
 }
@@ -749,6 +751,7 @@ IconView::visualRect(const QModelIndex &index) const
 {
     if (!index.isValid()||index.column()||!m_horItems||!m_rects.contains(index.internalPointer()))
         return QRect();
+
     return m_rects.value(index.internalPointer(), QRect()).translated(0, -verticalOffset());
 }
 
@@ -851,6 +854,8 @@ IconView::rowsInserted(const QModelIndex &parent, int start, int end)
 void
 IconView::calculateRects()
 {
+    if (!m_horItems)
+        return;
     m_rects.clear();
     m_catRects.clear();
     static_cast<IconDelegate *>(itemDelegate())->clearData();

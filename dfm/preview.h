@@ -159,6 +159,7 @@ private slots:
     void updateItemsPos();
     void scrollBarMoved( const int value );
     void continueIf();
+    void updateScene();
 
 private:
     friend class PixmapItem;
