@@ -559,7 +559,6 @@ MainWindow::addTab(const QString &path)
     connect( container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
     connect( container, SIGNAL(sortingChanged(int,int)), this, SLOT(sortingChanged(int,int)));
     connect( container->model(), SIGNAL(hiddenVisibilityChanged(bool)), m_showHiddenAct, SLOT(setChecked(bool)) );
-    connect( container->model(), SIGNAL(searchFinished()), this, SLOT(finishedSearching()));
 
     QList<QAction *> actList;
     actList << m_openInTabAct << m_mkDirAct << m_pasteAct << m_copyAct << m_cutAct
@@ -589,7 +588,6 @@ MainWindow::addTab(ViewContainer *container, int index)
     container->installEventFilter(this);
     connect( container->model(), SIGNAL(directoryLoaded(QString)), this, SLOT(rootPathChanged(QString)));
     connect( container->model(), SIGNAL(directoryLoaded(QString)), m_recentFoldersView, SLOT(folderEntered(QString)));
-    connect( container->model(), SIGNAL(searchFinished()), this, SLOT(finishedSearching()));
     connect( container, SIGNAL(viewChanged()), this, SLOT(checkViewAct()));
     connect( container->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(mainSelectionChanged(QItemSelection,QItemSelection)));
     connect( container, SIGNAL(iconSizeChanged(int)), this, SLOT(setSliderPos(int)));
@@ -620,12 +618,6 @@ MainWindow::addTab(ViewContainer *container, int index)
 
     if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
         m_tabBar->setVisible(m_tabBar->count() > 1);
-}
-
-void
-MainWindow::finishedSearching()
-{
-    m_filterBox->setMode(m_filterBox->mode());
 }
 
 void

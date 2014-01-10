@@ -234,6 +234,7 @@ signals:
     void sortingChanged(const int sortCol, const int order);
     void paintRequest();
     void searchFinished();
+    void searchStarted();
 
 private:
     Node *m_rootNode, *m_current;

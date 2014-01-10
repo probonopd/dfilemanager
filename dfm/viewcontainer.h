@@ -34,6 +34,7 @@
 #include "flowview.h"
 #include "filesystemmodel.h"
 #include "pathnavigator.h"
+#include "searchbox.h"
 
 namespace DFM
 {
@@ -79,6 +80,7 @@ public:
     void rename();
     void goHome();
     void animateIconSize(int start, int stop);
+    SearchIndicator *searchIndicator() { return m_searchIndicator; }
     BreadCrumbs *breadCrumbs();
     QString currentFilter();
     QStringList visited() { return m_backList; }
@@ -88,6 +90,7 @@ public:
 
 protected:
     void leaveEvent(QEvent *) { emit leftView(); }
+    void resizeEvent(QResizeEvent *);
     void setModel(QAbstractItemModel *model);
     void setSelectionModel(QItemSelectionModel *selectionModel);
     void scrollToSelection();
@@ -131,6 +134,7 @@ private:
     QStringList m_forwardList;
     QItemSelectionModel *m_selectModel;
     BreadCrumbs *m_breadCrumbs;
+    SearchIndicator *m_searchIndicator;
 };
 
 class FileItemDelegate : public QStyledItemDelegate

@@ -117,11 +117,9 @@ PixmapItem::PixmapItem(GraphicsScene *scene, QGraphicsItem *parent)
 void
 PixmapItem::updatePixmaps()
 {
-    const QString &file = m_preView->model()->filePath(m_preView->indexOfItem(this));
-    const QModelIndex &index = m_preView->model()->index(file);
+    const QModelIndex &index = m_preView->indexOfItem(this);
     m_pix[0] = m_preView->model()->data(index, FileSystemModel::FlowImg).value<QPixmap>();
     m_pix[1] = m_preView->model()->data(index, FileSystemModel::FlowRefl).value<QPixmap>();
-//    m_shape = QVariant::fromValue(m_preView->model()->data(index, FileSystemModel::FlowShape)).value<QPainterPath>();
     updateShape();
     m_preView->viewport()->update();
 }

@@ -517,7 +517,7 @@ FileSystemModel::Node::search(const QString &fileName)
         m_mutex.unlock();
     }
     else
-        m_children[Visible].clear(); //only previous searchresults here...
+        qDeleteAll(m_children[Visible]); //only previous searchresults here...
     emit model()->layoutChanged();
 
     emit model()->rootPathChanged(m_filePath);
@@ -538,7 +538,7 @@ FileSystemModel::Node::endSearch()
     if (!m_children[Files].isEmpty())
     {
         emit model()->layoutAboutToBeChanged();
-        m_children[Visible].clear();
+        qDeleteAll(m_children[Visible]);
         m_children[Visible]=m_children[Files];
         m_children[Hidden]=m_children[HiddenFiles];
         m_children[Files].clear();
@@ -696,6 +696,7 @@ FileSystemModel::FileSystemModel(QObject *parent)
 
 FileSystemModel::~FileSystemModel()
 {
+    m_it->discontinue();
     if ( m_it->isRunning() )
         m_it->wait();
     delete m_rootNode;
@@ -827,10 +828,10 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         return node->filePath();
 
     if ( role == Qt::TextAlignmentRole )
-    if ( col == 1 )
-        return int(Qt::AlignVCenter|Qt::AlignRight);
-    else
-        return int(Qt::AlignLeft|Qt::AlignVCenter);
+        if ( col == 1 )
+            return int(Qt::AlignVCenter|Qt::AlignRight);
+        else
+            return int(Qt::AlignLeft|Qt::AlignVCenter);
 
     if ( role == Qt::FontRole && !col )
     {
@@ -1228,8 +1229,10 @@ FileSystemModel::categories()
 void
 FileSystemModel::search(const QString &fileName)
 {
+    emit searchStarted();
     Node *node = rootNode()->node(m_rootPath);
     node->setFilter(QString());
+    node->endSearch();
     dataGatherer()->search(fileName, node);
 }
 

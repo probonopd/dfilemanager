@@ -26,6 +26,59 @@
 
 using namespace DFM;
 
+SearchIndicator::SearchIndicator(QWidget *parent)
+    : QWidget(parent)
+    , m_timer(new QTimer(this))
+    , m_in(true)
+    , m_step(100)
+{
+    setAttribute(Qt::WA_TransparentForMouseEvents);
+    setAttribute(Qt::WA_NoMousePropagation);
+    m_timer->setInterval(20);
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(animate()));
+    setFixedSize(256, 256);
+    const QColor &fg(palette().color(QPalette::Text));
+    m_pixmap = QPixmap(256, 256);
+    m_pixmap.fill(Qt::transparent);
+    QPainter p(&m_pixmap);
+    p.setBrush(Qt::NoBrush);
+    p.setPen(QPen(fg, 48.0f, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    p.setRenderHint(QPainter::Antialiasing);
+    p.drawEllipse(25, 25, 164, 164);
+    p.drawLine(180, 180, 207, 207);
+    p.end();
+    start();
+}
+
+void
+SearchIndicator::paintEvent(QPaintEvent *)
+{
+    QPainter p(this);
+    p.setOpacity(0.5f);
+    p.setRenderHint(QPainter::SmoothPixmapTransform);
+    p.translate(128, 128);
+    p.scale((float)m_step/100, (float)m_step/100);
+    p.translate(-128, -128);
+    p.drawTiledPixmap(rect(), m_pixmap);
+    p.end();
+}
+
+void
+SearchIndicator::animate()
+{
+    if (m_step>99)
+        m_in=false;
+    if (m_step<80)
+        m_in=true;
+
+    if (m_in)
+        ++m_step;
+    else
+        --m_step;
+    update();
+}
+
+//--------------------------------------------------------------------------
 
 SearchTypeSelector::SearchTypeSelector(QWidget *parent) : QToolButton(parent)
 {

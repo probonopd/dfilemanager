@@ -26,11 +26,36 @@
 #include <QPixmap>
 #include <QDebug>
 #include <QToolButton>
+#include <QTimer>
 
 namespace DFM
 {
 
 enum SearchMode { Filter = 0, Search = 1 };
+
+
+class SearchIndicator : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit SearchIndicator(QWidget *parent = 0);
+
+public slots:
+    inline void start() { setVisible(true); m_timer->start(); }
+    inline void stop() { setVisible(false); m_timer->stop(); }
+
+protected:
+    void paintEvent(QPaintEvent *);
+
+private slots:
+    void animate();
+
+private:
+    QPixmap m_pixmap;
+    bool m_in;
+    int m_step;
+    QTimer *m_timer;
+};
 
 class SearchBox;
 class SearchTypeSelector : public QToolButton

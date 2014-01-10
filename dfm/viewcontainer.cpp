@@ -52,8 +52,13 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     , m_detailsView(new DetailsView(this))
     , m_flowView(new FlowView(this))
     , m_breadCrumbs(new BreadCrumbs(this, m_model))
+    , m_searchIndicator(new SearchIndicator(this))
 
 {
+    m_searchIndicator->setVisible(false);
+    connect(m_model, SIGNAL(searchFinished()), m_searchIndicator, SLOT(stop()));
+    connect(m_model, SIGNAL(searchStarted()), m_searchIndicator, SLOT(start()));
+
     m_breadCrumbs->setVisible(Store::settings()->value("pathVisible", true).toBool());
     m_myView = Icon;
     m_back = false;
@@ -423,6 +428,13 @@ QAbstractItemView
     if ( m_myView != Flow )
         return static_cast<QAbstractItemView*>(m_viewStack->currentWidget());
     return static_cast<QAbstractItemView*>(m_flowView->detailsView());
+}
+
+void
+ViewContainer::resizeEvent(QResizeEvent *e)
+{
+    QWidget::resizeEvent(e);
+    m_searchIndicator->move(width()-256, height()-256);
 }
 
 void ViewContainer::setRootIndex(const QModelIndex &index) { VIEWS(setRootIndex(index)); }
