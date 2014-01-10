@@ -119,8 +119,9 @@ FileSystemModel::Node::Node(FileSystemModel *model, const QString &path, Node *p
 
 FileSystemModel::Node::~Node()
 {
-    for (int i = 0; i<Deleted+1; ++i)
-        qDeleteAll(m_children[i]);
+    for (int i = 0; i<HiddenFiles+1; ++i)
+        if (!m_children[i].isEmpty())
+            qDeleteAll(m_children[i]);
 }
 
 void
@@ -369,6 +370,7 @@ FileSystemModel::Node::rePopulate()
     if (!m_children[Files].isEmpty())
     {
         m_mutex.lock();
+        m_children[Deleted]+=m_children[Visible];
         m_children[Visible].clear();
         m_children[Visible]=m_children[Files];
         m_children[Files].clear();
@@ -517,7 +519,7 @@ FileSystemModel::Node::search(const QString &fileName)
         m_mutex.unlock();
     }
     else
-        qDeleteAll(m_children[Visible]); //only previous searchresults here...
+        m_children[Deleted]+=m_children[Visible]; //only previous searchresults here...
     emit model()->layoutChanged();
 
     emit model()->rootPathChanged(m_filePath);
@@ -538,7 +540,8 @@ FileSystemModel::Node::endSearch()
     if (!m_children[Files].isEmpty())
     {
         emit model()->layoutAboutToBeChanged();
-        qDeleteAll(m_children[Visible]);
+        m_children[Deleted]+=m_children[Visible];
+        m_children[Visible].clear();
         m_children[Visible]=m_children[Files];
         m_children[Hidden]=m_children[HiddenFiles];
         m_children[Files].clear();
