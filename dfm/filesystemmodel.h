@@ -86,7 +86,7 @@ public:
     class Node : public QFileInfo
     {
     public:
-        enum Children { Visible = 0, Hidden = 1, Filtered = 2, Deleted = 3, Files = 4, HiddenFiles = 5 };
+        enum Children { Visible = 0, Hidden = 1, Filtered = 2, Files = 3, HiddenFiles = 4 };
         enum Type { FSNode = 0, SearchResult = 1 };
         ~Node();
         void insertChild(Node *node);
@@ -94,13 +94,14 @@ public:
 
         inline bool isSearchResult() { return m_type == SearchResult; }
 
-        bool hasChild( const QString &name );
+        bool hasChild(const QString &name, const bool nameIsPath = false, const bool onlyVisible = false);
         int childCount() const;
         int row();
 
-        Type type() { return m_type; }
+        inline Type type() const { return m_type; }
 
         Node *child(const int c);
+        Node *child(const QString &path);
         inline Node *parent() const { return m_parent; }
 
         void rePopulate();
@@ -224,6 +225,7 @@ private slots:
     void dirChanged( const QString &path );
     void emitRootPathLater() { emit rootPathChanged(rootPath()); }
     void nodeGenerated(const QString &path, FileSystemModel::Node *node);
+    void removeDeleted();
 
 signals:
     void flowDataChanged( const QModelIndex &start, const QModelIndex &end );

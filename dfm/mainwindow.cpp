@@ -40,6 +40,7 @@ QList<MainWindow *> MainWindow::s_openWindows;
 MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     : QMainWindow()
     , m_sortButton(0)
+    , m_activeContainer(0)
 { 
     addActions(Store::customActions());
     s_currentWindow = this;
@@ -923,6 +924,16 @@ MainWindow::writeSettings()
     Store::config.behaviour.sortingOrd = m_model->sortOrder();
     Store::writeConfig();
     m_placesView->store();
+}
+
+void
+MainWindow::activatePath(const QString &folder)
+{
+    if (!m_activeContainer)
+        return;
+    if (!m_activeContainer->model())
+        return;
+    m_activeContainer->model()->setPath(folder);
 }
 
 MainWindow *MainWindow::currentWindow() { return s_currentWindow; }

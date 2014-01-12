@@ -176,7 +176,7 @@ protected:
         if (m_pixData.contains(index.internalPointer()))
             return m_pixData.value(index.internalPointer());
 
-        QIcon icon = m_model->fileIcon(index);
+        const QIcon &icon = m_model->fileIcon(index);
 
         const bool isThumb = m_model->hasThumb(m_model->filePath(index));
 

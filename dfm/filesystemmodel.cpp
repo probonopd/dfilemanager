@@ -93,6 +93,9 @@ static bool lessThen(FileSystemModel::Node *n1, FileSystemModel::Node *n2)
     return desc?!lt:lt;
 }
 
+static QDir::Filters filters = QDir::AllEntries|QDir::System|QDir::NoDotAndDotDot|QDir::Hidden;
+static FileSystemModel::Nodes s_deletedNodes;
+
 FileSystemModel::Node::Node(FileSystemModel *model, const QString &path, Node *parent, const Type &t)
     : QFileInfo(path)
     , m_parent(parent)
@@ -178,6 +181,20 @@ FileSystemModel::Node
     QMutexLocker locker(&m_mutex);
     if (c > -1 && c < m_children[Visible].size())
         return m_children[Visible].at(c);
+    return 0;
+}
+
+FileSystemModel::Node
+*FileSystemModel::Node::child(const QString &path)
+{
+    QMutexLocker locker(&m_mutex);
+    int c = m_children[Visible].count();
+    while ( --c > -1 )
+    {
+        Node *node = m_children[Visible].at(c);
+        if ( node && node->filePath() == path )
+            return node;
+    }
     return 0;
 }
 
@@ -308,7 +325,7 @@ FileSystemModel::Node
         else
             rePopulate();
     }
-    for ( int i = 0; i < Deleted; ++i )
+    for ( int i = 0; i < Files; ++i )
     {
         if (!i)
             m_mutex.lock();
@@ -349,19 +366,36 @@ FileSystemModel::Node
     while (dir.cdUp())
         paths.prepend(dir.absolutePath());
 
-    Node *node = model()->rootNode();
+    Node *n = model()->rootNode();
 
-    while ( !paths.isEmpty() && node )
-        node = node->nodeFromPath(paths.takeFirst(), checkOnly);
+    while ( !paths.isEmpty() && n )
+        n = n->nodeFromPath(paths.takeFirst(), checkOnly);
 
-    if ( node && node->filePath() == path )
-        return node;
+    if ( n && n->filePath() == path )
+        return n;
 
     return 0;
 }
 
-static QDir::Filters filters = QDir::AllEntries|QDir::System|QDir::NoDotAndDotDot|QDir::Hidden;
-static QDir::Filters noHidden = QDir::AllEntries|QDir::System|QDir::NoDotAndDotDot;
+bool
+FileSystemModel::Node::hasChild(const QString &name, const bool nameIsPath, const bool onlyVisible)
+{
+    int vis = onlyVisible ? 0 : Files;
+    for ( int i = 0; i < vis; ++i )
+    {
+        FileSystemModel::Nodes::const_iterator start = m_children[i].constBegin(), end = m_children[i].constEnd();
+        while ( start != end )
+        {
+            bool check = (*start)->name() == name;
+            if (nameIsPath)
+                check = (*start)->filePath() == name;
+            if (check)
+                return true;
+            ++start;
+        }
+    }
+    return false;
+}
 
 void
 FileSystemModel::Node::rePopulate()
@@ -370,7 +404,7 @@ FileSystemModel::Node::rePopulate()
     if (!m_children[Files].isEmpty())
     {
         m_mutex.lock();
-        m_children[Deleted]+=m_children[Visible];
+        s_deletedNodes+=m_children[Visible];
         m_children[Visible].clear();
         m_children[Visible]=m_children[Files];
         m_children[Files].clear();
@@ -389,7 +423,7 @@ FileSystemModel::Node::rePopulate()
             model()->setSort(sc, so);
     }
     if ( isPopulated() )
-        for ( int i = 0; i < Deleted; ++i )
+        for ( int i = 0; i < Files; ++i )
         {
             int c = m_children[i].count();
             while ( --c > -1 )
@@ -403,7 +437,7 @@ FileSystemModel::Node::rePopulate()
                         model()->beginRemoveRows(model()->index(filePath()), c, c);
                         m_mutex.lock();
                     }
-                    m_children[Deleted] << m_children[i].takeAt(c);
+                    s_deletedNodes << m_children[i].takeAt(c);
                     if ( !i )
                     {
                         m_mutex.unlock();
@@ -442,22 +476,6 @@ FileSystemModel::Node::rePopulate()
     for ( int i = 0; i < m_children[Visible].count(); ++i )
         if ( m_children[Visible].at(i)->isPopulated() )
             m_children[Visible].at(i)->rePopulate();
-}
-
-bool
-FileSystemModel::Node::hasChild(const QString &name)
-{
-    for ( int i = 0; i < Deleted; ++i )
-    {
-        FileSystemModel::Nodes::const_iterator start = m_children[i].constBegin(), end = m_children[i].constEnd();
-        while ( start != end )
-        {
-            if ( (*start)->name() == name )
-                return true;
-            ++start;
-        }
-    }
-    return false;
 }
 
 void
@@ -519,7 +537,12 @@ FileSystemModel::Node::search(const QString &fileName)
         m_mutex.unlock();
     }
     else
-        m_children[Deleted]+=m_children[Visible]; //only previous searchresults here...
+    {
+        m_mutex.lock();
+        s_deletedNodes+=m_children[Visible]; //only previous searchresults here...
+        m_children[Visible].clear();
+        m_mutex.unlock();
+    }
     emit model()->layoutChanged();
 
     emit model()->rootPathChanged(m_filePath);
@@ -540,7 +563,7 @@ FileSystemModel::Node::endSearch()
     if (!m_children[Files].isEmpty())
     {
         emit model()->layoutAboutToBeChanged();
-        m_children[Deleted]+=m_children[Visible];
+        s_deletedNodes+=m_children[Visible];
         m_children[Visible].clear();
         m_children[Visible]=m_children[Files];
         m_children[Hidden]=m_children[HiddenFiles];
@@ -695,6 +718,7 @@ FileSystemModel::FileSystemModel(QObject *parent)
     connect ( m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)) );
     connect ( m_dataGatherer, SIGNAL(nodeGenerated(QString,FileSystemModel::Node*)), this, SLOT(nodeGenerated(QString,FileSystemModel::Node*)) );
     connect(this, SIGNAL(fileRenamed(QString,QString,QString)), ThumbsLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
+    connect(m_dataGatherer, SIGNAL(finished()), this, SLOT(removeDeleted()));
 }
 
 FileSystemModel::~FileSystemModel()
@@ -726,7 +750,7 @@ FileSystemModel::nodeGenerated(const QString &path, FileSystemModel::Node *node)
 void
 FileSystemModel::setRootPath(const QString &path)
 {
-    if ( rootPath() == path || path.isEmpty() )
+    if ( !QFileInfo(path).isDir() )
         return;
     Node *current = rootNode()->node(m_rootPath);
     if (current)
@@ -774,12 +798,9 @@ FileSystemModel::flags(const QModelIndex &index) const
 {
     Node *node = fromIndex(index);
     Qt::ItemFlags flags /*= QAbstractItemModel::flags(index)*/=Qt::ItemIsEnabled;
-    if ( node->isWritable() )
-        flags |= Qt::ItemIsEditable;
-    if ( node->isDir() )
-        flags |= Qt::ItemIsDropEnabled;
-    if ( node->isReadable() && !isPopulating() )
-        flags |= Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
+    if ( node->isWritable() ) flags |= Qt::ItemIsEditable;
+    if ( node->isDir() ) flags |= Qt::ItemIsDropEnabled;
+    if ( node->isReadable() && !isPopulating() ) flags |= Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
     return flags;
 }
 
@@ -1011,7 +1032,13 @@ QModelIndex
 FileSystemModel::index(const QString &path) const
 {
     Node *node = m_rootNode->node(path);
-    if ( !node )
+
+    if (!node)
+        if (Node *rootPathNode = m_rootNode->node(rootPath()))
+            if (rootPathNode->isPopulated())
+                node = rootPathNode->child(path);
+
+    if (!node)
         return QModelIndex();
 
     return createIndex(node->row(), 0, node);
@@ -1258,4 +1285,11 @@ FileSystemModel::currentSearchString()
 {
     Node *node = rootNode()->node(m_rootPath);
     return node?node->filter():QString();
+}
+
+void
+FileSystemModel::removeDeleted()
+{
+    qDeleteAll(s_deletedNodes);
+    s_deletedNodes.clear();
 }

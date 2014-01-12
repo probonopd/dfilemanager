@@ -209,8 +209,8 @@ ColumnsWidget::setCurrentView( ColumnsView *view )
         return;
     m_currentView = view;
     emit currentViewChagned(view);
-    if ( !view->hasFocus() )
-        view->setFocus();
+//    if ( !view->hasFocus() )
+//        view->setFocus();
 //    if ( m_fsModel->index(m_fsModel->rootPath()) != view->rootIndex() )
 //        m_fsModel->setRootPath(m_fsModel->filePath(view->rootIndex()));
 }
