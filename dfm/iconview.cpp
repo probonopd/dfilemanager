@@ -528,18 +528,18 @@ IconView::mouseReleaseEvent( QMouseEvent *e )
     QAbstractItemView::mouseReleaseEvent(e);
     const QModelIndex &index = indexAt(e->pos());
     m_pressPos = QPoint();
-    if ( Store::config.views.singleClick
-         && e->modifiers() == Qt::NoModifier
-         && e->button() == Qt::LeftButton
-         && state() == NoState )
-    {
-        if (index == m_pressedIndex)
-            emit activated(index);
-        e->accept();
-        m_pressedIndex = QModelIndex();
-        viewport()->update();
-        return;
-    }
+//    if ( Store::config.views.singleClick
+//         && e->modifiers() == Qt::NoModifier
+//         && e->button() == Qt::LeftButton
+//         && state() == NoState )
+//    {
+//        if (index == m_pressedIndex)
+//            emit activated(index);
+//        e->accept();
+//        m_pressedIndex = QModelIndex();
+//        viewport()->update();
+//        return;
+//    }
     if ( e->button() == Qt::MiddleButton )
     {
         if ( e->pos() == m_startPos
