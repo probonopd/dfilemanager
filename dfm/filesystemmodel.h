@@ -225,6 +225,7 @@ private slots:
     void dirChanged( const QString &path );
     void emitRootPathLater() { emit rootPathChanged(rootPath()); }
     void nodeGenerated(const QString &path, FileSystemModel::Node *node);
+    void removeDeletedLater();
     void removeDeleted();
 
 signals:

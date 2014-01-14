@@ -537,7 +537,7 @@ TabBar::TabBar(QWidget *parent)
     , m_addButton(0)
     , m_hasPress(false)
     , m_dropIndicator(new DropIndicator(this))
-    , m_mouseGrabber(0)
+    , m_filteringEvents(false)
 {
     setSelectionBehaviorOnRemove(QTabBar::SelectPreviousTab);
     setDocumentMode(true);
@@ -584,6 +584,11 @@ TabBar::dragEnterEvent(QDragEnterEvent *e)
 void
 TabBar::dragMoveEvent(QDragMoveEvent *e)
 {
+    if (e->source() == this && !m_filteringEvents)
+    {
+        m_filteringEvents = true;
+        qApp->installEventFilter(this);
+    }
     if ( e->mimeData()->property("tab").isValid() && tabAt(e->pos()) != -1 )
     {
         QRect r = tabRect(tabAt(e->pos()));
@@ -692,7 +697,6 @@ TabBar::newWindowTab(int tab)
     win->show();
 }
 
-#if 0
 bool
 TabBar::eventFilter(QObject *o, QEvent *e)
 {
@@ -701,7 +705,6 @@ TabBar::eventFilter(QObject *o, QEvent *e)
             m_dragCancelled=true;
     return QTabBar::eventFilter(o, e);
 }
-#endif
 
 void
 TabBar::mouseMoveEvent(QMouseEvent *e)
@@ -737,6 +740,9 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
         if (!drag->exec(Qt::CopyAction|Qt::MoveAction))
             if (count() > 1 && !m_dragCancelled) //no idea how to actually get the dragcancel 'event'
                 newWindowTab(data->property("tab").toInt());
+        if (m_filteringEvents)
+            qApp->removeEventFilter(this);
+        m_filteringEvents = false;
     }
     if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
         QCoreApplication::sendEvent(bar, e);

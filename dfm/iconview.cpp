@@ -525,24 +525,28 @@ IconView::mousePressEvent( QMouseEvent *event )
 void
 IconView::mouseReleaseEvent( QMouseEvent *e )
 {
+    QAbstractItemView::mouseReleaseEvent(e);
     const QModelIndex &index = indexAt(e->pos());
     m_pressPos = QPoint();
     if ( Store::config.views.singleClick
-         && !e->modifiers()
+         && e->modifiers() == Qt::NoModifier
          && e->button() == Qt::LeftButton
-         && index == m_pressedIndex
          && state() == NoState )
     {
-        emit activated(index);
+        if (index == m_pressedIndex)
+            emit activated(index);
         e->accept();
+        m_pressedIndex = QModelIndex();
+        viewport()->update();
         return;
     }
     if ( e->button() == Qt::MiddleButton )
     {
         if ( e->pos() == m_startPos
-             && !e->modifiers() )
+             && !e->modifiers()
+             && index == m_pressedIndex )
         {
-            emit newTabRequest( indexAt( e->pos() ) );
+            emit newTabRequest(index);
             e->accept();
         }
         if ( m_startSlide )
@@ -557,7 +561,7 @@ IconView::mouseReleaseEvent( QMouseEvent *e )
         }
     }
 
-    QAbstractItemView::mouseReleaseEvent( e );
+
     viewport()->update(); //required for itemdelegate toggling between bold / normal font.... just update( index ) doesnt work.
 }
 
@@ -872,7 +876,7 @@ IconView::calculateRects()
         for (int cat = 0; cat < m_categories.count(); ++cat)
         {
             m_contentsHeight+=vsz;
-            int starth = m_contentsHeight;
+            const int startv = m_contentsHeight;
 
             m_contentsHeight+=fm.boundingRect(m_categories.at(cat)).height();
             int row = -1;
@@ -890,7 +894,7 @@ IconView::calculateRects()
                 if (index.isValid()&&index.internalPointer())
                     m_rects.insert(index.internalPointer(), QRect(hsz*row, m_contentsHeight, hsz, vsz));
             }
-            m_catRects.insert(m_categories.at(cat), QRect(0, starth, viewport()->width(), (m_contentsHeight+vsz)-starth));
+            m_catRects.insert(m_categories.at(cat), QRect(0, startv, viewport()->width(), (m_contentsHeight+vsz)-startv));
         }
     }
     else

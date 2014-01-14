@@ -473,6 +473,9 @@ FileSystemModel::Node::rePopulate()
     if ( filePath() == model()->rootPath() )
         emit model()->directoryLoaded(filePath());
 
+    qDeleteAll(s_deletedNodes);
+    s_deletedNodes.clear();
+
     for ( int i = 0; i < m_children[Visible].count(); ++i )
         if ( m_children[Visible].at(i)->isPopulated() )
             m_children[Visible].at(i)->rePopulate();
@@ -718,7 +721,7 @@ FileSystemModel::FileSystemModel(QObject *parent)
     connect ( m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)) );
     connect ( m_dataGatherer, SIGNAL(nodeGenerated(QString,FileSystemModel::Node*)), this, SLOT(nodeGenerated(QString,FileSystemModel::Node*)) );
     connect(this, SIGNAL(fileRenamed(QString,QString,QString)), ThumbsLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
-    connect(m_dataGatherer, SIGNAL(finished()), this, SLOT(removeDeleted()));
+    connect(m_dataGatherer, SIGNAL(finished()), this, SLOT(removeDeletedLater()));
 }
 
 FileSystemModel::~FileSystemModel()
@@ -1285,6 +1288,12 @@ FileSystemModel::currentSearchString()
 {
     Node *node = rootNode()->node(m_rootPath);
     return node?node->filter():QString();
+}
+
+void
+FileSystemModel::removeDeletedLater()
+{
+//    QTimer::singleShot(500, this, SLOT(removeDeleted()));
 }
 
 void
