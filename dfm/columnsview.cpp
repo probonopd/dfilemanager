@@ -189,7 +189,7 @@ ColumnsView::keyPressEvent(QKeyEvent *event)
         if ( selectionModel()->selectedIndexes().count() )
             foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
                 if ( !index.column() )
-                    emit activated(index);
+                    emit opened(index);
         event->accept();
         return;
     }
@@ -247,7 +247,7 @@ ColumnsView::mouseReleaseEvent(QMouseEvent *e)
          && m_pressPos == e->pos()
          && state() == NoState )
     {
-        emit activated(index);
+        emit opened(index);
         e->accept();
         return;
     }
@@ -353,4 +353,17 @@ ColumnsView::wheelEvent(QWheelEvent *e)
         return;
     }
     QListView::wheelEvent(e);
+}
+
+void
+ColumnsView::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    QListView::mouseDoubleClickEvent(event);
+    const QModelIndex &index = indexAt(event->pos());
+    if (index.isValid()
+            && !Store::config.views.singleClick
+            && !event->modifiers()
+            && event->button() == Qt::LeftButton
+            && state() == NoState)
+        emit opened(index);
 }

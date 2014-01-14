@@ -85,7 +85,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
         v->setMouseTracking( true );
         connect( v, SIGNAL(entered(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
         connect( v, SIGNAL(viewportEntered()), this, SIGNAL(viewportEntered()));
-        connect( v, SIGNAL(activated(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect( v, SIGNAL(opened(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
 //        connect( m_model, SIGNAL(paintRequest()), v->viewport(), SLOT(update()) );
     }
 

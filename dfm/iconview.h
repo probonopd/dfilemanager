@@ -53,9 +53,11 @@ protected:
     void resizeEvent(QResizeEvent *e);
     void mouseMoveEvent(QMouseEvent *e);
     void contextMenuEvent(QContextMenuEvent *event);
+
     void mouseReleaseEvent(QMouseEvent *e);
     void mousePressEvent(QMouseEvent *event);
     void mouseDoubleClickEvent(QMouseEvent *event);
+
     void paintEvent(QPaintEvent *e);
     void keyPressEvent(QKeyEvent *e);
     void showEvent(QShowEvent *e);
@@ -85,6 +87,7 @@ public slots:
 signals:
     void iconSizeChanged(const int size);
     void newTabRequest(const QModelIndex &path);
+    void opened(const QModelIndex &index);
     
 private slots:
     void scrollEvent();

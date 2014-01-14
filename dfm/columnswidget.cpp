@@ -71,7 +71,7 @@ void
 ColumnsWidget::connectView(ColumnsView *view)
 {
     view->disconnect();
-    connect(view, SIGNAL(activated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
+    connect(view, SIGNAL(opened(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
     connect(view, SIGNAL(dirActivated(QModelIndex)), m_container, SLOT(activate(QModelIndex)));
     connect(view, SIGNAL(entered(QModelIndex)), m_container, SIGNAL(entered(QModelIndex)));
     connect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));

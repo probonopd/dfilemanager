@@ -48,12 +48,14 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event);
     void mouseReleaseEvent(QMouseEvent *e);
     void mousePressEvent(QMouseEvent *event);
+    void mouseDoubleClickEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *);
     void resizeEvent(QResizeEvent *event);
 
 signals:
     void newTabRequest(const QModelIndex &path);
     void sortIndicatorChanged(int column, int order);
+    void opened(const QModelIndex &index);
 
 private slots:
     void sortingChanged(const int column, const int order);

@@ -102,6 +102,19 @@ DetailsView::sortingChanged(const int column, const int order)
 }
 
 void
+DetailsView::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    QTreeView::mouseDoubleClickEvent(event);
+    const QModelIndex &index = indexAt(event->pos());
+    if (index.isValid()
+            && !Store::config.views.singleClick
+            && !event->modifiers()
+            && event->button() == Qt::LeftButton
+            && state() == NoState)
+        emit opened(index);
+}
+
+void
 DetailsView::setModel(QAbstractItemModel *model)
 {
     QTreeView::setModel(model);
@@ -122,7 +135,7 @@ DetailsView::keyPressEvent(QKeyEvent *event)
         if ( selectionModel()->selectedIndexes().count() )
             foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
                 if ( !index.column() )
-                    emit activated(index);
+                    emit opened(index);
         event->accept();
         return;
     }

@@ -62,12 +62,14 @@ signals:
     void pathDeleted(ColumnsView *view);
     void dirActivated(const QModelIndex &dir);
     void expandRequest(const QModelIndex &index);
+    void opened(const QModelIndex &index);
 
 protected:
     void contextMenuEvent(QContextMenuEvent *event);
     void mouseReleaseEvent(QMouseEvent *e);
     void keyPressEvent(QKeyEvent *);
     void mousePressEvent(QMouseEvent *event) { QListView::mousePressEvent(event); m_pressPos = event->pos(); emit focusRequest(this); }
+    void mouseDoubleClickEvent(QMouseEvent *event);
 //    void focusInEvent(QFocusEvent *event) { QListView::focusInEvent(event); emit focusRequest(this); /*viewport()->update();*/ }
 //    void focusOutEvent(QFocusEvent *event) { QListView::focusOutEvent(event); viewport()->update(); }
     void wheelEvent(QWheelEvent *e);

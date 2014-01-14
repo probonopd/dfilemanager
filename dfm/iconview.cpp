@@ -436,7 +436,7 @@ IconView::keyPressEvent(QKeyEvent *event)
         if ( selectionModel()->selectedIndexes().count() )
             foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
                 if ( !index.column() )
-                    emit activated(index);
+                    emit opened(index);
         event->accept();
         return;
     }
@@ -528,18 +528,18 @@ IconView::mouseReleaseEvent( QMouseEvent *e )
     QAbstractItemView::mouseReleaseEvent(e);
     const QModelIndex &index = indexAt(e->pos());
     m_pressPos = QPoint();
-//    if ( Store::config.views.singleClick
-//         && e->modifiers() == Qt::NoModifier
-//         && e->button() == Qt::LeftButton
-//         && state() == NoState )
-//    {
-//        if (index == m_pressedIndex)
-//            emit activated(index);
-//        e->accept();
-//        m_pressedIndex = QModelIndex();
-//        viewport()->update();
-//        return;
-//    }
+    if ( Store::config.views.singleClick
+         && e->modifiers() == Qt::NoModifier
+         && e->button() == Qt::LeftButton
+         && state() == NoState )
+    {
+        if (index == m_pressedIndex)
+            emit opened(index);
+        e->accept();
+        m_pressedIndex = QModelIndex();
+        viewport()->update();
+        return;
+    }
     if ( e->button() == Qt::MiddleButton )
     {
         if ( e->pos() == m_startPos
@@ -568,8 +568,14 @@ IconView::mouseReleaseEvent( QMouseEvent *e )
 void
 IconView::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    if (!Store::config.views.singleClick)
-        QAbstractItemView::mouseDoubleClickEvent(event);
+    QAbstractItemView::mouseDoubleClickEvent(event);
+    const QModelIndex &index = indexAt(event->pos());
+    if (index.isValid()
+            && !Store::config.views.singleClick
+            && !event->modifiers()
+            && event->button() == Qt::LeftButton
+            && state() == NoState)
+        emit opened(index);
 }
 
 QStyleOptionViewItem
