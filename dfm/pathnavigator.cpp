@@ -284,6 +284,7 @@ PathNavigator::genNavFromPath( const QString &path )
     }
     m_layout->addStretch();
     m_bc->pathBox()->setEditText(path);
+    m_bc->pathChanged(path);
 }
 
 BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)

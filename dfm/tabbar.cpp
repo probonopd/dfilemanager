@@ -156,6 +156,7 @@ FooBar::FooBar(QWidget *parent)
     , m_toolBar(MainWindow::currentWindow()->toolBar())
     , m_hasPress(false)
     , m_pressPos(QPoint())
+    , m_flags(Qt::Widget)
 {
     m_mainWin->installEventFilter(this);
     if ( Store::config.behaviour.frame )
@@ -164,6 +165,9 @@ FooBar::FooBar(QWidget *parent)
     m_toolBar->setAttribute(Qt::WA_NoSystemBackground);
     m_toolBar->setAutoFillBackground(false);
     setAttribute(Qt::WA_NoSystemBackground);
+    m_flags = m_mainWin->windowFlags();
+//    m_mainWin->setWindowFlags(Qt::Popup);
+//    m_mainWin->setWindowFlags(Qt::);
 }
 
 int
@@ -188,6 +192,9 @@ FooBar::setTabBar(TabBar *tabBar)
 void
 FooBar::correctTabBarHeight()
 {
+//    m_mainWin->setWindowFlags(m_flags);
+    if (!m_mainWin->isVisible())
+        m_mainWin->show();
     m_tabBar->setFixedHeight(m_tabBar->tabSizeHint(m_tabBar->currentIndex()).height());
 
     QPixmap confPix(16, 16);

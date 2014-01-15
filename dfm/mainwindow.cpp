@@ -424,6 +424,8 @@ MainWindow::closeEvent(QCloseEvent *event)
     writeSettings();
     s_openWindows.removeOne(this);
     event->accept();
+    if (s_openWindows.isEmpty())
+        qApp->quit();
 }
 
 void

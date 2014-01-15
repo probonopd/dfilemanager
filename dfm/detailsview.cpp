@@ -191,10 +191,10 @@ DetailsView::mouseReleaseEvent(QMouseEvent *e)
          && !e->modifiers()
          && e->button() == Qt::LeftButton
          && m_pressedIndex == index.internalPointer()
-         && visualRect(index).contains(e->pos())
+//         && visualRect(index).contains(e->pos())
          && !state() )
     {
-        emit activated(index);
+        emit opened(index);
         e->accept();
         return;
     }

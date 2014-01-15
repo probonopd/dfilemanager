@@ -167,7 +167,6 @@ public slots:
     void setRootPath( const QString &rootPath );
     inline void toggleEditable() { currentWidget() == m_pathNav ? setEditable(true) : setEditable(false); }
     void complete( const QString &path);
-private slots:
     void pathChanged( const QString &path );
 signals:
     void newPath( const QString &path );

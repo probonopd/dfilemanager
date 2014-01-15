@@ -100,6 +100,7 @@ private:
     QPoint m_pressPos;
     MainWindow *m_mainWin;
     WindowFrame *m_frame;
+    Qt::WindowFlags m_flags;
     friend class TabBar;
 };
 
