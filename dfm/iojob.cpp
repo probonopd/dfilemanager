@@ -398,7 +398,7 @@ IOThread::IOThread(const QStringList &inf, const QString &dest, const bool cut, 
     connect(this, SIGNAL(errorSignal()), this, SLOT(errorSlot()));
     connect(m_speedTimer, SIGNAL(timeout()), this, SLOT(checkSpeed()));
     m_timer->start(100);
-    m_speedTimer->start(1000);
+    m_speedTimer->start(100);
 }
 
 IOThread::IOThread(const QStringList &paths, QObject *parent)
@@ -423,7 +423,7 @@ IOThread::checkSpeed()
 {
     const quint64 diff = m_allProgress-m_diffCheck;
     m_diffCheck = m_allProgress;
-    emit speed(QString("%1 /s").arg(Ops::prettySize(diff)));
+    emit speed(QString("%1 /s").arg(Ops::prettySize(diff*10)));
 }
 
 void
@@ -440,12 +440,26 @@ IOThread::run()
     case Copy:
     {
         const quint64 destId = Ops::getDriveInfo<Ops::Id>( m_destDir );
-        while (!m_canceled && !m_inFiles.isEmpty())
+        QStringList::const_iterator begin = m_inFiles.begin(), end = m_inFiles.end();
+        while (!m_canceled && begin != end)
         {
-            m_inFile = m_inFiles.takeFirst();
+            m_inFile = *begin;
             const bool sameDisk = destId != 0 && ( (quint64)Ops::getDriveInfo<Ops::Id>( m_inFile ) ==  destId );
             const QString &outFile = QDir(m_destDir).absoluteFilePath(QFileInfo(m_inFile).fileName());
             copyRecursive( m_inFile, outFile, m_cut, sameDisk );
+            ++begin;
+        }
+        if (m_cut)
+        {
+            begin = m_inFiles.begin();
+            while (!m_canceled && begin != end)
+            {
+                m_inFile = *begin;
+                const bool sameDisk = destId != 0 && ( (quint64)Ops::getDriveInfo<Ops::Id>( m_inFile ) ==  destId );
+                if (!sameDisk)
+                    remove(m_inFile);
+                ++begin;
+            }
         }
         break;
     }
@@ -538,8 +552,8 @@ IOThread::copyRecursive(const QString &inFile, const QString &outFile, bool cut,
                 setPaused(true);
                 PAUSE;
             }
-        const QDir &inDir(inFile);
-        const QStringList &entries(inDir.entryList(QDir::AllDirs|QDir::Files|QDir::NoDotAndDotDot|QDir::Hidden, QDir::Name|QDir::DirsFirst));
+        const QDir inDir(inFile);
+        const QStringList entries(inDir.entryList(QDir::AllDirs|QDir::Files|QDir::NoDotAndDotDot|QDir::Hidden, QDir::Name|QDir::DirsFirst));
         const int n = entries.count();
         for ( int i = 0; i < n; ++i )
         {
@@ -553,9 +567,6 @@ IOThread::copyRecursive(const QString &inFile, const QString &outFile, bool cut,
         setPaused(true);
         PAUSE;
     }
-
-    if (cut && QFileInfo(outFile).exists())
-        remove(inFile);
 }
 
 bool

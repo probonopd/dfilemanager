@@ -95,19 +95,16 @@ Menu::mousePressEvent(QMouseEvent *e)
 }
 
 NavButton::NavButton(QWidget *parent, const QString &path, const QString &text)
-    : QToolButton(parent)
+    : QWidget(parent)
     , m_path(path)
     , m_nav(static_cast<PathNavigator *>(parent))
     , m_hasData(false)
     , m_margin(4)
+    , m_text(text)
 {
-    setText(text);
-    setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    connect(this, SIGNAL(released()), this, SLOT(emitPath()));
-    setFixedHeight(23);
+    setMaximumHeight(16);
     if ( m_nav->path() != path )
         setMinimumWidth(23);
-    setIconSize(QSize(16, 16));
     setAcceptDrops(true);
     setForegroundRole(QPalette::Text);
 }
@@ -115,7 +112,13 @@ NavButton::NavButton(QWidget *parent, const QString &path, const QString &text)
 QSize
 NavButton::sizeHint() const
 {
-    return QSize(18+fontMetrics().boundingRect(text()).width()+m_margin*2, 23);
+    return QSize(18+fontMetrics().boundingRect(m_text).width()+m_margin*2, 16);
+}
+
+QSize
+NavButton::minimumSizeHint() const
+{
+    return QSize(QWidget::minimumSizeHint().width(), 16);
 }
 
 void
@@ -141,7 +144,7 @@ NavButton::dropEvent(QDropEvent *e)
 void
 NavButton::leaveEvent(QEvent *e)
 {
-    QToolButton::leaveEvent(e);
+    QWidget::leaveEvent(e);
     m_hasData = false;
     update();
 }
@@ -149,7 +152,7 @@ NavButton::leaveEvent(QEvent *e)
 void
 NavButton::dragLeaveEvent(QDragLeaveEvent *e)
 {
-    QToolButton::dragLeaveEvent(e);
+    QWidget::dragLeaveEvent(e);
     m_hasData = false;
     update();
 }
@@ -160,11 +163,11 @@ NavButton::paintEvent(QPaintEvent *e)
 //    QToolButton::paintEvent(e);
     const QPixmap &pix = m_nav->model()->fileIcon(m_nav->model()->index(m_path)).pixmap(16);
     QPainter p(this);
-    p.drawTiledPixmap(m_margin, 4, 16, 16, pix);
+    p.drawTiledPixmap(m_margin, 0, 16, 16, pix);
 
-    QRect textRect = QRect(18+m_margin, 4, width()-(18+m_margin), height()-5);
-    const QColor &fg=palette().color(foregroundRole());
-    const QColor &bg=palette().color(backgroundRole());
+    const QRect &textRect = QRect(18+m_margin, 0, width()-(18+m_margin), height());
+    const QColor &fg = palette().color(foregroundRole());
+    const QColor &bg = palette().color(backgroundRole());
     int y = bg.value()>fg.value()?1:-1;
     const QColor &emb = Ops::colorMid(bg, y==1?Qt::white:Qt::black);
 
@@ -176,36 +179,59 @@ NavButton::paintEvent(QPaintEvent *e)
     lgb.setColorAt(0.0f, emb);
     lgb.setColorAt(0.6f, emb);
     lgb.setColorAt(1.0f, Qt::transparent);
+
     if ( rect().width() < sizeHint().width()-m_margin )
         p.setPen(QPen(lgb, 1.0f));
     else
         p.setPen(emb);
-    p.drawText(textRect.translated(0, 1), Qt::AlignLeft|Qt::AlignVCenter, text());
+
+    p.drawText(textRect.translated(0, 1), Qt::AlignLeft|Qt::AlignVCenter, m_text);
+
     if ( rect().width() < sizeHint().width()-m_margin )
         p.setPen(QPen(lgf, 1.0f));
     else
         p.setPen(fg);
-    p.drawText(textRect, Qt::AlignLeft|Qt::AlignVCenter, text());
-    p.end();
 
+    p.drawText(textRect, Qt::AlignLeft|Qt::AlignVCenter, m_text);
     if ( m_hasData )
     {
         QRectF r(rect());
         r.adjust(0.5f, 0.5f, -0.5f, -0.5f);
-        QPainter p(this);
         p.setPen(palette().color(foregroundRole()));
         p.drawRect(r);
-        p.end();
     }
+    p.end();
+}
+
+void
+NavButton::mousePressEvent(QMouseEvent *e)
+{
+    m_hasPress = true;
+    QWidget::mousePressEvent(e);
 }
 
 void
 NavButton::mouseReleaseEvent(QMouseEvent *e)
 {
+    if (!m_hasPress)
+        return QWidget::mouseReleaseEvent(e);
+
+    if (m_hasPress && !rect().contains(e->pos()))
+    {
+        m_hasPress = false;
+        return QWidget::mouseReleaseEvent(e);
+    }
+
     if ( e->button() == Qt::LeftButton )
-        QToolButton::mouseReleaseEvent(e);
+    {
+        m_hasPress = false;
+        emit navPath(m_path);
+        e->accept();
+        return;
+    }
     else if ( e->button() == Qt::MidButton )
     {
+        m_hasPress = false;
         e->accept();
         MainWindow::currentWindow()->addTab( m_path );
     }
@@ -214,7 +240,7 @@ NavButton::mouseReleaseEvent(QMouseEvent *e)
 }
 
 PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model )
-    : QFrame( parent )
+    : QWidget( parent )
     , m_fsModel(model)
     , m_hasPress(false)
     , m_layout(new QHBoxLayout(this))
@@ -223,11 +249,16 @@ PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model )
     connect( m_fsModel, SIGNAL( directoryLoaded(QString)), this, SLOT( genNavFromPath( QString ) ) );
     setForegroundRole( QPalette::Text );
     setBackgroundRole( QPalette::Base );
-    setMaximumHeight( 23 );
     setContentsMargins( 0, 0, 0, 0 );
     m_layout->setContentsMargins( 0, 0, 0, 0 );
     m_layout->setSpacing( 0 );
     setLayout(m_layout);
+}
+
+QSize
+PathNavigator::sizeHint() const
+{
+    return QSize(QWidget::sizeHint().width(), 16);
 }
 
 void
@@ -296,8 +327,8 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
     addWidget(m_pathNav);
     addWidget(m_pathBox);
 
-    setMaximumHeight(23);
     setFrameStyle( QFrame::StyledPanel | QFrame::Sunken );
+    setContentsMargins(0, 0, 0, 0);
     setAutoFillBackground(true);
     setBackgroundRole(QPalette::Base);
     QPalette pal = palette();
@@ -308,7 +339,6 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
     m_pathBox->setInsertPolicy(QComboBox::InsertAtBottom);
     m_pathBox->setEditable(true);
     m_pathBox->setDuplicatesEnabled(false);
-    m_pathBox->setMaximumHeight(23);
     m_pathBox->installEventFilter(this);
 
 
@@ -323,6 +353,12 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
     connect ( m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()) );
     connect ( m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()) );
     setCurrentWidget(m_pathNav);
+}
+
+QSize
+BreadCrumbs::sizeHint() const
+{
+    return QSize(QFrame::sizeHint().width(), 16);
 }
 
 void BreadCrumbs::setRootPath( const QString &rootPath ) { m_fsModel->setPath( Ops::sanityChecked(rootPath) ); setEditable(false); }

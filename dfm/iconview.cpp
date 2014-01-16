@@ -885,20 +885,20 @@ IconView::calculateRects()
             const int startv = m_contentsHeight;
 
             m_contentsHeight+=fm.boundingRect(m_categories.at(cat)).height();
-            int row = -1;
+            int col = -1;
             const QModelIndexList &block(m_model->category(m_categories.at(cat)));
             for (int i = 0; i < block.count(); ++i)
             {
-                if (row+1==m_horItems)
+                if (col+1==m_horItems)
                 {
                     m_contentsHeight+=vsz;
-                    row=0;
+                    col=0;
                 }
                 else
-                    ++row;
+                    ++col;
                 const QModelIndex &index(block.at(i));
                 if (index.isValid()&&index.internalPointer())
-                    m_rects.insert(index.internalPointer(), QRect(hsz*row, m_contentsHeight, hsz, vsz));
+                    m_rects.insert(index.internalPointer(), QRect(hsz*col, m_contentsHeight, hsz, vsz));
             }
             m_catRects.insert(m_categories.at(cat), QRect(0, startv, viewport()->width(), (m_contentsHeight+vsz)-startv));
         }

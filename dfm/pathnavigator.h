@@ -42,18 +42,20 @@ namespace DFM
 class PathNavigator;
 class BreadCrumbs;
 class PathBox;
-class NavButton : public QToolButton
+class NavButton : public QWidget
 {
     Q_OBJECT
 public:
     NavButton(QWidget *parent = 0, const QString &path = QString(), const QString &text = QString());
     QSize sizeHint() const;
-//    QSize minimumSizeHint() { return QSize(18+fontMetrics().boundingRect(text()).width(), 23); }
+    QSize minimumSizeHint() const;
 
 signals:
     void navPath(const QString &path);
+    void released();
 
 protected:
+    void mousePressEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
     void leaveEvent(QEvent *);
     void dragEnterEvent(QDragEnterEvent *);
@@ -61,13 +63,10 @@ protected:
     void dropEvent(QDropEvent *);
     void paintEvent(QPaintEvent *);
 
-private slots:
-    inline void emitPath() { if ( !m_path.isNull() && !m_path.isEmpty() && QFileInfo(m_path).isDir() ) emit navPath(m_path); }
-
 private:
-    QString m_path;
+    QString m_path, m_text;
     PathNavigator *m_nav;
-    bool m_hasData;
+    bool m_hasData, m_hasPress;
     int m_margin;
 };
 
@@ -121,7 +120,7 @@ protected:
     void keyPressEvent(QKeyEvent *e) { if ( e->key() == Qt::Key_Escape ) emit cancelEdit(); else QComboBox::keyPressEvent(e); }
 };
 
-class PathNavigator : public QFrame
+class PathNavigator : public QWidget
 {
     Q_OBJECT
 public:
@@ -130,14 +129,15 @@ public:
     inline FileSystemModel *model() { return m_fsModel; }
     inline QList<NavButton *> navButtons() { return QList<NavButton *>(findChildren<NavButton *>()); }
     inline int count() { return navButtons().count(); }
+    QSize sizeHint() const;
     
 signals:
     void pathChanged(const QString &path);
     void edit();
 
 protected:
-    void mousePressEvent(QMouseEvent *e) { QFrame::mousePressEvent(e); m_hasPress = true; }
-    void mouseReleaseEvent(QMouseEvent *e) { QFrame::mouseReleaseEvent(e); if ( m_hasPress ) emit edit(); m_hasPress = false; }
+    void mousePressEvent(QMouseEvent *e) { QWidget::mousePressEvent(e); m_hasPress = true; }
+    void mouseReleaseEvent(QMouseEvent *e) { QWidget::mouseReleaseEvent(e); if ( m_hasPress ) emit edit(); m_hasPress = false; }
     void clear();
 
 private slots:
@@ -163,6 +163,7 @@ public:
     inline bool isEditable() { return currentWidget() == static_cast<QWidget *>(m_pathBox); }
     inline PathNavigator *pathNav() { return m_pathNav; }
     inline PathBox *pathBox() { return m_pathBox; }
+    QSize sizeHint() const;
 public slots:
     void setRootPath( const QString &rootPath );
     inline void toggleEditable() { currentWidget() == m_pathNav ? setEditable(true) : setEditable(false); }

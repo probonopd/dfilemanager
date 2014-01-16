@@ -95,7 +95,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     m_viewStack->addWidget(m_flowView);
 
     QVBoxLayout *layout = new QVBoxLayout();
-    layout->addWidget(m_viewStack);
+    layout->addWidget(m_viewStack, 1);
     layout->addWidget(m_breadCrumbs);
     layout->setContentsMargins(0,0,0,0);
     layout->setSpacing(0);

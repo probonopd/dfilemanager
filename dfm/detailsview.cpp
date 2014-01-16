@@ -191,7 +191,7 @@ DetailsView::mouseReleaseEvent(QMouseEvent *e)
          && !e->modifiers()
          && e->button() == Qt::LeftButton
          && m_pressedIndex == index.internalPointer()
-//         && visualRect(index).contains(e->pos())
+         && visualRect(index).contains(e->pos()) //clicking on expanders should not open the dir...
          && !state() )
     {
         emit opened(index);
