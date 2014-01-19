@@ -47,9 +47,17 @@ typedef struct Config
         invertedColors,
         capsContainers,
         invActBookmark;
-        int tabShape, tabRoundness, tabHeight, tabWidth, tabOverlap, sortingCol;
+        int tabShape,
+        tabRoundness,
+        tabHeight,
+        tabWidth,
+        tabOverlap,
+        sortingCol,
+        pathBarStyle,
+        sideBarStyle,
+        view,
+        minFontSize;
         Qt::SortOrder sortingOrd;
-        int view, minFontSize;
     } behaviour;
 
     struct views

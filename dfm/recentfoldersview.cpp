@@ -36,11 +36,14 @@ RecentFoldersView::RecentFoldersView(QWidget *parent) : QListView(parent), m_mod
     connect(this, SIGNAL(activated(QModelIndex)), this, SLOT(itemActivated(QModelIndex)));
     connect(this, SIGNAL(clicked(QModelIndex)), this, SLOT(itemActivated(QModelIndex)));
 
-    //base color... slight hihglight tint
-    QPalette pal = palette();
-    QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
-    pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
-    setPalette( pal );
+    if (Store::config.behaviour.sideBarStyle)
+    {
+        //base color... slight hihglight tint
+        QPalette pal = palette();
+        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
+        pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
+        setPalette( pal );
+    }
 }
 
 void
@@ -60,6 +63,8 @@ RecentFoldersView::folderEntered(const QString &folder)
     if (!fsModel)
         return;
     QIcon icon(fsModel->fileIcon(fsModel->index(folder)));
+    if (icon.isNull())
+        icon = QFileIconProvider().icon(QFileIconProvider::Folder);
     QStandardItem *item = new QStandardItem(icon, QFileInfo(folder).fileName());
     item->setData(folder);
     item->setToolTip(folder);

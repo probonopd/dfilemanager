@@ -229,6 +229,7 @@ DetailsView::resizeEvent(QResizeEvent *event)
     setColumnWidth(1, qRound(w*0.12f));
     setColumnWidth(2, qRound(w*0.08f));
     setColumnWidth(3, qRound(w*0.2f));
+//    setColumnWidth(4, qRound(w*0.07f));
 //    for ( int i = 1; i < header()->count(); ++i )
 //        setColumnWidth(i, w*0.1f);
 }

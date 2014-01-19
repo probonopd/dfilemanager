@@ -659,13 +659,19 @@ IconView::paintEvent( QPaintEvent *e )
         rect.moveBottomRight( viewport()->rect().bottomRight() );
         p.drawText( rect, sizeString );
     }
-    if (m_pressPos != QPoint())
+    if (m_pressPos != QPoint() && state() == DragSelectingState)
     {
         QStyleOptionRubberBand opt;
         opt.initFrom(this);
         opt.shape = QRubberBand::Rectangle;
         opt.opaque = false;
-        opt.rect = QRect(m_pressPos, mapFromGlobal(QCursor::pos()));
+
+        const QPoint &gb = mapFromGlobal(QCursor::pos());
+        const int startx = qMin(m_pressPos.x(), gb.x());
+        const int starty = qMin(m_pressPos.y(), gb.y());
+        const int endx = qMax(m_pressPos.x(), gb.x());
+        const int endy = qMax(m_pressPos.y(), gb.y());
+        opt.rect = QRect(startx, starty, endx-startx, endy-starty);
         style()->drawControl(QStyle::CE_RubberBand, &opt, &p);
     }
     p.end();
@@ -730,6 +736,7 @@ IconView::setModel( QAbstractItemModel *model )
         m_layTimer->setInterval(20);
         connect(m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(updateLayout()));
         connect(m_model, SIGNAL(rootPathChanged(QString)), m_layTimer, SLOT(start()));
+        connect(m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(clear()));
         connect(m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(calculateRects()));
         connect(m_model, SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(clear(QModelIndex,QModelIndex)));
 //        connect(m_model, SIGNAL(hiddenVisibilityChanged(bool)), this, SLOT(updateLayout()));
@@ -1033,4 +1040,10 @@ void
 IconView::clear(const QModelIndex &first, const QModelIndex &last)
 {
     static_cast<IconDelegate *>(itemDelegate())->clear(first);
+}
+
+void
+IconView::clear()
+{
+    static_cast<IconDelegate *>(itemDelegate())->clearData();
 }

@@ -95,6 +95,7 @@ private slots:
     void updateIconSize();
     void calculateRects();
     void clear(const QModelIndex &first, const QModelIndex &last);
+    void clear();
     void animatedScrollTo(const int pos);
     void scrollAnimation();
     void sliderSlided(int value);

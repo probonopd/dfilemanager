@@ -482,11 +482,14 @@ PlacesView::PlacesView( QWidget *parent )
     setAnimated( true );
     setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 
-    //base color... slight hihglight tint
-    QPalette pal = palette();
-    QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
-    pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
-    setPalette( pal );
+    if (Store::config.behaviour.sideBarStyle)
+    {
+        //base color... slight hihglight tint
+        QPalette pal = palette();
+        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
+        pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
+        setPalette( pal );
+    }
 
     connect ( this, SIGNAL(changed()), this, SLOT(store()) );
     connect ( this, SIGNAL(clicked(QModelIndex)), this, SLOT(emitPath(QModelIndex)) );

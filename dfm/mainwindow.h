@@ -48,6 +48,47 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
+    enum Actions { GoBack = 0,
+                   GoUp,
+                   GoForward,
+                   GoHome,
+                   Exit,
+                   About,
+                   AboutQt,
+                   AddPlace,
+                   RenamePlace,
+                   RemovePlace,
+                   IconView,
+                   DetailView,
+                   ColumnView,
+                   FlowView,
+                   DeleteSelection,
+                   ShowHidden,
+                   MkDir,
+                   Copy,
+                   Cut,
+                   Paste,
+                   Rename,
+                   AddPlaceContainer,
+                   SetPlaceIcon,
+                   Refresh,
+                   CustomCommand,
+                   ShowMenuBar,
+                   ShowStatusBar,
+                   ShowPathBar,
+                   AddTab,
+                   OpenInTab,
+                   Configure,
+                   Properties,
+                   EditPath,
+                   NewWindow,
+                   SortName,
+                   SortSize,
+                   SortDate,
+                   SortType,
+                   SortDescending
+                 };
+
     MainWindow( const QStringList &arguments = QStringList(), bool autoTab = true );
     inline ViewContainer *activeContainer() { return m_activeContainer; }
     inline PlacesView *placesView() { return m_placesView; }
@@ -59,9 +100,9 @@ public:
     static QList<MainWindow *> openWindows();
     inline ViewContainer *containerForTab( int tab ) { return static_cast<ViewContainer *>(m_stackedWidget->widget(tab)); }
     inline InfoWidget *infoWidget() { return m_infoWidget; }
-    inline QList<QAction *> acts() const { return m_actions; }
     inline QMenu *mainMenu() { return m_mainMenu; }
     inline QSlider *iconSizeSlider() { return m_iconSizeSlider; }
+    inline QAction *action(const Actions action) { return m_actions[action]; }
     ViewContainer *takeContainer(int tab);
     void updateConfig();
     void createMenus();
@@ -156,19 +197,13 @@ private:
     QStackedWidget *m_stackedWidget;
     TabBar *m_tabBar;
     QMainWindow *m_tabWin;
-    QList<QAction *> m_actions;
     QMenu *m_mainMenu;
     QToolButton *m_sortButton;
 
     QMenu *m_fileMenu, *m_editMenu, *m_goMenu, *m_viewMenu, *m_helpMenu;
     QToolBar *m_toolBar;
 
-    /* needs to get converted to enum / array */
-    QAction *m_goBackAct, *m_goUpAct, *m_goForwardAct, *m_homeAct, *m_exitAct, *m_aboutAct, *m_aboutQtAct
-    , *m_placeAct, *m_renPlaceAct, *m_rmPlaceAct, *m_iconViewAct, *m_listViewAct, *m_colViewAct, *m_delCurrentSelectionAct
-    , *m_showHiddenAct, *m_mkDirAct, *m_copyAct, *m_cutAct, *m_pasteAct, *m_renameAct, *m_placeContAct, *m_flowAct, *m_refreshAct
-    , *m_placeIconAct, *m_cstCmdAct, *m_menuAct, *m_statAct, *m_pathVisibleAct, *m_addTabAct, *m_openInTabAct, *m_configureAct, *m_propertiesAct
-    , *m_pathEditAct, *m_newWindowAct, *m_sortNameAct, *m_sortSizeAct, *m_sortDateAct, *m_sortTypeAct, *m_sortDescAct;
+    QAction *m_actions[SortDescending+1];
 
     QActionGroup *m_sortActs;
 

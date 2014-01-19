@@ -61,7 +61,9 @@ Store::readConfiguration()
     config.behaviour.hideTabBarWhenOnlyOneTab = settings()->value("hideTabBarWhenOnlyOne", false).toBool();
     config.behaviour.systemIcons = settings()->value("useSystemIcons", false).toBool();
     config.behaviour.devUsage = settings()->value("drawDevUsage", false).toBool();
-    config.behaviour.view = settings()->value("start.view", 0).toInt();   
+    config.behaviour.view = settings()->value("start.view", 0).toInt();
+    config.behaviour.pathBarStyle = settings()->value("pathBarStyle", 1).toInt();
+    config.behaviour.sideBarStyle = settings()->value("sideBarStyle", 1).toInt();
 
 
     config.views.showThumbs = settings()->value("showThumbs", false).toBool();

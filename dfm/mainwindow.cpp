@@ -144,7 +144,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     vBox->addWidget(m_tabWin);
     center->setLayout(vBox);
 
-    m_placesView->addActions(QList<QAction *>() << m_placeAct << m_renPlaceAct << m_rmPlaceAct << m_placeContAct << m_placeIconAct );
+    m_placesView->addActions(QList<QAction *>() << m_actions[AddPlace] << m_actions[RenamePlace] << m_actions[RemovePlace] << m_actions[AddPlaceContainer] << m_actions[SetPlaceIcon] );
 
     setCentralWidget(center);
 
@@ -154,13 +154,13 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     m_statusBar->installEventFilter(this);
     toggleMenuVisible();
 
-    m_pathVisibleAct->setChecked(Store::settings()->value("pathVisible", true).toBool());
+    m_actions[ShowPathBar]->setChecked(Store::settings()->value("pathVisible", true).toBool());
     hidePath();
 
     m_placesView->installEventFilter(this);
     if ( m_activeContainer )
         m_activeContainer->setFocus();
-    m_statusBar->setVisible(m_statAct->isChecked());
+    m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked());
     QTimer::singleShot(200, m_toolBar, SLOT(update())); //should be superfluos but make sure toolbar is painted correctly....
 }
 
@@ -291,7 +291,7 @@ MainWindow::copySelection()
 void
 MainWindow::togglePath()
 {
-    m_activeContainer->setPathEditable(m_pathEditAct->isChecked());
+    m_activeContainer->setPathEditable(m_actions[EditPath]->isChecked());
 }
 
 void
@@ -460,8 +460,8 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
     if (obj == m_placesView && (event->type() == QEvent::Resize || event->type() == QEvent::Show) && !m_dockLeft->isFloating())
     {
         int w = m_placesView->viewport()->width();
-        w -= m_toolBar->widgetForAction(m_goBackAct)->width();
-        w -= m_toolBar->widgetForAction(m_goForwardAct)->width();
+        w -= m_toolBar->widgetForAction(m_actions[GoBack])->width();
+        w -= m_toolBar->widgetForAction(m_actions[GoForward])->width();
         w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
         if (m_toolBarSpacer->width() != w )
         {
@@ -513,10 +513,10 @@ MainWindow::genPlace()
 void
 MainWindow::checkViewAct()
 {
-    m_iconViewAct->setChecked(m_activeContainer->currentViewType() == ViewContainer::Icon);
-    m_listViewAct->setChecked(m_activeContainer->currentViewType() == ViewContainer::Details);
-    m_colViewAct->setChecked(m_activeContainer->currentViewType() == ViewContainer::Columns);
-    m_flowAct->setChecked(m_activeContainer->currentViewType() == ViewContainer::Flow);
+    m_actions[IconView]->setChecked(m_activeContainer->currentViewType() == ViewContainer::Icon);
+    m_actions[DetailView]->setChecked(m_activeContainer->currentViewType() == ViewContainer::Details);
+    m_actions[ColumnView]->setChecked(m_activeContainer->currentViewType() == ViewContainer::Columns);
+    m_actions[FlowView]->setChecked(m_activeContainer->currentViewType() == ViewContainer::Flow);
     m_iconSizeSlider->setVisible(m_activeContainer->currentViewType() == ViewContainer::Icon);
     emit viewChanged( m_activeContainer->currentView() );
 }
@@ -532,15 +532,15 @@ MainWindow::about()
 
 void MainWindow::deleteCurrentSelection() { m_activeContainer->deleteCurrentSelection(); }
 
-void MainWindow::toggleHidden() { m_model->setHiddenVisible(m_showHiddenAct->isChecked()); }
+void MainWindow::toggleHidden() { m_model->setHiddenVisible(m_actions[ShowHidden]->isChecked()); }
 
 void MainWindow::refreshView() { m_activeContainer->refresh(); }
 
 void MainWindow::customCommand() { m_activeContainer->customCommand(); }
 
-void MainWindow::toggleMenuVisible() { menuBar()->setVisible(m_menuAct->isChecked()); }
+void MainWindow::toggleMenuVisible() { menuBar()->setVisible(m_actions[ShowMenuBar]->isChecked()); }
 
-void MainWindow::toggleStatusVisible() { m_statusBar->setVisible(m_statAct->isChecked()); }
+void MainWindow::toggleStatusVisible() { m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked()); }
 
 void
 MainWindow::addTab(const QString &path)
@@ -561,12 +561,12 @@ MainWindow::addTab(const QString &path)
     connect( container, SIGNAL(entered(QModelIndex)), m_infoWidget, SLOT(hovered(QModelIndex)));
     connect( container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
     connect( container, SIGNAL(sortingChanged(int,int)), this, SLOT(sortingChanged(int,int)));
-    connect( container->model(), SIGNAL(hiddenVisibilityChanged(bool)), m_showHiddenAct, SLOT(setChecked(bool)) );
+    connect( container->model(), SIGNAL(hiddenVisibilityChanged(bool)), m_actions[ShowHidden], SLOT(setChecked(bool)) );
 
     QList<QAction *> actList;
-    actList << m_openInTabAct << m_mkDirAct << m_pasteAct << m_copyAct << m_cutAct
-            << m_delCurrentSelectionAct << m_renameAct << m_cstCmdAct << m_goUpAct
-            << m_goBackAct << m_goForwardAct << m_propertiesAct;
+    actList << m_actions[OpenInTab] << m_actions[MkDir] << m_actions[Paste] << m_actions[Copy] << m_actions[Cut]
+            << m_actions[DeleteSelection] << m_actions[Rename] << m_actions[CustomCommand] << m_actions[GoUp]
+            << m_actions[GoBack] << m_actions[GoForward] << m_actions[Properties];
 
     container->addActions(actList);
     m_stackedWidget->addWidget(container);
@@ -600,12 +600,12 @@ MainWindow::addTab(ViewContainer *container, int index)
     connect( container, SIGNAL(entered(QModelIndex)), m_infoWidget, SLOT(hovered(QModelIndex)));
     connect( container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
     connect( container, SIGNAL(sortingChanged(int,int)), this, SLOT(sortingChanged(int,int)));
-    connect( container->model(), SIGNAL(hiddenVisibilityChanged(bool)), m_showHiddenAct, SLOT(setChecked(bool)) );
+    connect( container->model(), SIGNAL(hiddenVisibilityChanged(bool)), m_actions[ShowHidden], SLOT(setChecked(bool)) );
 
     QList<QAction *> actList;
-    actList << m_openInTabAct << m_mkDirAct << m_pasteAct << m_copyAct << m_cutAct
-            << m_delCurrentSelectionAct << m_renameAct << m_cstCmdAct << m_goUpAct
-            << m_goBackAct << m_goForwardAct << m_propertiesAct;
+    actList << m_actions[OpenInTab] << m_actions[MkDir] << m_actions[Paste] << m_actions[Copy] << m_actions[Cut]
+            << m_actions[DeleteSelection] << m_actions[Rename] << m_actions[CustomCommand] << m_actions[GoUp]
+            << m_actions[GoBack] << m_actions[GoForward] << m_actions[Properties];
 
     container->addActions(actList);
     m_stackedWidget->insertWidget(index, container);
@@ -637,13 +637,13 @@ MainWindow::tabChanged(int currentIndex)
     sortingChanged(m_activeContainer->model()->sortColumn(), (int)m_activeContainer->model()->sortOrder());
     m_recentFoldersView->folderEntered(m_model->rootPath());
     setWindowTitle(m_tabBar->tabText(currentIndex));
-    m_activeContainer->setPathEditable(m_pathEditAct->isChecked());
+    m_activeContainer->setPathEditable(m_actions[EditPath]->isChecked());
     m_iconSizeSlider->setValue(m_activeContainer->iconSize().width()/16);
     m_iconSizeSlider->setToolTip("Size: " + QString::number(m_activeContainer->iconSize().width()) + " px");
     m_placesView->activateAppropriatePlace(m_model->rootPath());
     updateStatusBar(m_model->rootPath());
     m_filterBox->setText(m_model->currentSearchString());
-    m_showHiddenAct->setChecked(m_model->showHidden());
+    m_actions[ShowHidden]->setChecked(m_model->showHidden());
     setActions();
 }
 
@@ -724,8 +724,8 @@ ViewContainer
 void
 MainWindow::setActions()
 {
-    m_goBackAct->setEnabled(m_activeContainer->canGoBack());
-    m_goForwardAct->setEnabled(m_activeContainer->canGoForward());
+    m_actions[GoBack]->setEnabled(m_activeContainer->canGoBack());
+    m_actions[GoForward]->setEnabled(m_activeContainer->canGoForward());
 //    m_pathVisibleAct->setChecked(m_activeContainer);
     checkViewAct();
 }
@@ -776,8 +776,8 @@ void
 MainWindow::hidePath()
 {
     foreach ( BreadCrumbs *bc, findChildren<BreadCrumbs *>() )
-        bc->setVisible(m_pathVisibleAct->isChecked());
-    Store::settings()->setValue("pathVisible", m_pathVisibleAct->isChecked());
+        bc->setVisible(m_actions[ShowPathBar]->isChecked());
+    Store::settings()->setValue("pathVisible", m_actions[ShowPathBar]->isChecked());
 }
 
 void
@@ -786,26 +786,26 @@ MainWindow::sortingChanged(const int column, const int order)
     Store::config.behaviour.sortingCol=column;
     Store::config.behaviour.sortingOrd=(Qt::SortOrder)order;
 
-    m_sortNameAct->setChecked(column == 0);
-    m_sortSizeAct->setChecked(column == 1);
-    m_sortTypeAct->setChecked(column == 2);
-    m_sortDateAct->setChecked(column == 3);
-    m_sortDescAct->setChecked((Qt::SortOrder)order == Qt::DescendingOrder);
+    m_actions[SortName]->setChecked(column == 0);
+    m_actions[SortSize]->setChecked(column == 1);
+    m_actions[SortType]->setChecked(column == 2);
+    m_actions[SortDate]->setChecked(column == 3);
+    m_actions[SortDescending]->setChecked((Qt::SortOrder)order == Qt::DescendingOrder);
 }
 
 void
 MainWindow::setSorting()
 {
     int i = 0;
-    if ( m_sortNameAct->isChecked() )
+    if ( m_actions[SortName]->isChecked() )
         i = 0;
-    else if ( m_sortSizeAct->isChecked() )
+    else if ( m_actions[SortSize]->isChecked() )
         i = 1;
-    else if ( m_sortTypeAct->isChecked() )
+    else if ( m_actions[SortType]->isChecked() )
         i = 2;
-    else if ( m_sortDateAct->isChecked() )
+    else if ( m_actions[SortDate]->isChecked() )
         i = 3;
-    m_activeContainer->sort(i, (Qt::SortOrder)m_sortDescAct->isChecked());
+    m_activeContainer->sort(i, (Qt::SortOrder)m_actions[SortDescending]->isChecked());
 }
 
 void
@@ -820,8 +820,8 @@ MainWindow::showEvent(QShowEvent *e)
 {
     QMainWindow::showEvent(e);
     int w = m_placesView->viewport()->width();
-    w -= m_toolBar->widgetForAction(m_goBackAct)->width();
-    w -= m_toolBar->widgetForAction(m_goForwardAct)->width();
+    w -= m_toolBar->widgetForAction(m_actions[GoBack])->width();
+    w -= m_toolBar->widgetForAction(m_actions[GoForward])->width();
     w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
     if (m_toolBarSpacer->width() != w )
     {
@@ -864,10 +864,10 @@ MainWindow::readSettings()
     m_tabWin->addDockWidget(Qt::RightDockWidgetArea, m_dockRight);
     m_tabWin->addDockWidget((Qt::DockWidgetArea)Store::config.docks.infoArea, m_dockBottom);
 
-    m_statAct->setChecked(Store::settings()->value("statusVisible", true).toBool());
-    m_pathVisibleAct->setChecked(Store::settings()->value("pathVisible", true).toBool());
-    m_pathEditAct->setChecked(Store::settings()->value("pathEditable", false).toBool());
-    m_menuAct->setChecked(Store::settings()->value("menuVisible", true).toBool());
+    m_actions[ShowStatusBar]->setChecked(Store::settings()->value("statusVisible", true).toBool());
+    m_actions[ShowPathBar]->setChecked(Store::settings()->value("pathVisible", true).toBool());
+    m_actions[EditPath]->setChecked(Store::settings()->value("pathEditable", false).toBool());
+    m_actions[ShowMenuBar]->setChecked(Store::settings()->value("menuVisible", true).toBool());
     m_placesView->populate();
     updateConfig();
 }
@@ -880,24 +880,25 @@ MainWindow::updateIcons()
 
     const QColor &tbfgc(m_sortButton->palette().color(m_sortButton->foregroundRole()));
     const int tbis = m_toolBar->iconSize().height();
-    m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_goBackAct->setIcon(IconProvider::icon(IconProvider::GoBack, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_goForwardAct->setIcon(IconProvider::icon(IconProvider::GoForward, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_iconViewAct->setIcon(IconProvider::icon(IconProvider::IconView, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_listViewAct->setIcon(IconProvider::icon(IconProvider::DetailsView, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_colViewAct->setIcon(IconProvider::icon(IconProvider::ColumnsView, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_flowAct->setIcon(IconProvider::icon(IconProvider::FlowView, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_homeAct->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_configureAct->setIcon(IconProvider::icon(IconProvider::Configure, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_showHiddenAct->setIcon(IconProvider::icon(IconProvider::Hidden, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_actions[GoHome]->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_actions[GoBack]->setIcon(IconProvider::icon(IconProvider::GoBack, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_actions[GoForward]->setIcon(IconProvider::icon(IconProvider::GoForward, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_actions[IconView]->setIcon(IconProvider::icon(IconProvider::IconView, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_actions[DetailView]->setIcon(IconProvider::icon(IconProvider::DetailsView, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_actions[ColumnView]->setIcon(IconProvider::icon(IconProvider::ColumnsView, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_actions[FlowView]->setIcon(IconProvider::icon(IconProvider::FlowView, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_actions[GoHome]->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_actions[Configure]->setIcon(IconProvider::icon(IconProvider::Configure, tbis, tbfgc, Store::config.behaviour.systemIcons));
+    m_actions[ShowHidden]->setIcon(IconProvider::icon(IconProvider::Hidden, tbis, tbfgc, Store::config.behaviour.systemIcons));
     if ( m_sortButton )
     {
         m_sortButton->setMinimumWidth(32);
         m_sortButton->setIcon(IconProvider::icon(IconProvider::Sort, tbis, tbfgc, false));
-        m_toolBar->widgetForAction(m_showHiddenAct)->setMinimumWidth(32);
-        m_toolBar->widgetForAction(m_homeAct)->setMinimumWidth(32);
-        m_toolBar->widgetForAction(m_configureAct)->setMinimumWidth(32);
+        m_toolBar->widgetForAction(m_actions[ShowHidden])->setMinimumWidth(32);
+        m_toolBar->widgetForAction(m_actions[GoHome])->setMinimumWidth(32);
+        m_toolBar->widgetForAction(m_actions[Configure])->setMinimumWidth(32);
     }
+    m_dockLeft->setContentsMargins(0, 0, 0, 0);
 }
 
 void
@@ -918,10 +919,10 @@ MainWindow::writeSettings()
     Store::settings()->setValue("size", size());
     Store::settings()->setValue("windowState", saveState(1));
     Store::settings()->setValue("tabWindowState", m_tabWin->saveState(1));
-    Store::settings()->setValue("statusVisible", m_statAct->isChecked());
-    Store::settings()->setValue("pathVisible", m_pathVisibleAct->isChecked());
-    Store::settings()->setValue("pathEditable", m_pathEditAct->isChecked());
-    Store::settings()->setValue("menuVisible", m_menuAct->isChecked());
+    Store::settings()->setValue("statusVisible", m_actions[ShowStatusBar]->isChecked());
+    Store::settings()->setValue("pathVisible", m_actions[ShowPathBar]->isChecked());
+    Store::settings()->setValue("pathEditable", m_actions[EditPath]->isChecked());
+    Store::settings()->setValue("menuVisible", m_actions[ShowMenuBar]->isChecked());
     Store::config.behaviour.sortingCol = m_model->sortColumn();
     Store::config.behaviour.sortingOrd = m_model->sortOrder();
     Store::writeConfig();

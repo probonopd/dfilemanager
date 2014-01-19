@@ -329,12 +329,16 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
 
     setFrameStyle( QFrame::StyledPanel | QFrame::Sunken );
     setContentsMargins(0, 0, 0, 0);
-    setAutoFillBackground(true);
-    setBackgroundRole(QPalette::Base);
-    QPalette pal = palette();
-    QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
-    pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
-    setPalette( pal );
+
+    if (Store::config.behaviour.pathBarStyle)
+    {
+        setAutoFillBackground(true);
+        setBackgroundRole(QPalette::Base);
+        QPalette pal = palette();
+        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
+        pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
+        setPalette( pal );
+    }
 
     m_pathBox->setInsertPolicy(QComboBox::InsertAtBottom);
     m_pathBox->setEditable(true);
