@@ -488,6 +488,7 @@ PlacesView::PlacesView( QWidget *parent )
         QPalette pal = palette();
         QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
         pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
+        pal.setColor( QPalette::Text, qApp->palette().color(QPalette::Text) );
         setPalette( pal );
     }
 

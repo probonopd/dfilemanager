@@ -47,6 +47,7 @@ typedef struct Config
         invertedColors,
         capsContainers,
         invActBookmark;
+
         int tabShape,
         tabRoundness,
         tabHeight,
@@ -57,6 +58,7 @@ typedef struct Config
         sideBarStyle,
         view,
         minFontSize;
+
         Qt::SortOrder sortingOrd;
     } behaviour;
 
@@ -80,11 +82,6 @@ typedef struct Config
     {
         int lock, infoArea;
     } docks;
-
-    struct icons
-    {
-        QMap<QString, QPixmap> customIcons;
-    } icons;
 } Config;
 
 

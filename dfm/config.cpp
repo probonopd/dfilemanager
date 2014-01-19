@@ -98,28 +98,6 @@ Store::readConfiguration()
 
     config.behaviour.invActBookmark = settings()->value("behaviour.invActBookmark", false).toBool();
 
-    settings()->beginGroup("CustomIcons");
-
-    int extent = 256;
-    foreach ( const QString &key, settings()->childKeys() )
-    {
-         QStringList icon = settings()->value(key).toStringList();
-         if ( icon.count() != 2 )
-             continue;
-         QImageReader r(icon[1]);
-         if ( !r.canRead() )
-             continue;
-         QSize thumbsize = r.size();
-         if ( qMax( thumbsize.width(), thumbsize.height() ) > extent )
-             thumbsize.scale( extent, extent, Qt::KeepAspectRatio );
-         r.setScaledSize(thumbsize);
-
-         const QImage image(r.read());
-         config.icons.customIcons.insert(icon[0], QPixmap::fromImage(image));
-    }
-
-    settings()->endGroup();
-
     settings()->beginGroup("CustomActions");
     foreach ( const QString &string, settings()->childKeys() )
     {

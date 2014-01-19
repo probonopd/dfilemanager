@@ -894,11 +894,6 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 //        return fg;
 //    }
 
-    const bool customIcon = Store::config.icons.customIcons.contains(file);
-
-    if ( col == 0 && role == Qt::DecorationRole && customIcon )
-        return QIcon(Store::config.icons.customIcons.value(file));
-
     if ( role == Qt::DecorationRole )
     {
         if ( ThumbsLoader::hasThumb(file) )
@@ -913,7 +908,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
 
     if ( role >= FlowImg && role != Category )
     {
-        const QIcon &icon = customIcon ? QIcon(Store::config.icons.customIcons.value(file)) : m_ip->icon(*node);
+        const QIcon &icon = m_ip->icon(*node);
 
         if ( m_it->hasData(file) )
             return QPixmap::fromImage(m_it->flowData(file, role == FlowRefl));

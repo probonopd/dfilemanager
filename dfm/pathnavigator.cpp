@@ -334,6 +334,7 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
     {
         setAutoFillBackground(true);
         setBackgroundRole(QPalette::Base);
+        setForegroundRole(QPalette::Text);
         QPalette pal = palette();
         QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
         pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
