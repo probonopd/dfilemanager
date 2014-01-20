@@ -51,7 +51,6 @@ FlowView::FlowView(QWidget *parent) : QWidget(parent)
     connect( m_preView, SIGNAL(centerIndexChanged(QModelIndex)), Ops::absWinFor<MainWindow *>(this)->infoWidget(), SLOT(hovered(QModelIndex)) );
     connect( m_splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(saveSplitter()) );
 
-
     m_splitter->setHandleWidth(style()->pixelMetric(QStyle::PM_SplitterWidth));
 }
 
@@ -91,7 +90,7 @@ FlowView::treeCurrentIndexChanged(QItemSelection,QItemSelection)
     if (index.isValid())
     {
         m_preView->animateCenterIndex(index);
-        m_dView->scrollTo(index, QAbstractItemView::PositionAtCenter);
+        m_dView->scrollTo(index, QAbstractItemView::EnsureVisible);
     }
 }
 
@@ -107,4 +106,4 @@ QModelIndex FlowView::rootIndex() { return m_dView->rootIndex(); }
 QModelIndex FlowView::currentIndex() { return m_dView->currentIndex(); }
 void FlowView::addActions(QList<QAction *> actions) { m_dView->addActions(actions); }
 void FlowView::setFilter(QString filter) { m_dView->setFilter(filter); }
-void FlowView::flowCurrentIndexChanged(const QModelIndex &index) { m_dView->setCurrentIndex(index); }
+void FlowView::flowCurrentIndexChanged(const QModelIndex &index) { m_dView->scrollTo(index, QAbstractItemView::EnsureVisible); }

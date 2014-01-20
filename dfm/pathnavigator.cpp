@@ -106,7 +106,6 @@ NavButton::NavButton(QWidget *parent, const QString &path, const QString &text)
     if ( m_nav->path() != path )
         setMinimumWidth(23);
     setAcceptDrops(true);
-    setForegroundRole(QPalette::Text);
 }
 
 QSize
@@ -247,8 +246,6 @@ PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model )
     , m_bc(static_cast<BreadCrumbs *>(parent))
 {
     connect( m_fsModel, SIGNAL( directoryLoaded(QString)), this, SLOT( genNavFromPath( QString ) ) );
-    setForegroundRole( QPalette::Text );
-    setBackgroundRole( QPalette::Base );
     setContentsMargins( 0, 0, 0, 0 );
     m_layout->setContentsMargins( 0, 0, 0, 0 );
     m_layout->setSpacing( 0 );
