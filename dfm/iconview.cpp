@@ -130,7 +130,7 @@ public:
             painter->setBrush(h);
             painter->drawRoundedRect(RECT.adjusted(1, 1, 0, 0), 3, 3);
         }
-        const QColor &high(selected ? PAL.color(QPalette::HighlightedText) : m_model->data(index, Qt::ForegroundRole).value<QColor>());
+        const QColor &high(selected ? PAL.color(QPalette::HighlightedText) : PAL.color(QPalette::Text));
         QPen pen = painter->pen();
         painter->setPen(high);
         painter->setFont(index.data(Qt::FontRole).value<QFont>());

@@ -338,11 +338,14 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
         setPalette( pal );
     }
 
+    QPalette pal(m_pathBox->palette());
+    pal.setColor(QPalette::Text, palette().color(foregroundRole()));
+    m_pathBox->setPalette(pal);
+
     m_pathBox->setInsertPolicy(QComboBox::InsertAtBottom);
     m_pathBox->setEditable(true);
     m_pathBox->setDuplicatesEnabled(false);
     m_pathBox->installEventFilter(this);
-
 
     QCompleter *completer = new QCompleter(m_pathBox);
     QDirModel *dirModel = new QDirModel(completer); //this is no work w/ filesystemmodel?
