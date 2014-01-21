@@ -408,7 +408,6 @@ MainWindow::createToolBars()
     gl->addWidget(m_filterBox, 0, 1);
 
     m_toolBar->addWidget(searchWidget);
-    QTimer::singleShot(1000, this, SLOT(updateIcons()));
 }
 
 void

@@ -105,6 +105,7 @@ InfoWidget::InfoWidget(QWidget *parent)
 void
 InfoWidget::paintEvent(QPaintEvent *event)
 {
+#if 0
     QLinearGradient lg(rect().topLeft(), rect().bottomLeft());
     const QColor &bgBase = palette().color(backgroundRole());
     lg.setColorAt(0.0f, Ops::colorMid(Qt::white, bgBase, 1, 4));
@@ -112,6 +113,7 @@ InfoWidget::paintEvent(QPaintEvent *event)
     QPainter p(this);
     p.fillRect(rect(), lg);
     p.end();
+#endif
     QFrame::paintEvent(event);
 }
 
@@ -130,21 +132,15 @@ InfoWidget::hovered(const QModelIndex &index)
         m_perm[0]->setText("Permissions:");
     }
     const FileSystemModel *fsModel = static_cast<const FileSystemModel*>(index.model());
-    QIcon icon = fsModel->fileIcon(index);
-//    if ( icon.isNull() && fsModel->fileInfo(index).isDir() )
-//        icon = fsModel->iconPix(fsModel->fileInfo(fsModel->index(index.row(), 0, index.parent())), 64);
-//    if ( icon.isNull() )
-//        icon = qvariant_cast<QIcon>(fsModel->data(fsModel->index(index.row(), 0, index.parent()), Qt::DecorationRole));
-    QPixmap pix = icon.pixmap(64);
     const bool dir = fsModel->fileInfo(index).isDir();
-    m_tw->setPixmap(pix);
+    m_tw->setPixmap(fsModel->fileIcon(index.sibling(index.row(), 0)).pixmap(64));
     m_fileName->setText(fsModel->fileName(index));
     m_ownerLbl->setText(fsModel->fileInfo(index).owner());
     m_typeLbl->setText(Ops::getFileType(fsModel->filePath(index)));
     m_mimeLbl->setText(Ops::getMimeType(fsModel->filePath(index)));
 
     m_lastMod[1]->setText(fsModel->fileInfo(index).lastModified().toString());
-    const QString &s(fsModel->data(fsModel->index(index.row(), 4, index.parent())).toString());
+    const QString &s(fsModel->data(index, FileSystemModel::FilePermissions).toString());
     m_perm[1]->setText(s);
 
     m_sizeLbl->setText(dir ? "--" : Ops::prettySize(fsModel->fileInfo(index).size()));

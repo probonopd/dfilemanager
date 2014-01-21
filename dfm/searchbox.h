@@ -64,6 +64,9 @@ class SearchTypeSelector : public QToolButton
 public:
     explicit SearchTypeSelector(QWidget *parent = 0);
 
+public slots:
+    void updateIcon();
+
 signals:
     void modeChanged(const SearchMode mode);
 
@@ -79,6 +82,9 @@ class ClearSearch : public QToolButton
     Q_OBJECT
 public:
     explicit ClearSearch(QWidget *parent = 0);
+
+public slots:
+    void updateIcon();
 };
 
 class SearchBox : public QLineEdit

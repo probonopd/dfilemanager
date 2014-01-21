@@ -161,7 +161,9 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     if ( m_activeContainer )
         m_activeContainer->setFocus();
     m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked());
-    QTimer::singleShot(200, m_toolBar, SLOT(update())); //should be superfluos but make sure toolbar is painted correctly....
+    foreach (QAction *a, m_toolBar->actions())
+        connect(a, SIGNAL(changed()), this, SLOT(updateIcons()));
+    QTimer::singleShot(50, this, SLOT(updateIcons()));
 }
 
 void
@@ -878,27 +880,52 @@ MainWindow::updateIcons()
     if ( !m_sortButton )
         return;
 
-    const QColor &tbfgc(m_sortButton->palette().color(m_sortButton->foregroundRole()));
-    const int tbis = m_toolBar->iconSize().height();
-    m_actions[GoHome]->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_actions[GoBack]->setIcon(IconProvider::icon(IconProvider::GoBack, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_actions[GoForward]->setIcon(IconProvider::icon(IconProvider::GoForward, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_actions[IconView]->setIcon(IconProvider::icon(IconProvider::IconView, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_actions[DetailView]->setIcon(IconProvider::icon(IconProvider::DetailsView, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_actions[ColumnView]->setIcon(IconProvider::icon(IconProvider::ColumnsView, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_actions[FlowView]->setIcon(IconProvider::icon(IconProvider::FlowView, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_actions[GoHome]->setIcon(IconProvider::icon(IconProvider::GoHome, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_actions[Configure]->setIcon(IconProvider::icon(IconProvider::Configure, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    m_actions[ShowHidden]->setIcon(IconProvider::icon(IconProvider::Hidden, tbis, tbfgc, Store::config.behaviour.systemIcons));
-    if ( m_sortButton )
-    {
-        m_sortButton->setMinimumWidth(32);
-        m_sortButton->setIcon(IconProvider::icon(IconProvider::Sort, tbis, tbfgc, false));
-        m_toolBar->widgetForAction(m_actions[ShowHidden])->setMinimumWidth(32);
-        m_toolBar->widgetForAction(m_actions[GoHome])->setMinimumWidth(32);
-        m_toolBar->widgetForAction(m_actions[Configure])->setMinimumWidth(32);
-    }
+#define SETICON(_ICON_) setIcon(IconProvider::icon(_ICON_, m_toolBar->iconSize().height(), tb->palette().color(tb->foregroundRole()), Store::config.behaviour.systemIcons))
+#define ACTION(_ACTION_) static_cast<QToolButton *>(m_toolBar->widgetForAction(m_actions[_ACTION_]))
+    QToolButton *tb = 0;
+
+    tb = ACTION(GoBack);
+    tb->SETICON(IconProvider::GoBack);
+
+    tb = ACTION(GoForward);
+    tb->SETICON(IconProvider::GoForward);
+
+    tb = ACTION(IconView);
+    tb->SETICON(IconProvider::IconView);
+
+    tb = ACTION(DetailView);
+    tb->SETICON(IconProvider::DetailsView);
+
+    tb = ACTION(ColumnView);
+    tb->SETICON(IconProvider::ColumnsView);
+
+    tb = ACTION(FlowView);
+    tb->SETICON(IconProvider::FlowView);
+
+    tb = ACTION(Configure);
+    tb->SETICON(IconProvider::Configure);
+
+    tb = ACTION(GoHome);
+    tb->SETICON(IconProvider::GoHome);
+
+    tb = ACTION(ShowHidden);
+    tb->SETICON(IconProvider::Hidden);
+
+    tb = m_sortButton;
+    tb->setMinimumWidth(32);
+    tb->SETICON(IconProvider::Sort);
+
+    tb = 0;
+#undef ACTION
+#undef SETICON
+
+    m_toolBar->widgetForAction(m_actions[ShowHidden])->setMinimumWidth(32);
+    m_toolBar->widgetForAction(m_actions[GoHome])->setMinimumWidth(32);
+    m_toolBar->widgetForAction(m_actions[Configure])->setMinimumWidth(32);
+
     m_dockLeft->setContentsMargins(0, 0, 0, 0);
+    m_dockRight->setContentsMargins(0, 0, 0, 0);
+    m_dockBottom->setContentsMargins(0, 0, 0, 0);
 }
 
 void

@@ -142,6 +142,8 @@ public:
 
         QRect theRect = pixmap.rect();
         theRect.moveCenter(QRect(RECT.topLeft(), QSize(RECT.width(), DECOSIZE.height()+2)).center());
+        m_hitRects.insert(index.internalPointer(), theRect);
+
         if (m_model->hasThumb(m_model->filePath(index)))
         {
             const int d = 4;
@@ -159,13 +161,22 @@ public:
     {
         return m_iv->gridSize();
     }
-    void clearData() { m_textData.clear(); m_pixData.clear(); }
-    void clear(const QModelIndex &index)
+    inline void clearData() { m_textData.clear(); m_pixData.clear(); m_hitRects.clear(); }
+    inline void clear(const QModelIndex &index)
     {
         if (m_pixData.contains(index.internalPointer()))
             m_pixData.remove(index.internalPointer());
         if (m_textData.contains(index.internalPointer()))
             m_textData.remove(index.internalPointer());
+        if (m_hitRects.contains(index.internalPointer()))
+            m_hitRects.remove(index.internalPointer());
+    }
+    bool isHitted(const QModelIndex &index, const QPoint &p)
+    {
+        if (m_hitRects.contains(index.internalPointer()))
+            if (m_hitRects.value(index.internalPointer()).contains(p))
+                return true;
+        return false;
     }
 protected:
     QPixmap pix( const QStyleOptionViewItem &option, const QModelIndex &index ) const
@@ -208,7 +219,6 @@ protected:
                 s = qMin<int>((DECOSIZE.height()+2)-m, ((float)DECOSIZE.width()*((float)pixmap.height()/(float)pixmap.width()))-m );
             pixmap = icon.pixmap(s);
         }
-
         m_pixData.insert(index.internalPointer(), pixmap);
         return pixmap;
     }
@@ -275,6 +285,7 @@ protected:
         m_textData.insert(index.internalPointer(), theText);
         return theText;
     }
+
     static inline int textFlags() { return Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap; }
 private:
     QPixmap m_shadowData[9];
@@ -282,6 +293,7 @@ private:
     IconView *m_iv;
     mutable QHash<void *, QString> m_textData;
     mutable QHash<void *, QPixmap> m_pixData;
+    mutable QHash<void *, QRect> m_hitRects;
     FileSystemModel *m_model;
 };
 
@@ -792,7 +804,8 @@ IconView::indexAt(const QPoint &p) const
 //        if (!viewport()->rect().intersects(r))
 //            continue;
         if (r.contains(p))
-            return index;
+            if (static_cast<IconDelegate *>(itemDelegate())->isHitted(index, p))
+                return index;
     }
     return QModelIndex();
 }

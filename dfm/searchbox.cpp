@@ -102,7 +102,13 @@ SearchTypeSelector::SearchTypeSelector(QWidget *parent) : QToolButton(parent)
     connect(cancel, SIGNAL(triggered()), this, SLOT(cancel()));
     connect(close, SIGNAL(triggered()), this, SLOT(closeSearch()));
     setMenu(m);
-    setIcon(IconProvider::icon(IconProvider::Search, 16, palette().color(foregroundRole()), Store::config.behaviour.systemIcons));
+    QTimer::singleShot(500, this, SLOT(updateIcon()));
+}
+
+void
+SearchTypeSelector::updateIcon()
+{
+    setIcon(IconProvider::icon(IconProvider::Search, 16, parentWidget()->palette().color(QPalette::Text), Store::config.behaviour.systemIcons));
 }
 
 void
@@ -128,8 +134,13 @@ ClearSearch::ClearSearch(QWidget *parent) : QToolButton(parent)
     setCursor(Qt::PointingHandCursor);
     setAttribute(Qt::WA_Hover);
     setToolButtonStyle(Qt::ToolButtonIconOnly);
-    setIcon(IconProvider::icon(IconProvider::Clear, 16, palette().color(foregroundRole()), Store::config.behaviour.systemIcons));
+    QTimer::singleShot(500, this, SLOT(updateIcon()));
+}
 
+void
+ClearSearch::updateIcon()
+{
+    setIcon(IconProvider::icon(IconProvider::Clear, 16, parentWidget()->palette().color(QPalette::Text), Store::config.behaviour.systemIcons));
 }
 
 //--------------------------------------------------------------------------

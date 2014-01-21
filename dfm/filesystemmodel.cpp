@@ -280,6 +280,17 @@ FileSystemModel::Node::rename(const QString &newName)
     return false;
 }
 
+QString
+FileSystemModel::Node::permissionsString()
+{
+    const QFile::Permissions p = permissions();
+    QString perm;
+    perm.append(p.testFlag(QFile::ReadUser)?"R, ":"-, ");
+    perm.append(p.testFlag(QFile::WriteUser)?"W, ":"-, ");
+    perm.append(p.testFlag(QFile::ExeUser)?"X":"-");
+    return perm;
+}
+
 QVariant
 FileSystemModel::Node::data(const int column)
 {
@@ -302,15 +313,7 @@ FileSystemModel::Node::data(const int column)
         break;
     }
     case 3: return lastModified(); break;
-    case 4:
-    {
-        const QFile::Permissions p = permissions();
-        QString perm;
-        perm.append(p.testFlag(QFile::ReadUser)?"R, ":"-, ");
-        perm.append(p.testFlag(QFile::WriteUser)?"W, ":"-, ");
-        perm.append(p.testFlag(QFile::ExeUser)?"X":"-");
-        return perm;
-    }
+    case 4: return permissionsString(); break;
     default: return QString("--");
     }
 }
@@ -839,7 +842,7 @@ bool FileSystemModel::hasThumb(const QString &file) { return ThumbsLoader::insta
 QVariant
 FileSystemModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid()||index.column()>4||index.row()>100000)
+    if (!index.isValid()||index.column()>3||index.row()>100000)
         return QVariant();
 
     Node *node = fromIndex(index);
@@ -853,6 +856,8 @@ FileSystemModel::data(const QModelIndex &index, int role) const
         return node->name();
     if ( role == FilePathRole )
         return node->filePath();
+    if (role == FilePermissions)
+        return node->permissionsString();
 
     if ( role == Qt::TextAlignmentRole )
         if ( col == 1 )
