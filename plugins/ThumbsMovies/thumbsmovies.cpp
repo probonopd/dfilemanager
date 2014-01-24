@@ -2,7 +2,9 @@
 #include <QFileInfo>
 #include <QApplication>
 
+#if QT_VERSION < 0x050000
 Q_EXPORT_PLUGIN2(thumbsmovies, ThumbsMovies)
+#endif
 
 ThumbsMovies::ThumbsMovies():m_mc(0),m_loopTimer(0),m_evLoop(0)
 {

@@ -439,13 +439,18 @@ PlacesModel::data(const QModelIndex &index, int role) const
                 font.setPointSize(qMax<int>(Store::config.behaviour.minFontSize, m_places->font().pointSize()*0.8));
                 return font;
             }
+            return QVariant();
         }
-
         if ( Place *p = m_places->itemFromIndex<Place *>(index) )
             if ( role == Qt::DisplayRole )
                 return p->name();
-            else if ( role == Qt::DecorationRole )
-                return QIcon::fromTheme( p->iconName() );
+            else if ( role == Qt::DecorationRole && !dynamic_cast<DeviceItem *>(p) )
+            {
+                QIcon icon = QIcon::fromTheme( p->iconName() );
+                if (icon.isNull())
+                    icon = FileIconProvider().icon(QFileInfo(p->path()));
+                return icon;
+            }
     }
     return QStandardItemModel::data(index, role);
 }
@@ -545,8 +550,10 @@ PlacesView::dropEvent( QDropEvent *event )
             if ( !f.isDir() )
                 continue;
             QSettings settings( QDir(file).absoluteFilePath(".directory"), QSettings::IniFormat );
-            const QIcon &icon = QIcon::fromTheme(settings.value( "Desktop Entry/Icon" ).toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
-            places->appendRow(new Place(f.fileName(), f.filePath(), icon.name()));
+            QIcon icon = QIcon::fromTheme(settings.value( "Desktop Entry/Icon" ).toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
+            if (icon.isNull()||icon.name().isNull())
+                icon = FileIconProvider().icon(f);
+            places->appendRow(new Place(f.fileName(), f.filePath(), icon.name(), icon));
         }
         expand(indexFromItem(places));
         emit changed();
@@ -577,11 +584,13 @@ PlacesView::dropEvent( QDropEvent *event )
             {
                 foreach ( const QString &file, files )
                 {
-                    const QFileInfo &f(file);
+                    const QFileInfo f(file);
                     if ( !f.isDir() )
                         continue;
                     QSettings settings( QDir(file).absoluteFilePath(".directory"), QSettings::IniFormat );
-                    const QIcon &icon = QIcon::fromTheme(settings.value( "Desktop Entry/Icon" ).toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
+                    QIcon icon = QIcon::fromTheme(settings.value( "Desktop Entry/Icon" ).toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
+                    if (icon.isNull()||icon.name().isNull())
+                        icon = FileIconProvider().icon(f);
                     addPlace( f.fileName(), f.filePath(), icon, cont );
                 }
                 emit changed();
@@ -600,7 +609,7 @@ PlacesView::dropEvent( QDropEvent *event )
         {
             foreach ( const QString &file, files )
             {
-                const QFileInfo &f(file);
+                const QFileInfo f(file);
                 if ( !f.isDir() )
                     continue;
                 QSettings settings( QDir(file).absoluteFilePath(".directory"), QSettings::IniFormat );
@@ -737,7 +746,7 @@ PlacesView::addPlace(QString name, QString path, QIcon icon, QStandardItem *pare
         cont = dynamic_cast<Container *>(currentItem());
     if ( !cont )
         return;
-    Place *place = new Place(name, path, icon.name());
+    Place *place = new Place(name, path, icon.name(), icon);
     place->setFlags(place->flags() | Qt::ItemIsEditable);
     cont->appendRow(place);
     if ( storeSettings )

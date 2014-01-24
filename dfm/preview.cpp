@@ -127,18 +127,10 @@ PixmapItem::updatePixmaps()
 void
 PixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    if ( m_pix[1].isNull() )
+    if ((m_pix[0].isNull()||m_pix[1].isNull())&&m_preView->indexOfItem(this).data(Qt::DecorationRole).isValid())
         updatePixmaps();
-#if 0
-    if (option->state & QStyle::State_MouseOver) //just to have some hover effect...
-    {
-        painter->translate(SIZE/2.0f, SIZE/2.0f);
-        painter->scale(1.1, 1.1);
-        painter->translate(-SIZE/2.0f, -SIZE/2.0f);
-    }
-#endif
     painter->drawTiledPixmap(QRect(0, SIZE, SIZE, SIZE), m_pix[1]);
-    if ( painter->transform().isScaling() )
+    if (painter->transform().isScaling())
         painter->setRenderHints(QPainter::SmoothPixmapTransform);
     painter->drawTiledPixmap(QRect(0, 1, SIZE, SIZE), m_pix[0]);
     painter->setRenderHints(QPainter::SmoothPixmapTransform, false);

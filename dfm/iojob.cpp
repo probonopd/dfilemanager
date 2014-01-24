@@ -398,7 +398,7 @@ IOThread::IOThread(const QStringList &inf, const QString &dest, const bool cut, 
     connect(this, SIGNAL(errorSignal()), this, SLOT(errorSlot()));
     connect(m_speedTimer, SIGNAL(timeout()), this, SLOT(checkSpeed()));
     m_timer->start(100);
-    m_speedTimer->start(100);
+    m_speedTimer->start(1000);
 }
 
 IOThread::IOThread(const QStringList &paths, QObject *parent)
@@ -423,7 +423,7 @@ IOThread::checkSpeed()
 {
     const quint64 diff = m_allProgress-m_diffCheck;
     m_diffCheck = m_allProgress;
-    emit speed(QString("%1 /s").arg(Ops::prettySize(diff*10)));
+    emit speed(QString("%1 /s").arg(Ops::prettySize(diff)));
 }
 
 void

@@ -7,7 +7,9 @@
 #include <QFileInfo>
 #include <magic.h>
 
+#if QT_VERSION < 0x050000
 Q_EXPORT_PLUGIN2(thumbstext, ThumbsText)
+#endif
 
 static magic_t s_magicMime;
 static QString getMimeType(const QString &file)

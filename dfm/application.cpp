@@ -141,6 +141,8 @@ Application::loadPlugins()
     }
 #else
     QDir pluginsDir(applicationDirPath());
+    pluginsDir.cdUp();
+    pluginsDir.cdUp();
 #endif
     loadPluginsFromDir(pluginsDir);
 }
@@ -148,7 +150,7 @@ Application::loadPlugins()
 void
 Application::loadPluginsFromDir(const QDir dir)
 {
-    foreach (QString fileName, dir.entryList(QDir::Files))
+    foreach (QString fileName, dir.entryList(QDir::AllEntries|QDir::NoDotAndDotDot))
     {
         QPluginLoader loader(dir.absoluteFilePath(fileName));
         QObject *plugin = loader.instance();
@@ -158,6 +160,8 @@ Application::loadPluginsFromDir(const QDir dir)
                 m_thumbIfaces.insert(it->name(), it);
             m_allThumbIfaces << it;
         }
+        if (QFileInfo(dir.absoluteFilePath(fileName)).isDir())
+            loadPluginsFromDir(QDir(dir.absoluteFilePath(fileName)));
     }
 }
 

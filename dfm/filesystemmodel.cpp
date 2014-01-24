@@ -631,20 +631,7 @@ DataGatherer::run()
         m_node->rePopulate();
         if ( m_node->filePath() != m_model->rootPath() )
             return;
-        QFileSystemWatcher *watcher = m_model->dirWatcher();
-        if ( !watcher->directories().isEmpty() )
-            watcher->removePaths(watcher->directories());
-        QStringList newPaths;
-        FileSystemModel::Node *node = m_node;
-        while ( node )
-        {
-            if ( !node->filePath().isEmpty() )
-                newPaths << node->filePath();
-            node->setLocked(true);
-            node = node->parent();
-        }
-        if ( !newPaths.isEmpty() )
-            watcher->addPaths(newPaths);
+
         break;
     }
     case Generate:
@@ -763,6 +750,9 @@ FileSystemModel::setRootPath(const QString &path)
         current->endSearch();
     ThumbsLoader::clearQueue();
     m_rootPath = path;
+    if (!m_watcher->directories().isEmpty())
+        m_watcher->removePaths(m_watcher->directories());
+    m_watcher->addPath(m_rootPath);
     Node *node = rootNode()->node(path);
     if ( !node )
         dataGatherer()->generateNode(path);
@@ -928,11 +918,12 @@ FileSystemModel::data(const QModelIndex &index, int role) const
             return QPixmap::fromImage(m_it->flowNameData(icon.name(), role == FlowRefl));
         else if ( !icon.name().isEmpty() )
             m_it->queueName(icon);
-
-        if ( role == FlowRefl )
-            return QPixmap();
-
-        return icon.pixmap(SIZE);
+        else
+        {
+            QImage img = icon.pixmap(SIZE).toImage();
+            m_it->queueFile(file, img);
+        }
+        return QPixmap();
     }
 
     if (role == Category)

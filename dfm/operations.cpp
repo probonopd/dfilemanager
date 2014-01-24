@@ -262,11 +262,12 @@ Ops::reflection( const QImage &img )
 {
     if ( img.isNull() )
         return QImage();
-    QImage refl(SIZE, SIZE, QImage::Format_ARGB32);
+    QImage refl(QSize(SIZE, SIZE), QImage::Format_ARGB32);
     refl.fill( Qt::transparent);
     QRect r = img.rect();
     if (!r.isValid())
         return QImage();
+
     r.moveCenter(refl.rect().center());
     r.moveTop(refl.rect().top());
     QPainter p(&refl);

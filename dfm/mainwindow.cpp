@@ -144,7 +144,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     vBox->addWidget(m_tabWin);
     center->setLayout(vBox);
 
-    m_placesView->addActions(QList<QAction *>() << m_actions[AddPlace] << m_actions[RenamePlace] << m_actions[RemovePlace] << m_actions[AddPlaceContainer] << m_actions[SetPlaceIcon] );
+    m_placesView->addActions(QList<QAction *>() << m_actions[AddPlace] << m_actions[RenamePlace] << m_actions[RemovePlace] << m_actions[AddPlaceContainer] << m_actions[SetPlaceIcon]);
 
     setCentralWidget(center);
 
@@ -161,8 +161,8 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     if ( m_activeContainer )
         m_activeContainer->setFocus();
     m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked());
-    foreach (QAction *a, m_toolBar->actions())
-        connect(a, SIGNAL(changed()), this, SLOT(updateIcons()));
+//    foreach (QAction *a, m_toolBar->actions())
+//        connect(a, SIGNAL(changed()), this, SLOT(updateIcons()));
     QTimer::singleShot(50, this, SLOT(updateIcons()));
 }
 
@@ -326,17 +326,19 @@ MainWindow::pasteSelection()
 void
 MainWindow::rootPathChanged(const QString &path)
 {
-    setWindowTitle(m_model->rootDirectory().dirName());
+    const QString &rootPath = m_model->rootPath();
+    const QString &dir = QFileInfo(rootPath).fileName().isEmpty()?rootPath:QFileInfo(rootPath).fileName();
+    setWindowTitle(dir);
     if (m_filterBox->mode() == Filter)
     {
         m_filterBox->clear();
         m_activeContainer->setFilter("");
     }
-    m_placesView->activateAppropriatePlace(path);
-    m_tabBar->setTabText(m_tabBar->currentIndex(), m_model->rootDirectory().dirName());
+    m_placesView->activateAppropriatePlace(rootPath);
+    m_tabBar->setTabText(m_tabBar->currentIndex(), dir);
     if ( Store::config.behaviour.gayWindow )
-        m_tabBar->setTabIcon(m_tabBar->currentIndex(), m_model->iconProvider()->icon(QFileInfo(m_model->rootPath())));
-    updateStatusBar(path);
+        m_tabBar->setTabIcon(m_tabBar->currentIndex(), m_model->iconProvider()->icon(QFileInfo(rootPath)));
+    updateStatusBar(rootPath);
     setActions();
 }
 
@@ -576,10 +578,12 @@ MainWindow::addTab(const QString &path)
         m_model = container->model();
 //    static_cast<FileIconProvider *>(m_model->iconProvider())->loadThemedFolders(m_model->rootPath());
 
+    const QString &fileName = QFileInfo(container->model()->rootPath()).fileName().isEmpty()?container->model()->rootPath():QFileInfo(container->model()->rootPath()).fileName();
+
     if ( Store::config.behaviour.gayWindow )
-        m_tabBar->addTab(m_model->iconProvider()->icon(QFileInfo(container->model()->rootPath())), QFileInfo(container->model()->rootPath()).fileName());
+        m_tabBar->addTab(m_model->iconProvider()->icon(QFileInfo(container->model()->rootPath())), fileName);
     else
-        m_tabBar->addTab(QFileInfo(container->model()->rootPath()).fileName());
+        m_tabBar->addTab(fileName);
 
     if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
         m_tabBar->setVisible(m_tabBar->count() > 1);
@@ -616,10 +620,12 @@ MainWindow::addTab(ViewContainer *container, int index)
     if (!m_activeContainer)
         m_activeContainer = container;
 
+    const QString &fileName = QFileInfo(container->model()->rootPath()).fileName().isEmpty()?container->model()->rootPath():QFileInfo(container->model()->rootPath()).fileName();
+
     if ( Store::config.behaviour.gayWindow )
-        m_tabBar->insertTab(index, m_model->iconProvider()->icon(QFileInfo(container->model()->rootPath())), QFileInfo(container->model()->rootPath()).fileName());
+        m_tabBar->insertTab(index, m_model->iconProvider()->icon(QFileInfo(container->model()->rootPath())), fileName);
     else
-        m_tabBar->insertTab(index, QFileInfo(container->model()->rootPath()).fileName());
+        m_tabBar->insertTab(index, fileName);
 
     if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
         m_tabBar->setVisible(m_tabBar->count() > 1);
@@ -880,43 +886,19 @@ MainWindow::updateIcons()
     if ( !m_sortButton )
         return;
 
-#define SETICON(_ICON_) setIcon(IconProvider::icon(_ICON_, m_toolBar->iconSize().height(), tb->palette().color(tb->foregroundRole()), Store::config.behaviour.systemIcons))
-#define ACTION(_ACTION_) static_cast<QToolButton *>(m_toolBar->widgetForAction(m_actions[_ACTION_]))
-    QToolButton *tb = 0;
+#define SETICON(_ICON_) setIcon(IconProvider::icon(_ICON_, m_toolBar->iconSize().height(), m_toolBar->palette().color(m_toolBar->foregroundRole()), Store::config.behaviour.systemIcons))
+    m_actions[GoBack]->SETICON(IconProvider::GoBack);
+    m_actions[GoForward]->SETICON(IconProvider::GoForward);
+    m_actions[IconView]->SETICON(IconProvider::IconView);
+    m_actions[DetailView]->SETICON(IconProvider::DetailsView);
+    m_actions[ColumnView]->SETICON(IconProvider::ColumnsView);
+    m_actions[FlowView]->SETICON(IconProvider::FlowView);
+    m_actions[Configure]->SETICON(IconProvider::Configure);
+    m_actions[GoHome]->SETICON(IconProvider::GoHome);
+    m_actions[ShowHidden]->SETICON(IconProvider::Hidden);
 
-    tb = ACTION(GoBack);
-    tb->SETICON(IconProvider::GoBack);
-
-    tb = ACTION(GoForward);
-    tb->SETICON(IconProvider::GoForward);
-
-    tb = ACTION(IconView);
-    tb->SETICON(IconProvider::IconView);
-
-    tb = ACTION(DetailView);
-    tb->SETICON(IconProvider::DetailsView);
-
-    tb = ACTION(ColumnView);
-    tb->SETICON(IconProvider::ColumnsView);
-
-    tb = ACTION(FlowView);
-    tb->SETICON(IconProvider::FlowView);
-
-    tb = ACTION(Configure);
-    tb->SETICON(IconProvider::Configure);
-
-    tb = ACTION(GoHome);
-    tb->SETICON(IconProvider::GoHome);
-
-    tb = ACTION(ShowHidden);
-    tb->SETICON(IconProvider::Hidden);
-
-    tb = m_sortButton;
-    tb->setMinimumWidth(32);
-    tb->SETICON(IconProvider::Sort);
-
-    tb = 0;
-#undef ACTION
+    m_sortButton->setMinimumWidth(32);
+    m_sortButton->SETICON(IconProvider::Sort);
 #undef SETICON
 
     m_toolBar->widgetForAction(m_actions[ShowHidden])->setMinimumWidth(32);

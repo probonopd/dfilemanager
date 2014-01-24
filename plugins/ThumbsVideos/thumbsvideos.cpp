@@ -1,7 +1,9 @@
 #include "thumbsvideos.h"
 #include <QDebug>
 
+#if QT_VERSION < 0x050000
 Q_EXPORT_PLUGIN2(thumbsvideos, ThumbsVideos)
+#endif
 
 void
 ThumbsVideos::init()

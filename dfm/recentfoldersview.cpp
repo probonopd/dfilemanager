@@ -49,7 +49,8 @@ RecentFoldersView::RecentFoldersView(QWidget *parent) : QListView(parent), m_mod
 void
 RecentFoldersView::folderEntered(const QString &folder)
 {
-    QList<QStandardItem*> l = m_model->findItems(QFileInfo(folder).fileName());
+    const QString &folderName = QFileInfo(folder).fileName().isEmpty()?folder:QFileInfo(folder).fileName();
+    QList<QStandardItem*> l = m_model->findItems(folderName);
     if ( l.count() )
         foreach ( QStandardItem *item, l )
             if ( item->data().toString() == folder )
@@ -65,7 +66,7 @@ RecentFoldersView::folderEntered(const QString &folder)
     QIcon icon(fsModel->fileIcon(fsModel->index(folder)));
     if (icon.isNull())
         icon = QFileIconProvider().icon(QFileIconProvider::Folder);
-    QStandardItem *item = new QStandardItem(icon, QFileInfo(folder).fileName());
+    QStandardItem *item = new QStandardItem(icon, folderName);
     item->setData(folder);
     item->setToolTip(folder);
     m_model->insertRow(0, item);

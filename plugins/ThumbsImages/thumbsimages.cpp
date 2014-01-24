@@ -3,7 +3,9 @@
 #include <QFileInfo>
 #include <QDebug>
 
+#if QT_VERSION < 0x050000
 Q_EXPORT_PLUGIN2(thumbsimages, ThumbsImages)
+#endif
 
 void
 ThumbsImages::init()
@@ -43,7 +45,7 @@ ThumbsImages::thumb(const QString &file, const int size, QImage &thumb)
         img = img.scaled(sz, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     }
     thumb = img;
-    return !thumb.isNull();
+    return !thumb.size().isEmpty();
 }
 
 static QStringList suf;

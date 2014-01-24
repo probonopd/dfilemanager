@@ -29,6 +29,7 @@ ViewAnimator::ViewAnimator(QObject *parent) : QObject(parent),
     m_view(static_cast<QAbstractItemView *>(parent)),
     m_model(0)
 {
+//    m_animTimer->setInterval(20);
     connect(m_animTimer, SIGNAL(timeout()), this, SLOT(animEvent()));
     connect(m_view, SIGNAL(entered(QModelIndex)), this, SLOT(indexHovered(QModelIndex)));
     connect(m_view, SIGNAL(viewportEntered()), this, SLOT(removeHoveredIndex()));
@@ -48,7 +49,7 @@ ViewAnimator::indexHovered(const QModelIndex &index)
     {
         m_hoveredIndex = index;
         if (!m_animTimer->isActive())
-            m_animTimer->start(30);
+            m_animTimer->start(20);
     }
 }
 
@@ -67,7 +68,7 @@ ViewAnimator::removeHoveredIndex()
 {
     m_hoveredIndex = QModelIndex();
     if ( m_totalIndex && !m_animTimer->isActive() )
-        m_animTimer->start( 50 );
+        m_animTimer->start(40);
 }
 
 void

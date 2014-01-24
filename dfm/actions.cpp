@@ -44,7 +44,7 @@ MainWindow::createActions()
     connect(m_actions[GoHome], SIGNAL(triggered()), this, SLOT(goHome()));
     addAction(m_actions[GoHome]);
 
-    m_actions[GoBack] = new QAction( IconProvider::icon(IconProvider::GoBack, tbis, tbfgc, Store::config.behaviour.systemIcons), tr("&Go Back"), this);
+    m_actions[GoBack] = new QAction(tr("&Go Back"), this);
     m_actions[GoBack]->setShortcuts( QKeySequence::Back);
     m_actions[GoBack]->setShortcutContext( Qt::ApplicationShortcut );
     m_actions[GoBack]->setObjectName("actionGoBack");
@@ -59,7 +59,7 @@ MainWindow::createActions()
     connect(m_actions[GoUp], SIGNAL(triggered()), this, SLOT(goUp()));
     addAction(m_actions[GoUp]);
 
-    m_actions[GoForward] = new QAction(IconProvider::icon(IconProvider::GoForward, tbis, tbfgc, Store::config.behaviour.systemIcons), tr("&Go Forward"), this);
+    m_actions[GoForward] = new QAction(tr("&Go Forward"), this);
     m_actions[GoForward]->setShortcuts(QKeySequence::Forward);
     m_actions[GoForward]->setShortcutContext( Qt::ApplicationShortcut );
     m_actions[GoForward]->setObjectName("actionGoForward");
@@ -115,7 +115,7 @@ MainWindow::createActions()
     connect(m_actions[RemovePlace], SIGNAL(triggered()), m_placesView, SLOT(removePlace()));
     addAction(m_actions[RemovePlace]);
 
-    m_actions[IconView] = new QAction(IconProvider::icon(IconProvider::IconView, tbis, tbfgc, Store::config.behaviour.systemIcons), tr("&Icons View"), this);
+    m_actions[IconView] = new QAction(tr("&Icons View"), this);
     m_actions[IconView]->setShortcuts( QList<QKeySequence>() << QKeySequence("Ctrl+1") );
     m_actions[IconView]->setShortcutContext( Qt::ApplicationShortcut );
     m_actions[IconView]->setObjectName("actionIconView");
@@ -124,7 +124,7 @@ MainWindow::createActions()
     connect(m_actions[IconView], SIGNAL(triggered()), this, SLOT(setViewIcons()));
     addAction(m_actions[IconView]);
 
-    m_actions[DetailView] = new QAction(IconProvider::icon(IconProvider::DetailsView, tbis, tbfgc, Store::config.behaviour.systemIcons), tr("&Details View"), this);
+    m_actions[DetailView] = new QAction(tr("&Details View"), this);
     m_actions[DetailView]->setShortcuts( QList<QKeySequence>() << QKeySequence("Ctrl+2") );
     m_actions[DetailView]->setShortcutContext( Qt::ApplicationShortcut );
     m_actions[DetailView]->setObjectName("actionsListView");
@@ -132,7 +132,7 @@ MainWindow::createActions()
     connect(m_actions[DetailView], SIGNAL(triggered()), this, SLOT(setViewDetails()));
     addAction(m_actions[DetailView]);
 
-    m_actions[ColumnView] = new QAction(IconProvider::icon(IconProvider::ColumnsView, tbis, tbfgc, Store::config.behaviour.systemIcons), tr("&Columns View"), this);
+    m_actions[ColumnView] = new QAction(tr("&Columns View"), this);
     m_actions[ColumnView]->setShortcuts( QList<QKeySequence>() << QKeySequence("Ctrl+3") );
     m_actions[ColumnView]->setShortcutContext( Qt::ApplicationShortcut );
     m_actions[ColumnView]->setObjectName("actionColView");
@@ -140,7 +140,7 @@ MainWindow::createActions()
     connect(m_actions[ColumnView], SIGNAL(triggered()), this, SLOT(setViewCols()));
     addAction(m_actions[ColumnView]);
 
-    m_actions[FlowView] = new QAction(IconProvider::icon(IconProvider::FlowView, tbis, tbfgc, Store::config.behaviour.systemIcons), tr("&Flow"), this);
+    m_actions[FlowView] = new QAction(tr("&Flow"), this);
     m_actions[FlowView]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+4") );
     m_actions[FlowView]->setShortcutContext( Qt::ApplicationShortcut );
     m_actions[FlowView]->setObjectName("actionFlow");
@@ -148,7 +148,7 @@ MainWindow::createActions()
     connect(m_actions[FlowView], SIGNAL(triggered()), this, SLOT(flowView()));
     addAction(m_actions[FlowView]);
 
-    m_actions[ShowHidden] = new QAction(IconProvider::icon(IconProvider::Hidden, tbis, tbfgc, Store::config.behaviour.systemIcons), tr("&Show Hidden"), this);
+    m_actions[ShowHidden] = new QAction(tr("&Show Hidden"), this);
     m_actions[ShowHidden]->setShortcuts( QList<QKeySequence>() << QKeySequence("F8") );
     m_actions[ShowHidden]->setShortcutContext( Qt::ApplicationShortcut );
     m_actions[ShowHidden]->setObjectName("actionShowHidden");
@@ -246,13 +246,13 @@ MainWindow::createActions()
 
     m_actions[Configure] = new QAction(tr("Configure"),this);
     m_actions[Configure]->setObjectName("configAct");
-    m_actions[Configure]->setIcon(IconProvider::icon(IconProvider::Configure, tbis, tbfgc, Store::config.behaviour.systemIcons));
+//    m_actions[Configure]->setIcon(IconProvider::icon(IconProvider::Configure, tbis, tbfgc, Store::config.behaviour.systemIcons));
     connect(m_actions[Configure], SIGNAL(triggered()),this,SLOT(showSettings()));
     addAction(m_actions[Configure]);
 
     m_actions[Properties] = new QAction(tr("Properties"),this);
     m_actions[Properties]->setObjectName("propAct");
-    m_actions[Properties]->setIcon(QIcon::fromTheme("Configure"));
+//    m_actions[Properties]->setIcon(QIcon::fromTheme("Configure"));
     connect(m_actions[Properties], SIGNAL(triggered()),this,SLOT(fileProperties()));
     addAction(m_actions[Properties]);
 

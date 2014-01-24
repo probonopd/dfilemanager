@@ -45,12 +45,13 @@ class Place : public QStandardItem
 {
 public:
     enum Info { Name = 0, Path = 1, Icon = 2 };
-    inline Place(const QString &name = QString(), const QString &path = QString(), const QString &iconName = QString())
+    inline Place(const QString &name = QString(), const QString &path = QString(), const QString &iconName = QString(), const QIcon &icon = QIcon())
     {
-        m_values << name << path << iconName; ;
+        m_values << name << path << iconName;
+        m_icon = icon;
     }
-    inline Place(const QStringList &texts = QStringList()) : m_values(texts) { while (m_values.count() < 3) m_values << QString(); }
-    inline Place( Place *p ) { m_values << p->name() << p->path() << p->iconName(); }
+    inline Place(const QStringList &texts = QStringList(), const QIcon &icon = QIcon()) : m_values(texts) { while (m_values.count() < 3) m_values << QString(); m_icon = icon; }
+    inline Place( Place *p ) { m_values << p->name() << p->path() << p->iconName(); m_icon = p->fileIcon(); }
     virtual QStringList values() { return m_values; }
     virtual QString name() const { return m_values[Name]; }
     virtual QString path() const { return m_values[Path]; }
@@ -58,9 +59,12 @@ public:
     virtual void setName( const QString &name ) { m_values[Name] = name; }
     virtual void setPath( const QString &path ) { m_values[Path] = path; }
     virtual void setIconName( const QString &iconName ) { m_values[Icon] = iconName; }
+    inline QIcon fileIcon() { return m_icon; }
+    inline void setFileIcon(const QIcon &icon) { m_icon = icon; }
 
 private:
     QStringList m_values;
+    QIcon m_icon;
 };
 
 class Container : public Place

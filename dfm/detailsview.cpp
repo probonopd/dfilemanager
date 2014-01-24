@@ -120,7 +120,11 @@ DetailsView::setModel(QAbstractItemModel *model)
     QTreeView::setModel(model);
     m_model = qobject_cast<FileSystemModel *>(model);
     for ( int i = 0; i<header()->count(); ++i )
+#if QT_VERSION < 0x050000
         header()->setResizeMode(i, QHeaderView::Fixed);
+#else
+        header()->setSectionResizeMode(i, QHeaderView::Fixed);
+#endif
 }
 
 void
