@@ -55,6 +55,8 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
         case GoHome : iconString = "go-home"; break;
         case Search : iconString = "edit-find"; break;
         case Clear : iconString = "list-remove"; break;
+        case Sort : iconString = "view-sort-ascending"; break;
+        case Hidden : iconString = "inode-directory"; break;
         default : iconString = "";
         }
 
