@@ -255,7 +255,6 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev 
 {
 //    QColor mid = Operations::colorMid( m_view->palette().color( QPalette::Base ), m_view->palette().color( QPalette::Text ) );
 //    QColor fg = Operations::colorMid( m_view->palette().color( QPalette::Highlight ), mid, 1, 5 );
-    m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole())));
     m_tb->setVisible(true);
     m_tb->setFixedSize(16, 16);
     m_tb->setToolTip( isMounted() ? "Unmount" : "Mount" );
@@ -277,6 +276,7 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev 
     connect( a, SIGNAL(triggered()), this, SLOT(setHidden()) );
 
     m_actions << a;
+    QTimer::singleShot(100, this, SLOT(updateIcon()));
 }
 
 void
@@ -331,6 +331,8 @@ DeviceItem::setHidden()
         m_view->deviceManager()->actions().at(0)->setEnabled(false);
     }
 }
+
+void DeviceItem::updateIcon() { m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole()))); }
 
 bool DeviceItem::isHidden() const { return m_view->hiddenDevices().contains(devPath()); }
 

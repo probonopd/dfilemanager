@@ -145,6 +145,7 @@ private slots:
     inline void toggleMount() { setMounted(!isMounted()); }
     void updateSpace();
     void changeState();
+    void updateIcon();
 
 private:
     bool m_isVisible, m_isHidden;

@@ -33,7 +33,9 @@ ThumbsMovies::thumb(const QString &file, const int size, QImage &thumb)
     m_evLoop->exec();
     if (!m_image.isNull())
     {
-        thumb = m_image.scaled(size, size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        thumb = m_image;
+        if (m_image.size().width()>size||m_image.size().height()>size)
+            thumb = m_image.scaled(size, size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         return true;
     }
     return false;
