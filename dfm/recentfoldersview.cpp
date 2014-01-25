@@ -36,21 +36,51 @@ RecentFoldersView::RecentFoldersView(QWidget *parent) : QListView(parent), m_mod
     connect(this, SIGNAL(activated(QModelIndex)), this, SLOT(itemActivated(QModelIndex)));
     connect(this, SIGNAL(clicked(QModelIndex)), this, SLOT(itemActivated(QModelIndex)));
 
-    if (Store::config.behaviour.sideBarStyle)
+    QTimer::singleShot(50, this, SLOT(paletteOps()));
+}
+
+void
+RecentFoldersView::paletteOps()
+{
+    QPalette::ColorRole bg = viewport()->backgroundRole(), fg = viewport()->foregroundRole();
+    if (!viewport()->autoFillBackground())
     {
-        //base color... slight hihglight tint
-        QPalette pal = palette();
-        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
-        pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
-        setPalette( pal );
+        bg = backgroundRole();
+        fg = foregroundRole();
     }
+    setBackgroundRole(bg);
+    setForegroundRole(fg);
+    viewport()->setBackgroundRole(bg);
+    viewport()->setForegroundRole(fg);
+    QPalette pal = palette();
+    const QColor fgc = pal.color(fg), bgc = pal.color(bg);
+    if (Store::config.behaviour.sideBarStyle == 1)
+    {
+        viewport()->setAutoFillBackground(true);
+        //base color... slight hihglight tint
+        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), qApp->palette().color( QPalette::Highlight ), 10, 1 );
+        pal.setColor( bg, Ops::colorMid( Qt::black, midC, 1, 10 ) );
+        pal.setColor( fg, qApp->palette().color(fg) );
+    }
+    else if (Store::config.behaviour.sideBarStyle == 2)
+    {
+        pal.setColor(bg, fgc);
+        pal.setColor(fg, bgc);
+    }
+    else if (Store::config.behaviour.sideBarStyle == 3)
+    {
+        const QColor &wtext = pal.color(QPalette::WindowText), w = pal.color(QPalette::Window);
+        pal.setColor(bg, wtext);
+        pal.setColor(fg, w);
+    }
+    setPalette(pal);
 }
 
 void
 RecentFoldersView::folderEntered(const QString &folder)
 {
     const QString &folderName = QFileInfo(folder).fileName().isEmpty()?folder:QFileInfo(folder).fileName();
-    QList<QStandardItem*> l = m_model->findItems(folderName);
+    QList<QStandardItem *> l = m_model->findItems(folderName);
     if ( l.count() )
         foreach ( QStandardItem *item, l )
             if ( item->data().toString() == folder )

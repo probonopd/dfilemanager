@@ -45,17 +45,14 @@ InfoWidget::InfoWidget(QWidget *parent)
 //    QColor midC = Operations::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
 //    pal.setColor( QPalette::Base, Operations::colorMid( Qt::black, midC, 1, 10 ) );
 //    setPalette( pal );
-    setAutoFillBackground( true );
-    setBackgroundRole(QPalette::WindowText);
-    setForegroundRole(QPalette::Window);
     setFrameStyle( QFrame::StyledPanel | QFrame::Sunken );
 
     QFont f(font());
     f.setBold(true);
     f.setPointSize(f.pointSize()+2);
     m_fileName->setFont(f);
-    m_fileName->setBackgroundRole(QPalette::WindowText);
-    m_fileName->setForegroundRole(QPalette::Window);
+//    m_fileName->setBackgroundRole(QPalette::WindowText);
+//    m_fileName->setForegroundRole(QPalette::Window);
 
     f.setPointSize(qMax(Store::config.behaviour.minFontSize, f.pointSize()-2));
     for ( int i = 0; i < 2; ++i )
@@ -68,8 +65,8 @@ InfoWidget::InfoWidget(QWidget *parent)
     {
         l->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         l->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        l->setBackgroundRole(QPalette::WindowText);
-        l->setForegroundRole(QPalette::Window);
+//        l->setBackgroundRole(QPalette::WindowText);
+//        l->setForegroundRole(QPalette::Window);
     }
 
     foreach(QLabel *l, QList<QLabel *>() << m_ownerLbl << m_typeLbl <<  m_mimeLbl << m_sizeLbl << m_lastMod[1] << m_perm[1])
@@ -77,8 +74,8 @@ InfoWidget::InfoWidget(QWidget *parent)
         l->setFont(f);
         l->setWordWrap(true);
         l->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        l->setBackgroundRole(QPalette::WindowText);
-        l->setForegroundRole(QPalette::Window);
+//        l->setBackgroundRole(QPalette::WindowText);
+//        l->setForegroundRole(QPalette::Window);
     }
 
     setMaximumHeight( 68 );
@@ -100,6 +97,36 @@ InfoWidget::InfoWidget(QWidget *parent)
     gdl->addWidget(m_perm[1], 1, 7);
     gdl->setVerticalSpacing(0);
     setLayout(gdl);
+
+    QTimer::singleShot(50, this, SLOT(paletteOps()));
+}
+
+void
+InfoWidget::paletteOps()
+{
+    setAutoFillBackground( true );
+    QPalette::ColorRole bg = backgroundRole(), fg = foregroundRole();
+    QPalette pal = palette();
+    const QColor fgc = pal.color(fg), bgc = pal.color(bg);
+    if (Store::config.behaviour.sideBarStyle == 1)
+    {
+        //base color... slight hihglight tint
+        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), qApp->palette().color( QPalette::Highlight ), 10, 1 );
+        pal.setColor( bg, Ops::colorMid( Qt::black, midC, 1, 10 ) );
+        pal.setColor( fg, qApp->palette().color(fg) );
+    }
+    else if (Store::config.behaviour.sideBarStyle == 2)
+    {
+        pal.setColor(bg, fgc);
+        pal.setColor(fg, bgc);
+    }
+    else if (Store::config.behaviour.sideBarStyle == 3)
+    {
+        const QColor &wtext = pal.color(QPalette::WindowText), w = pal.color(QPalette::Window);
+        pal.setColor(bg, wtext);
+        pal.setColor(fg, w);
+    }
+    setPalette(pal);
 }
 
 void

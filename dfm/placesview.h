@@ -240,6 +240,7 @@ public slots:
     void populate();
     void store();
     void updateAllWindows();
+    void paletteOps();
 
 protected:
     void drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const;

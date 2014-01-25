@@ -90,6 +90,7 @@ protected:
     
 public slots:
     void hovered(const QModelIndex &index);
+    void paletteOps();
 
 private:
     ThumbWidget *m_tw;

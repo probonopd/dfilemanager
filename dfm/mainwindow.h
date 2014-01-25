@@ -175,6 +175,7 @@ private slots:
     void addBookmarks();
     void setSorting();
     void sortingChanged(const int column, const int order);
+    void updateToolbarSpacer();
 
 signals:
     void viewChanged( QAbstractItemView *view );

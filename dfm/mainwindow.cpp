@@ -163,7 +163,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked());
 //    foreach (QAction *a, m_toolBar->actions())
 //        connect(a, SIGNAL(changed()), this, SLOT(updateIcons()));
-    QTimer::singleShot(50, this, SLOT(updateIcons()));
+    QTimer::singleShot(500, this, SLOT(updateIcons()));
 }
 
 void
@@ -462,17 +462,7 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
     }
 
     if (obj == m_placesView && (event->type() == QEvent::Resize || event->type() == QEvent::Show) && !m_dockLeft->isFloating())
-    {
-        int w = m_placesView->viewport()->width();
-        w -= m_toolBar->widgetForAction(m_actions[GoBack])->width();
-        w -= m_toolBar->widgetForAction(m_actions[GoForward])->width();
-        w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
-        if (m_toolBarSpacer->width() != w )
-        {
-            const int width = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
-            m_toolBarSpacer->setFixedWidth(width);
-        }
-    }
+        updateToolbarSpacer();
 
     if (obj == m_statusBar && event->type() == QEvent::Paint)
     {
@@ -881,6 +871,20 @@ MainWindow::readSettings()
 }
 
 void
+MainWindow::updateToolbarSpacer()
+{
+    int w = m_placesView->viewport()->width();
+    w -= m_toolBar->widgetForAction(m_actions[GoBack])->width();
+    w -= m_toolBar->widgetForAction(m_actions[GoForward])->width();
+    w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
+    if (m_toolBarSpacer->width() != w )
+    {
+        const int width = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
+        m_toolBarSpacer->setFixedWidth(width);
+    }
+}
+
+void
 MainWindow::updateIcons()
 {
     if ( !m_sortButton )
@@ -908,6 +912,8 @@ MainWindow::updateIcons()
     m_dockLeft->setContentsMargins(0, 0, 0, 0);
     m_dockRight->setContentsMargins(0, 0, 0, 0);
     m_dockBottom->setContentsMargins(0, 0, 0, 0);
+
+    QTimer::singleShot(0, this, SLOT(updateToolbarSpacer()));
 }
 
 void

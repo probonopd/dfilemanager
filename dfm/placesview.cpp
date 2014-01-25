@@ -126,7 +126,9 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     const bool underMouse = option.state & QStyle::State_MouseOver,
             selected = option.state & QStyle::State_Selected;
 
-    QColor baseColor = m_placesView->palette().color( QPalette::Base );
+    const QPalette::ColorRole fgr = m_placesView->foregroundRole(), bgr = m_placesView->backgroundRole();
+
+    QColor baseColor = m_placesView->palette().color( bgr );
     if ( underMouse )
         painter->fillRect( RECT, baseColor );
 
@@ -136,10 +138,10 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     int indent = DECOSIZE.height(), textMargin = indent + ( isHeader( index ) ? 0 : DECOSIZE.width() );
     QRect textRect( RECT.adjusted( textMargin, 0, 0, 0 ) );
 
-    QColor mid = Ops::colorMid( PAL.color( QPalette::Base ), PAL.color( QPalette::Text ) );
-    QColor fg = isHeader( index ) ? Ops::colorMid( PAL.color( QPalette::Highlight ), mid, 1, 5 ) : PAL.color( QPalette::Text );
+    QColor mid = Ops::colorMid( PAL.color( bgr ), PAL.color( fgr ) );
+    QColor fg = isHeader( index ) ? Ops::colorMid( PAL.color( QPalette::Highlight ), mid, 1, 5 ) : PAL.color( fgr );
     QPalette pal(PAL);
-    pal.setColor(QPalette::Text, fg);
+    pal.setColor(fgr, fg);
     const QStyleOptionViewItem &copy(option);
     const_cast<QStyleOptionViewItem *>(&copy)->palette = pal;
 
@@ -163,8 +165,8 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
         if ( d->isHidden() )
             painter->setOpacity(0.5f);
 
-    fg=!selected?PAL.color(QPalette::Text):PAL.color(QPalette::HighlightedText);
-    const QColor &bg = selected?PAL.color( QPalette::Highlight ):PAL.color(QPalette::Base);
+    fg=!selected?PAL.color(fgr):PAL.color(QPalette::HighlightedText);
+    const QColor &bg = selected?PAL.color( QPalette::Highlight ):PAL.color(bgr);
     int y = bg.value()>fg.value()?1:-1;
     const QColor &emb = Ops::colorMid(bg, y==1?Qt::white:Qt::black);
     QLinearGradient lgf(textRect.topLeft(), textRect.topRight());
@@ -253,7 +255,7 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev 
 {
 //    QColor mid = Operations::colorMid( m_view->palette().color( QPalette::Base ), m_view->palette().color( QPalette::Text ) );
 //    QColor fg = Operations::colorMid( m_view->palette().color( QPalette::Highlight ), mid, 1, 5 );
-    m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(QPalette::Text)));
+    m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole())));
     m_tb->setVisible(true);
     m_tb->setFixedSize(16, 16);
     m_tb->setToolTip( isMounted() ? "Unmount" : "Mount" );
@@ -487,20 +489,48 @@ PlacesView::PlacesView( QWidget *parent )
     setAnimated( true );
     setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 
-    if (Store::config.behaviour.sideBarStyle)
-    {
-        //base color... slight hihglight tint
-        QPalette pal = palette();
-        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
-        pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
-        pal.setColor( QPalette::Text, qApp->palette().color(QPalette::Text) );
-        setPalette( pal );
-    }
-
     connect ( this, SIGNAL(changed()), this, SLOT(store()) );
     connect ( this, SIGNAL(clicked(QModelIndex)), this, SLOT(emitPath(QModelIndex)) );
     connect ( m_timer, SIGNAL(timeout()), this, SLOT(updateAllWindows()) );
     connect ( MainWindow::currentWindow(), SIGNAL(settingsChanged()), viewport(), SLOT(update()) );
+    QTimer::singleShot(50, this, SLOT(paletteOps()));
+}
+
+void
+PlacesView::paletteOps()
+{
+    QPalette::ColorRole bg = viewport()->backgroundRole(), fg = viewport()->foregroundRole();
+    if (!viewport()->autoFillBackground())
+    {
+        bg = backgroundRole();
+        fg = foregroundRole();
+    }
+    setBackgroundRole(bg);
+    setForegroundRole(fg);
+    viewport()->setBackgroundRole(bg);
+    viewport()->setForegroundRole(fg);
+    QPalette pal = palette();
+    const QColor fgc = pal.color(fg), bgc = pal.color(bg);
+    if (Store::config.behaviour.sideBarStyle == 1)
+    {
+        viewport()->setAutoFillBackground(true);
+        //base color... slight hihglight tint
+        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
+        pal.setColor( bg, Ops::colorMid( Qt::black, midC, 1, 10 ) );
+        pal.setColor( fg, qApp->palette().color(fg) );
+    }
+    else if (Store::config.behaviour.sideBarStyle == 2)
+    {
+        pal.setColor(bg, fgc);
+        pal.setColor(fg, bgc);
+    }
+    else if (Store::config.behaviour.sideBarStyle == 3)
+    {
+        const QColor &wtext = pal.color(QPalette::WindowText), w = pal.color(QPalette::Window);
+        pal.setColor(bg, wtext);
+        pal.setColor(fg, w);
+    }
+    setPalette(pal);
 }
 
 void

@@ -169,6 +169,7 @@ public slots:
     inline void toggleEditable() { currentWidget() == m_pathNav ? setEditable(true) : setEditable(false); }
     void complete( const QString &path);
     void pathChanged( const QString &path );
+    void paletteOps();
 signals:
     void newPath( const QString &path );
 protected:

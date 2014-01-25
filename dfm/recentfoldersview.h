@@ -41,6 +41,7 @@ public slots:
     void folderEntered( const QString &folder );
 private slots:
     void itemActivated( const QModelIndex &index );
+    void paletteOps();
 private:
     QStandardItemModel *m_model;
 };

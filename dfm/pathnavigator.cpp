@@ -324,24 +324,6 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
     addWidget(m_pathNav);
     addWidget(m_pathBox);
 
-    setFrameStyle( QFrame::StyledPanel | QFrame::Sunken );
-    setContentsMargins(0, 0, 0, 0);
-
-    if (Store::config.behaviour.pathBarStyle)
-    {
-        setAutoFillBackground(true);
-        setBackgroundRole(QPalette::Base);
-        setForegroundRole(QPalette::Text);
-        QPalette pal = palette();
-        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
-        pal.setColor( QPalette::Base, Ops::colorMid( Qt::black, midC, 1, 10 ) );
-        setPalette( pal );
-    }
-
-    QPalette pal(m_pathBox->palette());
-    pal.setColor(QPalette::Text, palette().color(foregroundRole()));
-    m_pathBox->setPalette(pal);
-
     m_pathBox->setInsertPolicy(QComboBox::InsertAtBottom);
     m_pathBox->setEditable(true);
     m_pathBox->setDuplicatesEnabled(false);
@@ -358,6 +340,42 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
     connect ( m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()) );
     connect ( m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()) );
     setCurrentWidget(m_pathNav);
+    QTimer::singleShot(50, this, SLOT(paletteOps()));
+}
+
+void
+BreadCrumbs::paletteOps()
+{
+    setAutoFillBackground(Store::config.behaviour.pathBarStyle);
+    if (Store::config.behaviour.pathBarStyle)
+        setFrameStyle( QFrame::StyledPanel | QFrame::Sunken );
+    setContentsMargins(0, 0, 0, 0);
+    QPalette::ColorRole bg = backgroundRole(), fg = foregroundRole();
+    QPalette pal = palette();
+    const QColor fgc = pal.color(fg), bgc = pal.color(bg);
+    if (Store::config.behaviour.pathBarStyle == 1)
+    {
+        //base color... slight hihglight tint
+        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), qApp->palette().color( QPalette::Highlight ), 10, 1 );
+        pal.setColor( bg, Ops::colorMid( Qt::black, midC, 1, 10 ) );
+        pal.setColor( fg, qApp->palette().color(QPalette::Text) );
+    }
+    else if (Store::config.behaviour.pathBarStyle == 2)
+    {
+        pal.setColor(bg, fgc);
+        pal.setColor(fg, bgc);
+    }
+    else if (Store::config.behaviour.pathBarStyle == 3)
+    {
+        const QColor &wtext = pal.color(QPalette::WindowText), w = pal.color(QPalette::Window);
+        pal.setColor(bg, wtext);
+        pal.setColor(fg, w);
+    }
+    setPalette(pal);
+
+    QPalette ppal(m_pathBox->palette());
+    ppal.setColor(QPalette::Text, palette().color(foregroundRole()));
+    m_pathBox->setPalette(ppal);
 }
 
 QSize
