@@ -213,9 +213,81 @@ static inline QString desktopInfo(const QString &desktop, bool name)
     return name ? n : e;
 }
 
+#ifndef Q_OS_UNIX
+
+static QMap<QString, QString> apps()
+{
+    const QString &regKey = QString("HKEY_LOCAL_MACHINE\\SOFTWARE\\RegisteredApplications");
+    QSettings settings(regKey, QSettings::NativeFormat);
+    QMap<QString, QString> apps;
+
+    foreach (const QString &appName, settings.childKeys())
+    {
+        QString capabilities = QString("HKEY_LOCAL_MACHINE\\%1").arg(settings.value(appName).toString());
+        QSettings capSetting(capabilities, QSettings::NativeFormat);
+        if (!capSetting.childGroups().contains("FileAssociations"))
+            continue;
+
+        capSetting.beginGroup("FileAssociations");
+        foreach (const QString &suffix, capSetting.childKeys())
+            apps.insert(capSetting.value(suffix).toString(), appName);
+    }
+    return apps;
+}
+
+QString getRegistry(const QString &key, const QString &path)
+{
+    wchar_t value[256];
+    DWORD bufferSize = 8192;
+    RegGetValue(HKEY_CLASSES_ROOT, path.toStdWString().data(), key.toStdWString().data(), RRF_RT_ANY, NULL, (void *)&value, &bufferSize);
+    return QString::fromWCharArray(value);
+}
+
+
+
+#define MUICACHE "Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache"
+
+static QMap<QString, QString> appsExe()
+{
+    const QString &regKey = QString("HKEY_CLASSES_ROOT\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache");
+    QSettings settings(regKey, QSettings::NativeFormat);
+    QMap<QString, QString> apps;
+
+    foreach (QString ck, settings.childKeys())
+    {
+        ck.replace("/", "\\");
+        if (QFileInfo(ck).exists())
+            apps.insert(QFileInfo(ck).fileName().toLower(), getRegistry(ck, QString(MUICACHE)));
+    }
+    return apps;
+}
+
+static QMap<QString, QString> map(const QString &command)
+{
+    QMap<QString, QString> typeMap;
+    QProcess p;
+    p.start("cmd", QStringList() << "/C" << command, QIODevice::ReadOnly);
+    p.waitForFinished();
+
+    QTextStream output(&p);
+    while (!output.atEnd())
+    {
+        QString line = output.readLine();
+        QStringList types = line.split("=");
+        if (types.count()<2)
+            continue;
+        typeMap.insert(types.at(0), types.at(1));
+    }
+    return typeMap;
+}
+
+#endif
+
 QList<QAction *>
 Store::openWithActions(const QString &file)
 {
+    QList<QAction *> actionList;
+#if defined(Q_OS_UNIX)
     QFile mimeTypes("/usr/share/mime/globs");
     mimeTypes.open(QFile::ReadOnly);
     QStringList mimeTypesList = QString(mimeTypes.read(QFileInfo(mimeTypes).size())).split("\n", QString::SkipEmptyParts);
@@ -256,7 +328,6 @@ Store::openWithActions(const QString &file)
     QStringList apps = QStringList() << appsMap[Ops::getMimeType(file)] << appsMap[mimeMap[QFileInfo(file).suffix()]];
     apps.removeDuplicates();
 
-    QList<QAction *> actionList;
     foreach(QString app, apps)
     {
         const QString &name = desktopInfo(app, true);
@@ -264,11 +335,90 @@ Store::openWithActions(const QString &file)
             continue;
         QAction *action = new QAction(name, instance());
         action->setProperty("file", file);
-        connect( action, SIGNAL( triggered() ), Ops::instance(), SLOT( openWith() ) );
+        connect( action, SIGNAL( triggered() ), Ops::instance(), SLOT( openWith() ) ) ;
         QVariant var;
         var.setValue(desktopInfo(app, false));
         action->setData(var);
         actionList << action;
     }
+    return actionList;
+#else
+    QFileInfo f(file);
+    if (f.suffix().isEmpty()) //windows doesnt know files w/o suffix...
+        return actionList;
+
+    const QString &suffix = QString(".%1").arg(f.suffix());
+//    QMap<QString, QString> assoc = map("assoc");
+//    QMap<QString, QString> ftype = map("ftype");
+//    QMap<QString, QString> set = map("set");
+    QMap<QString, QString> appMap = apps();
+    QMap<QString, QString> appExeMap = appsExe();
+
+    const QString &regKey = QString("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\%1\\OpenWithProgids").arg(suffix);
+    QSettings settings(regKey, QSettings::NativeFormat);
+
+    foreach (const QString &progId, settings.childKeys())
+    {
+        const QString &regCommand = QString("HKCR\\%1\\Shell\\Open\\Command").arg(progId);
+        QString app = QSettings(regCommand, QSettings::NativeFormat).value(".").toString();
+
+        QString appName;
+        if (appMap.contains(progId))
+            appName = appMap.value(progId);
+        else
+        {
+            QString appExeDll;
+            if (app.contains(".dll", Qt::CaseInsensitive))
+            {
+                qDebug() << "contains .dll";
+                QStringList list = app.split("\\");
+                foreach (const QString &string, list)
+                {
+                    qDebug() << string;
+                    if (string.contains(".dll", Qt::CaseInsensitive))
+                    {
+                        appExeDll = string.toLower();
+                        int start = appExeDll.indexOf("dll")+3;
+                        int end = appExeDll.size()-start;
+                        appExeDll.remove(start, end);
+                        break;
+                    }
+                }
+            }
+            else if (app.contains(".exe", Qt::CaseInsensitive))
+            {
+                qDebug() << "contains .exe";
+                QStringList list = app.split("\\");
+                foreach (const QString &string, list)
+                {
+                    qDebug() << string;
+                    if (string.contains(".exe", Qt::CaseInsensitive))
+                    {
+                        appExeDll = string.toLower();
+                        int start = appExeDll.indexOf("exe")+3;
+                        int end = appExeDll.size()-start;
+                        appExeDll.remove(start, end);
+                        break;
+                    }
+                }
+            }
+            qDebug() << appExeMap << appExeDll << app;
+            appName = appExeMap.value(appExeDll);
+        }
+
+        if (app.contains("%1"))
+            app = app.arg(QDir::toNativeSeparators(file));
+        else
+            app.append(QString(" %1").arg(QDir::toNativeSeparators(file)));
+
+
+        QAction *action = new QAction(appName, instance());
+        action->setProperty("file", QDir::toNativeSeparators(file));
+        connect( action, SIGNAL( triggered() ), Ops::instance(), SLOT( openWith() ) ) ;
+        action->setData(QVariant::fromValue(app));
+        actionList << action;
+    }
+
+#endif
     return actionList;
 }

@@ -465,7 +465,9 @@ QString ViewContainer::rootPath() const { return m_model->rootPath(); }
 QWidget
 *FileItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-    return new QTextEdit(parent);
+    QTextEdit *editor = new QTextEdit(parent);
+    editor->setContentsMargins(0, 0, 0, 0);
+    return editor;
 }
 
 void

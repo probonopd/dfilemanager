@@ -117,8 +117,28 @@ void
 Ops::openWith()
 {
     QAction *action = static_cast<QAction *>( sender() );
-    QString program( action->data().toString().split( " " ).at( 0 ) );
-    QProcess::startDetached( program, QStringList() << action->property("file").toString() );
+    QString program;
+    const QString &file = action->property("file").toString();
+#if defined(Q_OS_UNIX)
+    program = action->data().toString().split( " " ).at( 0 );
+    QProcess::startDetached( program, QStringList() << file );
+#else
+    program = action->data().toString();
+    program.prepend("cmd /C start ");
+
+    if( !CreateProcess( NULL,
+        (wchar_t *)program.utf16(), //command to execute
+        NULL,
+        NULL,
+        FALSE,
+        CREATE_NO_WINDOW,  // dont show the cmd window....
+        NULL,
+        NULL,
+        new STARTUPINFO(),
+        new PROCESS_INFORMATION() )
+    )
+        qDebug() << "couldnt launch" << program;
+#endif
 }
 
 void

@@ -159,16 +159,16 @@ InfoWidget::hovered(const QModelIndex &index)
         m_perm[0]->setText("Permissions:");
     }
     const FileSystemModel *fsModel = static_cast<const FileSystemModel*>(index.model());
-    const bool dir = fsModel->fileInfo(index).isDir();
+    const QFileInfo i = fsModel->fileInfo(index);
     m_tw->setPixmap(fsModel->fileIcon(index.sibling(index.row(), 0)).pixmap(64));
-    m_fileName->setText(fsModel->fileName(index));
-    m_ownerLbl->setText(fsModel->fileInfo(index).owner());
-    m_typeLbl->setText(Ops::getFileType(fsModel->filePath(index)));
-    m_mimeLbl->setText(Ops::getMimeType(fsModel->filePath(index)));
+    m_fileName->setText(i.fileName());
+    m_ownerLbl->setText(i.owner());
+    m_typeLbl->setText(Ops::getFileType(i.filePath()));
+    m_mimeLbl->setText(Ops::getMimeType(i.filePath()));
 
-    m_lastMod[1]->setText(fsModel->fileInfo(index).lastModified().toString());
+    m_lastMod[1]->setText(i.lastModified().toString());
     const QString &s(fsModel->data(index, FileSystemModel::FilePermissions).toString());
     m_perm[1]->setText(s);
 
-    m_sizeLbl->setText(dir ? "--" : Ops::prettySize(fsModel->fileInfo(index).size()));
+    m_sizeLbl->setText(i.isDir() ? "--" : Ops::prettySize(i.size()));
 }

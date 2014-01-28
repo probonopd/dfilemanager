@@ -349,7 +349,8 @@ BreadCrumbs::paletteOps()
     setAutoFillBackground(Store::config.behaviour.pathBarStyle);
     if (Store::config.behaviour.pathBarStyle)
         setFrameStyle( QFrame::StyledPanel | QFrame::Sunken );
-    setContentsMargins(0, 0, 0, 0);
+    else
+        setContentsMargins(0, 0, 0, 0);
     QPalette::ColorRole bg = backgroundRole(), fg = foregroundRole();
     QPalette pal = palette();
     const QColor fgc = pal.color(fg), bgc = pal.color(bg);

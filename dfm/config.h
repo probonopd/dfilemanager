@@ -88,7 +88,7 @@ typedef struct Config
 class Store : public QObject
 {
 public:
-    ~Store(){}
+//    ~Store(){}
     static Store *instance();
     static inline void readConfig() { instance()->readConfiguration(); }
     static inline void writeConfig() { instance()->writeConfiguration(); }

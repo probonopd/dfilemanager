@@ -476,8 +476,8 @@ FileSystemModel::Node::rePopulate()
     if ( filePath() == model()->rootPath() )
         emit model()->directoryLoaded(filePath());
 
-    qDeleteAll(s_deletedNodes);
-    s_deletedNodes.clear();
+//    qDeleteAll(s_deletedNodes);
+//    s_deletedNodes.clear();
 
     for ( int i = 0; i < m_children[Visible].count(); ++i )
         if ( m_children[Visible].at(i)->isPopulated() )
@@ -869,7 +869,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
             return f;
         }
     }
-
+#if 0
     if (role == Qt::ToolTipRole)
     {
         if (node->isSymLink())
@@ -881,6 +881,7 @@ FileSystemModel::data(const QModelIndex &index, int role) const
             return QString("Width: %1, Height: %2").arg(QString::number(sz.width()), QString::number(sz.height()));
         }
     }
+#endif
 
 //    if (node->isDir() && !col && role == Qt::ForegroundRole)
 //    {
