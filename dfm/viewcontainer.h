@@ -27,6 +27,7 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QStyledItemDelegate>
+#include <QMenu>
 
 #include "iconview.h"
 #include "detailsview.h"
@@ -38,7 +39,7 @@
 
 namespace DFM
 {
-
+class Button;
 class ColumnsWidget;
 class IconView;
 class DetailsView;

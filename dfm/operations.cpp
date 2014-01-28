@@ -125,9 +125,10 @@ Ops::openWith()
 #else
     program = action->data().toString();
     program.prepend("cmd /C start ");
+    wchar_t *command = (wchar_t *)program.toStdWString().data();
 
     if( !CreateProcess( NULL,
-        (wchar_t *)program.utf16(), //command to execute
+        command, //command to execute
         NULL,
         NULL,
         FALSE,

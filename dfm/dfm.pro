@@ -28,7 +28,8 @@ HEADERS = mainwindow.h \
     preview.h \
     columnswidget.h \
     interfaces.h \
-    devices.h
+    devices.h \
+    widgets.h
 SOURCES = main.cpp \
     mainwindow.cpp \
     iconview.cpp \
@@ -58,7 +59,8 @@ SOURCES = main.cpp \
     preview.cpp \
     config.cpp \
     columnswidget.cpp \
-    devices.cpp
+    devices.cpp \
+    widgets.cpp
 #RESOURCES = resources.qrc
 TARGET = dfm
 

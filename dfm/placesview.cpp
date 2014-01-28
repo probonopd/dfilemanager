@@ -248,17 +248,16 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev 
     , m_device(dev)
     , m_view(view)
     , m_manager(parentItem)
-    , m_tb(new QToolButton(m_view))
+    , m_button(new Button(m_view))
     , m_timer(new QTimer(this))
     , m_isVisible(true)
     , m_isHidden(false)
 {
 //    QColor mid = Operations::colorMid( m_view->palette().color( QPalette::Base ), m_view->palette().color( QPalette::Text ) );
 //    QColor fg = Operations::colorMid( m_view->palette().color( QPalette::Highlight ), mid, 1, 5 );
-    m_tb->setVisible(true);
-    m_tb->setFixedSize(16, 16);
-    m_tb->setToolTip( isMounted() ? "Unmount" : "Mount" );
-    connect (m_tb, SIGNAL(clicked()), this, SLOT(toggleMount()));
+    m_button->setVisible(true);
+    m_button->setToolTip( isMounted() ? "Unmount" : "Mount" );
+    connect (m_button, SIGNAL(clicked()), this, SLOT(toggleMount()));
     connect (m_timer, SIGNAL(timeout()), this, SLOT(updateSpace()));
     m_timer->start(1000);
     connect (m_device, SIGNAL(accessibilityChanged(bool, const QString &)), this, SLOT(changeState()));
@@ -282,12 +281,11 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev 
 void
 DeviceItem::updateTb()
 {
-    QRect rect = m_view->visualRect(index());
+    const QRect &rect = m_view->visualRect(index());
     if ( isVisible() )
-        m_tb->setVisible(m_view->isExpanded(m_manager->index()));
-    const int add = (rect.height()/2.0f)-(m_tb->height()/2.0f);
-    const int x = 16*0.75, y = rect.y()+add;
-    m_tb->move(x, y);
+        m_button->setVisible(m_view->isExpanded(m_manager->index()));
+    m_button->move(16, rect.y()+qApp->style()->pixelMetric(QStyle::PM_DefaultFrameWidth, 0, m_view));
+    m_button->resize(16, rect.height());
 }
 
 void
@@ -295,7 +293,7 @@ DeviceItem::setVisible(bool v)
 {
     m_isVisible = v;
     m_view->setRowHidden(row(), m_manager->index(), !v);
-    m_tb->setVisible(v);
+    m_button->setVisible(v);
     foreach ( DeviceItem *d, m_view->deviceManager()->deviceItems() )
         d->updateTb();
 }
@@ -332,7 +330,7 @@ DeviceItem::setHidden()
     }
 }
 
-void DeviceItem::updateIcon() { m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole()))); }
+void DeviceItem::updateIcon() { m_button->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole()))); }
 
 bool DeviceItem::isHidden() const { return m_view->hiddenDevices().contains(devPath()); }
 
@@ -356,8 +354,8 @@ DeviceItem::changeState()
         setToolTip(Ops::prettySize(freeBytes()) + " Free");
     else
         setToolTip(QString());
-    m_tb->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole())));
-    m_tb->setToolTip( isMounted() ? "Unmount" : "Mount" );
+    m_button->setIcon(mountIcon(isMounted(), 16, m_view->palette().color(m_view->foregroundRole())));
+    m_button->setToolTip( isMounted() ? "Unmount" : "Mount" );
 }
 
 DeviceManager::DeviceManager(const QStringList &texts, QObject *parent)
@@ -523,13 +521,13 @@ PlacesView::paletteOps()
     }
     else if (Store::config.behaviour.sideBarStyle == 2)
     {
-        pal.setColor(bg, fgc);
+        pal.setColor(bg, Ops::colorMid( fgc, pal.color( QPalette::Highlight ), 10, 1 ));
         pal.setColor(fg, bgc);
     }
     else if (Store::config.behaviour.sideBarStyle == 3)
     {
         const QColor &wtext = pal.color(QPalette::WindowText), w = pal.color(QPalette::Window);
-        pal.setColor(bg, wtext);
+        pal.setColor(bg, Ops::colorMid( wtext, pal.color( QPalette::Highlight ), 10, 1 ));
         pal.setColor(fg, w);
     }
     setPalette(pal);

@@ -35,6 +35,8 @@
 #include <QAction>
 #include <QMainWindow>
 
+
+#include "widgets.h"
 #include "operations.h"
 #include "devices.h"
 
@@ -116,7 +118,7 @@ class DeviceItem : public QObject, public Place //have to inherit QObject for si
     Q_OBJECT
 public:
     DeviceItem( DeviceManager *parentItem = 0, PlacesView *view = 0, Device *dev = 0 );
-    ~DeviceItem() { m_tb->deleteLater(); delete m_device; }
+    ~DeviceItem() { m_button->deleteLater(); delete m_device; }
     void setMounted( const bool mount ) { m_device->setMounted(mount); }
     inline bool isMounted() const { return m_device->isMounted(); }
     inline QString mountPath() const { return m_device->mountPath(); }
@@ -150,7 +152,7 @@ private slots:
 private:
     bool m_isVisible, m_isHidden;
     PlacesView *m_view;
-    QToolButton *m_tb;
+    Button *m_button;
     DeviceManager *m_manager;
     QTimer *m_timer;
     Device *m_device;

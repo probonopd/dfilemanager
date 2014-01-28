@@ -28,6 +28,8 @@
 #include <QToolButton>
 #include <QTimer>
 
+#include "widgets.h"
+
 namespace DFM
 {
 
@@ -58,7 +60,7 @@ private:
 };
 
 class SearchBox;
-class SearchTypeSelector : public QToolButton
+class SearchTypeSelector : public Button
 {
     Q_OBJECT
 public:
@@ -77,7 +79,7 @@ private slots:
     void closeSearch();
 };
 
-class ClearSearch : public QToolButton
+class ClearSearch : public Button
 {
     Q_OBJECT
 public:

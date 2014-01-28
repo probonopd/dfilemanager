@@ -80,14 +80,11 @@ SearchIndicator::animate()
 
 //--------------------------------------------------------------------------
 
-SearchTypeSelector::SearchTypeSelector(QWidget *parent) : QToolButton(parent)
+SearchTypeSelector::SearchTypeSelector(QWidget *parent) : Button(parent)
 {
-    setIconSize(QSize(16, 16));
     setFixedSize(16, 16);
     setCursor(Qt::PointingHandCursor);
     setAttribute(Qt::WA_Hover);
-    setPopupMode(QToolButton::InstantPopup);
-    setToolButtonStyle(Qt::ToolButtonIconOnly);
     QMenu *m = new QMenu(this);
     m->setSeparatorsCollapsible(false);
     m->addSeparator()->setText(tr("Searching Options:"));
@@ -127,13 +124,11 @@ SearchTypeSelector::closeSearch()
 
 //--------------------------------------------------------------------------
 
-ClearSearch::ClearSearch(QWidget *parent) : QToolButton(parent)
+ClearSearch::ClearSearch(QWidget *parent) : Button(parent)
 {
-    setIconSize(QSize(16, 16));
     setFixedSize(16, 16);
     setCursor(Qt::PointingHandCursor);
     setAttribute(Qt::WA_Hover);
-    setToolButtonStyle(Qt::ToolButtonIconOnly);
     QTimer::singleShot(500, this, SLOT(updateIcon()));
 }
 

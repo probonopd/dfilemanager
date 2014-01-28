@@ -363,13 +363,13 @@ MainWindow::createToolBars()
     m_toolBar->setMovable(false);
     m_toolBar->addAction(m_actions[GoBack]);
     m_toolBar->addAction(m_actions[GoForward]);
-    m_toolBar->addSeparator();
+//    m_toolBar->addSeparator();
     m_toolBar->addWidget(m_toolBarSpacer);
     m_toolBar->addAction(m_actions[IconView]);
     m_toolBar->addAction(m_actions[DetailView]);
     m_toolBar->addAction(m_actions[ColumnView]);
     m_toolBar->addAction(m_actions[FlowView]);
-    m_toolBar->addSeparator();
+//    m_toolBar->addSeparator();
 
     QWidget *spacerFixed = new QWidget(m_toolBar);
     spacerFixed->setFixedWidth(64);

@@ -363,13 +363,13 @@ BreadCrumbs::paletteOps()
     }
     else if (Store::config.behaviour.pathBarStyle == 2)
     {
-        pal.setColor(bg, fgc);
+        pal.setColor(bg, Ops::colorMid( fgc, pal.color( QPalette::Highlight ), 10, 1 ));
         pal.setColor(fg, bgc);
     }
     else if (Store::config.behaviour.pathBarStyle == 3)
     {
         const QColor &wtext = pal.color(QPalette::WindowText), w = pal.color(QPalette::Window);
-        pal.setColor(bg, wtext);
+        pal.setColor(bg, Ops::colorMid( wtext, pal.color( QPalette::Highlight ), 10, 1 ));
         pal.setColor(fg, w);
     }
     setPalette(pal);
