@@ -163,7 +163,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked());
 //    foreach (QAction *a, m_toolBar->actions())
 //        connect(a, SIGNAL(changed()), this, SLOT(updateIcons()));
-    QTimer::singleShot(500, this, SLOT(updateIcons()));
+    QTimer::singleShot(0, this, SLOT(updateIcons()));
 }
 
 void
@@ -733,7 +733,7 @@ MainWindow::viewItemHovered( const QModelIndex &index )
 {
     if ( !m_model )
         return;
-    if ( m_model->isPopulating() || !index.isValid() || index.row() > 100000 || index.column() > 3 )
+    if ( m_model->isWorking() || !index.isValid() || index.row() > 100000 || index.column() > 3 )
         return;
     const QString &file = m_model->filePath(index);
     m_statusBar->showMessage( file );
@@ -882,6 +882,7 @@ MainWindow::updateToolbarSpacer()
         const int width = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
         m_toolBarSpacer->setFixedWidth(width);
     }
+    QTimer::singleShot(0, m_toolBar, SLOT(update()));
 }
 
 void
@@ -890,7 +891,27 @@ MainWindow::updateIcons()
     if ( !m_sortButton )
         return;
 
-#define SETICON(_ICON_) setIcon(IconProvider::icon(_ICON_, m_toolBar->iconSize().height(), m_toolBar->palette().color(m_toolBar->foregroundRole()), Store::config.behaviour.systemIcons))
+    QWidget *firstTB = m_toolBar->widgetForAction(m_actions[GoBack]);
+    QPixmap pix(firstTB->size());
+    pix.fill(Qt::transparent);
+    firstTB->render(&pix);
+    QImage img = pix.toImage();
+    QRgb *rgbPx = reinterpret_cast<QRgb *>(img.bits());
+    const int size = img.width()*img.height();
+    unsigned int value = 0;
+    for (int i=0; i<size; ++i)
+        value += QColor(rgbPx[i]).value();
+
+    QColor fg = m_toolBar->palette().color(m_toolBar->foregroundRole());
+    if ( qAbs((value/size)-fg.value()) < 127 ) //not enough contrast...
+    {
+        qDebug() << "not enough contrast... calculating new icons color for toolbuttons";
+//        fg.setHsv(fg.hue(), fg.saturation(), 255-fg.value());
+        fg = m_toolBar->palette().color(m_toolBar->backgroundRole());
+    }
+
+
+#define SETICON(_ICON_) setIcon(IconProvider::icon(_ICON_, m_toolBar->iconSize().height(), fg, Store::config.behaviour.systemIcons))
     m_actions[GoBack]->SETICON(IconProvider::GoBack);
     m_actions[GoForward]->SETICON(IconProvider::GoForward);
     m_actions[IconView]->SETICON(IconProvider::IconView);

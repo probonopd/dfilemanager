@@ -114,10 +114,13 @@ class PathBox : public QComboBox
     Q_OBJECT
 public:
     inline explicit PathBox(QWidget *parent = 0) : QComboBox(parent) {}
+
 signals:
     void cancelEdit();
+
 protected:
     void keyPressEvent(QKeyEvent *e) { if ( e->key() == Qt::Key_Escape ) emit cancelEdit(); else QComboBox::keyPressEvent(e); }
+    void paintEvent(QPaintEvent *);
 };
 
 class PathNavigator : public QWidget
@@ -142,6 +145,7 @@ protected:
 
 private slots:
      void genNavFromPath(const QString &path);
+     void genNavFromUrl(const QUrl &url);
 
 private:
     QString m_path;
@@ -164,45 +168,17 @@ public:
     inline PathNavigator *pathNav() { return m_pathNav; }
     inline PathBox *pathBox() { return m_pathBox; }
     QSize sizeHint() const;
+
 public slots:
     void setRootPath( const QString &rootPath );
     inline void toggleEditable() { currentWidget() == m_pathNav ? setEditable(true) : setEditable(false); }
     void complete( const QString &path);
     void pathChanged( const QString &path );
     void paletteOps();
+
 signals:
     void newPath( const QString &path );
-protected:
-    bool eventFilter(QObject *o, QEvent *e)
-    {
-        if ( o == m_pathBox )
-        {
-            if ( e->type() == QEvent::Paint )
-            {
-                QPainter p(m_pathBox);
-                p.setRenderHint(QPainter::Antialiasing);
-                p.setPen(Qt::NoPen);
-                p.setBrush(m_pathBox->palette().color(m_pathBox->foregroundRole()));
-                QStyleOptionComboBox opt;
-                opt.initFrom(m_pathBox);
-                QRect r = style()->subControlRect(QStyle::CC_ComboBox, &opt, QStyle::SC_ComboBoxArrow);
-                QPolygon triangle(3);
-                int w = r.right(), x = r.x(), y = r.y(), h = r.bottom();
-                triangle.putPoints(0, 3,   x,y,   w,y,    r.center().x(),h);
-                QPainterPath path;
-                path.addPolygon(triangle);
-                path.closeSubpath();
-                p.drawPath(path);
-                p.end();
-                return true;
-            }
-            // WHY THE FUCK CANT THE FOLLOWING COMPILE?!?!? 0_o
-//            else if ( e->type() == QEvent::KeyRelease )
-//                if ( static_cast<QKeyEvent *>(e)->key() == Qt::Key_Escape )
-//                    return true;
-        }
-        return QStackedWidget::eventFilter(o, e);
-    }
+
 private:
     PathBox *m_pathBox;
     PathNavigator *m_pathNav;

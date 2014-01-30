@@ -299,18 +299,20 @@ private:
 
 IconView::IconView( QWidget *parent )
     : QAbstractItemView( parent )
-    , m_wheelTimer( new QTimer(this) )
     , m_delta(0)
     , m_newSize(0)
-    , m_sizeTimer(new QTimer(this))
     , m_gridHeight(0)
-    , m_container(static_cast<ViewContainer *>(parent))
-    , m_layTimer(new QTimer(this))
     , m_model(0)
     , m_oldSliderVal(0)
-    , m_scrollTimer(new QTimer(this))
-    , m_hadSelection(false)
     , m_horItems(0)
+    , m_scrollTimer(new QTimer(this))
+    , m_sizeTimer(new QTimer(this))
+    , m_layTimer(new QTimer(this))
+    , m_wheelTimer(new QTimer(this))
+    , m_resizeTimer(new QTimer(this))
+    , m_hadSelection(false)
+    , m_container(static_cast<ViewContainer *>(parent))
+
 {
     setItemDelegate( new IconDelegate( this ) );
     const int iSize = Store::config.views.iconView.iconSize*16;
@@ -335,10 +337,9 @@ IconView::IconView( QWidget *parent )
     connect( MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(correctLayout()) );
     connect( m_sizeTimer, SIGNAL(timeout()), this, SLOT(updateIconSize()) );
     connect( m_layTimer, SIGNAL(timeout()), this, SLOT(calculateRects()) );
-
     connect( m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollAnimation()) );
-
     connect( verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(sliderSlided(int)) );
+    connect(m_resizeTimer, SIGNAL(timeout()), this, SLOT(sizeTimerEvent()));
 
     m_slide = false;
     m_startSlide = false;
@@ -459,13 +460,23 @@ void
 IconView::resizeEvent( QResizeEvent *e )
 {
     QAbstractItemView::resizeEvent( e );
-    if ( e->size().width() != e->oldSize().width() )
-        updateLayout();
+    m_prevSize = size();
+    m_resizeTimer->start(250);
     if (m_contentsHeight>viewport()->height())
         verticalScrollBar()->setRange(0, m_contentsHeight-viewport()->height());
     else
         verticalScrollBar()->setRange(0, -1);
     verticalScrollBar()->setPageStep(viewport()->height());
+}
+
+void
+IconView::sizeTimerEvent()
+{
+    if (m_prevSize==size())
+    {
+        m_resizeTimer->stop();
+        updateLayout();
+    }
 }
 
 void
@@ -746,8 +757,8 @@ IconView::setModel( QAbstractItemModel *model )
     if ( m_model = qobject_cast<FileSystemModel *>( model ) )
     {
         m_layTimer->setInterval(20);
-        connect(m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(updateLayout()));
-        connect(m_model, SIGNAL(rootPathChanged(QString)), m_layTimer, SLOT(start()));
+        connect(m_model, SIGNAL(finishedWorking()), this, SLOT(updateLayout()));
+        connect(m_model, SIGNAL(startedWorking()), m_layTimer, SLOT(start()));
         connect(m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(clear()));
         connect(m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(calculateRects()));
         connect(m_model, SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(clear(QModelIndex,QModelIndex)));
@@ -940,7 +951,7 @@ IconView::calculateRects()
     else
         verticalScrollBar()->setRange(0, -1);
     viewport()->update();
-    if (!m_model->isPopulating())
+    if (!m_model->isWorking())
         m_layTimer->stop();
 }
 

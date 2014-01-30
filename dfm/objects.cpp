@@ -18,43 +18,45 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include "objects.h"
+using namespace DFM;
 
-/* A collection of classes that's based on QWidget thats used
- * all around in the code.
- */
+Thread::Thread(QObject *parent) : QThread(parent)
+  , m_quit(false)
+  , m_pause(false)
+{}
 
-#ifndef WIDGETS_H
-#define WIDGETS_H
-
-#include <QWidget>
-#include <QIcon>
-#include <QMenu>
-
-namespace DFM
+void
+Thread::setPause(bool p)
 {
-
-class Button : public QWidget
-{
-    Q_OBJECT
-public:
-    explicit Button(QWidget *parent = 0);
-    inline void setIcon(const QIcon &icon) { m_icon = icon; update(); }
-    inline void setMenu(QMenu *menu) { m_menu = menu; m_hasMenu = true; }
-
-signals:
-    void clicked();
-
-protected:
-    void mousePressEvent(QMouseEvent *);
-    void mouseReleaseEvent(QMouseEvent *);
-    void paintEvent(QPaintEvent *);
-
-private:
-    bool m_hasPress, m_hasMenu;
-    QIcon m_icon;
-    QMenu *m_menu;
-};
-
+    m_mutex.lock();
+    m_pause=p;
+    m_mutex.unlock();
+    if (!p)
+        m_pauseCond.wakeAll();
 }
 
-#endif // WIDGETS_H
+bool
+Thread::isPaused()
+{
+    QMutexLocker locker(&m_mutex);
+    return m_pause;
+}
+
+void
+Thread::pause()
+{
+    m_mutex.lock();
+    if (m_pause)
+        m_pauseCond.wait(&m_mutex);
+    m_mutex.unlock();
+}
+
+void
+Thread::discontinue()
+{
+    m_mutex.lock();
+    m_quit=true;
+    m_mutex.unlock();
+    setPause(false);
+}

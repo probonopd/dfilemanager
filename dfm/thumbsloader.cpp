@@ -36,9 +36,8 @@ using namespace DFM;
 ThumbsLoader *ThumbsLoader::m_instance = 0;
 
 ThumbsLoader::ThumbsLoader(QObject *parent) :
-    QThread(parent),
-    m_extent(256),
-    m_quit(false)
+    Thread(parent),
+    m_extent(256)
 {
     connect(APP,SIGNAL(aboutToQuit()),this,SLOT(discontinue()));
     start();
@@ -92,19 +91,19 @@ ThumbsLoader::_hasThumb(const QString &file) const
 void
 ThumbsLoader::clearQ()
 {
-    QMutexLocker locker(&m_listMutex);
+    QMutexLocker locker(&m_queueMutex);
     m_queue.clear();
 }
 
 void
 ThumbsLoader::_queueFile(const QString &file)
 {
-    QMutexLocker locker(&m_listMutex);
+    QMutexLocker locker(&m_queueMutex);
     if ( m_queue.contains(file) || _hasThumb(file) || _hasIcon(file) /*|| m_tried.contains(file)*/ )
         return;
 
     m_queue << file;
-    if ( m_pause )
+    if ( isPaused() )
         setPause(false);
 }
 
@@ -119,7 +118,7 @@ ThumbsLoader::_thumb(const QString &file) const
 void
 ThumbsLoader::genThumb( const QString &path )
 {
-    const QFileInfo &fi(path);
+    const QFileInfo fi(path);
     if ( !fi.isReadable() )
     {
         removeThumb(path);
@@ -162,9 +161,9 @@ ThumbsLoader::run()
     {
         while ( !m_queue.isEmpty() )
         {
-            m_listMutex.lock();
+            m_queueMutex.lock();
             const QString &file = m_queue.takeFirst();
-            m_listMutex.unlock();
+            m_queueMutex.unlock();
             genThumb(file);
         }
         setPause(!m_quit);
@@ -177,8 +176,7 @@ ThumbsLoader::run()
 static QHash<QString, QImage> s_themeIcons[2];
 
 ImagesThread::ImagesThread(QObject *parent)
-    : QThread(parent)
-    , m_quit(false)
+    : Thread(parent)
 {}
 
 void
@@ -262,7 +260,7 @@ ImagesThread::queueName(const QIcon &icon)
 
     const QImage &source = icon.pixmap(SIZE).toImage();
     m_nameQueue.insert(icon.name(), source);
-    if ( m_pause )
+    if ( isPaused() )
         setPause(false);
     if ( !isRunning() )
         start();
@@ -275,7 +273,7 @@ ImagesThread::queueFile(const QString &file, const QImage &source, const bool fo
         return;
 
     m_imgQueue.insert(file, source);
-    if ( m_pause )
+    if ( isPaused() )
         setPause(false);
     if ( !isRunning() )
         start();

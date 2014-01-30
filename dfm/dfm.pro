@@ -29,7 +29,9 @@ HEADERS = mainwindow.h \
     columnswidget.h \
     interfaces.h \
     devices.h \
-    widgets.h
+    widgets.h \
+    objects.h \
+    fsworkers.h
 SOURCES = main.cpp \
     mainwindow.cpp \
     iconview.cpp \
@@ -60,7 +62,9 @@ SOURCES = main.cpp \
     config.cpp \
     columnswidget.cpp \
     devices.cpp \
-    widgets.cpp
+    widgets.cpp \
+    objects.cpp \
+    fsworkers.cpp
 #RESOURCES = resources.qrc
 TARGET = dfm
 

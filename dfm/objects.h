@@ -18,43 +18,39 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-
-/* A collection of classes that's based on QWidget thats used
+/* A collection of classes that's based on QObject thats used
  * all around in the code.
  */
 
-#ifndef WIDGETS_H
-#define WIDGETS_H
+#ifndef OBJECTS_H
+#define OBJECTS_H
 
-#include <QWidget>
-#include <QIcon>
-#include <QMenu>
+#include <QThread>
+#include <QWaitCondition>
+#include <QMutex>
 
 namespace DFM
 {
 
-class Button : public QWidget
+class Thread : public QThread
 {
     Q_OBJECT
 public:
-    explicit Button(QWidget *parent = 0);
-    inline void setIcon(const QIcon &icon) { m_icon = icon; update(); }
-    inline void setMenu(QMenu *menu) { m_menu = menu; m_hasMenu = true; }
+    explicit Thread(QObject *parent = 0);
+    void setPause(bool p);
+    bool isPaused();
+    void pause();
 
-signals:
-    void clicked();
+public slots:
+    virtual void discontinue();
 
 protected:
-    void mousePressEvent(QMouseEvent *);
-    void mouseReleaseEvent(QMouseEvent *);
-    void paintEvent(QPaintEvent *);
-
-private:
-    bool m_hasPress, m_hasMenu;
-    QIcon m_icon;
-    QMenu *m_menu;
+    QWaitCondition m_pauseCond;
+    QMutex m_mutex;
+    bool m_pause;
+    bool m_quit;
 };
 
 }
 
-#endif // WIDGETS_H
+#endif // OBJECTS_H

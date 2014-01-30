@@ -370,11 +370,9 @@ Store::openWithActions(const QString &file)
             QString appExeDll;
             if (app.contains(".dll", Qt::CaseInsensitive))
             {
-                qDebug() << "contains .dll";
                 QStringList list = app.split("\\");
                 foreach (const QString &string, list)
                 {
-                    qDebug() << string;
                     if (string.contains(".dll", Qt::CaseInsensitive))
                     {
                         appExeDll = string.toLower();
@@ -387,11 +385,9 @@ Store::openWithActions(const QString &file)
             }
             else if (app.contains(".exe", Qt::CaseInsensitive))
             {
-                qDebug() << "contains .exe";
                 QStringList list = app.split("\\");
                 foreach (const QString &string, list)
                 {
-                    qDebug() << string;
                     if (string.contains(".exe", Qt::CaseInsensitive))
                     {
                         appExeDll = string.toLower();
@@ -402,7 +398,6 @@ Store::openWithActions(const QString &file)
                     }
                 }
             }
-            qDebug() << appExeMap << appExeDll << app;
             appName = appExeMap.value(appExeDll);
         }
 

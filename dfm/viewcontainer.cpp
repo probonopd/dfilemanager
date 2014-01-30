@@ -56,8 +56,8 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
 
 {
     m_searchIndicator->setVisible(false);
-    connect(m_model, SIGNAL(searchFinished()), m_searchIndicator, SLOT(stop()));
-    connect(m_model, SIGNAL(searchStarted()), m_searchIndicator, SLOT(start()));
+    connect(m_model, SIGNAL(finishedWorking()), m_searchIndicator, SLOT(stop()));
+    connect(m_model, SIGNAL(startedWorking()), m_searchIndicator, SLOT(start()));
 
     m_breadCrumbs->setVisible(Store::settings()->value("pathVisible", true).toBool());
     m_myView = Icon;
@@ -331,7 +331,7 @@ void
 ViewContainer::setFilter(QString filter)
 {
 //    VIEWS(setFilter(filter));
-    FileSystemModel::Node *node = model()->fromIndex(model()->index(model()->rootPath()));
+    FileSystemNode *node = model()->fromIndex(model()->index(model()->rootPath()));
     if ( !node )
         return;
     node->setFilter(filter);
@@ -495,7 +495,7 @@ FileItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const
     FileSystemModel *fsModel = static_cast<FileSystemModel *>(model);
     if ( !edit||!fsModel )
         return;
-    FileSystemModel::Node *node = fsModel->fromIndex(index);
+    FileSystemNode *node = fsModel->fromIndex(index);
     const QString &newName = edit->toPlainText();
     if ( node->name() == newName )
         return;

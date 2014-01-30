@@ -36,7 +36,7 @@ RecentFoldersView::RecentFoldersView(QWidget *parent) : QListView(parent), m_mod
     connect(this, SIGNAL(activated(QModelIndex)), this, SLOT(itemActivated(QModelIndex)));
     connect(this, SIGNAL(clicked(QModelIndex)), this, SLOT(itemActivated(QModelIndex)));
 
-    QTimer::singleShot(50, this, SLOT(paletteOps()));
+    QTimer::singleShot(0, this, SLOT(paletteOps()));
 }
 
 void
@@ -64,13 +64,13 @@ RecentFoldersView::paletteOps()
     }
     else if (Store::config.behaviour.sideBarStyle == 2)
     {
-        pal.setColor(bg, Ops::colorMid( fgc, pal.color( QPalette::Highlight ), 10, 1 ));
+        pal.setColor(bg, Ops::colorMid( fgc, qApp->palette().color( QPalette::Highlight ), 10, 1 ));
         pal.setColor(fg, bgc);
     }
     else if (Store::config.behaviour.sideBarStyle == 3)
     {
         const QColor &wtext = pal.color(QPalette::WindowText), w = pal.color(QPalette::Window);
-        pal.setColor(bg, Ops::colorMid( wtext, pal.color( QPalette::Highlight ), 10, 1 ));
+        pal.setColor(bg, Ops::colorMid( wtext, qApp->palette().color( QPalette::Highlight ), 10, 1 ));
         pal.setColor(fg, w);
     }
     setPalette(pal);

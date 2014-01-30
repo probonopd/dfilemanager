@@ -80,7 +80,7 @@ SearchIndicator::animate()
 
 //--------------------------------------------------------------------------
 
-SearchTypeSelector::SearchTypeSelector(QWidget *parent) : Button(parent)
+SearchTypeSelector::SearchTypeSelector(SearchBox *parent) : Button(parent), m_searchBox(parent)
 {
     setFixedSize(16, 16);
     setCursor(Qt::PointingHandCursor);
@@ -99,7 +99,15 @@ SearchTypeSelector::SearchTypeSelector(QWidget *parent) : Button(parent)
     connect(cancel, SIGNAL(triggered()), this, SLOT(cancel()));
     connect(close, SIGNAL(triggered()), this, SLOT(closeSearch()));
     setMenu(m);
-    QTimer::singleShot(500, this, SLOT(updateIcon()));
+    QTimer::singleShot(0, this, SLOT(updateIcon()));
+}
+
+void
+SearchTypeSelector::filter()
+{
+    closeSearch();
+    m_searchBox->clear();
+    emit modeChanged(Filter);
 }
 
 void
@@ -129,7 +137,7 @@ ClearSearch::ClearSearch(QWidget *parent) : Button(parent)
     setFixedSize(16, 16);
     setCursor(Qt::PointingHandCursor);
     setAttribute(Qt::WA_Hover);
-    QTimer::singleShot(500, this, SLOT(updateIcon()));
+    QTimer::singleShot(0, this, SLOT(updateIcon()));
 }
 
 void
@@ -176,11 +184,6 @@ SearchBox::setMode(const SearchMode mode)
         setPlaceholderText("Filter by name");
     else if (mode==Search)
         setPlaceholderText("Search...");
-    if (m_mode != mode)
-    {
-        MainWindow *mw = MainWindow::window(this);
-        mw->currentContainer()->model()->refresh();
-    }
     m_mode = mode;
 }
 

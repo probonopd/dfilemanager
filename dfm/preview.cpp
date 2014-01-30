@@ -538,7 +538,7 @@ PreView::setRootIndex(const QModelIndex &rootIndex)
 void
 PreView::rowsInserted(const QModelIndex &parent, int start, int end)
 {
-    if ( !parent.isValid() || m_rootIndex != parent || m_model->isPopulating() )
+    if ( !parent.isValid() || m_rootIndex != parent || m_model->isWorking() )
         return;
 
     populate(start, end);

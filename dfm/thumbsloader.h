@@ -37,21 +37,15 @@
 #include <QMutex>
 #include "filesystemmodel.h"
 #include "interfaces.h"
+#include "objects.h"
 
 namespace DFM
 {
 
-#define PAUSING inline void setPause(bool p) {m_mutex.lock(); m_pause=p; m_mutex.unlock(); if (!p) m_pauseCond.wakeAll();}\
-    inline void pause() { m_mutex.lock(); if (m_pause) m_pauseCond.wait(&m_mutex); m_mutex.unlock(); }\
-    bool m_pause;\
-    QMutex m_mutex;\
-    QWaitCondition m_pauseCond;
-
 class FileSystemModel;
-class ThumbsLoader : public QThread
+class ThumbsLoader : public Thread
 {
     Q_OBJECT
-    PAUSING
 public:
     explicit ThumbsLoader(QObject *parent = 0);
     enum Type { Thumb = 0, FlowPic, Reflection, FallBackRefl };
@@ -64,9 +58,9 @@ public:
     static inline void queueFile(const QString &file) { instance()->_queueFile(file); }
 
 public slots:
+    void discontinue() { m_queueMutex.lock(); m_queue.clear(); m_queueMutex.unlock(); Thread::discontinue(); }
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
     void removeThumb(const QString &file);
-    inline void discontinue() { m_mutex.lock(); m_queue.clear(); m_quit=true; m_mutex.unlock(); setPause(false); }
     
 signals:
     void thumbFor(const QString &file, const QString &name);
@@ -82,20 +76,18 @@ protected:
     void _queueFile(const QString &file);
 
 private:
+    QMutex m_queueMutex;
     QHash<QString, QImage> m_thumbs;
     QHash<QString, QString> m_dateCheck;
     QHash<QString, QString> m_icons;
-    bool m_quit;
-    mutable QMutex m_listMutex;
     QStringList m_queue, m_tried;
     int m_extent;
     static ThumbsLoader *m_instance;
 };
 
-class ImagesThread : public QThread
+class ImagesThread : public Thread
 {
     Q_OBJECT
-    PAUSING
 public:
     explicit ImagesThread(QObject *parent = 0);
     void queueFile( const QString &file, const QImage &source, const bool force = false );
@@ -106,9 +98,9 @@ public:
     bool hasNameData( const QString &name );
     void removeData( const QString &file );
     inline bool hasFileInQueue( const QString &file ) { return m_imgQueue.contains(file); }
-    inline void discontinue() { m_mutex.lock(); m_imgQueue.clear(); m_quit=true; m_mutex.unlock(); setPause(false); }
 
 public slots:
+    void discontinue() { m_imgQueue.clear(); Thread::discontinue(); }
     inline void clearData() { for (int i=0; i<2; ++i) m_images[i].clear(); }
 
 signals:
@@ -120,7 +112,6 @@ protected:
     void run();
 
 private:
-    bool m_quit;
     QMap<QString, QImage> m_imgQueue;
     QMap<QString, QImage> m_names[2];
     QMap<QString, QImage> m_images[2];

@@ -139,7 +139,9 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     QRect textRect( RECT.adjusted( textMargin, 0, 0, 0 ) );
 
     QColor mid = Ops::colorMid( PAL.color( bgr ), PAL.color( fgr ) );
-    QColor fg = isHeader( index ) ? Ops::colorMid( PAL.color( QPalette::Highlight ), mid, 1, 5 ) : PAL.color( fgr );
+    if (Store::config.behaviour.sideBarStyle)
+        mid = Ops::colorMid( PAL.color( QPalette::Highlight ), mid, 1, 5 );
+    QColor fg = isHeader( index ) ? mid : PAL.color( fgr );
     QPalette pal(PAL);
     pal.setColor(fgr, fg);
     const QStyleOptionViewItem &copy(option);
@@ -165,7 +167,8 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
         if ( d->isHidden() )
             painter->setOpacity(0.5f);
 
-    fg=!selected?PAL.color(fgr):PAL.color(QPalette::HighlightedText);
+    if (selected)
+        fg = PAL.color(QPalette::HighlightedText);
     const QColor &bg = selected?PAL.color( QPalette::Highlight ):PAL.color(bgr);
     int y = bg.value()>fg.value()?1:-1;
     const QColor &emb = Ops::colorMid(bg, y==1?Qt::white:Qt::black);
@@ -248,7 +251,7 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev 
     , m_device(dev)
     , m_view(view)
     , m_manager(parentItem)
-    , m_button(new Button(m_view))
+    , m_button(new Button(m_view->viewport()))
     , m_timer(new QTimer(this))
     , m_isVisible(true)
     , m_isHidden(false)
@@ -267,7 +270,7 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev 
     connect( m_view, SIGNAL(changed()), this, SLOT(updateTb()) );
     connect( m_view, SIGNAL(collapsed(QModelIndex)), this, SLOT(updateTb()) );
     connect( m_view->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateTb()) );
-    QTimer::singleShot(200, this, SLOT(updateTb()));
+    QTimer::singleShot(0, this, SLOT(updateTb()));
     setEditable(false);
 
     QAction *a = new QAction(tr("hidden"), this);
@@ -275,7 +278,7 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev 
     connect( a, SIGNAL(triggered()), this, SLOT(setHidden()) );
 
     m_actions << a;
-    QTimer::singleShot(100, this, SLOT(updateIcon()));
+    QTimer::singleShot(0, this, SLOT(updateIcon()));
 }
 
 void
@@ -284,7 +287,8 @@ DeviceItem::updateTb()
     const QRect &rect = m_view->visualRect(index());
     if ( isVisible() )
         m_button->setVisible(m_view->isExpanded(m_manager->index()));
-    m_button->move(16, rect.y()+qApp->style()->pixelMetric(QStyle::PM_DefaultFrameWidth, 0, m_view));
+
+    m_button->move(12, rect.y());
     m_button->resize(16, rect.height());
 }
 
@@ -493,7 +497,7 @@ PlacesView::PlacesView( QWidget *parent )
     connect ( this, SIGNAL(clicked(QModelIndex)), this, SLOT(emitPath(QModelIndex)) );
     connect ( m_timer, SIGNAL(timeout()), this, SLOT(updateAllWindows()) );
     connect ( MainWindow::currentWindow(), SIGNAL(settingsChanged()), viewport(), SLOT(update()) );
-    QTimer::singleShot(50, this, SLOT(paletteOps()));
+    QTimer::singleShot(0, this, SLOT(paletteOps()));
 }
 
 void
@@ -515,19 +519,19 @@ PlacesView::paletteOps()
     {
         viewport()->setAutoFillBackground(true);
         //base color... slight hihglight tint
-        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
+        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), qApp->palette().color( QPalette::Highlight ), 10, 1 );
         pal.setColor( bg, Ops::colorMid( Qt::black, midC, 1, 10 ) );
         pal.setColor( fg, qApp->palette().color(fg) );
     }
     else if (Store::config.behaviour.sideBarStyle == 2)
     {
-        pal.setColor(bg, Ops::colorMid( fgc, pal.color( QPalette::Highlight ), 10, 1 ));
+        pal.setColor(bg, Ops::colorMid( fgc, qApp->palette().color( QPalette::Highlight ), 10, 1 ));
         pal.setColor(fg, bgc);
     }
     else if (Store::config.behaviour.sideBarStyle == 3)
     {
         const QColor &wtext = pal.color(QPalette::WindowText), w = pal.color(QPalette::Window);
-        pal.setColor(bg, Ops::colorMid( wtext, pal.color( QPalette::Highlight ), 10, 1 ));
+        pal.setColor(bg, Ops::colorMid( wtext, qApp->palette().color( QPalette::Highlight ), 10, 1 ));
         pal.setColor(fg, w);
     }
     setPalette(pal);
@@ -576,7 +580,7 @@ PlacesView::dropEvent( QDropEvent *event )
         }
         foreach ( const QString &file, files )
         {
-            const QFileInfo &f(file);
+            const QFileInfo f(file);
             if ( !f.isDir() )
                 continue;
             QSettings settings( QDir(file).absoluteFilePath(".directory"), QSettings::IniFormat );

@@ -98,7 +98,7 @@ InfoWidget::InfoWidget(QWidget *parent)
     gdl->setVerticalSpacing(0);
     setLayout(gdl);
 
-    QTimer::singleShot(50, this, SLOT(paletteOps()));
+    QTimer::singleShot(0, this, SLOT(paletteOps()));
 }
 
 void

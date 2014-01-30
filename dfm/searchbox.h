@@ -64,7 +64,7 @@ class SearchTypeSelector : public Button
 {
     Q_OBJECT
 public:
-    explicit SearchTypeSelector(QWidget *parent = 0);
+    explicit SearchTypeSelector(SearchBox *parent = 0);
 
 public slots:
     void updateIcon();
@@ -73,10 +73,13 @@ signals:
     void modeChanged(const SearchMode mode);
 
 private slots:
-    inline void filter() { emit modeChanged(Filter); }
+    void filter();
     inline void search() { emit modeChanged(Search); }
     void cancel();
     void closeSearch();
+
+private:
+    SearchBox *m_searchBox;
 };
 
 class ClearSearch : public Button

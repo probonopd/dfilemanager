@@ -238,6 +238,27 @@ NavButton::mouseReleaseEvent(QMouseEvent *e)
         e->accept();
 }
 
+void
+PathBox::paintEvent(QPaintEvent *)
+{
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(Qt::NoPen);
+    p.setBrush(palette().color(foregroundRole()));
+    QStyleOptionComboBox opt;
+    opt.initFrom(this);
+    QRect r = QRect(0, 0, 9, 9);
+    r.moveCenter(style()->subControlRect(QStyle::CC_ComboBox, &opt, QStyle::SC_ComboBoxArrow, this).center());
+    QPolygon triangle(3);
+    int w = r.right(), x = r.x(), y = r.y(), h = r.bottom();
+    triangle.putPoints(0, 3,   x,y,   w,y,    r.center().x(),h);
+    QPainterPath path;
+    path.addPolygon(triangle);
+    path.closeSubpath();
+    p.drawPath(path);
+    p.end();
+}
+
 PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model )
     : QWidget( parent )
     , m_fsModel(model)
@@ -267,6 +288,12 @@ PathNavigator::clear()
             delete item->widget();
         delete item;
     }
+}
+
+void
+PathNavigator::genNavFromUrl(const QUrl &url)
+{
+
 }
 
 void
@@ -327,7 +354,6 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
     m_pathBox->setInsertPolicy(QComboBox::InsertAtBottom);
     m_pathBox->setEditable(true);
     m_pathBox->setDuplicatesEnabled(false);
-    m_pathBox->installEventFilter(this);
 
     QCompleter *completer = new QCompleter(m_pathBox);
     QDirModel *dirModel = new QDirModel(completer); //this is no work w/ filesystemmodel?
@@ -335,47 +361,50 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
     completer->setModel(dirModel);
     m_pathBox->setCompleter(completer);
 
-    connect ( m_pathBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(setRootPath(QString)) );
     connect ( m_pathBox, SIGNAL(activated(QString)), this, SLOT(setRootPath(QString)) );
     connect ( m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()) );
     connect ( m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()) );
     setCurrentWidget(m_pathNav);
-    QTimer::singleShot(50, this, SLOT(paletteOps()));
+    QTimer::singleShot(0, this, SLOT(paletteOps()));
 }
 
 void
 BreadCrumbs::paletteOps()
 {
-    setAutoFillBackground(Store::config.behaviour.pathBarStyle);
-    if (Store::config.behaviour.pathBarStyle)
+    const int style = Store::config.behaviour.pathBarStyle;
+    if (style > 0)
+        setAutoFillBackground(true);
+    if (style!=0)
         setFrameStyle( QFrame::StyledPanel | QFrame::Sunken );
     else
         setContentsMargins(0, 0, 0, 0);
     QPalette::ColorRole bg = backgroundRole(), fg = foregroundRole();
     QPalette pal = palette();
     const QColor fgc = pal.color(fg), bgc = pal.color(bg);
-    if (Store::config.behaviour.pathBarStyle == 1)
+    if (style == 1)
     {
         //base color... slight hihglight tint
         QColor midC = Ops::colorMid( pal.color( QPalette::Base ), qApp->palette().color( QPalette::Highlight ), 10, 1 );
         pal.setColor( bg, Ops::colorMid( Qt::black, midC, 1, 10 ) );
         pal.setColor( fg, qApp->palette().color(QPalette::Text) );
     }
-    else if (Store::config.behaviour.pathBarStyle == 2)
+    else if (style == 2)
     {
-        pal.setColor(bg, Ops::colorMid( fgc, pal.color( QPalette::Highlight ), 10, 1 ));
+        pal.setColor(bg, Ops::colorMid( fgc, qApp->palette().color( QPalette::Highlight ), 10, 1 ));
         pal.setColor(fg, bgc);
     }
-    else if (Store::config.behaviour.pathBarStyle == 3)
+    else if (style == 3)
     {
         const QColor &wtext = pal.color(QPalette::WindowText), w = pal.color(QPalette::Window);
-        pal.setColor(bg, Ops::colorMid( wtext, pal.color( QPalette::Highlight ), 10, 1 ));
+        pal.setColor(bg, Ops::colorMid( wtext, qApp->palette().color( QPalette::Highlight ), 10, 1 ));
         pal.setColor(fg, w);
     }
+    pal.setBrush(bg, pal.color(bg));
     setPalette(pal);
 
     QPalette ppal(m_pathBox->palette());
     ppal.setColor(QPalette::Text, palette().color(foregroundRole()));
+    ppal.setColor(QPalette::Base, palette().color(backgroundRole()));
     m_pathBox->setPalette(ppal);
 }
 
@@ -385,7 +414,12 @@ BreadCrumbs::sizeHint() const
     return QSize(QFrame::sizeHint().width(), 16);
 }
 
-void BreadCrumbs::setRootPath( const QString &rootPath ) { m_fsModel->setPath( Ops::sanityChecked(rootPath) ); setEditable(false); }
+void
+BreadCrumbs::setRootPath( const QString &rootPath )
+{
+    m_fsModel->setPath( Ops::sanityChecked(rootPath) );
+    setEditable(false);
+}
 
 void
 BreadCrumbs::pathChanged(const QString &path)

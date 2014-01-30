@@ -99,10 +99,11 @@ private slots:
     void animatedScrollTo(const int pos);
     void scrollAnimation();
     void sliderSlided(int value);
+    void sizeTimerEvent();
 
 private:
     QPixmap m_pix;
-    QSize m_gridSize;
+    QSize m_gridSize, m_prevSize;
     ViewContainer *m_container;
     QStringList m_categories;
     QPoint m_startPos, m_pressPos;
@@ -111,7 +112,7 @@ private:
     QHash<QString, QRect> m_catRects;
     bool m_slide, m_startSlide, m_hadSelection;
     FileSystemModel *m_model;
-    QTimer *m_wheelTimer, *m_sizeTimer, *m_layTimer, *m_scrollTimer;
+    QTimer *m_wheelTimer, *m_sizeTimer, *m_layTimer, *m_scrollTimer, *m_resizeTimer;
     QModelIndex m_firstIndex, m_pressedIndex;
     QPixmap m_homePix, m_bgPix[2];
     int m_delta, m_newSize, m_gridHeight, m_horItems, m_contentsHeight, m_oldSliderVal;
