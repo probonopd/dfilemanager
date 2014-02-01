@@ -135,7 +135,7 @@ NavButton::dragEnterEvent(QDragEnterEvent *e)
 void
 NavButton::dropEvent(QDropEvent *e)
 {
-    IO::Job::copy(e->mimeData()->urls(), m_path, true, true);
+    IO::Manager::copy(e->mimeData()->urls(), m_path, true, true);
     m_hasData = false;
     update();
 }

@@ -647,7 +647,7 @@ TabBar::dropEvent(QDropEvent *e)
         if ( r.isValid() )
         {
             const QString &dest = w->containerForTab(tab)->model()->rootPath();
-            IO::Job::copy(e->mimeData()->urls(), dest, true, true);
+            IO::Manager::copy(e->mimeData()->urls(), dest, true, true);
         }
         else
         {

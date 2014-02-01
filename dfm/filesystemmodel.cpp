@@ -516,7 +516,7 @@ FileSystemModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int 
     if ( !node->isDir() )
         return false;
 
-    IO::Job::copy(data->urls(), node->filePath(), true, true);
+    IO::Manager::copy(data->urls(), node->filePath(), true, true);
     return true;
 }
 

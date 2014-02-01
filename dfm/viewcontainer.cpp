@@ -359,7 +359,7 @@ ViewContainer::deleteCurrentSelection()
             delList << file.filePath();
     }
     if ( !delList.isEmpty() )
-        IO::Job::remove(delList);
+        IO::Manager::remove(delList);
 }
 
 void

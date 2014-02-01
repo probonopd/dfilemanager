@@ -29,6 +29,8 @@
 #include <QTextEdit>
 #include <QStyledItemDelegate>
 
+#include "globals.h"
+
 #ifdef Q_WS_X11
 #include <magic.h>
 #include <sys/statfs.h>
@@ -42,6 +44,8 @@ static Qt::SortOrder defaultOrder = Qt::AscendingOrder;
 
 namespace DFM
 {
+
+static IOJobData defaultIoJobData;
 
 class Ops : public QObject
 {
@@ -58,6 +62,10 @@ public:
     static QImage blurred( const QImage& image, const QRect& rect, int radius, bool alphaOnly = false );
     static void getSorting(const QString &file, int &sortCol = defaultSort, Qt::SortOrder &order = defaultOrder);
     static QString sanityChecked(const QString &file);
+    static IOTask taskFromString(const QString &task);
+    static QString taskToString(const IOTask &task);
+    static bool extractIoData(const QStringList &args, IOJobData &ioJobData = defaultIoJobData);
+    static QStringList fromIoJobData(const IOJobData &data);
 
     template<typename T> static inline T absWinFor( QWidget *w )
     {

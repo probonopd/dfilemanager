@@ -345,3 +345,56 @@ Ops::sanityChecked(const QString &file)
     return newFile;
 }
 
+IOTask Ops::taskFromString(const QString &task)
+{
+    if (task.toLower() == "--cp")
+        return DFM::CopyTask;
+    else if (task.toLower() == "--mv")
+        return DFM::MoveTask;
+    else if (task.toLower() == "--rm")
+        return DFM::RemoveTask;
+    return DFM::CopyTask;
+}
+
+QString Ops::taskToString(const IOTask &task)
+{
+    switch (task)
+    {
+    case CopyTask: return "--cp";
+    case MoveTask: return "--mv";
+    case RemoveTask: return "--rm";
+    }
+    return QString();
+}
+
+bool Ops::extractIoData(const QStringList &args, IOJobData &ioJobData)
+{
+    /* the syntax for copying files w/ dfm should
+     * look something like this:
+     * dfm --iojob --cp /path/to/infile /path/to/outfile
+     * so if we have less then 5 args to play
+     * w/ then we can safely assume we are not
+     * a iojob. 4 if we are a remove job tho.
+     */
+    if (args.count() < 4) //we are not a IOJob
+        return false;
+    if (args.at(1).toLower() != "--iojob")
+        return false;
+
+    ioJobData.ioTask = taskFromString(args.at(2));
+    ioJobData.inPaths = args.at(3);
+    ioJobData.inList = args.at(3).split(",", QString::SkipEmptyParts);
+    ioJobData.outPath = args.at(4);
+    return true;
+}
+
+QStringList
+Ops::fromIoJobData(const IOJobData &data)
+{
+    QStringList args = QStringList() << "--iojob";
+    args << taskToString(data.ioTask);
+    args << data.inPaths;
+    args << data.outPath;
+    return args;
+}
+

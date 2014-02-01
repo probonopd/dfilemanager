@@ -40,6 +40,7 @@
 #endif
 
 #include "interfaces.h"
+#include "globals.h"
 
 //#include <GL/glut.h>
 
@@ -51,7 +52,8 @@ class Application : public QApplication
 {
     Q_OBJECT
 public:
-    explicit Application(int &argc, char *argv[], const QString &key = "dfmkey"); /*: QApplication(argc, argv) {}*/
+    enum Type { Browser = 0, IOJob = 1 };
+    explicit Application(int &argc, char *argv[]); /*: QApplication(argc, argv) {}*/
     inline bool isRunning() { return m_isRunning; }
     bool setMessage(const QStringList &message);
     QList<ThumbInterface *> thumbIfaces() { return m_allThumbIfaces; }
@@ -62,8 +64,11 @@ public:
     void activateThumbInterface(const QString &name);
     inline void deActivateThumbInterface(ThumbInterface *ti) { m_thumbIfaces.remove(ti->name()); }
     void deActivateThumbInterface(const QString &name);
+    Type appType() { return m_type; }
+
     void loadPlugins();
     void loadPluginsFromDir(const QDir dir);
+
 //    bool notify(QObject * receiver, QEvent * event);
 
 signals:
@@ -87,14 +92,15 @@ protected:
 #endif
 
 private:
+    Type m_type;
     bool m_isRunning;
     QSharedMemory *m_sharedMem;
     QFileSystemWatcher *m_fsWatcher;
-    QString m_key;
-    QString m_filePath;
+    QString m_key, m_filePath;
     QFile m_file;
     QMap<QString, ThumbInterface *> m_thumbIfaces;
     QList<ThumbInterface *> m_allThumbIfaces;
+    DFM::IOJobData m_ioJobData;
 #if 0
     QList<DFM::Docks::DockWidget *> m_docks;
     QMainWindow *m_mainWindow;

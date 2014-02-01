@@ -634,7 +634,7 @@ PlacesView::dropEvent( QDropEvent *event )
             if ( place ) //dropping files on a place
             {
                 QApplication::restoreOverrideCursor();
-                IO::Job::copy( files, place->path(), true, true );
+                IO::Manager::copy( files, place->path(), true, true );
                 RETURN;
             }
 

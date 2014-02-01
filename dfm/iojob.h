@@ -41,6 +41,7 @@
 #include <QMutex>
 #include <QKeyEvent>
 #include "operations.h"
+#include "globals.h"
 
 namespace DFM
 {
@@ -104,22 +105,30 @@ private slots:
 
 //-----------------------------------------------------------------------------------------------
 
-class IOThread : public QThread
+class Manager : public QThread
 {
     Q_OBJECT
 public:
-    enum Type { Copy = 0, Remove };
-    IOThread(const QStringList &inf, const QString &dest, const bool cut, const quint64 totalSize, QObject *parent = 0);
-    IOThread(const QStringList &paths = QStringList(), QObject *parent = 0);
-    void run();
-    bool paused() { return m_pause; }
+    explicit Manager(QObject *parent = 0);
+
+    bool paused() const { return m_pause; }
+    void pause();
     void setMode( QPair<Mode, QString> mode );
 
+    static void copy(const QStringList &sourceFiles, const QString &destination, bool cut = false, bool ask = false);
+    static void copy(const QList<QUrl> &sourceFiles, const QString & destination, bool cut = false, bool ask = false);
+    static void remove(const QStringList &files);
+    void queue(const IOJobData &ioJobData);
+    inline QString errorString() const { return m_errorString; }
+
 public slots:
-    inline void cancelCopy() { m_canceled = true; m_inFiles.clear(); setPaused(false); qDebug() << "cancelling copy..."; }
+    inline void cancelCopy() { m_canceled = true; setPaused(false); qDebug() << "cancelling copy..."; }
     void setPaused(bool pause);
+    void getMessage(const QStringList &message);
 
 signals:
+    void copyOrMoveStarted();
+    void copyOrMoveFinished();
     void copyProgress(const QString &inFile, const QString &outFile, const int progress, const int currentProgress);
     void fileExists(const QStringList &files);
     void pauseToggled( const bool pause, const bool cut );
@@ -134,39 +143,26 @@ private slots:
     void checkSpeed();
 
 protected:
-    void copyRecursive(const QString &inFile, const QString &outFile, bool cut, bool sameDisk);
+    bool copyRecursive(const QString &inFile, const QString &outFile, bool cut, bool sameDisk);
     bool clone(const QString &in, const QString &out);
     bool remove(const QString &path) const;
     int currentProgress() { return m_allProgress*100/m_total; }
+    void reset();
+    void doJob(const IOJobData &ioJobData);
+    void getDirs(const QString &dir, quint64 &fileSize = (quint64 &)defaultInteger);
+    void run();
 
 private:
-    QStringList m_inFiles, m_rmPaths;
-    QString m_destDir, m_inFile, m_newFile, m_outFile;
+    QString m_destDir, m_inFile, m_newFile, m_outFile, m_errorString;
     bool m_cut, m_canceled, m_pause;
-    quint64 m_total, m_allProgress, m_diffCheck, m_inSize;
+    quint64 m_total, m_allProgress, m_diffCheck;
     QMutex m_mutex;
     QWaitCondition m_pauseCond;
     Mode m_mode;
-    Type m_type;
     int m_inProgress, m_fileProgress;
     QTimer *m_timer, *m_speedTimer;
-};
-
-//-----------------------------------------------------------------------------------------------
-
-class Job : public QObject
-{
-    Q_OBJECT
-public:
-    inline explicit Job(QObject *parent = 0) : QObject(parent){}
-    ~Job() { qDebug() << "destroyed"; }
-    static void copy(const QStringList &sourceFiles, const QString &destination, bool cut = false, bool ask = false);
-    static void copy(const QList<QUrl> &sourceFiles, const QString & destination, bool cut = false, bool ask = false);
-    static void remove(const QStringList &paths);
-    void getDirs(const QString &dir, quint64 *fileSize);
-    void cp(const QStringList &copyFiles, const QString &destination, bool cut = false, bool ask = false);
-    void cp(const QList<QUrl> &copyFiles, const QString &destination, bool cut = false, bool ask = false);
-    void rm(const QStringList &paths) { (new IOThread(paths, this))->start(); }
+    CopyDialog *m_copyDialog;
+    QList<IOJobData> m_queue;
 };
 
 }

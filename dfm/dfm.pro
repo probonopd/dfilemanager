@@ -31,7 +31,8 @@ HEADERS = mainwindow.h \
     devices.h \
     widgets.h \
     objects.h \
-    fsworkers.h
+    fsworkers.h \
+    globals.h
 SOURCES = main.cpp \
     mainwindow.cpp \
     iconview.cpp \

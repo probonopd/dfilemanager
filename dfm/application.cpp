@@ -41,21 +41,29 @@ static Atom netClientListStacking = 0;
 #endif
 #endif
 
-Application::Application(int &argc, char *argv[], const QString &key)
+Application::Application(int &argc, char *argv[])
     : QApplication(argc, argv)
-    , m_sharedMem(new QSharedMemory(key, this))
-    , m_key(key)
+    , m_sharedMem()
+    , m_key()
     , m_fsWatcher(0)
+    , m_type(Browser)
 {
 #if QT_VERSION < 0x050000
     const QString &dirPath(QDesktopServices::storageLocation(QDesktopServices::TempLocation));
 #else
     const QString &dirPath(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
 #endif
+
     if ( !QFileInfo(dirPath).exists() )
         QDir::root().mkpath(dirPath);
 
-    m_filePath = QDir(dirPath).absoluteFilePath("dfm_message_file");
+    if (arguments().contains("--iojob"))
+        m_type = IOJob;
+
+    const QString &key = m_type == Browser ? "dfm_browser" : m_type == IOJob ? "dfm_iojob" : "dfm_key";
+    m_sharedMem = new QSharedMemory(key, this);
+    const QString &fileName = m_type == Browser ? "dfm_browser_file" : m_type == IOJob ? "dfm_iojob_file" : "dfm_file";
+    m_filePath = QDir(dirPath).absoluteFilePath(fileName);
     m_file.setFileName(m_filePath);
     if ( m_sharedMem->attach() )
         m_isRunning = true;
@@ -77,7 +85,8 @@ Application::Application(int &argc, char *argv[], const QString &key)
         m_fsWatcher->addPath(m_filePath);
 
         connect(m_fsWatcher, SIGNAL(fileChanged(QString)), this, SLOT(fileChanged(QString)));
-        DFM::Store::readConfig();
+        if (m_type == Browser)
+            DFM::Store::readConfig();
     }
 #ifdef Q_WS_X11
 #if 0
@@ -96,6 +105,8 @@ Application::fileChanged(const QString &file)
         return;
 
     s_lastModified = QFileInfo(m_file).lastModified();
+
+    qDebug() << "file changed.... again";
 
     if (m_file.open(QFile::ReadOnly))
     {

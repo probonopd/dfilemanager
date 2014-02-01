@@ -21,6 +21,8 @@
 #include "application.h"
 #include "mainwindow.h"
 #include "config.h"
+#include "iojob.h"
+#include "operations.h"
 
 int main(int argc, char *argv[])
 {
@@ -33,33 +35,42 @@ int main(int argc, char *argv[])
 
     if ( app.isRunning() )
     {
-        QStringList message;
-        if ( argc>1 )
-            for (int i = 0; i<argc; ++i)
-                if ( i )
-                    message << QString(argv[i]);
-        app.setMessage(message);
+        app.setMessage(app.arguments());
         return 0;
     }
 
-    if ( app.font().pointSize() < DFM::Store::config.behaviour.minFontSize )
+    switch (app.appType())
     {
-        QFont font = app.font();
-        font.setPointSize(DFM::Store::config.behaviour.minFontSize);
-        app.setFont(font);
-    }
-
-    if ( !DFM::Store::config.styleSheet.isEmpty() )
+    case Application::Browser :
     {
-        QFile file(DFM::Store::config.styleSheet);
-        file.open(QFile::ReadOnly);
-        app.setStyleSheet(file.readAll());
-        file.close();
-    }
+        if ( app.font().pointSize() < DFM::Store::config.behaviour.minFontSize )
+        {
+            QFont font = app.font();
+            font.setPointSize(DFM::Store::config.behaviour.minFontSize);
+            app.setFont(font);
+        }
 
-    DFM::MainWindow *mainWin = new DFM::MainWindow(app.arguments());
-    QObject::connect(&app, SIGNAL(lastMessage(QStringList)), mainWin, SLOT(receiveMessage(QStringList)));
-    mainWin->show();
+        if ( !DFM::Store::config.styleSheet.isEmpty() )
+        {
+            QFile file(DFM::Store::config.styleSheet);
+            file.open(QFile::ReadOnly);
+            app.setStyleSheet(file.readAll());
+            file.close();
+        }
+
+        DFM::MainWindow *mainWin = new DFM::MainWindow(app.arguments());
+        QObject::connect(&app, SIGNAL(lastMessage(QStringList)), mainWin, SLOT(receiveMessage(QStringList)));
+        mainWin->show();
+    }
+    case Application::IOJob :
+    {
+        DFM::IO::Manager *manager = new DFM::IO::Manager();
+        QObject::connect(&app, SIGNAL(lastMessage(QStringList)), manager, SLOT(getMessage(QStringList)));
+        DFM::IOJobData ioJobData;
+        if (DFM::Ops::extractIoData(app.arguments(), ioJobData))
+            manager->queue(ioJobData);
+    }
+    } //end t
     return app.exec();
 }
 
