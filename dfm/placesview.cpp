@@ -211,8 +211,9 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     }
 
 
-//    if ( qMax(iconPix.width(), iconPix.height()) > 16 )
-//        iconPix = iconPix.scaled(QSize(16, 16),Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    if ( qMax(iconPix.width(), iconPix.height()) > 16 )
+        iconPix = iconPix.scaled(QSize(16, 16), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
     QApplication::style()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, iconPix);
     if ( selected && Store::config.behaviour.invActBookmark ) QApplication::style()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, iconPix);
     painter->restore();

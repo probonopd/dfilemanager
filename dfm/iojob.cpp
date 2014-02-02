@@ -369,7 +369,8 @@ void
 Manager::doJob(const IOJobData &ioJobData)
 {
     reset();
-
+//    qDebug() << "doing job:";
+//    qDebug() << Ops::taskToString(ioJobData.ioTask) << ioJobData.inList;
     if (ioJobData.ioTask < RemoveTask)
     {
 #if 0
@@ -411,6 +412,8 @@ Manager::doJob(const IOJobData &ioJobData)
         emit copyOrMoveStarted();
         foreach (const QString &file, copyFiles)
         {
+            if (m_canceled)
+                return;
             m_inFile = file;
             const bool sameDisk = destId != 0 && ( (quint64)Ops::getDriveInfo<Ops::Id>( m_inFile ) ==  destId );
 #ifdef Q_OS_UNIX
@@ -463,7 +466,7 @@ Manager::reset()
 void
 Manager::getDirs(const QString &dir, quint64 &fileSize)
 {
-    const QFileInfoList &entries = QDir(dir).entryInfoList(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden);
+    const QFileInfoList &entries = QDir(dir).entryInfoList(allEntries);
     foreach (const QFileInfo &entry, entries)
     {
         if (entry.isDir())
@@ -477,6 +480,8 @@ void
 Manager::queue(const IOJobData &ioJobData)
 {
     m_queue << ioJobData;
+//    qDebug() << "got new IO job to the queue:";
+//    qDebug() << Ops::taskToString(ioJobData.ioTask) << ioJobData.inList;
     start();
 }
 
@@ -536,7 +541,7 @@ Manager::setMode(QPair<Mode, QString> mode)
 {
     m_mode = mode.first;
     m_newFile = m_mode == NewName ? mode.second : QString();
-    if ( m_mode == Cancel || m_mode == SkipAll )
+    if ( m_mode == Cancel )
         cancelCopy();
     else
         setPaused(false);
@@ -556,16 +561,25 @@ bool
 Manager::copyRecursive(const QString &inFile, const QString &outFile, bool cut, bool sameDisk)
 {
     if ( m_canceled )
-        return false;
+        return true;
+
+    QFileInfo outFileInfo(outFile);
 
     if ( m_mode != OverwriteAll )
-        if (QFileInfo(outFile).exists())
+    {
+        if (outFileInfo.exists())
         {
+            if (m_mode == SkipAll)
+                return true;
             emit fileExists(QStringList() << inFile << outFile);
             setPaused(true);
         }
+    }
 
     pause();
+
+    if (m_mode == SkipAll && outFileInfo.exists())
+        return true;
 
     if ( m_mode == Overwrite || m_mode == OverwriteAll )
     {
@@ -577,7 +591,7 @@ Manager::copyRecursive(const QString &inFile, const QString &outFile, bool cut, 
     else if (m_mode == Skip)
     {
         m_mode = Continue;
-        return false;
+        return true;
     }
 
     if (m_mode == NewName && !m_newFile.isEmpty())
@@ -600,7 +614,7 @@ Manager::copyRecursive(const QString &inFile, const QString &outFile, bool cut, 
     if (QFileInfo(inFile).isDir())
     {
         QDir inDir(inFile), outDir(outFile);
-        inDir.setFilter(QDir::AllEntries|QDir::Files|QDir::NoDotAndDotDot|QDir::Hidden|QDir::System);
+        inDir.setFilter(allEntries);
         QDirIterator dirIterator(inDir);
         while (dirIterator.hasNext())
         {
@@ -619,13 +633,14 @@ Manager::clone(const QString &in, const QString &out)
     m_outFile = out;
     if (m_canceled)
         return true;
-    if (QFileInfo(out).exists())
+    if (QFileInfo(in).isDir())
+        return QDir(out).mkpath(out);
+
+    QFileInfo outInfo(out);
+    if (outInfo.exists())
         return false;
     if (!QFileInfo(QFileInfo(out).absoluteDir().path()).isWritable())
         return false;
-
-    if (QFileInfo(in).isDir())
-        return QDir(out).mkpath(out);
 
     QFile fileIn(in);
     if (!fileIn.open(QIODevice::ReadOnly))
@@ -671,7 +686,7 @@ Manager::remove(const QString &path) const
         return false;
     if (!QFileInfo(path).isDir())
         QFile::remove(path);
-    QDirIterator it(path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden , QDirIterator::Subdirectories);
+    QDirIterator it(path, allEntries, QDirIterator::Subdirectories);
     QStringList children;
     while (it.hasNext())
         children.prepend(it.next());

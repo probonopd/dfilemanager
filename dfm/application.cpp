@@ -106,8 +106,6 @@ Application::fileChanged(const QString &file)
 
     s_lastModified = QFileInfo(m_file).lastModified();
 
-    qDebug() << "file changed.... again";
-
     if (m_file.open(QFile::ReadOnly))
     {
         QTextStream out(&m_file);

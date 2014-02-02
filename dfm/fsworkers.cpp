@@ -61,7 +61,6 @@ static bool lessThen(FileSystemNode *n1, FileSystemNode *n2)
     return desc?!lt:lt;
 }
 
-static QDir::Filters filters = QDir::AllEntries|QDir::System|QDir::NoDotAndDotDot|QDir::Hidden;
 static FileSystemNode::Nodes s_deletedNodes;
 
 FileSystemNode::FileSystemNode(FileSystemModel *model, const QString &path, FileSystemNode *parent, const Type &t)
@@ -442,7 +441,7 @@ FileSystemNode::rePopulate()
     }
     else if ( dir.isAbsolute() )
     {
-        QDirIterator it(filePath(), filters);
+        QDirIterator it(filePath(), allEntries);
         while ( it.hasNext() )
         {
             if (gatherer()->isCancelled())
@@ -540,7 +539,7 @@ FileSystemNode::search(const QString &fileName)
     }
     emit model()->layoutChanged();
 
-    QDirIterator it(m_filePath, QDir::AllEntries|QDir::Hidden|QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    QDirIterator it(m_filePath, allEntries, QDirIterator::Subdirectories);
     while (it.hasNext()&&!model()->dataGatherer()->isCancelled())
     {
         const QFileInfo &file(it.next());

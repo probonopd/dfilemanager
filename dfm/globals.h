@@ -23,6 +23,7 @@
 #define GLOBALS_H
 
 #include <QString>
+#include <QDir>
 
 namespace DFM
 {
@@ -37,6 +38,7 @@ struct IOJobData
 };
 
 static int defaultInteger = 0;
+static QDir::Filters allEntries = QDir::AllEntries|QDir::NoDotAndDotDot|QDir::Hidden|QDir::System;
 
 }
 
