@@ -38,6 +38,7 @@ Store::Store(QObject *parent) : QObject(parent)
     m_settings = new QSettings(QSettings::IniFormat, QSettings::UserScope, "dfm", "dfm");
 #endif
     m_customActionsMenu.setTitle(tr("Custom Actions"));
+    connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(deleteLater()));
 }
 
 Store

@@ -430,6 +430,8 @@ Manager::doJob(const IOJobData &ioJobData)
                 setPaused(true);
                 pause();
             }
+            else if (m_cut)
+                remove(file);
         }
         emit copyOrMoveFinished();
     }
@@ -581,9 +583,12 @@ Manager::copyRecursive(const QString &inFile, const QString &outFile, bool cut, 
     if (m_mode == NewName && !m_newFile.isEmpty())
     {
         m_mode = Continue;
-        const QString &newFile = m_newFile;
-        m_newFile = QString();
-        return copyRecursive(inFile, newFile, cut, sameDisk);
+        if (!copyRecursive(inFile, m_newFile, cut, sameDisk))
+        {
+            m_newFile = QString();
+            return false;
+        }
+        else return true;
     }
 
     if (cut && sameDisk && !m_canceled)

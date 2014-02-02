@@ -18,7 +18,11 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QTextEdit>
+#include "filesystemmodel.h"
 #include "objects.h"
+
+
 using namespace DFM;
 
 Thread::Thread(QObject *parent) : QThread(parent)
@@ -59,4 +63,73 @@ Thread::discontinue()
     m_quit=true;
     m_mutex.unlock();
     setPause(false);
+}
+
+//-------------------------------------------------------------------------------------------
+
+
+QWidget
+*FileItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    QTextEdit *editor = new QTextEdit(parent);
+    editor->setContentsMargins(0, 0, 0, 0);
+    return editor;
+}
+
+void
+FileItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+{
+    QTextEdit *edit = qobject_cast<QTextEdit *>(editor);
+    if (!edit||!index.isValid())
+        return;
+
+    edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    const QString &oldName = index.data(Qt::EditRole).toString();
+    edit->setText(oldName);
+
+    const bool isDir = static_cast<const FileSystemModel *>(index.model())->isDir(index);
+    QTextCursor tc = edit->textCursor();
+    const int last = (isDir||!oldName.contains("."))?oldName.size():oldName.lastIndexOf(".");
+    tc.setPosition(last, QTextCursor::KeepAnchor);
+    edit->setTextCursor(tc);
+}
+
+void
+FileItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+{
+    QTextEdit *edit = qobject_cast<QTextEdit *>(editor);
+    FileSystemModel *fsModel = static_cast<FileSystemModel *>(model);
+    if ( !edit||!fsModel )
+        return;
+    FileSystemNode *node = fsModel->fromIndex(index);
+    const QString &newName = edit->toPlainText();
+    if ( node->name() == newName )
+        return;
+    if ( !node->rename(newName) )
+        QMessageBox::warning(edit->window(), "Failed to rename", QString("%1 to %2").arg(node->name(), newName));
+}
+
+bool
+FileItemDelegate::eventFilter(QObject *object, QEvent *event)
+{
+    QWidget *editor = qobject_cast<QWidget *>(object);
+    if (editor && event->type() == QEvent::KeyPress)
+        if (static_cast<QKeyEvent *>(event)->key()==Qt::Key_Return)
+        {
+            emit commitData(editor);
+            emit closeEditor(editor, QAbstractItemDelegate::NoHint);
+            return true;
+        }
+    return QStyledItemDelegate::eventFilter(object, event);
+}
+
+void
+FileItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    QStyleOptionViewItem opt = option;
+    QStyleOption textOpt;
+    textOpt.initFrom(editor);
+    int frameWidth = QApplication::style()->pixelMetric(QStyle::PM_DefaultFrameWidth, &textOpt, editor);
+    opt.rect = opt.rect.adjusted(-frameWidth, -frameWidth, frameWidth, frameWidth);
+    QStyledItemDelegate::updateEditorGeometry(editor, opt, index);
 }

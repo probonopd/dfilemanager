@@ -26,6 +26,7 @@
 #define OBJECTS_H
 
 #include <QThread>
+#include <QStyledItemDelegate>
 #include <QWaitCondition>
 #include <QMutex>
 
@@ -49,6 +50,18 @@ protected:
     QMutex m_mutex;
     bool m_pause;
     bool m_quit;
+};
+
+class FileItemDelegate : public QStyledItemDelegate
+{
+    Q_OBJECT
+public:
+    FileItemDelegate(QObject *parent = 0):QStyledItemDelegate(parent){}
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    void setEditorData(QWidget *editor, const QModelIndex &index) const;
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
+    bool eventFilter(QObject *object, QEvent *event);
+    void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const;
 };
 
 }
