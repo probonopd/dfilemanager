@@ -21,19 +21,19 @@ ThumbsPDF::init()
 bool
 ThumbsPDF::thumb(const QString &file, const int size, QImage &thumb)
 {   
-    if ( QFileInfo(file).size() > maxSize || !canRead(file) )
+    if (QFileInfo(file).size() > maxSize || !canRead(file))
         return false;
 
     try
     {
         m_image.read(QString("%1[0]").arg(file).toLocal8Bit().data());
         Magick::Blob blob;
-        m_image.magick( "PNG" );
-        m_image.write( &blob );
-        if ( thumb.loadFromData((uchar*)blob.data(), blob.length(), "PNG") )
+        m_image.magick("PNG");
+        m_image.write(&blob);
+        if (thumb.loadFromData((uchar*)blob.data(), blob.length(), "PNG"))
             return true;
     }
-    catch ( Magick::Exception &error )
+    catch (Magick::Exception &error)
     {
         qDebug() << error.what();
         return false;

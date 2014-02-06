@@ -46,24 +46,29 @@
 namespace DFM
 {
 
-class FileSystemModel;
-
-class FileIconProvider : public QFileIconProvider
-{
-public:
-    inline explicit FileIconProvider(FileSystemModel *model = 0) : QFileIconProvider(), m_fsModel(model){}
-    QIcon icon(const QFileInfo &info) const;
-
-private:
-    FileSystemModel *m_fsModel;
-};
-
-namespace Worker { class Gatherer; }
 class ThumbsLoader;
 class ImagesThread;
 class ViewContainer;
-class FileSystemNode;
-class FileSystemModel : public QAbstractItemModel
+
+namespace FS {class Model;}
+class FileIconProvider : public QFileIconProvider
+{
+public:
+    inline explicit FileIconProvider(FS::Model *model = 0) : QFileIconProvider(), m_fsModel(model){}
+    QIcon icon(const QFileInfo &info) const;
+
+private:
+    FS::Model *m_fsModel;
+};
+
+namespace FS
+{
+
+class Model;
+namespace Worker {class Gatherer;}
+
+class Node;
+class Model : public QAbstractItemModel
 {
     Q_OBJECT
 public:
@@ -85,8 +90,8 @@ public:
         History =2
     };
 
-    explicit FileSystemModel(QObject *parent = 0);
-    ~FileSystemModel();
+    explicit Model(QObject *parent = 0);
+    ~Model();
 
     static bool hasThumb(const QString &file);
 
@@ -97,10 +102,11 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     int columnCount(const QModelIndex &parent) const { return 4; }
 
-    FileSystemNode *fromIndex(const QModelIndex &index) const;
+    Node *nodeForIndex(const QModelIndex &index) const;
+    Node *fromIndex(const QModelIndex &index) const;
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
     QModelIndex parent(const QModelIndex &child) const;
-    QModelIndex index(const QString &path) const;
+    QModelIndex index(const QUrl &url);
 
     void fetchMore(const QModelIndex &parent);
     bool canFetchMore(const QModelIndex &parent) const;
@@ -115,11 +121,10 @@ public:
     QModelIndexList category(const QString &cat);
     QModelIndexList category(const QModelIndex &fromCat);
 
-    void setUrl(const QUrl &url);
+    QUrl rootUrl() { return m_url; }
     void setRootPath(const QString &path);
     inline QString rootPath() const { return m_rootPath; }
-    FileSystemNode *rootNode();
-    FileSystemNode *schemeNode(const QString &scheme);
+    Node *rootNode();
 
     void forceEmitDataChangedFor(const QString &file);
     inline QDir rootDirectory() const { return QDir(m_rootPath); }
@@ -128,7 +133,7 @@ public:
 
     inline QIcon fileIcon(const QModelIndex &index) const { return bool(index.column()==0)?data(index, Qt::DecorationRole).value<QIcon>():QIcon(); }
     QString fileName(const QModelIndex &index) const;
-    QString filePath(const QModelIndex &index) const;
+    QUrl url(const QModelIndex &index) const;
 
     bool isDir(const QModelIndex &index) const;
     QFileInfo fileInfo(const QModelIndex &index) const;
@@ -149,38 +154,46 @@ public:
     void endWorking();
     inline bool isWorking() const { QMutexLocker locker(&m_mutex); return m_isPopulating; }
 
+    void search(const QString &fileName, const QString &filePath);
     void search(const QString &fileName);
     QString currentSearchString();
 
+    inline QMenu *schemes() { return m_schemeMenu; }
+
+    QString title(const QUrl &url = QUrl());
+
 public slots:
-    inline void setPath(const QString &path) { setRootPath(path); }
+    void setUrl(const QUrl &url);
+    void setUrlFromDynamicPropertyUrl();
+    inline void setPath(const QString &path) { setUrl(QUrl::fromLocalFile(path)); }
     void refresh();
     void endSearch();
     void cancelSearch();
 
 private slots:
-    void thumbFor( const QString &file, const QString &iconName );
-    void flowDataAvailable( const QString &file );
-    void dirChanged( const QString &path );
-    void emitRootPathLater() { emit rootPathChanged(rootPath()); }
-    void nodeGenerated(const QString &path, FileSystemNode *node);
+    void thumbFor(const QString &file, const QString &iconName);
+    void flowDataAvailable(const QString &file);
+    void dirChanged(const QString &path);
+    void nodeGenerated(const QString &path, Node *node);
     void removeDeletedLater();
     void removeDeleted();
+    void schemeFromSchemeMenu();
 
 signals:
-    void flowDataChanged( const QModelIndex &start, const QModelIndex &end );
-    void rootPathChanged(const QString &path);
+    void flowDataChanged(const QModelIndex &start, const QModelIndex &end);
     void directoryLoaded(const QString &path);
+    void urlChanged(const QUrl &url);
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
     void hiddenVisibilityChanged(bool visible);
     void sortingChanged(const int sortCol, const int order);
     void paintRequest();
     void startedWorking();
     void finishedWorking();
+    void urlLoaded(const QUrl &url);
 
 private:
-    FileSystemNode *m_rootNode, *m_current;
-    QMap<QString, FileSystemNode *> m_schemes;
+    Node *m_current;
+    Node *m_rootNode;
     QAbstractItemView *m_view;
     bool m_showHidden, m_isPopulating;
     QString m_rootPath;
@@ -191,11 +204,15 @@ private:
     ViewContainer *m_container;
     QFileSystemWatcher *m_watcher;
     Worker::Gatherer *m_dataGatherer;
+    QMenu *m_schemeMenu;
+    QUrl m_url;
     friend class ImagesThread;
-    friend class FileSystemNode;
+    friend class Node;
     friend class Worker::Gatherer;
     mutable QMutex m_mutex;
 };
+
+}
 
 }
 

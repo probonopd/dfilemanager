@@ -22,50 +22,56 @@
 #ifndef FSWORKERS_H
 #define FSWORKERS_H
 
+#include <QFileInfo>
+
 #include "objects.h"
 #include "filesystemmodel.h"
 
 namespace DFM
 {
 
-class FileSystemModel;
+namespace FS
+{
+
+class Model;
 namespace Worker { class Gatherer; }
 
-class FileSystemNode : public QFileInfo
+class Node;
+typedef QList<Node *> Nodes;
+
+class Node : public QFileInfo
 {
+    friend class Model;
+    friend class Worker::Gatherer;
 public:
-    typedef QList<FileSystemNode *> Nodes;
     enum Children { Visible = 0, Hidden = 1, Filtered = 2, Files = 3, HiddenFiles = 4 };
-    enum Type { FSNode = 0, SearchResult = 1 };
-    ~FileSystemNode();
-    void insertChild(FileSystemNode *node);
+    Node(FS::Model *model = 0, const QUrl &url = QUrl(), Node *parent = 0);
+    ~Node();
+
+    inline Model *model() { return m_model; }
+    Worker::Gatherer *gatherer();
+
+    inline QString name() const { return m_name; }
+    bool rename(const QString &newName);
     inline QString filePath() const { return m_filePath; }
+    inline bool isSearchResult() { return false; }
 
-    inline QString scheme() const { return m_scheme; }
-    inline void setScheme(const QString &scheme) { m_scheme = scheme; }
-
-    inline bool isSearchResult() { return m_type == SearchResult; }
-
-    bool hasChild(const QString &name, const bool nameIsPath = false, const bool onlyVisible = false);
-    int childCount() const;
     int row();
+    int rowFor(Node *child);
+    int childCount() const;
+    void addChild(Node *child);
+    bool hasChild(const QString &name, const bool nameIsPath = false, const bool onlyVisible = false);
+    Node *child(const int c);
+    Node *child(const QString &path, const bool nameIsPath = true);
 
-    inline Type type() const { return m_type; }
-
-    FileSystemNode *child(const int c);
-    FileSystemNode *child(const QString &path);
-    inline FileSystemNode *parent() const { return m_parent; }
-
+    void populateScheme() {}
     void rePopulate();
     inline bool isPopulated() const { return m_isPopulated; }
 
-    QString name();
-    bool rename(const QString &newName);
-
-    QVariant data(const int column);
-
+    QVariant data(int column);
     QString permissionsString();
     QString category();
+    inline QString scheme() { return url().scheme(); }
 
     void sort();
     int sortColumn();
@@ -77,27 +83,25 @@ public:
     void setFilter(const QString &filter);
     inline QString filter() const { return m_filter; }
 
-    FileSystemNode *node(const QString &path, bool checkOnly = true);
-    FileSystemModel *model();
-    Worker::Gatherer *gatherer();
+    void clear();
 
-protected:
-    int rowFor(FileSystemNode *child) const;
-    void search(const QString &fileName);
-    void endSearch();
-    FileSystemNode *nodeFromPath(const QString &path, bool checkOnly = true);
-    FileSystemNode(FileSystemModel *model = 0, const QString &path = QString(), FileSystemNode *parent = 0, const Type &t = FSNode);
+    Node *fromUrl(const QUrl &url);
+    Node *node(const QString &path, bool checkOnly = true);
+    Node *nodeFromPath(const QString &path, bool checkOnly = true);
+
+    QUrl url() { return m_url; }
+    void setUrl(const QUrl &url) { m_url = url; }
+
+    Node *parent() { return m_parent; }
 
 private:
     bool m_isPopulated;
-    FileSystemNode *m_parent;
     Nodes m_children[HiddenFiles+1];
-    QString m_filePath, m_filter, m_name, m_scheme;
-    FileSystemModel *m_model;
-    Type m_type;
+    Node *m_parent;
+    QString m_filePath, m_filter, m_name;
+    QUrl m_url;
     mutable QMutex m_mutex;
-    friend class FileSystemModel;
-    friend class Worker::Gatherer;
+    Model *m_model;
 };
 
 namespace Worker
@@ -107,13 +111,13 @@ enum Task { Populate = 0, Generate = 1, Search = 2, NoTask = 3 };
 class Job
 {
 public:
-    Job(const Task &t, FileSystemNode *node, const QString &path)
+    Job(const Task &t, Node *node, const QString &path)
         : m_task(t)
         , m_node(node)
         , m_path(path)
     {
     }
-    FileSystemNode *m_node;
+    Node *m_node;
     QString m_path;
     Task m_task;
 };
@@ -125,30 +129,33 @@ class Gatherer : public Thread
     Q_OBJECT
 public:
     explicit Gatherer(QObject *parent = 0);
-    void populateNode(FileSystemNode *node);
+    void populateNode(Node *node);
     void generateNode(const QString &path);
-    void search(const QString &name, FileSystemNode *node);
+    void search(const QString &name, const QString &filePath, Node *node);
     void setCancelled(bool cancel) { m_mutex.lock(); m_isCancelled=cancel; m_mutex.unlock(); }
     bool isCancelled() { QMutexLocker locker(&m_mutex); return m_isCancelled; }
 
 protected:
     void run();
+    void searchResultsForNode(const QString &name, const QString &filePath, Node *node);
 
 signals:
-    void nodeGenerated(const QString &path, FileSystemNode *node);
+    void nodeGenerated(const QString &path, Node *node);
 
 private:
     QMutex m_taskMutex;
-    FileSystemNode *m_node, *m_result;
-    FileSystemModel *m_model;
+    Node *m_node, *m_result;
+    FS::Model *m_model;
     Task m_task;
     QString m_path, m_searchPath, m_searchName;
     bool m_isCancelled;
-    friend class FileSystemNode;
-    friend class FileSystemModel;
+    friend class Node;
+    friend class Model;
 };
 
-}
+} //namespace worker
+
+} //namespace fs
 
 }
 

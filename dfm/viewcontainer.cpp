@@ -43,9 +43,9 @@ using namespace DFM;
 //    m_iconView->RUN;\
 //    m_columnsWidget->RUN;
 
-ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
+ViewContainer::ViewContainer(QWidget *parent, const QUrl &url)
     : QFrame(parent)
-    , m_model(new FileSystemModel(this))
+    , m_model(new FS::Model(this))
     , m_viewStack(new QStackedWidget(this))
     , m_iconView(new IconView(this))
     , m_columnsWidget(new ColumnsWidget(this))
@@ -70,23 +70,21 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     setModel(m_model);
     setSelectionModel(new QItemSelectionModel(m_model));
 
-    connect( m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(setRootPath(QString)) );
-    connect( m_model, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)) );
-//    connect( m_model, SIGNAL(rootPathAboutToChange(QString)), this, SLOT(rootPathChanged(QString)) );
-    connect( m_iconView, SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)) );
-    connect( m_iconView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
-    connect( m_detailsView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
-    connect( m_flowView->detailsView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)) );
-    connect( m_model, SIGNAL(sortingChanged(int,int)), this, SIGNAL(sortingChanged(int,int)) );
-    connect( m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(modelSort(int,int)) );
+    connect(m_model, SIGNAL(urlChanged(QUrl)), this, SLOT(setUrl(QUrl)));
+    connect(m_model, SIGNAL(urlLoaded(QUrl)), this, SLOT(urlLoaded(QUrl)));
+    connect(m_iconView, SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)));
+    connect(m_iconView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+    connect(m_detailsView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+    connect(m_flowView->detailsView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+    connect(m_model, SIGNAL(sortingChanged(int,int)), this, SIGNAL(sortingChanged(int,int)));
+    connect(m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(modelSort(int,int)));
 
     foreach (QAbstractItemView *v, QList<QAbstractItemView *>() << m_iconView << m_detailsView /*<< m_columnsView*/ << m_flowView->detailsView())
     {
-        v->setMouseTracking( true );
-        connect( v, SIGNAL(entered(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
-        connect( v, SIGNAL(viewportEntered()), this, SIGNAL(viewportEntered()));
-        connect( v, SIGNAL(opened(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
-//        connect( m_model, SIGNAL(paintRequest()), v->viewport(), SLOT(update()) );
+        v->setMouseTracking(true);
+        connect(v, SIGNAL(entered(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
+        connect(v, SIGNAL(viewportEntered()), this, SIGNAL(viewportEntered()));
+        connect(v, SIGNAL(opened(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
     }
 
     m_viewStack->addWidget(m_iconView);
@@ -102,7 +100,7 @@ ViewContainer::ViewContainer(QWidget *parent, QString rootPath)
     setLayout(layout);
 
     setView((View)Store::config.behaviour.view, false);
-    m_model->setPath(rootPath);
+    m_model->setUrl(url);
 
     emit iconSizeChanged(Store::config.views.iconView.iconSize*16);
 }
@@ -135,7 +133,7 @@ ViewContainer::setSelectionModel(QItemSelectionModel *selectionModel)
     VIEWS(setSelectionModel(selectionModel));
 }
 
-FileSystemModel *ViewContainer::model() { return m_model; }
+FS::Model *ViewContainer::model() { return m_model; }
 
 QItemSelectionModel *ViewContainer::selectionModel() { return m_selectModel; }
 
@@ -154,7 +152,7 @@ ViewContainer::setView(View view, bool store)
     emit viewChanged();
 
 #ifdef Q_WS_X11
-    if ( Store::config.views.dirSettings && store )
+    if (Store::config.views.dirSettings && store)
     {
         QDir dir(m_model->rootPath());
         QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
@@ -172,16 +170,16 @@ QList<QAction *> ViewContainer::rightClickActions() { return s_actions; }
 void
 ViewContainer::addActions(QList<QAction *> actions)
 {
-    if ( s_actions.isEmpty() )
+    if (s_actions.isEmpty())
         s_actions = actions;
     VIEWS(addActions(actions));
     Store::settings()->beginGroup("Scripts");
-    foreach ( const QString &string, Store::settings()->childKeys())
+    foreach (const QString &string, Store::settings()->childKeys())
     {
         QStringList actions = Store::settings()->value(string).toStringList(); //0 == name, 1 == script, 2 == keysequence
         QAction *action = new QAction(actions[0], this);
         action->setData(actions[1]);
-        if ( actions.count() > 2 )
+        if (actions.count() > 2)
             action->setShortcut(QKeySequence(actions[2]));
         connect (action, SIGNAL(triggered()), this, SLOT(scriptTriggered()));
         VIEWS(addAction(action));
@@ -195,14 +193,14 @@ ViewContainer::customActionTriggered()
     QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
     const QString &app = action.takeFirst();
 
-    if ( selectionModel()->hasSelection() )
+    if (selectionModel()->hasSelection())
     {
-        if ( selectionModel()->selectedRows().count() )
-            foreach ( const QModelIndex &index, selectionModel()->selectedRows() )
-                QProcess::startDetached(app, QStringList() << action << m_model->filePath( index ));
-        else if ( selectionModel()->selectedIndexes().count() )
-            foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
-                QProcess::startDetached(app, QStringList() << action << m_model->filePath( index ));
+        if (selectionModel()->selectedRows().count())
+            foreach (const QModelIndex &index, selectionModel()->selectedRows())
+                QProcess::startDetached(app, QStringList() << action << m_model->url(index).toLocalFile());
+        else if (selectionModel()->selectedIndexes().count())
+            foreach (const QModelIndex &index, selectionModel()->selectedIndexes())
+                QProcess::startDetached(app, QStringList() << action << m_model->url(index).toLocalFile());
     }
     else
     {
@@ -222,57 +220,64 @@ ViewContainer::scriptTriggered()
 void
 ViewContainer::activate(const QModelIndex &index)
 {
-    if ( !index.isValid() )
+    if (!index.isValid())
         return;
 
     const QFileInfo f(m_model->fileInfo(index));
-    if ( Ops::openFile(f.filePath()) )
+    if (Ops::openFile(f.filePath()))
         return;
 
     if (m_model->isDir(index))
     {
-        m_model->setPath(f.filePath());
+        m_model->setUrl(QUrl::fromLocalFile(f.filePath()));
         m_forwardList.clear();
     }
 }
 
 void
-ViewContainer::setRootPath(const QString &path)
+ViewContainer::setUrl(const QUrl &url)
 {
-    const QModelIndex &rootIndex = m_model->index(path);
+    const QModelIndex &rootIndex = m_model->index(url);
+    qDebug() << "viewcontainer::seturl" << url << rootIndex;
     setRootIndex(rootIndex);
-    if ( Store::config.views.dirSettings )
+    const QFileInfo &file = url.toLocalFile();
+    if (url.scheme() == "file" && file.exists())
     {
-        const QDir dir(path);
-        QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
-        settings.beginGroup("DFM");
-        QVariant var = settings.value("view");
-        if ( var.isValid() )
+        if (Store::config.views.dirSettings)
         {
-            View view = (View)var.value<int>();
-            setView(view, false);
+
+            const QDir dir(file.filePath());
+            QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
+            settings.beginGroup("DFM");
+            QVariant var = settings.value("view");
+            if (var.isValid())
+            {
+                View view = (View)var.value<int>();
+                setView(view, false);
+            }
+            settings.endGroup();
         }
-        settings.endGroup();
+        m_detailsView->setItemsExpandable(false);
+        for (int i = 0; i < views().count(); ++i)
+            if (views().at(i))
+            {
+                views().at(i)->setAttribute(Qt::WA_Hover, false);
+                views().at(i)->setMouseTracking(false);
+            }
+        m_selectModel->clearSelection();
+        if (!m_back && QFileInfo(file.filePath()).isDir() && (m_backList.isEmpty() || m_backList.count() &&  url != m_backList.last()))
+            m_backList << url;
+
+        m_back = false;
     }
-    m_detailsView->setItemsExpandable(false);
-    for ( int i = 0; i < views().count(); ++i )
-        if ( views().at(i) )
-        {
-            views().at(i)->setAttribute(Qt::WA_Hover, false);
-            views().at(i)->setMouseTracking(false);
-        }
-    m_selectModel->clearSelection();
-    if (!m_back && QFileInfo(path).isDir() && (m_backList.isEmpty() || m_backList.count() &&  path != m_backList.last()))
-        m_backList.append(path);
-    emit rootPathChanged(path);
-    m_back = false;
+    emit urlChanged(url);
 }
 
 void
-ViewContainer::dirLoaded(const QString &path)
+ViewContainer::urlLoaded(const QUrl &url)
 {
-    for ( int i = 0; i < views().count(); ++i )
-        if ( views().at(i) )
+    for (int i = 0; i < views().count(); ++i)
+        if (views().at(i))
         {
             views().at(i)->setAttribute(Qt::WA_Hover, true);
             views().at(i)->setMouseTracking(true);
@@ -289,7 +294,7 @@ ViewContainer::goBack()
 
     m_back = true;
     m_forwardList << m_backList.takeLast();
-    m_model->setPath(m_backList.last());
+    m_model->setUrl(m_backList.last());
 }
 
 void
@@ -298,19 +303,18 @@ ViewContainer::goForward()
     if (m_forwardList.isEmpty())
         return;
 
-    m_model->setPath(m_forwardList.takeLast());
+    m_model->setUrl(m_forwardList.takeLast());
 }
 
 bool
 ViewContainer::goUp()
 {
-    if (m_breadCrumbs->currentPath() == "/")
-        return false;
-    m_model->setPath(QFileInfo(m_model->rootPath()).dir().path());
+    QUrl url = m_breadCrumbs->url();
+    m_model->setUrl(url.resolved(QString("..")));
     return true;
 }
 
-void ViewContainer::goHome() { m_model->setPath(QDir::homePath()); }
+void ViewContainer::goHome() { m_model->setUrl(QUrl::fromLocalFile(QDir::homePath())); }
 
 void ViewContainer::refresh() { m_model->refresh(); }
 
@@ -331,8 +335,8 @@ void
 ViewContainer::setFilter(QString filter)
 {
 //    VIEWS(setFilter(filter));
-    FileSystemNode *node = model()->fromIndex(model()->index(model()->rootPath()));
-    if ( !node )
+    FS::Node *node = model()->fromIndex(model()->index(model()->rootUrl()));
+    if (!node)
         return;
     node->setFilter(filter);
     m_dirFilter = filter;
@@ -348,17 +352,17 @@ ViewContainer::deleteCurrentSelection()
     else
         delUs = m_selectModel->selectedIndexes();
 
-    if ( DeleteDialog(delUs).result() == 0 )
+    if (DeleteDialog(delUs).result() == 0)
         return;
 
     QStringList delList;
     for (int i = 0; i < delUs.count(); ++i)
     {
-        QFileInfo file(m_model->filePath(delUs.at(i)));
+        QFileInfo file(m_model->url(delUs.at(i)).toLocalFile());
         if (file.isWritable())
             delList << file.filePath();
     }
-    if ( !delList.isEmpty() )
+    if (!delList.isEmpty())
         IO::Manager::remove(delList);
 }
 
@@ -399,7 +403,7 @@ ViewContainer::customCommand()
         return;
 
     QStringList args(text.split(" "));
-    args << (m_model->filePath(idx).isNull() ? m_model->rootPath() : m_model->filePath(idx));
+    args << (m_model->url(idx).isEmpty() ? m_model->rootPath() : m_model->url(idx).toLocalFile());
     QString program = args.takeFirst();
     QProcess::startDetached(program, args);
 }
@@ -407,7 +411,7 @@ ViewContainer::customCommand()
 void
 ViewContainer::sort(const int column, const Qt::SortOrder order)
 {
-    if ( column == m_model->sortColumn() && order == m_model->sortOrder() )
+    if (column == m_model->sortColumn() && order == m_model->sortOrder())
         return;
     m_model->sort(column, order);
 }
@@ -415,7 +419,7 @@ ViewContainer::sort(const int column, const Qt::SortOrder order)
 void
 ViewContainer::createDirectory()
 {
-    QModelIndex newFolder = m_model->mkdir(m_model->index(m_model->rootPath()), "new_directory");
+    QModelIndex newFolder = m_model->mkdir(m_model->index(m_model->rootUrl()), "new_directory");
     currentView()->scrollTo(newFolder);
     currentView()->edit(newFolder);
 }
@@ -423,9 +427,9 @@ ViewContainer::createDirectory()
 QAbstractItemView
 *ViewContainer::currentView() const
 {
-    if ( m_myView == Columns )
+    if (m_myView == Columns)
         return m_columnsWidget->currentView();
-    if ( m_myView != Flow )
+    if (m_myView != Flow)
         return static_cast<QAbstractItemView*>(m_viewStack->currentWidget());
     return static_cast<QAbstractItemView*>(m_flowView->detailsView());
 }
@@ -437,7 +441,10 @@ ViewContainer::resizeEvent(QResizeEvent *e)
     m_searchIndicator->move(width()-256, height()-256);
 }
 
-void ViewContainer::setRootIndex(const QModelIndex &index) { VIEWS(setRootIndex(index)); }
+void ViewContainer::setRootIndex(const QModelIndex &index)
+{
+    VIEWS(setRootIndex(index));
+}
 
 QModelIndex ViewContainer::indexAt(const QPoint &p) const { return currentView()->indexAt(mapFromParent(p)); }
 
@@ -447,7 +454,7 @@ bool ViewContainer::pathVisible() { return m_breadCrumbs->isVisible(); }
 bool ViewContainer::canGoBack() { return m_backList.count() > 1; }
 bool ViewContainer::canGoForward() { return m_forwardList.count() >= 1; }
 
-void ViewContainer::genNewTabRequest(QModelIndex index) { emit newTabRequest(m_model->filePath(index)); }
+void ViewContainer::genNewTabRequest(QModelIndex index) { emit newTabRequest(m_model->url(index)); }
 
 BreadCrumbs *ViewContainer::breadCrumbs() { return m_breadCrumbs; }
 

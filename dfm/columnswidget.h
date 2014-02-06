@@ -37,22 +37,21 @@ class ColumnsWidget : public QScrollArea
 public:
     explicit ColumnsWidget(QWidget *parent = 0);
     ~ColumnsWidget(){}
-    void setModel( QAbstractItemModel *model );
-    inline void setSelectionModel( QItemSelectionModel *model ) { m_slctModel = model; }
+    void setModel(QAbstractItemModel *model);
+    inline void setSelectionModel(QItemSelectionModel *model) { m_slctModel = model; }
     QModelIndex currentIndex();
     ColumnsView *currentView();
     ViewContainer *container() { return m_container; }
     void clear();
-    void setFilter( const QString &filter );
     void scrollTo(const QModelIndex &index);
     
 signals:
-    void currentViewChagned( ColumnsView *view );
+    void currentViewChagned(ColumnsView *view);
     
 public slots:
     void edit(const QModelIndex &index);
-    void setRootIndex( const QModelIndex &index );
-    void setCurrentView( ColumnsView *view );
+    void setRootIndex(const QModelIndex &index);
+    void setCurrentView(ColumnsView *view);
     void reconnectViews();
     void showCurrent();
 
@@ -64,17 +63,17 @@ protected:
     void showEvent(QShowEvent *e);
     void wheelEvent(QWheelEvent *e);
     bool insideRoot(const QModelIndex &index);
-    int at(const QString &path) { return m_rootList.indexOf(path); }
-    inline bool isValid(const QString &path) { return !path.isEmpty()&&!m_columns.isEmpty()&&at(path)<m_columns.count(); }
+    int at(const QUrl &url) { return m_rootList.indexOf(url); }
+    inline bool isValid(const QUrl &url) { return !url.isEmpty()&&!m_columns.isEmpty()&&at(url)<m_columns.count(); }
     inline bool isValid(const int i) { return i>-1&&!m_columns.isEmpty()&&i<m_columns.count(); }
     inline ColumnsView *column(const int i) { return isValid(i) ? m_columns.at(i): 0; }
-    inline ColumnsView *column(const QString &path) { return isValid(path) ? column(at(path)) : 0; }
+    inline ColumnsView *column(const QUrl &url) { return isValid(url) ? column(at(url)) : 0; }
     inline int count() { return m_columns.count(); }
-    ColumnsView *viewFor(const QString &path);
+    ColumnsView *viewFor(const QUrl &url);
     QStringList fromRoot();
 
 private:
-    FileSystemModel *m_model;
+    FS::Model *m_model;
     QItemSelectionModel *m_slctModel;
     QFrame *m_viewport;
     QHBoxLayout *m_viewLay;
@@ -82,8 +81,7 @@ private:
     ViewContainer *m_container;
     ColumnsView *m_currentView;
     QModelIndex m_rootIndex;
-    QStringList m_rootList;
-    QStringList m_visited;
+    QList<QUrl> m_rootList;
 };
 
 }

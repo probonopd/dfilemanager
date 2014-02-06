@@ -47,22 +47,22 @@
 
 using namespace DFM;
 
-inline static QPixmap shadowPix( int size, int intens, QColor c )
+inline static QPixmap shadowPix(int size, int intens, QColor c)
 {
-    QPixmap pix( size, size );
-    pix.fill( Qt::transparent );
-    QPainter p( &pix );
-    QRect r( pix.rect() );
+    QPixmap pix(size, size);
+    pix.fill(Qt::transparent);
+    QPainter p(&pix);
+    QRect r(pix.rect());
     const float d = r.height()/2;
-    QRadialGradient rg( r.center(), d );
+    QRadialGradient rg(r.center(), d);
     const QColor &c2(QColor(c.red(), c.green(), c.blue(), c.alpha()/4));
-    rg.setColorAt( 0, c );
-    rg.setColorAt( 0.5, c2 );
-    rg.setColorAt( 1, Qt::transparent );
-    p.setBrush( rg );
-    p.setPen( Qt::NoPen );
-    p.setRenderHint( QPainter::Antialiasing );
-    p.drawEllipse( r );
+    rg.setColorAt(0, c);
+    rg.setColorAt(0.5, c2);
+    rg.setColorAt(1, Qt::transparent);
+    p.setBrush(rg);
+    p.setPen(Qt::NoPen);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.drawEllipse(r);
     p.end();
     return pix;
 }
@@ -72,8 +72,8 @@ class IconDelegate : public FileItemDelegate
 public:
     enum ShadowPart { TopLeft = 0, Top, TopRight, Left, Center, Right, BottomLeft, Bottom, BottomRight };
     enum Role { Text = 0, TextRect, Shape, Size };
-    inline explicit IconDelegate( IconView *parent )
-        : FileItemDelegate( parent )
+    inline explicit IconDelegate(IconView *parent)
+        : FileItemDelegate(parent)
         , m_size(4)
         , m_iv(parent)
     {
@@ -81,47 +81,47 @@ public:
     }
     inline void genShadowData()
     {
-        QPixmap shadow = shadowPix( ( m_size*2 )+1, 0, Qt::black );
+        QPixmap shadow = shadowPix((m_size*2)+1, 0, Qt::black);
 
-        m_shadowData[TopLeft] = shadow.copy( 0, 0, m_size, m_size );
-        m_shadowData[Top] = shadow.copy( m_size, 0, 1, m_size );
-        m_shadowData[TopRight] = shadow.copy( m_size, 0, m_size, m_size );
-        m_shadowData[Left] = shadow.copy( 0, m_size, m_size, 1 );
+        m_shadowData[TopLeft] = shadow.copy(0, 0, m_size, m_size);
+        m_shadowData[Top] = shadow.copy(m_size, 0, 1, m_size);
+        m_shadowData[TopRight] = shadow.copy(m_size, 0, m_size, m_size);
+        m_shadowData[Left] = shadow.copy(0, m_size, m_size, 1);
         m_shadowData[Center] = QPixmap(); //no center...
-        m_shadowData[Right] = shadow.copy( shadow.width()-( m_size+1 ), m_size, m_size, 1 );
-        m_shadowData[BottomLeft] = shadow.copy( 0, m_size, m_size, m_size );
-        m_shadowData[Bottom] = shadow.copy( m_size, shadow.height()-( m_size+1 ), 1, m_size );
-        m_shadowData[BottomRight] = shadow.copy( m_size, m_size, m_size, m_size );
+        m_shadowData[Right] = shadow.copy(shadow.width()-(m_size+1), m_size, m_size, 1);
+        m_shadowData[BottomLeft] = shadow.copy(0, m_size, m_size, m_size);
+        m_shadowData[Bottom] = shadow.copy(m_size, shadow.height()-(m_size+1), 1, m_size);
+        m_shadowData[BottomRight] = shadow.copy(m_size, m_size, m_size, m_size);
     }
-    inline void renderShadow( QRect rect, QPainter *painter ) const
+    inline void renderShadow(QRect rect, QPainter *painter) const
     {
         const int x = rect.x(), y = rect.y(), r = rect.right(), b = rect.bottom(), w = rect.width(), h = rect.height();
-        painter->drawTiledPixmap( QRect( rect.topLeft(), m_shadowData[TopLeft].size() ), m_shadowData[TopLeft] );
-        painter->drawTiledPixmap( QRect( QPoint( x+m_size, y ), QSize( w-( m_size*2+1 ), m_shadowData[Top].height() ) ), m_shadowData[Top] );
-        painter->drawTiledPixmap( QRect( QPoint( r-m_size, y ), m_shadowData[TopRight].size() ), m_shadowData[TopRight] );
-        painter->drawTiledPixmap( QRect( QPoint( x, y+m_size ), QSize( m_shadowData[Left].width(), h-( m_size*2+1 ) ) ), m_shadowData[Left] );
-        painter->drawTiledPixmap( QRect( QPoint( r-m_size, y+m_size ), QSize( m_shadowData[Right].width(), h-( m_size*2+1 ) ) ), m_shadowData[Right] );
-        painter->drawTiledPixmap( QRect( QPoint( x, b-m_size ), m_shadowData[BottomLeft].size() ), m_shadowData[BottomLeft] );
-        painter->drawTiledPixmap( QRect( QPoint( x+m_size, b-m_size ), QSize( w-( m_size*2+1 ), m_shadowData[Bottom].height() ) ), m_shadowData[Bottom] );
-        painter->drawTiledPixmap( QRect( QPoint( r-m_size, b-m_size ), m_shadowData[BottomRight].size() ), m_shadowData[BottomRight] );
+        painter->drawTiledPixmap(QRect(rect.topLeft(), m_shadowData[TopLeft].size()), m_shadowData[TopLeft]);
+        painter->drawTiledPixmap(QRect(QPoint(x+m_size, y), QSize(w-(m_size*2+1), m_shadowData[Top].height())), m_shadowData[Top]);
+        painter->drawTiledPixmap(QRect(QPoint(r-m_size, y), m_shadowData[TopRight].size()), m_shadowData[TopRight]);
+        painter->drawTiledPixmap(QRect(QPoint(x, y+m_size), QSize(m_shadowData[Left].width(), h-(m_size*2+1))), m_shadowData[Left]);
+        painter->drawTiledPixmap(QRect(QPoint(r-m_size, y+m_size), QSize(m_shadowData[Right].width(), h-(m_size*2+1))), m_shadowData[Right]);
+        painter->drawTiledPixmap(QRect(QPoint(x, b-m_size), m_shadowData[BottomLeft].size()), m_shadowData[BottomLeft]);
+        painter->drawTiledPixmap(QRect(QPoint(x+m_size, b-m_size), QSize(w-(m_size*2+1), m_shadowData[Bottom].height())), m_shadowData[Bottom]);
+        painter->drawTiledPixmap(QRect(QPoint(r-m_size, b-m_size), m_shadowData[BottomRight].size()), m_shadowData[BottomRight]);
     }
     void setEditorData(QWidget *editor, const QModelIndex &index) const
     {
         FileItemDelegate::setEditorData(editor, index);
         static_cast<QTextEdit *>(editor)->setAlignment(Qt::AlignCenter);
     }
-    void paint( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        if ( !m_model || !index.isValid() || !option.rect.isValid() )
+        if (!m_model || !index.isValid() || !option.rect.isValid())
             return;
 
         painter->save();
-        painter->setRenderHint( QPainter::Antialiasing );
+        painter->setRenderHint(QPainter::Antialiasing);
 
         const bool selected = option.state & QStyle::State_Selected;
         const int step = selected ? 8 : ViewAnimator::hoverLevel(m_iv, index);
 
-        if ( step )
+        if (step)
         {
             QColor h = selected?PAL.color(QPalette::Highlight):Ops::colorMid(PAL.color(QPalette::Highlight), PAL.color(QPalette::Base));
             h.setAlpha(255/8*step);
@@ -144,20 +144,20 @@ public:
         theRect.moveCenter(QRect(RECT.topLeft(), QSize(RECT.width(), DECOSIZE.height()+2)).center());
         m_hitRects.insert(index.internalPointer(), theRect);
 
-        if (m_model->hasThumb(m_model->filePath(index)))
+        if (m_model->hasThumb(m_model->url(index).toLocalFile()))
         {
             const int d = 4;
-            const QRect r( theRect.adjusted( -d, -d, d+1, d+2 ) );
-            renderShadow( r, painter );
+            const QRect r(theRect.adjusted(-d, -d, d+1, d+2));
+            renderShadow(r, painter);
 
-            painter->fillRect( theRect.adjusted(-2, -2, 2, 2), PAL.color( QPalette::Base ) );
-            painter->fillRect( theRect.adjusted(-1, -1, 1, 1), QColor(0, 0, 0, 64) );
+            painter->fillRect(theRect.adjusted(-2, -2, 2, 2), PAL.color(QPalette::Base));
+            painter->fillRect(theRect.adjusted(-1, -1, 1, 1), QColor(0, 0, 0, 64));
         }
         QApplication::style()->drawItemPixmap(painter, theRect, Qt::AlignCenter, pixmap);
         painter->restore();
     }
-    inline void setModel( FileSystemModel *fsModel ) { m_model = fsModel; }
-    QSize sizeHint( const QStyleOptionViewItem &option, const QModelIndex &index ) const
+    inline void setModel(FS::Model *fsModel) { m_model = fsModel; }
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
         return m_iv->gridSize();
     }
@@ -179,9 +179,9 @@ public:
         return false;
     }
 protected:
-    QPixmap pix( const QStyleOptionViewItem &option, const QModelIndex &index ) const
+    QPixmap pix(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        if ( !index.isValid()||!index.internalPointer() )
+        if (!index.isValid()||!index.internalPointer())
             return QPixmap();
 
         if (m_pixData.contains(index.internalPointer()))
@@ -189,21 +189,21 @@ protected:
 
         const QIcon &icon = m_model->fileIcon(index);
 
-        const bool isThumb = m_model->hasThumb(m_model->filePath(index));
+        const bool isThumb = m_model->hasThumb(m_model->url(index).toLocalFile());
 
         int newSize = icon.actualSize(DECOSIZE).height();
-        if ( !isThumb && icon.actualSize(DECOSIZE).height() < DECOSIZE.height() )
+        if (!isThumb && icon.actualSize(DECOSIZE).height() < DECOSIZE.height())
         {
             QList<int> il;
-            for ( int i = 0; i < icon.availableSizes().count(); ++i )
+            for (int i = 0; i < icon.availableSizes().count(); ++i)
                 il << icon.availableSizes().at(i).height();
 
-            if ( il.count() > 1 )
+            if (il.count() > 1)
                 qSort(il);
 
             int i = -1;
 
-            while ( newSize < DECOSIZE.height() && ++i<il.count() )
+            while (newSize < DECOSIZE.height() && ++i<il.count())
                 newSize = il.at(i);
         }
 
@@ -214,22 +214,22 @@ protected:
         {
             int s = 0, m = 16;
             if (pixmap.width() > pixmap.height())
-                s = qMin<int>(RECT.width()-m, ((float)DECOSIZE.height()*((float)pixmap.width()/(float)pixmap.height()))-m );
+                s = qMin<int>(RECT.width()-m, ((float)DECOSIZE.height()*((float)pixmap.width()/(float)pixmap.height()))-m);
             else
-                s = qMin<int>((DECOSIZE.height()+2)-m, ((float)DECOSIZE.width()*((float)pixmap.height()/(float)pixmap.width()))-m );
+                s = qMin<int>((DECOSIZE.height()+2)-m, ((float)DECOSIZE.width()*((float)pixmap.height()/(float)pixmap.width()))-m);
             pixmap = icon.pixmap(s);
         }
         m_pixData.insert(index.internalPointer(), pixmap);
         return pixmap;
     }
-    QString text( const QStyleOptionViewItem &option, const QModelIndex &index ) const
+    QString text(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        if ( !index.isValid()||!index.internalPointer() )
+        if (!index.isValid()||!index.internalPointer())
             return QString();
 
         if (m_textData.contains(index.internalPointer()))
             return m_textData.value(index.internalPointer());
-        QFontMetrics fm( option.fontMetrics );
+        QFontMetrics fm(option.fontMetrics);
 
         QString spaces(TEXT.replace(".", QString(" ")));
         spaces = spaces.replace("_", QString(" "));
@@ -253,7 +253,7 @@ protected:
             line.setLineWidth(w);
             QString actualText;
             actualText = TEXT.mid(line.textStart(), qMin(line.textLength(), TEXT.count()));
-            if ( line.lineNumber() == Store::config.views.iconView.lineCount-1 )
+            if (line.lineNumber() == Store::config.views.iconView.lineCount-1)
                 actualText = fm.elidedText(TEXT.mid(line.textStart(), TEXT.count()), Qt::ElideRight, w);
 
             //this should only happen if there
@@ -262,12 +262,12 @@ protected:
             //we do this only cause QTextLayout
             //doesnt think that dots or underscores
             //are actual wordseparators
-            if ( fm.boundingRect(actualText).width() > w )
+            if (fm.boundingRect(actualText).width() > w)
             {
                 int width = 0;
-                if ( actualText.contains(".") )
+                if (actualText.contains("."))
                     width += fm.boundingRect(".").width()*actualText.count(".");
-                if ( actualText.contains("_") )
+                if (actualText.contains("_"))
                     width += fm.boundingRect("_").width()*actualText.count("_");
 
                 int oldw = fm.boundingRect(" ").width()*actualText.count(" ");
@@ -275,7 +275,7 @@ protected:
 
                 line.setLineWidth(w-diff);
                 actualText = TEXT.mid(line.textStart(), qMin(line.textLength(), TEXT.count()));
-                if ( line.lineNumber() == Store::config.views.iconView.lineCount-1 )
+                if (line.lineNumber() == Store::config.views.iconView.lineCount-1)
                     actualText = fm.elidedText(TEXT.mid(line.textStart(), TEXT.count()), Qt::ElideRight, w);
             }
 
@@ -294,11 +294,11 @@ private:
     mutable QHash<void *, QString> m_textData;
     mutable QHash<void *, QPixmap> m_pixData;
     mutable QHash<void *, QRect> m_hitRects;
-    FileSystemModel *m_model;
+    FS::Model *m_model;
 };
 
-IconView::IconView( QWidget *parent )
-    : QAbstractItemView( parent )
+IconView::IconView(QWidget *parent)
+    : QAbstractItemView(parent)
     , m_delta(0)
     , m_newSize(0)
     , m_gridHeight(0)
@@ -314,41 +314,41 @@ IconView::IconView( QWidget *parent )
     , m_container(static_cast<ViewContainer *>(parent))
 
 {
-    setItemDelegate( new IconDelegate( this ) );
+    setItemDelegate(new IconDelegate(this));
     const int iSize = Store::config.views.iconView.iconSize*16;
     setGridHeight(iSize);
-    setSelectionMode( QAbstractItemView::ExtendedSelection );
-    setIconSize( QSize( iSize, iSize ) );
+    setSelectionMode(QAbstractItemView::ExtendedSelection);
+    setIconSize(QSize(iSize, iSize));
     updateLayout();
-    setEditTriggers( QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed );
-    setDragDropMode( QAbstractItemView::DragDrop );
-    setDropIndicatorShown( true );
-    setDefaultDropAction( Qt::MoveAction );
-    viewport()->setAcceptDrops( true );
-    setDragEnabled( true );
-    setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-//    setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
+    setEditTriggers(QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
+    setDragDropMode(QAbstractItemView::DragDrop);
+    setDropIndicatorShown(true);
+    setDefaultDropAction(Qt::MoveAction);
+    viewport()->setAcceptDrops(true);
+    setDragEnabled(true);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+//    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setSelectionBehavior(QAbstractItemView::SelectRows);
 
     ViewAnimator::manage(this);
-    connect( verticalScrollBar(), SIGNAL(valueChanged(int)), viewport(), SLOT(update()) );
-    connect( m_wheelTimer, SIGNAL(timeout()), this, SLOT(scrollEvent()) );
-    connect( this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)) );
-    connect( MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(correctLayout()) );
-    connect( m_sizeTimer, SIGNAL(timeout()), this, SLOT(updateIconSize()) );
-    connect( m_layTimer, SIGNAL(timeout()), this, SLOT(calculateRects()) );
-    connect( m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollAnimation()) );
-    connect( verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(sliderSlided(int)) );
+    connect(verticalScrollBar(), SIGNAL(valueChanged(int)), viewport(), SLOT(update()));
+    connect(m_wheelTimer, SIGNAL(timeout()), this, SLOT(scrollEvent()));
+    connect(this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)));
+    connect(MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(correctLayout()));
+    connect(m_sizeTimer, SIGNAL(timeout()), this, SLOT(updateIconSize()));
+    connect(m_layTimer, SIGNAL(timeout()), this, SLOT(calculateRects()));
+    connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollAnimation()));
+    connect(verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(sliderSlided(int)));
     connect(m_resizeTimer, SIGNAL(timeout()), this, SLOT(sizeTimerEvent()));
 
     m_slide = false;
     m_startSlide = false;
 
-    for ( int i = 16; i <= 256; i+=16 )
+    for (int i = 16; i <= 256; i+=16)
         m_allowedSizes << i;
 
 //    QDir storage(QDesktopServices::storageLocation(QDesktopServices::DataLocation));
-//    if ( storage.exists() && storage.isAbsolute() )
+//    if (storage.exists() && storage.isAbsolute())
 //        m_homePix.load(storage.absoluteFilePath("home.png"));
 }
 
@@ -364,46 +364,46 @@ void
 IconView::setNewSize(const int size)
 {
     m_newSize = size;
-    if ( !m_sizeTimer->isActive() )
+    if (!m_sizeTimer->isActive())
         m_sizeTimer->start(25);
 }
 
 void
 IconView::updateIconSize()
 {
-    if ( iconWidth() > m_newSize ) //zoom out
-        setIconWidth( iconWidth()-qMax(1, ((iconWidth()-m_newSize)/2)) );
-    else if ( iconWidth() < m_newSize ) //zoom in
-        setIconWidth( iconWidth()+qMax(1, ((m_newSize-iconWidth())/2)) );
+    if (iconWidth() > m_newSize) //zoom out
+        setIconWidth(iconWidth()-qMax(1, ((iconWidth()-m_newSize)/2)));
+    else if (iconWidth() < m_newSize) //zoom in
+        setIconWidth(iconWidth()+qMax(1, ((m_newSize-iconWidth())/2)));
     else
     {
-        emit iconSizeChanged( m_newSize );
+        emit iconSizeChanged(m_newSize);
         m_sizeTimer->stop();
     }
 }
 
 void
-IconView::wheelEvent( QWheelEvent * event )
+IconView::wheelEvent(QWheelEvent * event)
 {
-    if ( event->orientation() == Qt::Vertical )
+    if (event->orientation() == Qt::Vertical)
     {
         const int numDegrees = event->delta();
 
-        if ( event->modifiers() & Qt::CTRL )
+        if (event->modifiers() & Qt::CTRL)
         {
             QSlider *s = MainWindow::window(this)->iconSizeSlider();
             s->setValue(s->value()+(numDegrees>0?1:-1));
         }
         else
         {
-            if ( Store::config.views.iconView.smoothScroll )
+            if (Store::config.views.iconView.smoothScroll)
             {
                 m_delta += numDegrees;
-                if ( !m_wheelTimer->isActive() )
-                    m_wheelTimer->start( 25 );
+                if (!m_wheelTimer->isActive())
+                    m_wheelTimer->start(25);
             }
             else
-                verticalScrollBar()->setValue( verticalScrollBar()->value()-( numDegrees ) );
+                verticalScrollBar()->setValue(verticalScrollBar()->value()-(numDegrees));
         }
     }
     event->accept();
@@ -421,15 +421,15 @@ IconView::showEvent(QShowEvent *e)
 void
 IconView::scrollEvent()
 {
-    if ( m_delta > MAX )
+    if (m_delta > MAX)
         m_delta = MAX;
-    else if ( m_delta < -MAX )
+    else if (m_delta < -MAX)
         m_delta = -MAX;
-    if ( m_delta != 0 )
-        verticalScrollBar()->setValue( verticalScrollBar()->value()-( m_delta/8 ) );
-    if ( m_delta > 0 ) //upwards
+    if (m_delta != 0)
+        verticalScrollBar()->setValue(verticalScrollBar()->value()-(m_delta/8));
+    if (m_delta > 0) //upwards
         m_delta -= 30;
-    else if ( m_delta < 0 ) //downwards
+    else if (m_delta < 0) //downwards
         m_delta += 30;
     else
         m_wheelTimer->stop();
@@ -440,15 +440,15 @@ IconView::scrollEvent()
 void
 IconView::keyPressEvent(QKeyEvent *event)
 {
-    if ( event->key() == Qt::Key_Escape )
+    if (event->key() == Qt::Key_Escape)
         clearSelection();
-    if ( event->key() == Qt::Key_Return
+    if (event->key() == Qt::Key_Return
          && event->modifiers() == Qt::NoModifier
-         && state() == NoState )
+         && state() == NoState)
     {
-        if ( selectionModel()->selectedIndexes().count() )
-            foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
-                if ( !index.column() )
+        if (selectionModel()->selectedIndexes().count())
+            foreach (const QModelIndex &index, selectionModel()->selectedIndexes())
+                if (!index.column())
                     emit opened(index);
         event->accept();
         return;
@@ -457,9 +457,9 @@ IconView::keyPressEvent(QKeyEvent *event)
 }
 
 void
-IconView::resizeEvent( QResizeEvent *e )
+IconView::resizeEvent(QResizeEvent *e)
 {
-    QAbstractItemView::resizeEvent( e );
+    QAbstractItemView::resizeEvent(e);
     m_prevSize = size();
     m_resizeTimer->start(250);
     if (m_contentsHeight>viewport()->height())
@@ -480,16 +480,16 @@ IconView::sizeTimerEvent()
 }
 
 void
-IconView::mouseMoveEvent( QMouseEvent *event )
+IconView::mouseMoveEvent(QMouseEvent *event)
 {
     int newVal = event->pos().x() > m_startPos.x() ? 16 : -16;
     bool shouldSlide = event->pos().x() > m_startPos.x() + 64 || event->pos().x() < m_startPos.x() - 64;
     newVal += iconSize().width();
 
-    if ( shouldSlide && m_startSlide && m_allowedSizes.contains( newVal ) )
+    if (shouldSlide && m_startSlide && m_allowedSizes.contains(newVal))
     {
         m_slide = true;
-        emit iconSizeChanged( newVal );
+        emit iconSizeChanged(newVal);
         m_startPos = event->pos();
     }
     if ((event->buttons() & Qt::LeftButton) && selectionModel() && !indexAt(m_pressPos).isValid())
@@ -518,43 +518,43 @@ IconView::mouseMoveEvent( QMouseEvent *event )
             selectionModel()->clearSelection();
     }
     else
-        QAbstractItemView::mouseMoveEvent( event );
+        QAbstractItemView::mouseMoveEvent(event);
     if (m_pressPos != QPoint())
         viewport()->update();
 }
 
 void
-IconView::mousePressEvent( QMouseEvent *event )
+IconView::mousePressEvent(QMouseEvent *event)
 {
     m_pressPos = event->pos();
     m_pressedIndex = indexAt(m_pressPos);
     m_hadSelection = selectionModel()->hasSelection();
-    QAbstractItemView::mousePressEvent( event );
+    QAbstractItemView::mousePressEvent(event);
 
     if (!selectionModel() || (state() == EditingState))
         return;
 
-    if ( event->button() == Qt::MiddleButton )
+    if (event->button() == Qt::MiddleButton)
     {
         m_startPos = event->pos();
         m_startSlide = true;
-        setDragEnabled( false );   //we will likely not want to drag items around at this point...
+        setDragEnabled(false);   //we will likely not want to drag items around at this point...
         event->accept();
         return;
     }
-    viewport()->update(); //required for itemdelegate toggling between bold / normal font.... just update( index ) doesnt work.
+    viewport()->update(); //required for itemdelegate toggling between bold / normal font.... just update(index) doesnt work.
 }
 
 void
-IconView::mouseReleaseEvent( QMouseEvent *e )
+IconView::mouseReleaseEvent(QMouseEvent *e)
 {
     QAbstractItemView::mouseReleaseEvent(e);
     const QModelIndex &index = indexAt(e->pos());
     m_pressPos = QPoint();
-    if ( Store::config.views.singleClick
+    if (Store::config.views.singleClick
          && e->modifiers() == Qt::NoModifier
          && e->button() == Qt::LeftButton
-         && state() == NoState )
+         && state() == NoState)
     {
         if (index == m_pressedIndex)
             emit opened(index);
@@ -563,20 +563,20 @@ IconView::mouseReleaseEvent( QMouseEvent *e )
         viewport()->update();
         return;
     }
-    if ( e->button() == Qt::MiddleButton )
+    if (e->button() == Qt::MiddleButton)
     {
-        if ( e->pos() == m_startPos
+        if (e->pos() == m_startPos
              && !e->modifiers()
-             && index == m_pressedIndex )
+             && index == m_pressedIndex)
         {
             emit newTabRequest(index);
             e->accept();
         }
-        if ( m_startSlide )
+        if (m_startSlide)
         {
             m_slide = false;
             m_startSlide = false;
-            setDragEnabled( true );
+            setDragEnabled(true);
             viewport()->update();
             e->accept();
             m_startPos = QPoint();
@@ -585,7 +585,7 @@ IconView::mouseReleaseEvent( QMouseEvent *e )
     }
 
 
-    viewport()->update(); //required for itemdelegate toggling between bold / normal font.... just update( index ) doesnt work.
+    viewport()->update(); //required for itemdelegate toggling between bold / normal font.... just update(index) doesnt work.
 }
 
 void
@@ -613,31 +613,60 @@ IconView::viewOptions() const
 }
 
 void
-IconView::paintEvent( QPaintEvent *e )
+IconView::renderCategory(const QString &category, const QRect &catRect, QPainter *p, const int index)
+{
+    p->save();
+    QFont f(font());
+    f.setBold(true);
+    QFontMetrics fm(f);
+    QColor bg(palette().color(QPalette::Text));
+    bg.setAlpha(bool(index&1)?32:16);
+    QColor mid(Ops::colorMid(palette().color(QPalette::Base), palette().color(QPalette::Text)));
+    if (Store::config.views.iconView.categoryStyle == 0)
+    {
+        p->fillRect(catRect, bg);
+        p->setPen(QColor(255,255,255,64));
+        p->drawLine(catRect.topLeft(), catRect.topRight());
+        p->setPen(QColor(0,0,0,64));
+        p->drawLine(catRect.bottomLeft(), catRect.bottomRight());
+    }
+    else if (Store::config.views.iconView.categoryStyle == 1)
+    {
+        p->setRenderHint(QPainter::Antialiasing);
+        p->setBrush(bg);
+        p->setPen(Qt::NoPen);
+        p->drawRoundedRect(catRect.adjusted(0, 1, -1, 0), 4, 4);
+    }
+    else if (Store::config.views.iconView.categoryStyle == 2)
+    {
+        QRectF rf(catRect.adjusted(0, 2, -1, 0));
+        p->setRenderHint(QPainter::Antialiasing);
+        p->setBrush(bg);
+        p->setPen(mid);
+        p->drawRoundedRect(rf.translated(0.5, 0.5), 4, 4);
+    }
+    p->setPen(mid);
+    p->setFont(f);
+    p->drawText(fm.boundingRect(2, catRect.top()+1, width(), height(), 0, category, category.size()), category);
+    p->restore();
+}
+
+void
+IconView::paintEvent(QPaintEvent *e)
 {
     QPainter p(viewport());
     p.setClipRect(e->rect());
     if (isCategorized())
     {
-        QFont f(font());
-        f.setBold(true);
-        QFontMetrics fm(f);
         for (int cat = 0; cat < m_categories.count(); ++cat)
         {
             const QString &category(m_categories.at(cat));
             const QRect catRect = visualRect(category);
             if (!viewport()->rect().intersects(catRect))
                 continue;
-            p.fillRect(catRect, QColor(0,0,0,cat&1?32:16));
-            p.setPen(QColor(255,255,255,64));
-            p.drawLine(catRect.topLeft(), catRect.topRight());
-            p.setPen(QColor(0,0,0,64));
-            p.drawLine(catRect.bottomLeft(), catRect.bottomRight());
-            p.setPen(Ops::colorMid(palette().color(QPalette::Base), palette().color(QPalette::Text)));
-            p.save();
-            p.setFont(f);
-            p.drawText(fm.boundingRect(2, catRect.top(), width(), height(), 0, category, category.size()), category);
-            p.restore();
+
+            renderCategory(category, catRect, &p, cat);
+
             const QModelIndexList &block(m_model->category(category));
             for (int i = 0; i < block.count(); ++i)
             {
@@ -669,18 +698,18 @@ IconView::paintEvent( QPaintEvent *e )
             itemDelegate()->paint(&p, option, index);
         }
     }
-    if ( m_slide )
+    if (m_slide)
     {
-        QString sizeString = QString::number( iconSize().width() ) + " px";
-        QPainter p( viewport() );
+        QString sizeString = QString::number(iconSize().width()) + " px";
+        QPainter p(viewport());
         QFont font = p.font();
-        font.setBold( true );
-        font.setPointSize( 32 );
-        p.setFont( font );
+        font.setBold(true);
+        font.setPointSize(32);
+        p.setFont(font);
         QRect rect;
-        rect.setSize( QFontMetrics( font ).boundingRect( sizeString ).size() );
-        rect.moveBottomRight( viewport()->rect().bottomRight() );
-        p.drawText( rect, sizeString );
+        rect.setSize(QFontMetrics(font).boundingRect(sizeString).size());
+        rect.moveBottomRight(viewport()->rect().bottomRight());
+        p.drawText(rect, sizeString);
     }
     if (m_pressPos != QPoint() && state() == DragSelectingState)
     {
@@ -716,71 +745,71 @@ IconView::correctLayout()
 void
 IconView::updateLayout()
 {
-    if ( !isVisible()||!m_model )
+    if (!isVisible()||!m_model)
         return;
 
     int contentsWidth = viewport()->width();
-    int horItemCount = m_horItems = contentsWidth/( iconSize().width() + Store::config.views.iconView.textWidth*2 );
-    if ( m_model->rowCount( rootIndex() ) < horItemCount && m_model->rowCount( rootIndex() ) > 1 && !isCategorized() )
-        horItemCount = model()->rowCount( rootIndex() );
-    if ( contentsWidth && horItemCount )
-        setGridSize( QSize( contentsWidth/horItemCount, m_gridHeight ) );
+    int horItemCount = m_horItems = contentsWidth/(iconSize().width() + Store::config.views.iconView.textWidth*2);
+    if (m_model->rowCount(rootIndex()) < horItemCount && m_model->rowCount(rootIndex()) > 1 && !isCategorized())
+        horItemCount = model()->rowCount(rootIndex());
+    if (contentsWidth && horItemCount)
+        setGridSize(QSize(contentsWidth/horItemCount, m_gridHeight));
     calculateRects();
 }
 
 void
-IconView::contextMenuEvent( QContextMenuEvent *event )
+IconView::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu popupMenu;
-    if ( Store::customActions().count() )
+    if (Store::customActions().count())
         popupMenu.addMenu(Store::customActionsMenu());
-    popupMenu.addActions( actions() );
-    const QString &file = static_cast<FileSystemModel *>( model() )->filePath( indexAt( event->pos() ) );
-    QMenu openWith( tr( "Open With" ), this );
-    openWith.addActions( Store::openWithActions( file ) );
-    foreach( QAction *action, actions() )
+    popupMenu.addActions(actions());
+    const QString &file = static_cast<FS::Model *>(model())->url(indexAt(event->pos())).toLocalFile();
+    QMenu openWith(tr("Open With"), this);
+    openWith.addActions(Store::openWithActions(file));
+    foreach(QAction *action, actions())
     {
-        popupMenu.addAction( action );
-        if ( action->objectName() == "actionDelete" )
-            popupMenu.insertSeparator( action );
-        if ( action->objectName() == "actionCustomCmd" )
-            popupMenu.insertMenu( action, &openWith );
+        popupMenu.addAction(action);
+        if (action->objectName() == "actionDelete")
+            popupMenu.insertSeparator(action);
+        if (action->objectName() == "actionCustomCmd")
+            popupMenu.insertMenu(action, &openWith);
     }
-    popupMenu.exec( event->globalPos() );
+    popupMenu.exec(event->globalPos());
 }
 
 
 void
-IconView::setModel( QAbstractItemModel *model )
+IconView::setModel(QAbstractItemModel *model)
 {
-    QAbstractItemView::setModel( model );
-    if ( m_model = qobject_cast<FileSystemModel *>( model ) )
+    QAbstractItemView::setModel(model);
+    if (m_model = qobject_cast<FS::Model *>(model))
     {
         m_layTimer->setInterval(20);
         connect(m_model, SIGNAL(finishedWorking()), this, SLOT(updateLayout()));
         connect(m_model, SIGNAL(startedWorking()), m_layTimer, SLOT(start()));
-        connect(m_model, SIGNAL(rootPathChanged(QString)), this, SLOT(clear()));
+        connect(m_model, SIGNAL(urlChanged(QUrl)), this, SLOT(clear()));
         connect(m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(calculateRects()));
         connect(m_model, SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(clear(QModelIndex,QModelIndex)));
 //        connect(m_model, SIGNAL(hiddenVisibilityChanged(bool)), this, SLOT(updateLayout()));
         connect(m_model, SIGNAL(layoutChanged()), this, SLOT(updateLayout()));
         connect(m_model, SIGNAL(modelReset()), this, SLOT(updateLayout()));
-        static_cast<IconDelegate*>( itemDelegate() )->setModel( m_model );
+        static_cast<IconDelegate*>(itemDelegate())->setModel(m_model);
     }
 }
 
 void
-IconView::setIconWidth( const int width )
+IconView::setIconWidth(const int width)
 {
 //    float val = 0;
-//    if ( verticalScrollBar()->isVisible() )
+//    if (verticalScrollBar()->isVisible())
 //        val = (float)verticalScrollBar()->value()/(float)verticalScrollBar()->maximum();
-    QAbstractItemView::setIconSize( QSize( width, width ) );
+    QAbstractItemView::setIconSize(QSize(width, width));
     setGridHeight(width);
-    setGridSize( QSize( gridSize().width(), m_gridHeight ) );
-//    if ( m_firstIndex.isValid() /*&& width == m_newSize */)
+    setGridSize(QSize(gridSize().width(), m_gridHeight));
+//    if (m_firstIndex.isValid() /*&& width == m_newSize */)
 //        scrollTo(m_firstIndex, QAbstractItemView::PositionAtTop);
-//    if ( val && verticalScrollBar()->isVisible() )
+//    if (val && verticalScrollBar()->isVisible())
 //        verticalScrollBar()->setValue(verticalScrollBar()->maximum()*val);
 
     updateLayout();
@@ -798,7 +827,7 @@ IconView::visualRect(const QModelIndex &index) const
 QRect
 IconView::visualRect(const QString &cat) const
 {
-    if ( m_catRects.contains(cat) )
+    if (m_catRects.contains(cat))
         return m_catRects.value(cat, QRect()).translated(0, -verticalOffset());
     return QRect();
 }

@@ -42,10 +42,10 @@ InfoWidget::InfoWidget(QWidget *parent)
     , m_size(new QLabel(this))
 {
 //    QPalette pal = palette();
-//    QColor midC = Operations::colorMid( pal.color( QPalette::Base ), pal.color( QPalette::Highlight ), 10, 1 );
-//    pal.setColor( QPalette::Base, Operations::colorMid( Qt::black, midC, 1, 10 ) );
-//    setPalette( pal );
-    setFrameStyle( QFrame::StyledPanel | QFrame::Sunken );
+//    QColor midC = Operations::colorMid(pal.color(QPalette::Base), pal.color(QPalette::Highlight), 10, 1);
+//    pal.setColor(QPalette::Base, Operations::colorMid(Qt::black, midC, 1, 10));
+//    setPalette(pal);
+    setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
 
     QFont f(font());
     f.setBold(true);
@@ -55,7 +55,7 @@ InfoWidget::InfoWidget(QWidget *parent)
 //    m_fileName->setForegroundRole(QPalette::Window);
 
     f.setPointSize(qMax(Store::config.behaviour.minFontSize, f.pointSize()-2));
-    for ( int i = 0; i < 2; ++i )
+    for (int i = 0; i < 2; ++i)
     {
         m_lastMod[i] = new QLabel(this);
         m_perm[i] = new QLabel(this);
@@ -78,7 +78,7 @@ InfoWidget::InfoWidget(QWidget *parent)
 //        l->setForegroundRole(QPalette::Window);
     }
 
-    setMaximumHeight( 68 );
+    setMaximumHeight(68);
     QGridLayout *gdl = new QGridLayout();
     gdl->setMargin(1);
     gdl->addWidget(m_tw, 0, 0, 2, 1);
@@ -104,26 +104,26 @@ InfoWidget::InfoWidget(QWidget *parent)
 void
 InfoWidget::paletteOps()
 {
-    setAutoFillBackground( true );
+    setAutoFillBackground(true);
     QPalette::ColorRole bg = backgroundRole(), fg = foregroundRole();
     QPalette pal = palette();
     const QColor fgc = pal.color(fg), bgc = pal.color(bg);
     if (Store::config.behaviour.sideBarStyle == 1)
     {
         //base color... slight hihglight tint
-        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), qApp->palette().color( QPalette::Highlight ), 10, 1 );
-        pal.setColor( bg, Ops::colorMid( Qt::black, midC, 1, 10 ) );
-        pal.setColor( fg, qApp->palette().color(fg) );
+        QColor midC = Ops::colorMid(pal.color(QPalette::Base), qApp->palette().color(QPalette::Highlight), 10, 1);
+        pal.setColor(bg, Ops::colorMid(Qt::black, midC, 1, 10));
+        pal.setColor(fg, qApp->palette().color(fg));
     }
     else if (Store::config.behaviour.sideBarStyle == 2)
     {
-        pal.setColor(bg, Ops::colorMid( fgc, pal.color( QPalette::Highlight ), 10, 1 ));
+        pal.setColor(bg, Ops::colorMid(fgc, pal.color(QPalette::Highlight), 10, 1));
         pal.setColor(fg, bgc);
     }
     else if (Store::config.behaviour.sideBarStyle == 3)
     {
         const QColor &wtext = pal.color(QPalette::WindowText), w = pal.color(QPalette::Window);
-        pal.setColor(bg, Ops::colorMid( wtext, pal.color( QPalette::Highlight ), 10, 1 ));
+        pal.setColor(bg, Ops::colorMid(wtext, pal.color(QPalette::Highlight), 10, 1));
         pal.setColor(fg, w);
     }
     setPalette(pal);
@@ -158,7 +158,7 @@ InfoWidget::hovered(const QModelIndex &index)
         m_lastMod[0]->setText("Last Modified:");
         m_perm[0]->setText("Permissions:");
     }
-    const FileSystemModel *fsModel = static_cast<const FileSystemModel*>(index.model());
+    const FS::Model *fsModel = static_cast<const FS::Model*>(index.model());
     const QFileInfo i = fsModel->fileInfo(index);
     m_tw->setPixmap(fsModel->fileIcon(index.sibling(index.row(), 0)).pixmap(64));
     m_fileName->setText(i.fileName());
@@ -167,7 +167,7 @@ InfoWidget::hovered(const QModelIndex &index)
     m_mimeLbl->setText(Ops::getMimeType(i.filePath()));
 
     m_lastMod[1]->setText(i.lastModified().toString());
-    const QString &s(fsModel->data(index, FileSystemModel::FilePermissions).toString());
+    const QString &s(fsModel->data(index, FS::Model::FilePermissions).toString());
     m_perm[1]->setText(s);
 
     m_sizeLbl->setText(i.isDir() ? "--" : Ops::prettySize(i.size()));

@@ -40,12 +40,12 @@ ViewAnimator::ViewAnimator(QObject *parent) : QObject(parent),
 void
 ViewAnimator::indexHovered(const QModelIndex &index)
 {
-    if ( !m_model && index.isValid() )
+    if (!m_model && index.isValid())
     {
         m_model = index.model();
         connect(m_model, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(rowsRemoved(QModelIndex,int,int)));
     }
-    if ( index.isValid() && index.flags() & Qt::ItemIsEnabled )
+    if (index.isValid() && index.flags() & Qt::ItemIsEnabled)
     {
         m_hoveredIndex = index;
         if (!m_animTimer->isActive())
@@ -56,7 +56,7 @@ ViewAnimator::indexHovered(const QModelIndex &index)
 void
 ViewAnimator::rowsRemoved(const QModelIndex &parent, int start, int end)
 {
-    for ( int i = start; i<=end; ++i )
+    for (int i = start; i<=end; ++i)
     {
         const QModelIndex &index = m_model->index(i, 0, parent);
         m_hoverLevel.remove(index);
@@ -67,52 +67,52 @@ void
 ViewAnimator::removeHoveredIndex()
 {
     m_hoveredIndex = QModelIndex();
-    if ( m_totalIndex && !m_animTimer->isActive() )
+    if (m_totalIndex && !m_animTimer->isActive())
         m_animTimer->start(40);
 }
 
 void
 ViewAnimator::animEvent()
 {
-    if ( m_hoveredIndex != QModelIndex() )
-        if ( m_hoverLevel[m_hoveredIndex] == 8 )  //we have decided to hover one item longer then 400 ms... no reason to keep timer running.
+    if (m_hoveredIndex != QModelIndex())
+        if (m_hoverLevel[m_hoveredIndex] == 8)  //we have decided to hover one item longer then 400 ms... no reason to keep timer running.
         {
             m_animTimer->stop();
             return;
         }
     m_totalIndex = 0;
-    if ( m_hoverLevel[m_hoveredIndex] < 8 )
+    if (m_hoverLevel[m_hoveredIndex] < 8)
         m_hoverLevel[m_hoveredIndex]++;
 
-    if ( m_hoveredIndex != QModelIndex() )
+    if (m_hoveredIndex != QModelIndex())
         m_totalIndex = m_hoverLevel[m_hoveredIndex];
 
-    foreach ( const QModelIndex &index, m_hoverLevel.keys() )
+    foreach (const QModelIndex &index, m_hoverLevel.keys())
     {
         bool exists = false;
-        if ( const DFM::FileSystemModel *fsModel = qobject_cast<const DFM::FileSystemModel *>(m_view->model()) )
+        if (const DFM::FS::Model *fsModel = qobject_cast<const DFM::FS::Model *>(m_view->model()))
         {
-            if ( index.isValid() && fsModel->index( index.row(), 0, m_view->rootIndex()) == index )
+            if (index.isValid() && fsModel->index(index.row(), 0, m_view->rootIndex()) == index)
                 exists = true;
         }
         else
             exists = index.isValid();
-        if ( exists )
-        if ( m_hoverLevel[index] > 0 )
+        if (exists)
+        if (m_hoverLevel[index] > 0)
         {
-            if ( index != m_hoveredIndex )
+            if (index != m_hoveredIndex)
             {
                 m_hoverLevel[index]--;
                 m_totalIndex += m_hoverLevel[index];
             }
-            m_view->update( index );
-//            if ( QTreeView *tv = qobject_cast<QTreeView *>(m_view) )
-//                if ( DFM::FileSystemModel *fsm = qobject_cast<DFM::FileSystemModel *>(tv->model()) )
-//                    for ( int i = 0; i < tv->model()->columnCount(index.parent()); ++i )
-//                        tv->update( fsm->index(index.row(), i) );
+            m_view->update(index);
+//            if (QTreeView *tv = qobject_cast<QTreeView *>(m_view))
+//                if (DFM::FileSystemModel *fsm = qobject_cast<DFM::FileSystemModel *>(tv->model()))
+//                    for (int i = 0; i < tv->model()->columnCount(index.parent()); ++i)
+//                        tv->update(fsm->index(index.row(), i));
         }
     }
-    if ( !m_totalIndex )
+    if (!m_totalIndex)
         m_animTimer->stop();
     emit animation();
 }
@@ -128,7 +128,7 @@ ViewAnimator::eventFilter(QObject *obj, QEvent *ev)
 ViewAnimator
 *ViewAnimator::manage(QAbstractItemView *view)
 {
-    if ( ViewAnimator *anim = view->findChild<ViewAnimator*>() )
+    if (ViewAnimator *anim = view->findChild<ViewAnimator*>())
         return anim;
     return new ViewAnimator(view);
 }

@@ -45,11 +45,11 @@ FlowView::FlowView(QWidget *parent) : QWidget(parent)
     m_dView->setRootIsDecorated(false);
     m_dView->setItemsExpandable(false);
 
-    m_splitter->restoreState( Store::config.views.flowSize );
+    m_splitter->restoreState(Store::config.views.flowSize);
 
-    connect( m_preView, SIGNAL(centerIndexChanged(QModelIndex)), this, SLOT(flowCurrentIndexChanged(QModelIndex)) );
-    connect( m_preView, SIGNAL(centerIndexChanged(QModelIndex)), Ops::absWinFor<MainWindow *>(this)->infoWidget(), SLOT(hovered(QModelIndex)) );
-    connect( m_splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(saveSplitter()) );
+    connect(m_preView, SIGNAL(centerIndexChanged(QModelIndex)), this, SLOT(flowCurrentIndexChanged(QModelIndex)));
+    connect(m_preView, SIGNAL(centerIndexChanged(QModelIndex)), Ops::absWinFor<MainWindow *>(this)->infoWidget(), SLOT(hovered(QModelIndex)));
+    connect(m_splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(saveSplitter()));
 
     m_splitter->setHandleWidth(style()->pixelMetric(QStyle::PM_SplitterWidth));
 }
@@ -60,10 +60,10 @@ FlowView::saveSplitter()
     Store::config.views.flowSize = m_splitter->saveState();
 }
 
-FileSystemModel
+FS::Model
 *FlowView::model()
 {
-    return static_cast<FileSystemModel*>(m_dView->model());
+    return static_cast<FS::Model*>(m_dView->model());
 }
 
 void
@@ -99,11 +99,10 @@ FlowView::setSelectionModel(QItemSelectionModel *selectionModel)
 {
     m_dView->setSelectionModel(selectionModel);
     m_preView->setSelectionModel(selectionModel);
-    connect( m_dView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),this,SLOT(treeCurrentIndexChanged(QItemSelection,QItemSelection)));
+    connect(m_dView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),this,SLOT(treeCurrentIndexChanged(QItemSelection,QItemSelection)));
 }
 
 QModelIndex FlowView::rootIndex() { return m_dView->rootIndex(); }
 QModelIndex FlowView::currentIndex() { return m_dView->currentIndex(); }
 void FlowView::addActions(QList<QAction *> actions) { m_dView->addActions(actions); }
-void FlowView::setFilter(QString filter) { m_dView->setFilter(filter); }
 void FlowView::flowCurrentIndexChanged(const QModelIndex &index) { m_dView->scrollTo(index, QAbstractItemView::EnsureVisible); }

@@ -36,6 +36,7 @@
 
 #include "filesystemmodel.h"
 #include "operations.h"
+#include "widgets.h"
 
 namespace DFM
 {
@@ -46,12 +47,12 @@ class NavButton : public QWidget
 {
     Q_OBJECT
 public:
-    NavButton(QWidget *parent = 0, const QString &path = QString(), const QString &text = QString());
+    NavButton(QWidget *parent = 0, const QUrl &url = QUrl(), const QString &text = QString());
     QSize sizeHint() const;
     QSize minimumSizeHint() const;
 
 signals:
-    void navPath(const QString &path);
+    void urlRequest(const QUrl &url);
     void released();
 
 protected:
@@ -64,11 +65,14 @@ protected:
     void paintEvent(QPaintEvent *);
 
 private:
-    QString m_path, m_text;
+    QString m_text;
+    QUrl m_url;
     PathNavigator *m_nav;
     bool m_hasData, m_hasPress;
     int m_margin;
 };
+
+//-----------------------------------------------------------------------------
 
 class Menu : public QMenu
 {
@@ -78,36 +82,29 @@ public:
 protected:
     virtual void mousePressEvent(QMouseEvent *e);
 signals:
-    void newTabRequest( const QString &path );
+    void newTabRequest(const QString &path);
 };
+
+//-----------------------------------------------------------------------------
 
 class PathSeparator : public QWidget
 {
     Q_OBJECT
 public:
-    inline explicit PathSeparator(QWidget *parent, const QString &path = QString(), FileSystemModel *fsModel = 0)
-        : QWidget(parent)
-        , m_path(path)
-        , m_fsModel(fsModel)
-        , m_nav(qobject_cast<PathNavigator *>(parent))
-    {
-        setAttribute(Qt::WA_Hover);
-        setFixedSize(6, 7);
-    }
+    PathSeparator(QWidget *parent, const QUrl &url = QUrl(), FS::Model *fsModel = 0);
 
 protected:
     void mousePressEvent(QMouseEvent *event);
     void paintEvent(QPaintEvent *);
     void leaveEvent(QEvent *e) {QWidget::leaveEvent(e); update(); }
 
-private slots:
-    void setPath();
-
 private:
-    QString m_path;
+    QUrl m_url;
     PathNavigator *m_nav;
-    FileSystemModel *m_fsModel;
+    FS::Model *m_fsModel;
 };
+
+//-----------------------------------------------------------------------------
 
 class PathBox : public QComboBox
 {
@@ -119,70 +116,75 @@ signals:
     void cancelEdit();
 
 protected:
-    void keyPressEvent(QKeyEvent *e) { if ( e->key() == Qt::Key_Escape ) emit cancelEdit(); else QComboBox::keyPressEvent(e); }
+    void keyPressEvent(QKeyEvent *e) { if (e->key() == Qt::Key_Escape) emit cancelEdit(); else QComboBox::keyPressEvent(e); }
     void paintEvent(QPaintEvent *);
 };
+
+//-----------------------------------------------------------------------------
 
 class PathNavigator : public QWidget
 {
     Q_OBJECT
 public:
-    explicit PathNavigator(QWidget *parent = 0, FileSystemModel *model = 0);
-    inline QString path() const { return m_path; }
-    inline FileSystemModel *model() { return m_fsModel; }
+    explicit PathNavigator(QWidget *parent = 0, FS::Model *model = 0);
+    inline QUrl url() const { return m_url; }
+    inline FS::Model *model() { return m_fsModel; }
     inline QList<NavButton *> navButtons() { return QList<NavButton *>(findChildren<NavButton *>()); }
     inline int count() { return navButtons().count(); }
     QSize sizeHint() const;
     
 signals:
-    void pathChanged(const QString &path);
     void edit();
 
 protected:
-    void mousePressEvent(QMouseEvent *e) { QWidget::mousePressEvent(e); m_hasPress = true; }
-    void mouseReleaseEvent(QMouseEvent *e) { QWidget::mouseReleaseEvent(e); if ( m_hasPress ) emit edit(); m_hasPress = false; }
+    void mousePressEvent(QMouseEvent *e);
+    void mouseReleaseEvent(QMouseEvent *e);
+    void resizeEvent(QResizeEvent *);
     void clear();
 
 private slots:
-     void genNavFromPath(const QString &path);
      void genNavFromUrl(const QUrl &url);
+     void postConstructorJobs();
 
 private:
-    QString m_path;
+    QUrl m_url;
     QStringList m_pathList;
-    FileSystemModel *m_fsModel;
+    FS::Model *m_fsModel;
     QHBoxLayout *m_layout;
     QList<QWidget *> m_widgets;
     BreadCrumbs *m_bc;
+    Button *m_schemeButton;
     bool m_hasPress;
 };
+
+//-----------------------------------------------------------------------------
 
 class BreadCrumbs : public QStackedWidget
 {
     Q_OBJECT
 public:
-    explicit BreadCrumbs( QWidget *parent = 0, FileSystemModel *fsModel = 0 );
-    inline void setEditable( const bool editable ) { setCurrentWidget( editable ? static_cast<QWidget *>(m_pathBox) : static_cast<QWidget *>(m_pathNav) ); currentWidget()->setFocus(); }
-    inline QString currentPath() { return m_pathNav->path(); }
+    explicit BreadCrumbs(QWidget *parent = 0, FS::Model *fsModel = 0);
+    inline void setEditable(const bool editable) { setCurrentWidget(editable ? static_cast<QWidget *>(m_pathBox) : static_cast<QWidget *>(m_pathNav)); currentWidget()->setFocus(); }
+    inline QUrl url() { return m_pathNav->url(); }
     inline bool isEditable() { return currentWidget() == static_cast<QWidget *>(m_pathBox); }
     inline PathNavigator *pathNav() { return m_pathNav; }
     inline PathBox *pathBox() { return m_pathBox; }
     QSize sizeHint() const;
 
 public slots:
-    void setRootPath( const QString &rootPath );
+    void urlFromEdit(const QString &urlString);
     inline void toggleEditable() { currentWidget() == m_pathNav ? setEditable(true) : setEditable(false); }
-    void complete( const QString &path);
-    void pathChanged( const QString &path );
+    void complete(const QString &path);
+    void setUrl(const QUrl &url);
     void paletteOps();
 
 signals:
-    void newPath( const QString &path );
+    void newPath(const QString &path);
 
 private:
     PathBox *m_pathBox;
     PathNavigator *m_pathNav;
-    FileSystemModel *m_fsModel;
+    FS::Model *m_fsModel;
 };
 
 }

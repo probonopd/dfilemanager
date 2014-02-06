@@ -50,8 +50,7 @@ public:
     QModelIndex currentIndex();
     void addActions(QList<QAction *> actions);
     inline DetailsView *detailsView() { return m_dView; }
-    FileSystemModel *model();
-    void setFilter(QString filter);
+    FS::Model *model();
     inline QSplitter *splitter() { return m_splitter; }
     void setSelectionModel(QItemSelectionModel *selectionModel);
 

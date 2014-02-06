@@ -137,19 +137,19 @@ StartupWidget::StartupWidget(QWidget *parent)
     QGroupBox *gb = new QGroupBox("Lock Docks", this);
     QVBoxLayout *docks = new QVBoxLayout(gb);
     m_left = new QCheckBox(tr("Left"));
-    m_left->setChecked( bool( m_lock & Docks::Left ) );
-    m_left->setProperty( "dock", (int)Docks::Left );
-    connect( m_left, SIGNAL(toggled(bool)), this, SLOT(lockChanged()) );
+    m_left->setChecked(bool(m_lock & Docks::Left));
+    m_left->setProperty("dock", (int)Docks::Left);
+    connect(m_left, SIGNAL(toggled(bool)), this, SLOT(lockChanged()));
     docks->addWidget(m_left);
     m_right = new QCheckBox(tr("Right"));
-    m_right->setChecked( bool( m_lock & Docks::Right ) );
-    m_right->setProperty( "dock", (int)Docks::Right );
-    connect( m_right, SIGNAL(toggled(bool)), this, SLOT(lockChanged()) );
+    m_right->setChecked(bool(m_lock & Docks::Right));
+    m_right->setProperty("dock", (int)Docks::Right);
+    connect(m_right, SIGNAL(toggled(bool)), this, SLOT(lockChanged()));
     docks->addWidget(m_right);
     m_bottom = new QCheckBox(tr("Bottom"));
-    m_bottom->setChecked( bool( m_lock & Docks::Bottom ) );
-    m_bottom->setProperty( "dock", (int)Docks::Bottom );
-    connect( m_bottom, SIGNAL(toggled(bool)), this, SLOT(lockChanged()) );
+    m_bottom->setChecked(bool(m_lock & Docks::Bottom));
+    m_bottom->setProperty("dock", (int)Docks::Bottom);
+    connect(m_bottom, SIGNAL(toggled(bool)), this, SLOT(lockChanged()));
     docks->addWidget(m_bottom);
     gb->setLayout(docks);
 
@@ -160,7 +160,7 @@ StartupWidget::StartupWidget(QWidget *parent)
 
     QToolButton *startBtn = new QToolButton(this);
     startBtn->setText("<-");
-    connect ( startBtn, SIGNAL(clicked()), this, SLOT(getStartPath()) );
+    connect (startBtn, SIGNAL(clicked()), this, SLOT(getStartPath()));
 
     hLayout->addWidget(startBtn);
 
@@ -171,7 +171,7 @@ StartupWidget::StartupWidget(QWidget *parent)
 
     QToolButton *sheetBtn = new QToolButton(this);
     sheetBtn->setText("<-");
-    connect ( sheetBtn, SIGNAL(clicked()), this, SLOT(getShitPath()) );
+    connect (sheetBtn, SIGNAL(clicked()), this, SLOT(getShitPath()));
 
     sheetLo->addWidget(sheetBtn);
 
@@ -188,7 +188,7 @@ void
 StartupWidget::getShitPath()
 {
     QString styleSheet = QFileDialog::getOpenFileName(window(), tr("select stylesheet"), QDir::homePath(), tr("stylesheets (*.css *.qss);"));
-    if ( !styleSheet.isEmpty() )
+    if (!styleSheet.isEmpty())
         m_sheetEdit->setText(styleSheet);
 }
 
@@ -199,7 +199,7 @@ StartupWidget::getStartPath()
                                                     QDir::homePath(),
                                                     QFileDialog::ShowDirsOnly
                                                     | QFileDialog::DontResolveSymlinks);
-    if ( !dir.isEmpty() )
+    if (!dir.isEmpty())
         m_startPath->setText(dir);
 }
 
@@ -207,13 +207,13 @@ StartupWidget::getStartPath()
 /////////////////////////////////////////////////////////////////
 
 ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
-  , m_iconWidth( new QSlider( Qt::Horizontal, this ) )
-  , m_width( new QLabel(this) )
-  , m_showThumbs( new QGroupBox(tr("Show thumbnails"), this) )
-  , m_smoothScroll( new QCheckBox(tr("Smooth scrolling"), this) )
-  , m_rowPadding( new QSpinBox(this) )
-  , m_iconSlider( new QSlider( Qt::Horizontal, this ) )
-  , m_size( new QLabel(QString::number(Store::config.views.iconView.iconSize*16) + " px", this) )
+  , m_iconWidth(new QSlider(Qt::Horizontal, this))
+  , m_width(new QLabel(this))
+  , m_showThumbs(new QGroupBox(tr("Show thumbnails"), this))
+  , m_smoothScroll(new QCheckBox(tr("Smooth scrolling"), this))
+  , m_rowPadding(new QSpinBox(this))
+  , m_iconSlider(new QSlider(Qt::Horizontal, this))
+  , m_size(new QLabel(QString::number(Store::config.views.iconView.iconSize*16) + " px", this))
   , m_viewBox(new QComboBox(this))
   , m_singleClick(new QCheckBox(tr("Open folders and files with one click"), this))
   , m_lineCount(new QSpinBox(this))
@@ -229,9 +229,9 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     m_showThumbs->setCheckable(true);
 
     QVBoxLayout *tL = new QVBoxLayout(m_showThumbs);
-    if ( APP->hasThumbIfaces() )
+    if (APP->hasThumbIfaces())
     {
-        foreach ( ThumbInterface *plugin, APP->thumbIfaces() )
+        foreach (ThumbInterface *plugin, APP->thumbIfaces())
         {
             QCheckBox *box = new QCheckBox(plugin->name(), m_showThumbs);
             box->setChecked(APP->isActive(plugin));
@@ -245,14 +245,14 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     m_iconSlider->setSingleStep(1);
     m_iconSlider->setPageStep(1);
     m_iconSlider->setValue(Store::config.views.iconView.iconSize);
-    connect( m_iconSlider, SIGNAL(valueChanged(int)), this, SLOT(sizeChanged(int)) );
+    connect(m_iconSlider, SIGNAL(valueChanged(int)), this, SLOT(sizeChanged(int)));
 
     m_iconWidth->setRange(1, 32);
     m_iconWidth->setSingleStep(1);
     m_iconWidth->setPageStep(1);
     m_iconWidth->setValue(Store::config.views.iconView.textWidth);
     m_width->setText(QString::number(Store::config.views.iconView.textWidth*2) + " px");
-    connect ( m_iconWidth, SIGNAL(valueChanged(int)), this, SLOT(sliderChanged(int)) );
+    connect (m_iconWidth, SIGNAL(valueChanged(int)), this, SLOT(sliderChanged(int)));
 
     m_lineCount->setRange(1, 8);
     m_lineCount->setValue(qBound(1, Store::config.views.iconView.lineCount, 8));
@@ -342,8 +342,8 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
     m_ok->setText("OK");
     m_cancel->setText("Cancel");
 
-    connect( m_ok, SIGNAL(clicked()), this, SLOT(accept()) );
-    connect( m_cancel, SIGNAL(clicked()), this, SLOT(reject()) );
+    connect(m_ok, SIGNAL(clicked()), this, SLOT(accept()));
+    connect(m_cancel, SIGNAL(clicked()), this, SLOT(reject()));
 }
 
 void
@@ -352,8 +352,8 @@ SettingsDialog::accept()
     if (QFileInfo(m_behWidget->m_startUpWidget->startupPath()).isDir())
         Store::config.startPath = m_behWidget->m_startUpWidget->startupPath();
     if (QFileInfo(m_behWidget->m_startUpWidget->m_sheetEdit->text()).isReadable()
-            &&  ( QFileInfo(m_behWidget->m_startUpWidget->m_sheetEdit->text()).suffix() == "css"
-                  || QFileInfo(m_behWidget->m_startUpWidget->m_sheetEdit->text()).suffix() == "qss" ) )
+            &&  (QFileInfo(m_behWidget->m_startUpWidget->m_sheetEdit->text()).suffix() == "css"
+                  || QFileInfo(m_behWidget->m_startUpWidget->m_sheetEdit->text()).suffix() == "qss"))
     {
         Store::config.styleSheet = m_behWidget->m_startUpWidget->m_sheetEdit->text();
         QFile file(DFM::Store::config.styleSheet);
@@ -367,9 +367,9 @@ SettingsDialog::accept()
         qApp->setStyleSheet(QString());
     }
 
-    foreach ( QCheckBox *box, m_viewWidget->m_showThumbs->findChildren<QCheckBox *>() )
+    foreach (QCheckBox *box, m_viewWidget->m_showThumbs->findChildren<QCheckBox *>())
     {
-        if ( box->isChecked() )
+        if (box->isChecked())
             APP->activateThumbInterface(box->text());
         else
             APP->deActivateThumbInterface(box->text());

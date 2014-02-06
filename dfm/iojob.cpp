@@ -34,7 +34,7 @@ static QString s_errorBase = QString("There was an error while copying <br><br>%
                                     "<br><br>to<br><br>%2 <br><br>Are you sure you"
                                     "have write permissions in %3 ? <br><br>I will now exit.");
 
-FileExistsDialog::FileExistsDialog( const QStringList &files, QWidget *parent)
+FileExistsDialog::FileExistsDialog(const QStringList &files, QWidget *parent)
     : QDialog(parent)
     , m_overWrite(new QPushButton(this))
     , m_overWriteAll(new QPushButton(this))
@@ -56,8 +56,8 @@ FileExistsDialog::FileExistsDialog( const QStringList &files, QWidget *parent)
     QFileInfo inInfo(files[0]);
     QFileInfo outInfo(files[1]);
 
-    m_overWrite->setEnabled( !(inInfo.path() == outInfo.path() && inInfo.isDir()) );
-    m_overWriteAll->setEnabled( !(inInfo.path() == outInfo.path() && inInfo.isDir()) );
+    m_overWrite->setEnabled(!(inInfo.path() == outInfo.path() && inInfo.isDir()));
+    m_overWriteAll->setEnabled(!(inInfo.path() == outInfo.path() && inInfo.isDir()));
     m_newName->setEnabled(false);
 
     connect(m_overWrite, SIGNAL(clicked()), this, SLOT(accept()));
@@ -80,7 +80,7 @@ FileExistsDialog::FileExistsDialog( const QStringList &files, QWidget *parent)
     hBox->addStretch();
     vBox->addLayout(hBox);
     setLayout(vBox);
-    setWindowFlags( ( ( windowFlags() | Qt::CustomizeWindowHint ) & ~Qt::WindowCloseButtonHint ) );
+    setWindowFlags(((windowFlags() | Qt::CustomizeWindowHint) & ~Qt::WindowCloseButtonHint));
     setWindowModality(Qt::WindowModal);
 }
 
@@ -114,19 +114,19 @@ void
 FileExistsDialog::textChanged(const QString &text)
 {
     const bool hasChanged = text != QFileInfo(m_file).fileName();
-    m_overWrite->setEnabled( !hasChanged );
-    m_overWriteAll->setEnabled( !hasChanged );
+    m_overWrite->setEnabled(!hasChanged);
+    m_overWriteAll->setEnabled(!hasChanged);
     m_newFileName = QFileInfo(m_file).dir().absoluteFilePath(text);
-    if ( QFileInfo(m_newFileName).exists() )
+    if (QFileInfo(m_newFileName).exists())
         m_name->setText("File " + m_newFileName + " already exists, what do you do?");
-    m_newName->setEnabled( hasChanged && !QFileInfo(m_newFileName).exists() );
+    m_newName->setEnabled(hasChanged && !QFileInfo(m_newFileName).exists());
 }
 
 bool
 FileExistsDialog::event(QEvent *e)
 {
-    if ( QKeyEvent *ke = dynamic_cast<QKeyEvent*>(e) )
-        if ( ke->key() == Qt::Key_Escape )
+    if (QKeyEvent *ke = dynamic_cast<QKeyEvent*>(e))
+        if (ke->key() == Qt::Key_Escape)
             return true; //user should not can escape
     return QDialog::event(e);
 }
@@ -215,10 +215,10 @@ CopyDialog::CopyDialog(QWidget *parent)
 
     setLayout(vBoxL);
 //    vBoxL->setSizeConstraint(QLayout::SetFixedSize);
-    setWindowFlags( ( ( windowFlags() | Qt::CustomizeWindowHint ) & ~Qt::WindowCloseButtonHint ) );
+    setWindowFlags(((windowFlags() | Qt::CustomizeWindowHint) & ~Qt::WindowCloseButtonHint));
 }
 
-static QString elidedText( const QString &text ) { return qApp->fontMetrics().elidedText(text, Qt::ElideMiddle, 256); }
+static QString elidedText(const QString &text) { return qApp->fontMetrics().elidedText(text, Qt::ElideMiddle, 256); }
 
 void
 CopyDialog::setInfo(QString from, QString to, int completeProgress, int currentProgress)
@@ -229,7 +229,7 @@ CopyDialog::setInfo(QString from, QString to, int completeProgress, int currentP
     m_from->setText(elidedText(from));
     m_to->setText(elidedText(to));
     m_ok->setEnabled(m_progress->value() == 100);
-    if ( m_progress->value() == 100 )
+    if (m_progress->value() == 100)
     {
         m_cancel->setEnabled(false);
         m_pause->setEnabled(false);
@@ -373,66 +373,35 @@ Manager::doJob(const IOJobData &ioJobData)
 //    qDebug() << Ops::taskToString(ioJobData.ioTask) << ioJobData.inList;
     if (ioJobData.ioTask < RemoveTask)
     {
-#if 0
-        if ( ask )
-        {
-            if ( QApplication::overrideCursor() )
-                QApplication::restoreOverrideCursor();
-            QString title(tr("Are you sure?"));
-            QString message(tr("Do you want to move:<br>"));
-            foreach (const QString &file, copyFiles)
-                message.append("<br> - ").append(file);
-            message.append(tr("<br><br>-> ")).append(destination).append(" ?");
-
-            if ( QMessageBox::question(MainWindow::currentWindow(), title, message, QMessageBox::Yes, QMessageBox::No) == QMessageBox::No )
-                return;
-        }
-#endif
         m_cut = bool(ioJobData.ioTask==MoveTask);
         m_destDir = ioJobData.outPath;
-        quint64 fileSize = 0;
+        m_total = 0;
         const QStringList copyFiles = ioJobData.inList;
-        foreach (const QString &file, copyFiles)
-        {
-            if ( QFileInfo(file).isDir() )
-                if ( m_destDir.startsWith(file)
-                     || ( QFileInfo(file).path() == m_destDir && m_cut ) )
-                    return;
-
-            QFileInfo fileInfo(file);
-            if (fileInfo.isDir())
-                getDirs(file, fileSize);
-            else
-                fileSize += fileInfo.size();
-        }
-
-        const quint64 destId = Ops::getDriveInfo<Ops::Id>( m_destDir );
-        m_total = fileSize;
+        if (!getTotalSize(copyFiles, m_total))
+            return;
 
         emit copyOrMoveStarted();
         foreach (const QString &file, copyFiles)
         {
             if (m_canceled)
-                return;
+                break;
             m_inFile = file;
-            const bool sameDisk = destId != 0 && ( (quint64)Ops::getDriveInfo<Ops::Id>( m_inFile ) ==  destId );
+            m_outFile = QDir(m_destDir).absoluteFilePath(QFileInfo(file).fileName());
+            const bool sameDisk = Ops::sameDisk(file, m_destDir);
+            const bool canRename = bool(m_cut && sameDisk);
+
+            if (canRename)
+            {
+                if (!QFile::rename(m_inFile, m_outFile))
+                    error(s_errorBase.arg(m_inFile, m_outFile, m_destDir));
+                continue;
+            }
 #ifdef Q_OS_UNIX
-            if ( fileSize > Ops::getDriveInfo<Ops::Free>( m_destDir ) && !(m_cut && sameDisk) )
-            {
-                m_errorString = QString("Not enough space on %1").arg(m_destDir);
-                emit errorSignal();
-                setPaused(true);
-                pause();
-            }
+            if (m_total > Ops::getDriveInfo<Ops::Free>(m_destDir))
+                error(QString("Not enough space on %1").arg(m_destDir));
 #endif
-            const QString &outFile = QDir(ioJobData.outPath).absoluteFilePath(QFileInfo(file).fileName());
-            if (!copyRecursive(file, outFile, m_cut, sameDisk))
-            {
-                m_errorString = s_errorBase.arg(m_inFile, m_outFile, m_destDir);
-                emit errorSignal();
-                setPaused(true);
-                pause();
-            }
+            if (!copyRecursive(file, m_outFile, m_cut, sameDisk))
+                error(s_errorBase.arg(m_inFile, m_outFile, m_destDir));
             else if (m_cut)
                 remove(file);
         }
@@ -464,6 +433,15 @@ Manager::reset()
 }
 
 void
+Manager::error(const QString &error)
+{
+    m_errorString = error;
+    emit errorSignal();
+    setPaused(true);
+    pause();
+}
+
+void
 Manager::getDirs(const QString &dir, quint64 &fileSize)
 {
     const QFileInfoList &entries = QDir(dir).entryInfoList(allEntries);
@@ -474,6 +452,24 @@ Manager::getDirs(const QString &dir, quint64 &fileSize)
         else
             fileSize += entry.size();
     }
+}
+
+bool
+Manager::getTotalSize(const QStringList &copyFiles, quint64 &fileSize)
+{
+    foreach (const QString &file, copyFiles)
+    {
+        if (QFileInfo(file).isDir())
+            if (m_destDir.startsWith(file) || (QFileInfo(file).path() == m_destDir && m_cut))
+                return false;
+
+        QFileInfo fileInfo(file);
+        if (fileInfo.isDir())
+            getDirs(file, fileSize);
+        else
+            fileSize += fileInfo.size();
+    }
+    return true;
 }
 
 void
@@ -528,7 +524,7 @@ Manager::run()
 void
 Manager::setPaused(bool pause)
 {
-    emit pauseToggled( pause, m_cut );
+    emit pauseToggled(pause, m_cut);
     m_mutex.lock();
     m_pause = pause;
     m_mutex.unlock();
@@ -541,7 +537,7 @@ Manager::setMode(QPair<Mode, QString> mode)
 {
     m_mode = mode.first;
     m_newFile = m_mode == NewName ? mode.second : QString();
-    if ( m_mode == Cancel )
+    if (m_mode == Cancel)
         cancelCopy();
     else
         setPaused(false);
@@ -560,12 +556,12 @@ Manager::pause()
 bool
 Manager::copyRecursive(const QString &inFile, const QString &outFile, bool cut, bool sameDisk)
 {
-    if ( m_canceled )
+    if (m_canceled)
         return true;
 
     QFileInfo outFileInfo(outFile);
 
-    if ( m_mode != OverwriteAll )
+    if (m_mode != OverwriteAll)
     {
         if (outFileInfo.exists())
         {
@@ -581,11 +577,11 @@ Manager::copyRecursive(const QString &inFile, const QString &outFile, bool cut, 
     if (m_mode == SkipAll && outFileInfo.exists())
         return true;
 
-    if ( m_mode == Overwrite || m_mode == OverwriteAll )
+    if (m_mode == Overwrite || m_mode == OverwriteAll)
     {
-        if ( !QFileInfo(outFile).isDir() )
+        if (!QFileInfo(outFile).isDir())
             remove(outFile);
-        if ( m_mode == Overwrite )
+        if (m_mode == Overwrite)
             m_mode = Continue;
     }
     else if (m_mode == Skip)
@@ -605,9 +601,6 @@ Manager::copyRecursive(const QString &inFile, const QString &outFile, bool cut, 
         else return true;
     }
 
-    if (cut && sameDisk && !m_canceled)
-        return QFile::rename(inFile, outFile); //if we move inside the same disk we just rename, very fast
-
     if (!clone(inFile, outFile))
         return false;
 
@@ -619,7 +612,7 @@ Manager::copyRecursive(const QString &inFile, const QString &outFile, bool cut, 
         while (dirIterator.hasNext())
         {
             const QString &name = QFileInfo(dirIterator.next()).fileName();
-            if (!copyRecursive( inDir.absoluteFilePath(name) , outDir.absoluteFilePath(name), cut, sameDisk ))
+            if (!copyRecursive(inDir.absoluteFilePath(name) , outDir.absoluteFilePath(name), cut, sameDisk))
                 return false;
         }
     }
@@ -682,7 +675,7 @@ Manager::clone(const QString &in, const QString &out)
 bool
 Manager::remove(const QString &path) const
 {
-    if ( m_canceled )
+    if (m_canceled)
         return false;
     if (!QFileInfo(path).isDir())
         QFile::remove(path);

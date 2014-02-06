@@ -28,7 +28,6 @@
 #include "viewcontainer.h"
 #include "application.h"
 #include <QBitmap>
-#include <QAbstractItemModel>
 #include <QMutexLocker>
 
 using namespace DFM;
@@ -55,13 +54,13 @@ void
 ThumbsLoader::fileRenamed(const QString &path, const QString &oldName, const QString &newName)
 {
     const QString &file = QDir(path).absoluteFilePath(oldName);
-    removeThumb(file);
+    _removeThumb(file);
 }
 
 void
-ThumbsLoader::removeThumb(const QString &file)
+ThumbsLoader::_removeThumb(const QString &file)
 {
-    if ( m_thumbs.contains(file) )
+    if (m_thumbs.contains(file))
     {
         m_thumbs.remove(file);
         m_dateCheck.remove(file);
@@ -77,9 +76,16 @@ ThumbsLoader::_hasIcon(const QString &dir) const
 QString
 ThumbsLoader::_icon(const QString &dir) const
 {
-    if ( _hasIcon(dir) )
+    if (_hasIcon(dir))
         return m_icons.value(dir);
     return QString();
+}
+
+void
+ThumbsLoader::_removeIcon(const QString &dir)
+{
+    if (m_icons.contains(dir))
+        m_icons.remove(dir);
 }
 
 bool
@@ -99,40 +105,47 @@ void
 ThumbsLoader::_queueFile(const QString &file)
 {
     QMutexLocker locker(&m_queueMutex);
-    if ( m_queue.contains(file) || _hasThumb(file) || _hasIcon(file) /*|| m_tried.contains(file)*/ )
+    if (_hasThumb(file) || _hasIcon(file) /*|| m_tried.contains(file)*/)
         return;
 
+    if (m_queue.contains(file))
+    {
+        int i = m_queue.indexOf(file);
+        m_queue.move(i, qMax(0, i-10));
+        return;
+    }
+
     m_queue << file;
-    if ( isPaused() )
+    if (isPaused())
         setPause(false);
 }
 
 QImage
 ThumbsLoader::_thumb(const QString &file) const
 {
-    if ( _hasThumb(file) )
+    if (_hasThumb(file))
         return m_thumbs.value(file);
     return QImage();
 }
 
 void
-ThumbsLoader::genThumb( const QString &path )
+ThumbsLoader::genThumb(const QString &path)
 {
     const QFileInfo fi(path);
-    if ( !fi.isReadable() )
+    if (!fi.isReadable())
     {
-        removeThumb(path);
+        _removeThumb(path);
         return;
     }
 
-    if ( fi.isDir() )
+    if (fi.isDir())
     {
         const QString &dirFile(fi.absoluteFilePath());
         const QString &settingsFile(QDir(dirFile).absoluteFilePath(".directory"));
         const QSettings settings(settingsFile, QSettings::IniFormat);
         const QString &iconName = settings.value("Desktop Entry/Icon").toString();
-        if ( !iconName.isEmpty() )
-            if ( !hasIcon(dirFile) )
+        if (!iconName.isEmpty())
+            if (!hasIcon(dirFile))
         {
             m_icons.insert(dirFile, iconName);
             emit thumbFor(path, iconName); 
@@ -140,9 +153,9 @@ ThumbsLoader::genThumb( const QString &path )
         return;
     }
     QImage image;
-    if ( !APP->activeThumbIfaces().isEmpty() )
-        for ( int i = 0; i<APP->activeThumbIfaces().count(); ++i )
-            if (APP->activeThumbIfaces().at(i)->thumb(path, m_extent, image) )
+    if (!APP->activeThumbIfaces().isEmpty())
+        for (int i = 0; i<APP->activeThumbIfaces().count(); ++i)
+            if (APP->activeThumbIfaces().at(i)->thumb(path, m_extent, image))
             {
                 m_dateCheck.insert(path, fi.lastModified().toString());
                 m_thumbs.insert(path, image);
@@ -159,7 +172,7 @@ ThumbsLoader::run()
 
     while (!m_quit)
     {
-        while ( !m_queue.isEmpty() )
+        while (!m_queue.isEmpty())
         {
             m_queueMutex.lock();
             const QString &file = m_queue.takeFirst();
@@ -182,7 +195,7 @@ ImagesThread::ImagesThread(QObject *parent)
 void
 ImagesThread::removeData(const QString &file)
 {
-    for ( int i = 0; i < 2; ++i )
+    for (int i = 0; i < 2; ++i)
         m_images[i].remove(file);
     m_imgQueue.remove(file);
 }
@@ -191,7 +204,7 @@ void
 ImagesThread::genImagesFor(const QString &file)
 {
     const QImage &source = m_imgQueue.take(file);
-    if ( !source.isNull() )
+    if (!source.isNull())
     {
         m_images[0].insert(file, Ops::flowImg(source));
         m_images[1].insert(file, Ops::reflection(source));
@@ -203,7 +216,7 @@ void
 ImagesThread::genNameIconsFor(const QString &name)
 {
     const QImage &source = m_nameQueue.take(name);
-    if ( !source.isNull() )
+    if (!source.isNull())
     {
         s_themeIcons[0].insert(name, Ops::flowImg(source));
         s_themeIcons[1].insert(name, Ops::reflection(source));
@@ -212,11 +225,11 @@ ImagesThread::genNameIconsFor(const QString &name)
 
 void ImagesThread::run()
 {
-    while ( !m_quit )
+    while (!m_quit)
     {
-        while ( !m_nameQueue.isEmpty() )
+        while (!m_nameQueue.isEmpty())
             genNameIconsFor(m_nameQueue.keys().first());
-        while ( !m_imgQueue.isEmpty() )
+        while (!m_imgQueue.isEmpty())
             genImagesFor(m_imgQueue.keys().first());
 
         setPause(!m_quit);
@@ -227,7 +240,7 @@ void ImagesThread::run()
 QImage
 ImagesThread::flowData(const QString &file, const bool refl)
 {
-    if ( hasData(file) )
+    if (hasData(file))
         return m_images[refl].value(file);
     return QImage();
 }
@@ -235,7 +248,7 @@ ImagesThread::flowData(const QString &file, const bool refl)
 QImage
 ImagesThread::flowNameData(const QString &name, const bool refl)
 {
-    if ( hasNameData(name) )
+    if (hasNameData(name))
         return s_themeIcons[refl].value(name);
     return QImage();
 }
@@ -255,26 +268,26 @@ ImagesThread::hasNameData(const QString &name)
 void
 ImagesThread::queueName(const QIcon &icon)
 {
-    if ( m_nameQueue.contains(icon.name()) || hasNameData(icon.name()) )
+    if (m_nameQueue.contains(icon.name()) || hasNameData(icon.name()))
         return;
 
     const QImage &source = icon.pixmap(SIZE).toImage();
     m_nameQueue.insert(icon.name(), source);
-    if ( isPaused() )
+    if (isPaused())
         setPause(false);
-    if ( !isRunning() )
+    if (!isRunning())
         start();
 }
 
 void
-ImagesThread::queueFile(const QString &file, const QImage &source, const bool force )
+ImagesThread::queueFile(const QString &file, const QImage &source, const bool force)
 {
-    if ( (m_imgQueue.contains(file) || m_images[0].contains(file)) && !force )
+    if ((m_imgQueue.contains(file) || m_images[0].contains(file)) && !force)
         return;
 
     m_imgQueue.insert(file, source);
-    if ( isPaused() )
+    if (isPaused())
         setPause(false);
-    if ( !isRunning() )
+    if (!isRunning())
         start();
 }

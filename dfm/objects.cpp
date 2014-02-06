@@ -20,6 +20,7 @@
 
 #include <QTextEdit>
 #include "filesystemmodel.h"
+#include "fsworkers.h"
 #include "objects.h"
 
 
@@ -87,7 +88,7 @@ FileItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
     const QString &oldName = index.data(Qt::EditRole).toString();
     edit->setText(oldName);
 
-    const bool isDir = static_cast<const FileSystemModel *>(index.model())->isDir(index);
+    const bool isDir = static_cast<const FS::Model *>(index.model())->isDir(index);
     QTextCursor tc = edit->textCursor();
     const int last = (isDir||!oldName.contains("."))?oldName.size():oldName.lastIndexOf(".");
     tc.setPosition(last, QTextCursor::KeepAnchor);
@@ -98,14 +99,14 @@ void
 FileItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
     QTextEdit *edit = qobject_cast<QTextEdit *>(editor);
-    FileSystemModel *fsModel = static_cast<FileSystemModel *>(model);
-    if ( !edit||!fsModel )
+    FS::Model *fsModel = static_cast<FS::Model *>(model);
+    if (!edit||!fsModel)
         return;
-    FileSystemNode *node = fsModel->fromIndex(index);
+    FS::Node *node = fsModel->fromIndex(index);
     const QString &newName = edit->toPlainText();
-    if ( node->name() == newName )
+    if (node->name() == newName)
         return;
-    if ( !node->rename(newName) )
+    if (!node->rename(newName))
         QMessageBox::warning(edit->window(), "Failed to rename", QString("%1 to %2").arg(node->name(), newName));
 }
 

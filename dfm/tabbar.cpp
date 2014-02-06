@@ -55,7 +55,7 @@ WinButton::WinButton(Type t, QWidget *parent)
     , m_type(t)
     , m_mainWin(MainWindow::currentWindow())
 {
-    switch ( t )
+    switch (t)
     {
     case Min:
         connect(this, SIGNAL(clicked()), m_mainWin, SLOT(showMinimized()));
@@ -90,7 +90,7 @@ WinButton::mousePressEvent(QMouseEvent *e)
 void
 WinButton::mouseReleaseEvent(QMouseEvent *e)
 {
-    if ( m_hasPress && rect().contains(e->pos()) )
+    if (m_hasPress && rect().contains(e->pos()))
         emit clicked();
     m_hasPress = false;
     e->accept();
@@ -111,7 +111,7 @@ static uint fcolors[3] = { 0xFFE55E4F, 0xFFF8C76D, 0xFFA1D886 };
 void
 WinButton::paintEvent(QPaintEvent *e)
 {
-    if ( !Store::config.styleSheet.isEmpty() )
+    if (!Store::config.styleSheet.isEmpty())
     {
         QFrame::paintEvent(e);
         return;
@@ -142,7 +142,7 @@ WinButton::paintEvent(QPaintEvent *e)
 void
 WinButton::toggleMax()
 {
-    if ( m_mainWin->isMaximized() )
+    if (m_mainWin->isMaximized())
         m_mainWin->showNormal();
     else
         m_mainWin->showMaximized();
@@ -159,7 +159,7 @@ FooBar::FooBar(QWidget *parent)
     , m_flags(Qt::Widget)
 {
     m_mainWin->installEventFilter(this);
-    if ( Store::config.behaviour.frame )
+    if (Store::config.behaviour.frame)
         m_frame = new WindowFrame(m_mainWin);
     m_toolBar->installEventFilter(this);
     m_toolBar->setAttribute(Qt::WA_NoSystemBackground);
@@ -174,10 +174,10 @@ int
 FooBar::headHeight(MainWindow *win)
 {
     int h = 0;
-    if ( FooBar *foo = win->findChild<FooBar *>() )
+    if (FooBar *foo = win->findChild<FooBar *>())
         h += foo->height();
-    if ( QToolBar *bar = win->toolBar() )
-        if ( bar->isVisible() )
+    if (QToolBar *bar = win->toolBar())
+        if (bar->isVisible())
             h += bar->height();
     return h;
 }
@@ -201,7 +201,7 @@ FooBar::correctTabBarHeight()
     confPix.fill(Qt::transparent);
     QPainter p(&confPix);
 
-    if ( Store::config.behaviour.invertedColors )
+    if (Store::config.behaviour.invertedColors)
     {
         fg = m_mainWin->palette().color(backgroundRole());
         bg = m_mainWin->palette().color(foregroundRole());
@@ -244,7 +244,7 @@ FooBar::correctTabBarHeight()
     tl->setContentsMargins(0, m_topMargin, 0, 0);
     tl->setSpacing(0);
     tl->addWidget(m_tabBar);
-    if ( Store::config.behaviour.windowsStyle )
+    if (Store::config.behaviour.windowsStyle)
     {
         layout->addWidget(menu);
         layout->addLayout(tl);
@@ -272,7 +272,7 @@ FooBar::correctTabBarHeight()
     m_tabBar->setFont(font);
     m_tabBar->setAttribute(Qt::WA_Hover);
     m_tabBar->setMouseTracking(true);
-    if ( Store::config.behaviour.newTabButton )
+    if (Store::config.behaviour.newTabButton)
     {
         TabButton *tb = new TabButton(m_tabBar);
         connect(tb, SIGNAL(clicked()), m_tabBar, SIGNAL(newTabRequest()));
@@ -290,7 +290,7 @@ FooBar::tab(const QRect &r, int round, TabShape shape)
 {
     int x = r.x(), y = r.y(), w = x+(r.width()-1), h = y+(r.height()-1);
     QPainterPath path;
-    if ( shape == Standard )
+    if (shape == Standard)
     {
         path.moveTo(x, h);
         path.quadTo(x+(round), h, x+round, h-round);
@@ -301,7 +301,7 @@ FooBar::tab(const QRect &r, int round, TabShape shape)
         path.lineTo(w-round, h-round);
         path.quadTo(w-round, h, w, h);
     }
-    else if ( shape == Chrome )
+    else if (shape == Chrome)
     {
         int half = h/2, hf = round/2;
         path.moveTo(x, h);
@@ -377,11 +377,11 @@ FooBar::paintEvent(QPaintEvent *e)
 bool
 FooBar::eventFilter(QObject *o, QEvent *e)
 {
-    if ( o == m_mainWin
-         && e->type() == QEvent::Resize )
+    if (o == m_mainWin
+         && e->type() == QEvent::Resize)
     {
         resize(m_mainWin->width(), height());
-        if ( Store::config.behaviour.frame )
+        if (Store::config.behaviour.frame)
         {
             m_frame->resize(m_mainWin->size());
             QRegion mask = m_frame->rect();
@@ -392,7 +392,7 @@ FooBar::eventFilter(QObject *o, QEvent *e)
         m_mainWin->setMask(shape());
         return false;
     }
-    if ( o == m_toolBar && e->type() == QEvent::Paint )
+    if (o == m_toolBar && e->type() == QEvent::Paint)
     {
         QPainter p(m_toolBar);
         p.setBrushOrigin(0, -m_tabBar->height());
@@ -422,7 +422,7 @@ FooBar::mouseReleaseEvent(QMouseEvent *e)
 void
 FooBar::mouseMoveEvent(QMouseEvent *e)
 {
-    if ( m_hasPress )
+    if (m_hasPress)
     {
         m_mainWin->move(m_mainWin->pos()+(e->globalPos()-m_pressPos));
         m_pressPos = e->globalPos();
@@ -431,7 +431,7 @@ FooBar::mouseMoveEvent(QMouseEvent *e)
 
 static QImage closer[2];
 
-static QImage closeImg( QColor color )
+static QImage closeImg(QColor color)
 {
     QImage img(QSize(16, 16), QImage::Format_ARGB32);
     img.fill(Qt::transparent);
@@ -450,8 +450,8 @@ static QImage closeImg( QColor color )
 void
 TabCloser::paintEvent(QPaintEvent *)
 {
-    if ( closer[0].isNull() )
-        for (int i = 0; i < 2; ++i )
+    if (closer[0].isNull())
+        for (int i = 0; i < 2; ++i)
     {
         int y = bg.value()>fg.value()?1:-1;
         closer[i] = QImage(QSize(16, 16), QImage::Format_ARGB32);
@@ -477,7 +477,7 @@ TabButton::paintEvent(QPaintEvent *e)
     int y = bg.value()>fg.value()?1:-1;
     QColor emb(Ops::colorMid(bg, /*y==1 ? */Qt::white /*: Qt::black*/, 2, 1));
 
-    if ( Store::config.behaviour.tabShape == FooBar::Chrome )
+    if (Store::config.behaviour.tabShape == FooBar::Chrome)
     {
         QRect pr(rect().adjusted(1, 1, -1, -1));
         int px = pr.x(), py = pr.y(), pw = pr.width()-1, ph = pr.height()-1;
@@ -506,7 +506,7 @@ TabButton::paintEvent(QPaintEvent *e)
     vert.moveCenter(rect().center());
     QRect hor(QPoint(0,0), QSize(8, 2));
     hor.moveCenter(rect().center());
-    if ( y == 1 )
+    if (y == 1)
     {
         vert.translate(0, -1);
         hor.translate(0, -1);
@@ -548,7 +548,7 @@ TabBar::TabBar(QWidget *parent)
 {
     setSelectionBehaviorOnRemove(QTabBar::SelectPreviousTab);
     setDocumentMode(true);
-    if ( !Store::config.behaviour.gayWindow )
+    if (!Store::config.behaviour.gayWindow)
         setTabsClosable(true);
     else
         setAttribute(Qt::WA_NoSystemBackground);
@@ -571,7 +571,7 @@ TabBar::setAddTabButton(QWidget *addButton)
 void
 TabBar::correctAddButtonPos()
 {
-    if ( !m_addButton || !count() )
+    if (!m_addButton || !count())
         return;
     int x = tabRect(count()-1).right()+Store::config.behaviour.tabOverlap/2;
     int y = qFloor((float)rect().height()/2.0f-(float)m_addButton->height()/2.0f);
@@ -581,10 +581,10 @@ TabBar::correctAddButtonPos()
 void
 TabBar::dragEnterEvent(QDragEnterEvent *e)
 {
-    if ( e->source() == this && e->mimeData()->property("tab").isValid() )
+    if (e->source() == this && e->mimeData()->property("tab").isValid())
         m_dropIndicator->show();
     m_hasPress = false;
-    if ( e->mimeData()->hasUrls() )
+    if (e->mimeData()->hasUrls())
         e->acceptProposedAction();
 }
 
@@ -596,7 +596,7 @@ TabBar::dragMoveEvent(QDragMoveEvent *e)
         m_filteringEvents = true;
         qApp->installEventFilter(this);
     }
-    if ( e->mimeData()->property("tab").isValid() && tabAt(e->pos()) != -1 )
+    if (e->mimeData()->property("tab").isValid() && tabAt(e->pos()) != -1)
     {
         QRect r = tabRect(tabAt(e->pos()));
         m_dropIndicator->setVisible(true);
@@ -608,6 +608,11 @@ void
 TabBar::dragLeaveEvent(QDragLeaveEvent *e)
 {
     m_dropIndicator->hide();
+    if (!m_filteringEvents)
+    {
+        m_filteringEvents = true;
+        qApp->installEventFilter(this);
+    }
 }
 
 void
@@ -619,23 +624,23 @@ TabBar::dropEvent(QDropEvent *e)
     MainWindow *w = MainWindow::window(this);
     int tab = tabAt(e->pos());
     QRect r = tabRect(tab);
-    if ( e->mimeData()->property("tab").isValid() ) //dragging a tab
+    if (e->mimeData()->property("tab").isValid()) //dragging a tab
     {
-        if ( e->source() == this && r.isValid() ) //dragging a tab inside tabbar
+        if (e->source() == this && r.isValid()) //dragging a tab inside tabbar
         {
             int fromTab = e->mimeData()->property("tab").toInt();
             int toTab = tab;
-            if ( tab > fromTab && e->pos().x() < r.center().x() )
+            if (tab > fromTab && e->pos().x() < r.center().x())
                 --toTab;
-            else if ( tab < fromTab && e->pos().x() > r.center().x() )
+            else if (tab < fromTab && e->pos().x() > r.center().x())
                 ++toTab;
-            if ( fromTab != toTab )
+            if (fromTab != toTab)
                 moveTab(fromTab, toTab);
         }
         else if (e->source() != this) //from a tabbar in another window
         {
             int toTab = r.isValid()?tab:count();
-            if ( r.isValid() && e->pos().x() > r.center().x() )
+            if (r.isValid() && e->pos().x() > r.center().x())
                 ++toTab;
             MainWindow *sourceWin = MainWindow::window(static_cast<QWidget *>(e->source()));
             ViewContainer *container = sourceWin->takeContainer(e->mimeData()->property("tab").toInt());
@@ -644,16 +649,16 @@ TabBar::dropEvent(QDropEvent *e)
     }
     else
     {
-        if ( r.isValid() )
+        if (r.isValid())
         {
             const QString &dest = w->containerForTab(tab)->model()->rootPath();
             IO::Manager::copy(e->mimeData()->urls(), dest, true, true);
         }
         else
         {
-            if ( e->mimeData()->urls().count() == 1 || QMessageBox::question(w, tr("Are you sure?"), QString(tr("You are about to open %1 tabs").arg(e->mimeData()->urls().count())), QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes )
-                foreach ( const QUrl &file, e->mimeData()->urls() )
-                    if ( QFileInfo(file.toLocalFile()).isDir() )
+            if (e->mimeData()->urls().count() == 1 || QMessageBox::question(w, tr("Are you sure?"), QString(tr("You are about to open %1 tabs").arg(e->mimeData()->urls().count())), QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes)
+                foreach (const QUrl &file, e->mimeData()->urls())
+                    if (QFileInfo(file.toLocalFile()).isDir())
                         w->addTab(file.toLocalFile());
         }
     }
@@ -664,7 +669,7 @@ void
 TabBar::resizeEvent(QResizeEvent *e)
 {
     QTabBar::resizeEvent(e);
-    if ( Store::config.behaviour.gayWindow && m_addButton )
+    if (Store::config.behaviour.gayWindow && m_addButton)
         correctAddButtonPos();
 }
 
@@ -685,10 +690,10 @@ void
 TabBar::mousePressEvent(QMouseEvent *e)
 {
     e->accept();
-    if ( e->button() == Qt::LeftButton )
+    if (e->button() == Qt::LeftButton)
     {
         m_hasPress = true;
-        if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
+        if (FooBar *bar = MainWindow::window(this)->findChild<FooBar *>())
             QCoreApplication::sendEvent(bar, e);
     }
 }
@@ -717,16 +722,16 @@ void
 TabBar::mouseMoveEvent(QMouseEvent *e)
 {
     QTabBar::mouseMoveEvent(e);
-    if ( Store::config.behaviour.gayWindow )
+    if (Store::config.behaviour.gayWindow)
     {
         int t = tabAt(e->pos());
-        if ( tabRect(t).isValid() )
+        if (tabRect(t).isValid())
             m_hoveredTab = t;
         else
             m_hoveredTab = -1;
         update();
     }
-    if ( m_hasPress && tabAt(e->pos()) != -1 )
+    if (m_hasPress && tabAt(e->pos()) != -1)
     {
         m_dragCancelled = false;
         QDrag *drag = new QDrag(this);
@@ -738,7 +743,7 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
         data->setProperty("tab", tabAt(e->pos()));
         drag->setMimeData(data);
         QWidget *w = MainWindow::currentWindow()->containerForTab(tabAt(e->pos()));
-        if ( tabAt(e->pos()) != currentIndex() )
+        if (tabAt(e->pos()) != currentIndex())
             w->resize(MainWindow::currentWindow()->containerForTab(currentIndex())->size());
         QPixmap pix(w->size());
         w->render(&pix);
@@ -751,11 +756,11 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
             qApp->removeEventFilter(this);
         m_filteringEvents = false;
     }
-    if ( FooBar *bar = MainWindow::window(this)->findChild<FooBar *>() )
+    if (FooBar *bar = MainWindow::window(this)->findChild<FooBar *>())
         QCoreApplication::sendEvent(bar, e);
-    if ( m_hasPress )
+    if (m_hasPress)
         m_hasPress = false;
-    if ( m_dropIndicator->isVisible() )
+    if (m_dropIndicator->isVisible())
         m_dropIndicator->setVisible(false);
 }
 
@@ -763,12 +768,12 @@ void
 TabBar::leaveEvent(QEvent *e)
 {
     QTabBar::leaveEvent(e);
-    if ( Store::config.behaviour.gayWindow )
+    if (Store::config.behaviour.gayWindow)
     {
         m_hoveredTab = -1;
         update();
     }
-    if ( m_hasPress )
+    if (m_hasPress)
         m_hasPress = false;
 }
 
@@ -776,7 +781,7 @@ void
 TabBar::mouseReleaseEvent(QMouseEvent *e)
 {
     e->accept();
-    if ( m_hasPress && tabAt(e->pos()) != -1 )
+    if (m_hasPress && tabAt(e->pos()) != -1)
         setCurrentIndex(tabAt(e->pos()));
     m_hasPress = false;
     if (e->button() == Qt::MiddleButton && tabAt(e->pos()) > -1 && count() > 1)
@@ -788,7 +793,7 @@ TabBar::tabCloseRequest()
 {
     TabCloser *tc = static_cast<TabCloser *>(sender());
     int index = tabAt(tc->geometry().center());
-    if ( count() > 1 )
+    if (count() > 1)
         emit tabCloseRequested(index);
 }
 
@@ -797,7 +802,7 @@ TabBar::drawTab(QPainter *p, int index)
 {
     QRect r(tabRect(index));
     QString s(tabText(index));
-    if ( !r.isValid() )
+    if (!r.isValid())
         return;
 
     FooBar::TabShape tabShape = (FooBar::TabShape)Store::config.behaviour.tabShape;
@@ -805,15 +810,15 @@ TabBar::drawTab(QPainter *p, int index)
     int overlap = Store::config.behaviour.tabOverlap;
     QRect shape(r.adjusted(-overlap, 1, overlap, 0));
 
-    if ( shape.left() < rect().left() )
+    if (shape.left() < rect().left())
         shape.setLeft(rect().left());
-    if ( shape.right() > rect().right() )
+    if (shape.right() > rect().right())
         shape.setRight(rect().right());
 
     p->setPen(QPen(low, 3.0f));
     p->drawPath(FooBar::tab(shape, rndNess, tabShape)); //dark frame on all tabs
 
-    if ( index == currentIndex() )
+    if (index == currentIndex())
     {
         p->setPen(high);
         p->drawLine(rect().bottomLeft(), rect().bottomRight());
@@ -884,7 +889,7 @@ TabBar::drawTab(QPainter *p, int index)
 void
 TabBar::paintEvent(QPaintEvent *event)
 {
-    if ( !Store::config.behaviour.gayWindow )
+    if (!Store::config.behaviour.gayWindow)
     {
         QTabBar::paintEvent(event);
         return;
@@ -894,9 +899,9 @@ TabBar::paintEvent(QPaintEvent *event)
     p.setRenderHint(QPainter::Antialiasing);
     p.translate(0.5f, 0.5f);
 
-    for ( int i = 0; i < currentIndex(); ++i )
+    for (int i = 0; i < currentIndex(); ++i)
         drawTab(&p, i);
-    for ( int i = count(); i > currentIndex(); --i )
+    for (int i = count(); i > currentIndex(); --i)
         drawTab(&p, i);
     p.setPen(low);
     p.drawLine(0, height()-2, width(), height()-2);
@@ -907,7 +912,7 @@ TabBar::paintEvent(QPaintEvent *event)
 QSize
 TabBar::tabSizeHint(int index) const
 {
-    if ( Store::config.behaviour.gayWindow )
+    if (Store::config.behaviour.gayWindow)
         return QSize(qMin(Store::config.behaviour.tabWidth,(width()/count())-(m_addButton?qCeil(((float)m_addButton->width()/(float)count())+2):0)), Store::config.behaviour.tabHeight/*QTabBar::tabSizeHint(index).height()+3*/);
     else
         return QSize(qMin(150,width()/count()), QTabBar::tabSizeHint(index).height());
@@ -917,7 +922,7 @@ void
 TabBar::tabInserted(int index)
 {
     QTabBar::tabInserted(index);
-    if ( Store::config.behaviour.gayWindow )
+    if (Store::config.behaviour.gayWindow)
     {
         TabCloser *tc = new TabCloser();
         connect(tc, SIGNAL(clicked()), this, SLOT(tabCloseRequest()));
@@ -930,6 +935,6 @@ void
 TabBar::tabRemoved(int index)
 {
     QTabBar::tabRemoved(index);
-    if ( Store::config.behaviour.gayWindow )
+    if (Store::config.behaviour.gayWindow)
         correctAddButtonPos();
 }

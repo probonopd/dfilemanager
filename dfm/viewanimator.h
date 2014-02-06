@@ -43,7 +43,7 @@ public slots:
     void indexHovered(const QModelIndex &index);
     void removeHoveredIndex();
     void animEvent();
-    void rowsRemoved( const QModelIndex & parent, int start, int end );
+    void rowsRemoved(const QModelIndex & parent, int start, int end);
     inline void clear() { m_hoverLevel.clear(); }
 
 signals:

@@ -22,7 +22,7 @@ bool
 ThumbsImages::thumb(const QString &file, const int size, QImage &thumb)
 {
     QImageReader ir(file);
-    if ( !ir.canRead()||!canRead(file) )
+    if (!ir.canRead()||!canRead(file))
         return false;
 
     //sometimes ir.size() doesnt return a valid size,
@@ -30,18 +30,18 @@ ThumbsImages::thumb(const QString &file, const int size, QImage &thumb)
     //then we have to scale them later after we have
     //the full image. This is slower.
     QSize thumbsize(ir.size());
-    if ( thumbsize.isValid() && qMax( thumbsize.width(), thumbsize.height() ) > size )
-        thumbsize.scale( size, size, Qt::KeepAspectRatio );
+    if (thumbsize.isValid() && qMax(thumbsize.width(), thumbsize.height()) > size)
+        thumbsize.scale(size, size, Qt::KeepAspectRatio);
     ir.setScaledSize(thumbsize);
 
     QImage img(ir.read());
 
     //if the thumbsize isnt valid then we need to scale the
     //image after loading the whole image.
-    if ( qMax( img.size().width(), img.size().height() ) > size )
+    if (qMax(img.size().width(), img.size().height()) > size)
     {
         QSize sz(img.size());
-        sz.scale( size, size, Qt::KeepAspectRatio );
+        sz.scale(size, size, Qt::KeepAspectRatio);
         img = img.scaled(sz, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     }
     thumb = img;
@@ -53,8 +53,8 @@ static QStringList suf;
 QStringList
 ThumbsImages::suffixes() const
 {
-    if ( suf.isEmpty() )
-        for ( int i = 0; i < QImageReader::supportedImageFormats().count(); ++i )
+    if (suf.isEmpty())
+        for (int i = 0; i < QImageReader::supportedImageFormats().count(); ++i)
             suf << QString(QImageReader::supportedImageFormats().at(i));
     return suf;
 }

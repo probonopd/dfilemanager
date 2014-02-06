@@ -14,16 +14,16 @@ ThumbsVideos::init()
 bool
 ThumbsVideos::thumb(const QString &file, const int size, QImage &thumb)
 {
-    if ( !canRead(file) )
+    if (!canRead(file))
         return false;
     try
     {
         std::vector<uint8_t> pixels;
         m_vt.generateThumbnail(file.toStdString(), Png, pixels);
-        if ( thumb.loadFromData(pixels.data(), pixels.size(), "PNG") )
+        if (thumb.loadFromData(pixels.data(), pixels.size(), "PNG"))
             return true;
     }
-    catch ( std::exception &e )
+    catch (std::exception &e)
     {
         qDebug() << e.what();
         return false;

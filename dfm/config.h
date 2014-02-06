@@ -70,7 +70,7 @@ typedef struct Config
         struct iconView
         {
             bool smoothScroll, categorized;
-            int textWidth, iconSize, lineCount;
+            int textWidth, iconSize, lineCount, categoryStyle;
         } iconView;
         struct detailsView
         {
@@ -99,7 +99,7 @@ public:
     static Config config;
 
 protected:
-    explicit Store( QObject *parent = 0 );
+    explicit Store(QObject *parent = 0);
     void readConfiguration();
     void writeConfiguration();
     inline QList<QAction *> ca() const { return m_customActions; }

@@ -35,7 +35,7 @@
 namespace DFM
 {
 
-class FileSystemModel;
+namespace FS{class Model;}
 class DeleteDialog : public QDialog
 {
     Q_OBJECT
@@ -49,7 +49,7 @@ private:
     QVBoxLayout *m_vLayout;
     QHBoxLayout *m_hLayout, *m_hl;
     QLabel *m_textLabel, *m_pixLabel;
-    FileSystemModel *m_fsModel;
+    FS::Model *m_fsModel;
 };
 
 }

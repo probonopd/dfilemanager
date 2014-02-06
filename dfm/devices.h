@@ -44,11 +44,11 @@ class Device : public QObject
     Q_OBJECT
 public:
 #ifdef Q_OS_UNIX
-    Device( Solid::Device solid = Solid::Device() );
+    Device(Solid::Device solid = Solid::Device());
 #endif
-    Device( const QFileInfo &dev = QFileInfo() );
+    Device(const QFileInfo &dev = QFileInfo());
     ~Device() {}
-    void setMounted( const bool mount );
+    void setMounted(const bool mount);
     bool isMounted() const;
     QString mountPath() const;
     QString devPath() const;
@@ -74,7 +74,7 @@ class Devices : public QObject
 {
     Q_OBJECT
 public:
-    Devices( QObject *parent = 0 );
+    Devices(QObject *parent = 0);
     QList<Device *> devices() { return m_devices.values(); }
 
 signals:
@@ -84,8 +84,8 @@ signals:
 private slots:
     void populate();
 #ifdef Q_OS_UNIX
-    void deviceAdded( const QString &dev );
-    void deviceRemoved( const QString &dev );
+    void deviceAdded(const QString &dev);
+    void deviceRemoved(const QString &dev);
 #endif
 
 private:

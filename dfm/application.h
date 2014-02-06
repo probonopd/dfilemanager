@@ -72,16 +72,16 @@ public:
 //    bool notify(QObject * receiver, QEvent * event);
 
 signals:
-    void lastMessage( const QStringList &message );
+    void lastMessage(const QStringList &message);
 
 private slots:
     void fileChanged(const QString &file);
 
 #if 0
-    inline void manageDock( DFM::Docks::DockWidget *dock ) { m_docks << dock; }
-    inline void setMainWindow( QMainWindow *mainWin ) { m_mainWindow = mainWin; }
+    inline void manageDock(DFM::Docks::DockWidget *dock) { m_docks << dock; }
+    inline void setMainWindow(QMainWindow *mainWin) { m_mainWindow = mainWin; }
     inline QMainWindow *mainWindow() { return m_mainWindow; }
-    inline void setPlacesView( DFM::PlacesView *places ) { m_places = places; }
+    inline void setPlacesView(DFM::PlacesView *places) { m_places = places; }
     inline DFM::PlacesView *placesView() { return m_places; }
 #endif
 #ifdef Q_WS_X11

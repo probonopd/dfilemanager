@@ -47,10 +47,10 @@ void
 Device::setMounted(const bool mount)
 {
 #ifdef Q_OS_UNIX
-    if ( !m_solid.isValid() )
+    if (!m_solid.isValid())
         return;
 
-    if ( mount )
+    if (mount)
         m_solid.as<Solid::StorageAccess>()->setup();
     else
         m_solid.as<Solid::StorageAccess>()->teardown();
@@ -147,7 +147,7 @@ Devices::Devices(QObject *parent)
     connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceAdded(QString)), this, SLOT(deviceAdded(QString)));
     connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceRemoved(QString)), this, SLOT(deviceRemoved(QString)));
 #else // Q_OS_WIN
-    connect ( m_timer, SIGNAL(timeout()), this, SLOT(populate()) );
+    connect (m_timer, SIGNAL(timeout()), this, SLOT(populate()));
     m_timer->start(5000);
 #endif
     populate();
@@ -158,7 +158,7 @@ void
 Devices::deviceAdded(const QString &dev)
 {
     Solid::Device device = Solid::Device(dev);
-    if ( device.is<Solid::StorageAccess>() )
+    if (device.is<Solid::StorageAccess>())
     {
         Device *d = new Device(device);
         m_devices.insert(dev, d);
@@ -169,7 +169,7 @@ Devices::deviceAdded(const QString &dev)
 void
 Devices::deviceRemoved(const QString &dev)
 {
-    if ( m_devices.contains(dev) )
+    if (m_devices.contains(dev))
     {
         Device *d = m_devices.take(dev);
         emit deviceRemoved(d);
@@ -181,22 +181,22 @@ void
 Devices::populate()
 {
 #ifdef Q_OS_UNIX
-    foreach ( Solid::Device dev, Solid::Device::listFromType(Solid::DeviceInterface::StorageAccess) )
+    foreach (Solid::Device dev, Solid::Device::listFromType(Solid::DeviceInterface::StorageAccess))
     {
         Device *d = new Device(dev);
         m_devices.insert(dev.udi(), d);
     }
 #else
     QFileInfoList drives = QDir::drives();
-    for ( int i = 0; i<drives.count(); ++i )
-        if ( !m_devices.contains(drives.at(i).filePath()) )
+    for (int i = 0; i<drives.count(); ++i)
+        if (!m_devices.contains(drives.at(i).filePath()))
         {
             Device *d = new Device(drives.at(i));
             m_devices.insert(drives.at(i).filePath(), d);
             emit deviceAdded(d);
         }
-    foreach ( const QString &dev, m_devices.keys() )
-        if ( !drives.contains(QFileInfo(dev)) )
+    foreach (const QString &dev, m_devices.keys())
+        if (!drives.contains(QFileInfo(dev)))
         {
             Device *d = m_devices.take(dev);
             emit deviceRemoved(d);

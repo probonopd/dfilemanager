@@ -56,9 +56,9 @@ DeleteDialog::DeleteDialog(const QModelIndexList &idxList, QWidget *parent) : QD
 
     setLayout(m_vLayout);
 
-    connect( m_ok,SIGNAL(released()),this,
+    connect(m_ok,SIGNAL(released()),this,
              SLOT(accept()));
-    connect( m_cancel, SIGNAL(released()),this,
+    connect(m_cancel, SIGNAL(released()),this,
              SLOT(reject()));
 
     m_model->clear();
@@ -70,7 +70,7 @@ DeleteDialog::DeleteDialog(const QModelIndexList &idxList, QWidget *parent) : QD
 
     foreach(QModelIndex index, idxList)
     {
-        QStandardItem *item = new QStandardItem(m_fsModel->fileIcon(index), m_fsModel->filePath(index));
+        QStandardItem *item = new QStandardItem(m_fsModel->fileIcon(index), m_fsModel->url(index).toLocalFile());
         item->setEditable(false);
         item->setSelectable(false);
         m_model->appendRow(item);

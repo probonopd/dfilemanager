@@ -34,12 +34,12 @@ class DetailsDelegate : public FileItemDelegate
 public:
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        if ( !index.data().isValid() )
+        if (!index.data().isValid())
             return;
         painter->save();
         const bool isHovered = option.state & QStyle::State_MouseOver;
         const bool isSelected = option.state & QStyle::State_Selected;
-        if ( index.column() > 0 &&  !isHovered && !isSelected )
+        if (index.column() > 0 &&  !isHovered && !isSelected)
             painter->setOpacity(0.66);
         FileItemDelegate::paint(painter, option, index);
         painter->restore();
@@ -81,9 +81,9 @@ ViewContainer
 *DetailsView::container()
 {
     QWidget *w = this;
-    while ( w )
+    while (w)
     {
-        if ( ViewContainer *c = qobject_cast<ViewContainer *>(w) )
+        if (ViewContainer *c = qobject_cast<ViewContainer *>(w))
             return c;
         w = w->parentWidget();
     }
@@ -93,7 +93,7 @@ ViewContainer
 void
 DetailsView::sortingChanged(const int column, const int order)
 {
-    if ( header() && model() == m_model && column>-1&&column<header()->count() )
+    if (header() && model() == m_model && column>-1&&column<header()->count())
     {
         header()->blockSignals(true);
         header()->setSortIndicator(column, (Qt::SortOrder)order);
@@ -118,8 +118,8 @@ void
 DetailsView::setModel(QAbstractItemModel *model)
 {
     QTreeView::setModel(model);
-    m_model = qobject_cast<FileSystemModel *>(model);
-    for ( int i = 0; i<header()->count(); ++i )
+    m_model = qobject_cast<FS::Model *>(model);
+    for (int i = 0; i<header()->count(); ++i)
 #if QT_VERSION < 0x050000
         header()->setResizeMode(i, QHeaderView::Fixed);
 #else
@@ -130,15 +130,15 @@ DetailsView::setModel(QAbstractItemModel *model)
 void
 DetailsView::keyPressEvent(QKeyEvent *event)
 {
-    if ( event->key() == Qt::Key_Escape )
+    if (event->key() == Qt::Key_Escape)
         clearSelection();
-    if ( event->key() == Qt::Key_Return
+    if (event->key() == Qt::Key_Return
          && event->modifiers() == Qt::NoModifier
-         && state() == NoState )
+         && state() == NoState)
     {
-        if ( selectionModel()->selectedIndexes().count() )
-            foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
-                if ( !index.column() )
+        if (selectionModel()->selectedIndexes().count())
+            foreach (const QModelIndex &index, selectionModel()->selectedIndexes())
+                if (!index.column())
                     emit opened(index);
         event->accept();
         return;
@@ -147,36 +147,24 @@ DetailsView::keyPressEvent(QKeyEvent *event)
 }
 
 void
-DetailsView::setFilter(QString filter)
-{
-    for (int i = 0; i < model()->rowCount(rootIndex()); i++)
-    {
-        if (model()->index(i,0,rootIndex()).data().toString().toLower().contains(filter.toLower()))
-            setRowHidden(i,rootIndex(), false);
-        else
-            setRowHidden(i,rootIndex(),true);
-    }
-}
-
-void
 DetailsView::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu popupMenu;
-    if ( Store::customActions().count() )
+    if (Store::customActions().count())
         popupMenu.addMenu(Store::customActionsMenu());
-    popupMenu.addActions( actions() );
-    const QString &file = static_cast<FileSystemModel *>( model() )->filePath( indexAt( event->pos() ) );
-    QMenu openWith( tr( "Open With" ), this );
-    openWith.addActions( Store::openWithActions( file ) );
-    foreach( QAction *action, actions() )
+    popupMenu.addActions(actions());
+    const QString &file = static_cast<FS::Model *>(model())->url(indexAt(event->pos())).toLocalFile();
+    QMenu openWith(tr("Open With"), this);
+    openWith.addActions(Store::openWithActions(file));
+    foreach(QAction *action, actions())
     {
-        popupMenu.addAction( action );
-        if ( action->objectName() == "actionDelete" )
-            popupMenu.insertSeparator( action );
-        if ( action->objectName() == "actionCustomCmd" )
-            popupMenu.insertMenu( action, &openWith );
+        popupMenu.addAction(action);
+        if (action->objectName() == "actionDelete")
+            popupMenu.insertSeparator(action);
+        if (action->objectName() == "actionCustomCmd")
+            popupMenu.insertMenu(action, &openWith);
     }
-    popupMenu.exec( event->globalPos() );
+    popupMenu.exec(event->globalPos());
 }
 
 void
@@ -185,18 +173,18 @@ DetailsView::mouseReleaseEvent(QMouseEvent *e)
     setDragEnabled(true);
     const QModelIndex &index = indexAt(e->pos());
 
-    if ( !index.isValid() )
+    if (!index.isValid())
     {
         QTreeView::mouseReleaseEvent(e);
         return;
     }
 
-    if ( Store::config.views.singleClick
+    if (Store::config.views.singleClick
          && !e->modifiers()
          && e->button() == Qt::LeftButton
          && m_pressedIndex == index.internalPointer()
          && visualRect(index).contains(e->pos()) //clicking on expanders should not open the dir...
-         && !state() )
+         && !state())
     {
         emit opened(index);
         e->accept();
@@ -234,6 +222,6 @@ DetailsView::resizeEvent(QResizeEvent *event)
     setColumnWidth(2, qRound(w*0.08f));
     setColumnWidth(3, qRound(w*0.2f));
 //    setColumnWidth(4, qRound(w*0.07f));
-//    for ( int i = 1; i < header()->count(); ++i )
+//    for (int i = 1; i < header()->count(); ++i)
 //        setColumnWidth(i, w*0.1f);
 }

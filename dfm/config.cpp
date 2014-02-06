@@ -44,7 +44,7 @@ Store::Store(QObject *parent) : QObject(parent)
 Store
 *Store::instance()
 {
-    if ( !s_instance )
+    if (!s_instance)
         s_instance = new Store(qApp);
     return s_instance;
 }
@@ -54,7 +54,7 @@ Store::readConfiguration()
 {
     config.pluginPath = settings()->value("pluginPath", QString()).toString();
 
-    config.docks.lock = settings()->value( "docks.lock", 0 ).toInt();
+    config.docks.lock = settings()->value("docks.lock", 0).toInt();
     config.docks.infoArea = settings()->value("docks.infoArea", 8).toInt();
     config.startPath = settings()->value("startPath", QDir::homePath()).toString();
     config.styleSheet = settings()->value("styleSheet", QString()).toString();
@@ -77,6 +77,7 @@ Store::readConfiguration()
     config.views.iconView.iconSize = settings()->value("iconView.iconSize", 3).toInt();
     config.views.iconView.lineCount = settings()->value("iconView.lineCount", 3).toInt();
     config.views.iconView.categorized = settings()->value("iconView.categorized", false).toBool();
+    config.views.iconView.categoryStyle = settings()->value("iconView.categoryStyle", 0).toInt();
 
     config.behaviour.gayWindow = settings()->value("behaviour.gayWindow", false).toBool();
     config.behaviour.tabShape = settings()->value("behaviour.gayWindow.tabShape", 0).toInt();
@@ -100,13 +101,13 @@ Store::readConfiguration()
     config.behaviour.invActBookmark = settings()->value("behaviour.invActBookmark", false).toBool();
 
     settings()->beginGroup("CustomActions");
-    foreach ( const QString &string, settings()->childKeys() )
+    foreach (const QString &string, settings()->childKeys())
     {
         QStringList actions = settings()->value(string).toStringList(); //0 == name, 1 == cmd, 2 == keysequence
         QAction *action = new QAction(actions[0], this);
-        connect ( action, SIGNAL(triggered()), Ops::instance(), SLOT(customActionTriggered()) );
+        connect (action, SIGNAL(triggered()), Ops::instance(), SLOT(customActionTriggered()));
         action->setData(actions[1]);
-        if ( actions.count() > 2 )
+        if (actions.count() > 2)
             action->setShortcut(QKeySequence(actions[2]));
         m_customActions << action;
         m_customActionsMenu.addAction(action);
@@ -116,12 +117,12 @@ Store::readConfiguration()
     APP->loadPlugins();
 
 //    Configuration::settings()->beginGroup("Scripts");
-//    foreach ( const QString &string, Configuration::settings()->childKeys())
+//    foreach (const QString &string, Configuration::settings()->childKeys())
 //    {
 //        QStringList actions = Configuration::settings()->value(string).toStringList(); //0 == name, 1 == script, 2 == keysequence
 //        QAction *action = new QAction(actions[0], this);
 //        action->setData(actions[1]);
-//        if ( actions.count() > 2 )
+//        if (actions.count() > 2)
 //            action->setShortcut(QKeySequence(actions[2]));
 //        connect (action, SIGNAL(triggered()), this, SLOT(scriptTriggered()));
 //        VIEWS(addAction(action));
@@ -152,7 +153,7 @@ Store::writeConfiguration()
 
     settings()->setValue("views.dirSettings", config.views.dirSettings);
 
-    if ( !config.behaviour.gayWindow )
+    if (!config.behaviour.gayWindow)
         settings()->setValue("hideTabBarWhenOnlyOne", config.behaviour.hideTabBarWhenOnlyOneTab);
     settings()->setValue("styleSheet", config.styleSheet);
     settings()->setValue("views.singleClick", config.views.singleClick);
@@ -309,7 +310,7 @@ Store::openWithActions(const QString &file)
 
     QFile mimeInfo("/usr/share/applications/mimeinfo.cache");
     mimeInfo.open(QFile::ReadOnly);
-    QStringList mimeList = QString( mimeInfo.read( QFileInfo( mimeInfo ).size() ) ).split( "\n", QString::SkipEmptyParts );
+    QStringList mimeList = QString(mimeInfo.read(QFileInfo(mimeInfo).size())).split("\n", QString::SkipEmptyParts);
     mimeInfo.close();
 
     QMap<QString, QStringList> appsMap;
@@ -332,11 +333,11 @@ Store::openWithActions(const QString &file)
     foreach(QString app, apps)
     {
         const QString &name = desktopInfo(app, true);
-        if ( name.isEmpty() )
+        if (name.isEmpty())
             continue;
         QAction *action = new QAction(name, instance());
         action->setProperty("file", file);
-        connect( action, SIGNAL( triggered() ), Ops::instance(), SLOT( openWith() ) ) ;
+        connect(action, SIGNAL(triggered()), Ops::instance(), SLOT(openWith())) ;
         QVariant var;
         var.setValue(desktopInfo(app, false));
         action->setData(var);
@@ -410,7 +411,7 @@ Store::openWithActions(const QString &file)
 
         QAction *action = new QAction(appName, instance());
         action->setProperty("file", QDir::toNativeSeparators(file));
-        connect( action, SIGNAL( triggered() ), Ops::instance(), SLOT( openWith() ) ) ;
+        connect(action, SIGNAL(triggered()), Ops::instance(), SLOT(openWith())) ;
         action->setData(QVariant::fromValue(app));
         actionList << action;
     }

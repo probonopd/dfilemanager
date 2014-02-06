@@ -58,42 +58,45 @@ RecentFoldersView::paletteOps()
     {
         viewport()->setAutoFillBackground(true);
         //base color... slight hihglight tint
-        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), qApp->palette().color( QPalette::Highlight ), 10, 1 );
-        pal.setColor( bg, Ops::colorMid( Qt::black, midC, 1, 10 ) );
-        pal.setColor( fg, qApp->palette().color(fg) );
+        QColor midC = Ops::colorMid(pal.color(QPalette::Base), qApp->palette().color(QPalette::Highlight), 10, 1);
+        pal.setColor(bg, Ops::colorMid(Qt::black, midC, 1, 10));
+        pal.setColor(fg, qApp->palette().color(fg));
     }
     else if (Store::config.behaviour.sideBarStyle == 2)
     {
-        pal.setColor(bg, Ops::colorMid( fgc, qApp->palette().color( QPalette::Highlight ), 10, 1 ));
+        pal.setColor(bg, Ops::colorMid(fgc, qApp->palette().color(QPalette::Highlight), 10, 1));
         pal.setColor(fg, bgc);
     }
     else if (Store::config.behaviour.sideBarStyle == 3)
     {
         const QColor &wtext = pal.color(QPalette::WindowText), w = pal.color(QPalette::Window);
-        pal.setColor(bg, Ops::colorMid( wtext, qApp->palette().color( QPalette::Highlight ), 10, 1 ));
+        pal.setColor(bg, Ops::colorMid(wtext, qApp->palette().color(QPalette::Highlight), 10, 1));
         pal.setColor(fg, w);
     }
     setPalette(pal);
 }
 
 void
-RecentFoldersView::folderEntered(const QString &folder)
+RecentFoldersView::folderEntered(const QUrl &url)
 {
+    const QString &folder = url.toLocalFile();
+    if (!QFileInfo(folder).exists())
+        return;
     const QString &folderName = QFileInfo(folder).fileName().isEmpty()?folder:QFileInfo(folder).fileName();
     QList<QStandardItem *> l = m_model->findItems(folderName);
-    if ( l.count() )
-        foreach ( QStandardItem *item, l )
-            if ( item->data().toString() == folder )
+    if (l.count())
+        foreach (QStandardItem *item, l)
+            if (item->data().toString() == folder)
             {
-                m_model->insertRow(0, m_model->takeRow( item->row() ));
+                m_model->insertRow(0, m_model->takeRow(item->row()));
                 return;
             }
 
     ViewContainer *vc = MainWindow::currentContainer();
-    FileSystemModel *fsModel = vc->model();
+    FS::Model *fsModel = vc->model();
     if (!fsModel)
         return;
-    QIcon icon(fsModel->fileIcon(fsModel->index(folder)));
+    QIcon icon(fsModel->fileIcon(fsModel->index(QUrl::fromLocalFile(folder))));
     if (icon.isNull())
         icon = QFileIconProvider().icon(QFileIconProvider::Folder);
     QStandardItem *item = new QStandardItem(icon, folderName);
@@ -105,6 +108,6 @@ RecentFoldersView::folderEntered(const QString &folder)
 void
 RecentFoldersView::itemActivated(const QModelIndex &index)
 {
-    if ( index.isValid() )
-        emit recentFolderClicked( m_model->itemFromIndex(index)->data().toString() );
+    if (index.isValid())
+        emit recentFolderClicked(QUrl::fromLocalFile(m_model->itemFromIndex(index)->data().toString()));
 }

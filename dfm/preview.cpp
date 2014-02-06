@@ -89,7 +89,7 @@ void
 GraphicsScene::drawBackground(QPainter *painter, const QRectF &rect)
 {
     //    QGraphicsScene::drawBackground(painter, rect);
-    if ( !bg.isValid() )
+    if (!bg.isValid())
     {
         bg = Ops::colorMid(palette().color(QPalette::Highlight), Qt::black);
         bg.setHsv(bg.hue(), qMin(64, bg.saturation()), bg.value(), bg.alpha());
@@ -118,8 +118,8 @@ void
 PixmapItem::updatePixmaps()
 {
     const QModelIndex &index = m_preView->indexOfItem(this);
-    m_pix[0] = m_preView->model()->data(index, FileSystemModel::FlowImg).value<QPixmap>();
-    m_pix[1] = m_preView->model()->data(index, FileSystemModel::FlowRefl).value<QPixmap>();
+    m_pix[0] = m_preView->model()->data(index, FS::Model::FlowImg).value<QPixmap>();
+    m_pix[1] = m_preView->model()->data(index, FS::Model::FlowRefl).value<QPixmap>();
     updateShape();
     m_preView->viewport()->update();
 }
@@ -176,7 +176,6 @@ PreView::PreView(QWidget *parent)
     , m_wantsDrag(false)
     , m_perception(0.0f)
     , m_pressPos(QPointF())
-    , m_centerFile(QString())
     , m_hasZUpdate(false)
     , m_xpos(0.0f)
 {
@@ -190,7 +189,7 @@ PreView::PreView(QWidget *parent)
     QGLFormat::setDefaultFormat(glf);
     setMaximumHeight(SIZE*2.0f);
     QGLWidget *glWidget = new QGLWidget(glf, this);
-    connect( qApp, SIGNAL(aboutToQuit()), glWidget, SLOT(deleteLater()) );
+    connect(qApp, SIGNAL(aboutToQuit()), glWidget, SLOT(deleteLater()));
     setViewport(glWidget);
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     setOptimizationFlag(QGraphicsView::DontSavePainterState);
@@ -204,10 +203,10 @@ PreView::PreView(QWidget *parent)
     scrollBar->setPageStep(1);
     m_gfxProxy = m_scene->addWidget(scrollBar);
     m_scrollBar = static_cast<ScrollBar *>(m_gfxProxy->widget());
-    connect( m_scrollBar, SIGNAL(valueChanged(int)), this, SLOT(scrollBarMoved(int)) );
+    connect(m_scrollBar, SIGNAL(valueChanged(int)), this, SLOT(scrollBarMoved(int)));
     setFocusPolicy(Qt::NoFocus);
     setFrameStyle(QFrame::NoFrame);
-    for ( int i = 0; i < 2; ++i )
+    for (int i = 0; i < 2; ++i)
     {
         m_anim[i] = new QGraphicsItemAnimation(this);
         m_anim[i]->setTimeLine(m_timeLine);
@@ -237,7 +236,7 @@ PreView::PreView(QWidget *parent)
 QModelIndex
 PreView::indexOfItem(PixmapItem *item)
 {
-    if ( m_items.contains(item) )
+    if (m_items.contains(item))
         return m_model->index(m_items.indexOf(item), 0, m_rootIndex);
     return QModelIndex();
 }
@@ -259,11 +258,11 @@ PreView::showPrevious()
 void
 PreView::prepareAnimation()
 {
-    if ( !isValidRow(m_newRow) )
+    if (!isValidRow(m_newRow))
         return;
 
     int i = m_items.count();
-    while ( --i > -1 )
+    while (--i > -1)
         m_items.at(i)->saveX();
 #define CENTER QPoint(m_x-SIZE/2.0f, m_y)
 #define LEFT QPointF((m_x-SIZE)-space, m_y)
@@ -287,7 +286,7 @@ PreView::prepareAnimation()
 void
 PreView::animStep(const qreal value)
 {
-    if ( m_items.isEmpty() )
+    if (m_items.isEmpty())
         return;
 
     const float f = SCALE+(value*(1.0f-SCALE)), s = space*value;
@@ -299,8 +298,8 @@ PreView::animStep(const qreal value)
     rotate = ANGLE-rotate;
     m_items.at(m_nextRow)->transform(goingUp ? rotate : -rotate, Qt::YAxis, f, f);
 
-//    if ( m_items.count() > 1 )
-//        correctItemsPos(m_row-1, m_row+1 );
+//    if (m_items.count() > 1)
+//        correctItemsPos(m_row-1, m_row+1);
 
 
 
@@ -309,20 +308,20 @@ PreView::animStep(const qreal value)
 #define DOWN m_items.at(i)->savedX()+s
 
     int i = m_items.count();
-    while ( --i > -1 )
+    while (--i > -1)
     {
-        if ( i != m_row && i != m_nextRow )
-            m_items.at(i)->setX( goingUp ? UP : DOWN );
-        if ( !m_hasZUpdate )
-            m_items.at(i)->setZValue( i>=m_nextRow ? m_items.at(qMin(m_items.count()-1, i+1))->zValue()+1 : m_items.at(qMax(0, i-1))->zValue()-1 );
+        if (i != m_row && i != m_nextRow)
+            m_items.at(i)->setX(goingUp ? UP : DOWN);
+        if (!m_hasZUpdate)
+            m_items.at(i)->setZValue(i>=m_nextRow ? m_items.at(qMin(m_items.count()-1, i+1))->zValue()+1 : m_items.at(qMax(0, i-1))->zValue()-1);
     }
 
     m_hasZUpdate = true;
 
-    if ( value == 1 )
+    if (value == 1)
     {
         setCenterIndex(m_model->index(m_nextRow, 0, m_rootIndex));
-        if ( m_newRow == m_row )
+        if (m_newRow == m_row)
         {
             m_newRow = -1;
             m_nextRow = -1;  
@@ -334,25 +333,25 @@ PreView::animStep(const qreal value)
 void
 PreView::continueIf()
 {
-    if ( m_newRow > m_row )
+    if (m_newRow > m_row)
         showNext();
-    else if ( m_newRow < m_row )
+    else if (m_newRow < m_row)
         showPrevious();
 }
 
 void
 PreView::wheelEvent(QWheelEvent *event)
 {
-    if ( event->modifiers() & Qt::ControlModifier )
+    if (event->modifiers() & Qt::ControlModifier)
     {
-        if ( event->delta() > 0 )
+        if (event->delta() > 0)
             m_perception += 1;
         else
             m_perception -= 1;
         const float &y = m_y+SIZE;
         m_rootItem->setTransform(QTransform().translate(rect().width()/2.0f, y).rotate(m_perception, Qt::XAxis).translate(-rect().width()/2.0f, -y));
     }
-    else if ( event->modifiers() & Qt::MetaModifier )
+    else if (event->modifiers() & Qt::MetaModifier)
         m_rootItem->setScale(m_rootItem->scale()+((float)event->delta()*0.001f));
     else
         m_scrollBar->setValue(m_scrollBar->value()+(event->delta()>0?-1:1));
@@ -363,20 +362,20 @@ void
 PreView::enterEvent(QEvent *e)
 {
     QGraphicsView::enterEvent(e);
-    if ( QApplication::overrideCursor() )
+    if (QApplication::overrideCursor())
         QApplication::restoreOverrideCursor();
 }
 
 void
 PreView::setModel(QAbstractItemModel *model)
 {
-    m_model = static_cast<FileSystemModel *>(model);
+    m_model = static_cast<FS::Model *>(model);
     connect(m_model, SIGNAL(flowDataChanged(const QModelIndex & , const QModelIndex &)), this, SLOT(dataChanged(const QModelIndex & , const QModelIndex &)));
     connect(m_model, SIGNAL(layoutAboutToBeChanged()),this, SLOT(clear()));
     connect(m_model, SIGNAL(layoutChanged()),this, SLOT(reset()));
     connect(m_model, SIGNAL(modelAboutToBeReset()), this, SLOT(clear()));
     connect(m_model, SIGNAL(modelReset()),this, SLOT(reset()));
-    connect(m_model, SIGNAL(directoryLoaded(QString)),this, SLOT(reset()));
+    connect(m_model, SIGNAL(urlLoaded(QUrl)),this, SLOT(reset()));
     connect(m_model, SIGNAL(rowsInserted(const QModelIndex & , int , int)), this, SLOT(rowsInserted(const QModelIndex & , int , int)));
     connect(m_model, SIGNAL(rowsAboutToBeRemoved(const QModelIndex & , int , int)), this, SLOT(rowsRemoved(const QModelIndex & , int , int)));
 }
@@ -384,36 +383,36 @@ PreView::setModel(QAbstractItemModel *model)
 void
 PreView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
-    if ( !topLeft.isValid() || !bottomRight.isValid() )
+    if (!topLeft.isValid() || !bottomRight.isValid())
         return;
 
     const int start = topLeft.row(), end = bottomRight.row();
 
-    if ( m_items.count() > end )
-    for ( int i = start; i <= end; ++i )
+    if (m_items.count() > end)
+    for (int i = start; i <= end; ++i)
         m_items.at(i)->updatePixmaps();
 }
 
 void
 PreView::setCenterIndex(const QModelIndex &index)
 {
-    if ( !index.isValid() )
+    if (!index.isValid())
         return;
     const QString &name = index.data().toString();
 
-    if ( index.row() )
+    if (index.row())
     {
         m_savedRow = index.row();
         m_savedCenter = index;
 
     }
-    else if ( m_items.count() <= 1 )
+    else if (m_items.count() <= 1)
     {
         m_savedRow = 0;
         m_nextRow = 0;
         m_row = 0;
     }
-    m_centerFile = m_model->filePath(index);
+    m_centerUrl = m_model->url(index);
     m_prevCenter = m_centerIndex;
     m_centerIndex = index;
     m_nextRow = m_row;
@@ -427,16 +426,12 @@ PreView::setCenterIndex(const QModelIndex &index)
 void
 PreView::reset()
 {
-//    qDebug() << "PreView::reset" << m_rootIndex.isValid() << m_model->rowCount(m_rootIndex);
-
     clear();
-    if ( !QFileInfo(m_rootPath).exists() )
-        return;
 
-    if ( !m_rootIndex.isValid() )
-        m_rootIndex = m_model->index(m_rootPath);
+    if (!m_rootIndex.isValid())
+        m_rootIndex = m_model->index(m_rootUrl);
 
-    if ( m_rootIndex.isValid() && m_model && m_model->rowCount(m_rootIndex) )
+    if (m_rootIndex.isValid() && m_model && m_model->rowCount(m_rootIndex))
     {
         populate(0, m_model->rowCount(m_rootIndex)-1);
         m_scrollBar->setRange(0, m_items.count()-1);
@@ -465,7 +460,7 @@ PreView::updateScene()
         return;
 
     if (m_textItem->text().isEmpty())
-        m_textItem->setText(m_centerFile);
+        m_textItem->setText(QFileInfo(m_centerUrl.path()).fileName());
     m_scene->setSceneRect(QRect(QPoint(0, 0), size()));
     const float bottom = bMargin+m_scrollBar->height()+m_textItem->boundingRect().height();
     m_y = (height()/2.0f-SIZE/2.0f)-bottom;
@@ -493,21 +488,16 @@ PreView::updateScene()
 void
 PreView::rowsRemoved(const QModelIndex &parent, int start, int end)
 {
-    if ( !QFileInfo(m_rootPath).exists() )
-    {
-        clear();
-        return;
-    }
-    if ( !parent.isValid() )
+    if (!parent.isValid())
         return;
 
-    if ( m_model->filePath(m_rootIndex) != m_model->filePath(parent) || m_items.isEmpty() )
+    if (m_model->url(m_rootIndex) != m_model->url(parent) || m_items.isEmpty())
         return;
 
     m_timeLine->stop();
 
-    for ( int i = start; i <= end; ++i )
-        if ( m_items.count() > i )
+    for (int i = start; i <= end; ++i)
+        if (m_items.count() > i)
             delete m_items.takeAt(i);
 
     m_scrollBar->blockSignals(true);
@@ -515,7 +505,7 @@ PreView::rowsRemoved(const QModelIndex &parent, int start, int end)
     m_scrollBar->setValue(validate(start-1));
     m_scrollBar->blockSignals(false);
     QModelIndex center = m_model->index(validate(start-1), 0, m_rootIndex);
-    if ( m_items.count() == 1 )
+    if (m_items.count() == 1)
         center = m_model->index(0, 0, parent);
     setCenterIndex(center);
     updateItemsPos();
@@ -525,41 +515,39 @@ void
 PreView::setRootIndex(const QModelIndex &rootIndex)
 {
     clear();
-    if ( !rootIndex.isValid() )
+    if (!rootIndex.isValid())
         return;
 
     m_rootIndex = rootIndex;
-    m_rootPath = m_model->filePath(rootIndex);
+    m_rootUrl = m_model->url(rootIndex);
     m_savedRow = 0;
     m_savedCenter = QModelIndex();
-    m_centerFile = QString();
+    m_centerUrl = QUrl();
 }
 
 void
 PreView::rowsInserted(const QModelIndex &parent, int start, int end)
 {
-    if ( !parent.isValid() || m_rootIndex != parent || m_model->isWorking() )
+    if (!parent.isValid() || m_rootIndex != parent || m_model->isWorking())
         return;
 
     populate(start, end);
 
-    if ( !m_items.isEmpty() )
+    if (!m_items.isEmpty())
         m_scrollBar->setRange(0, m_items.count()-1);
 }
 
 void
 PreView::populate(const int start, const int end)
 {
-    if ( !m_rootIndex.isValid() )
+    if (!m_rootIndex.isValid())
         return;
 
-    for ( int i = start; i <= end; i++ )
+    for (int i = start; i <= end; i++)
         m_items.insert(i, new PixmapItem(m_scene, m_rootItem));
 
-    QModelIndex index;
-    if ( QFileInfo(m_centerFile).exists() )
-        index = m_model->index(m_centerFile);
-    if ( !index.isValid() )
+    QModelIndex index = m_model->index(m_centerUrl);
+    if (!index.isValid())
         index = m_model->index(validate(m_savedRow), 0, m_rootIndex);
 
     setCenterIndex(index);
@@ -570,10 +558,10 @@ PreView::populate(const int start, const int end)
 void
 PreView::updateItemsPos()
 {
-    if ( m_items.isEmpty()
+    if (m_items.isEmpty()
          || m_row == -1
          || m_row > m_model->rowCount(m_rootIndex)-1
-         || !isVisible() )
+         || !isVisible())
         return;
 
     m_timeLine->stop();
@@ -582,8 +570,8 @@ PreView::updateItemsPos()
     center->setPos(m_x-SIZE/2.0f, m_y);
     center->resetTransform();
 
-    if ( m_items.count() > 1 )
-        correctItemsPos(m_row-1, m_row+1 );
+    if (m_items.count() > 1)
+        correctItemsPos(m_row-1, m_row+1);
 }
 
 void
@@ -593,18 +581,18 @@ PreView::correctItemsPos(const int leftStart, const int rightStart)
     PixmapItem *p = 0;
     QList<PixmapItem *>::iterator i = m_items.begin()+rightStart;
 //    int hideAfter = 100, current = 0;
-    if ( i < m_items.end() )
+    if (i < m_items.end())
     {
         p = *i;
-        p->setPos( rect().center().x()+space, m_y );
+        p->setPos(rect().center().x()+space, m_y);
         p->transform(ANGLE, Qt::YAxis, SCALE, SCALE);
         m_xpos = p->x();
         p->setZValue(z);
-        while ( ++i < m_items.end() ) //right side
+        while (++i < m_items.end()) //right side
         {
             --z;
             p = *i;
-//            if ( current > hideAfter )
+//            if (current > hideAfter)
 //            {
 //                p->setVisible(false);
 //                continue;
@@ -622,19 +610,19 @@ PreView::correctItemsPos(const int leftStart, const int rightStart)
     z = m_items.count()-1;
     i = m_items.begin()+leftStart;
 //    current = 0;
-    if ( i > m_items.begin()-1 )
+    if (i > m_items.begin()-1)
     {
         p = *i;
-        p->setPos( (rect().center().x()-SIZE)-space, m_y );
+        p->setPos((rect().center().x()-SIZE)-space, m_y);
         p->transform(-ANGLE, Qt::YAxis, SCALE, SCALE);
         m_xpos = p->x();
         p->setZValue(z);
 
-        while ( --i > m_items.begin()-1 ) //left side
+        while (--i > m_items.begin()-1) //left side
         {
             --z;
             p = *i;
-//            if ( current > hideAfter )
+//            if (current > hideAfter)
 //            {
 //                p->setVisible(false);
 //                continue;
@@ -656,7 +644,7 @@ void
 PreView::mousePressEvent(QMouseEvent *event)
 {
     QGraphicsView::mousePressEvent(event);
-    if ( itemAt(event->pos()) )
+    if (itemAt(event->pos()))
         m_pressed = itemAt(event->pos());
     else
     {
@@ -670,16 +658,16 @@ void
 PreView::mouseReleaseEvent(QMouseEvent *event)
 {
     QGraphicsView::mouseReleaseEvent(event);
-    if ( itemAt(event->pos()) && m_pressed && itemAt(event->pos()) == m_pressed )
+    if (itemAt(event->pos()) && m_pressed && itemAt(event->pos()) == m_pressed)
     {
         const QModelIndex &index = indexOfItem(static_cast<PixmapItem *>(m_pressed));
-        if ( index.isValid() )
+        if (index.isValid())
         {
-            if ( index == m_centerIndex )
+            if (index == m_centerIndex)
             {
-                const QString &file = m_model->filePath(index);
-                if ( QFileInfo(file).isDir() )
-                    m_model->setPath(file);
+                const QString &file = m_model->url(index).toLocalFile();
+                if (QFileInfo(file).isDir())
+                    m_model->setUrl(QUrl::fromLocalFile(file));
                 else
                     Ops::openFile(file);
             }
@@ -694,9 +682,9 @@ void
 PreView::mouseMoveEvent(QMouseEvent *event)
 {
     QGraphicsView::mouseMoveEvent(event);
-    if ( !m_wantsDrag )
+    if (!m_wantsDrag)
         return;
-    if ( event->pos().y() < m_pressPos.y() )
+    if (event->pos().y() < m_pressPos.y())
         m_perception -= qAbs(event->pos().y() - m_pressPos.y())*0.1;
     else
         m_perception += qAbs(event->pos().y() - m_pressPos.y())*0.1;
@@ -708,9 +696,9 @@ PreView::mouseMoveEvent(QMouseEvent *event)
 void
 PreView::showCenterIndex(const QModelIndex &index)
 {
-    if ( !index.isValid() )
+    if (!index.isValid())
         return;
-    if ( !isVisible() ) //not visible... we silently update the index w/o animations
+    if (!isVisible()) //not visible... we silently update the index w/o animations
     {
         setCenterIndex(index);
         updateItemsPos();
@@ -719,10 +707,10 @@ PreView::showCenterIndex(const QModelIndex &index)
 
     m_newRow = index.row();
 
-    if ( m_newRow == m_row )
+    if (m_newRow == m_row)
         return;
 
-    if ( qAbs(m_newRow-m_row) > 10 )
+    if (qAbs(m_newRow-m_row) > 10)
     {
         int i = m_newRow > m_row ? -10 : +10;
         m_timeLine->stop();
@@ -731,11 +719,11 @@ PreView::showCenterIndex(const QModelIndex &index)
         showCenterIndex(m_model->index(m_newRow, 0, m_rootIndex));
         return;
     }
-    if ( m_timeLine->state() & QTimeLine::Running )
+    if (m_timeLine->state() & QTimeLine::Running)
         return;
-    if ( m_newRow > m_row )
+    if (m_newRow > m_row)
         showNext();
-    else if ( m_newRow < m_row )
+    else if (m_newRow < m_row)
         showPrevious();
 }
 
@@ -751,9 +739,9 @@ PreView::clear()
     m_pressed = 0;
     m_savedRow = -1;
     m_savedCenter = QModelIndex();
-    m_centerFile = QString();
+    m_centerUrl = QUrl();
     m_savedRow = 0;
-    while ( !m_items.isEmpty() )
+    while (!m_items.isEmpty())
         delete m_items.takeFirst();
     m_textItem->setText(QString("--"));
     m_scrollBar->setValue(0);
@@ -763,6 +751,6 @@ PreView::clear()
 void
 PreView::scrollBarMoved(const int value)
 {
-    if ( m_items.count() )
+    if (m_items.count())
         showCenterIndex(m_model->index(qBound(0, value, m_items.count()), 0, m_rootIndex));
 }

@@ -20,6 +20,7 @@
 
 
 #include "icondialog.h"
+#include "globals.h"
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QDirIterator>
@@ -51,10 +52,10 @@ IconDialog::IconDialog(QWidget *parent) : QDialog(parent)
     verticalLayout->addLayout(horizontalLayout);
     setLayout(verticalLayout);
 
-    connect( m_listView, SIGNAL(activated(QModelIndex)), this, SLOT(enableOkButton()) );
-    connect( m_listView, SIGNAL(clicked(QModelIndex)), this, SLOT(enableOkButton()) );
-    connect( m_ok, SIGNAL(released()), this, SLOT(accept()) );
-    connect( cancel, SIGNAL(released()), this, SLOT(reject()) );
+    connect(m_listView, SIGNAL(activated(QModelIndex)), this, SLOT(enableOkButton()));
+    connect(m_listView, SIGNAL(clicked(QModelIndex)), this, SLOT(enableOkButton()));
+    connect(m_ok, SIGNAL(released()), this, SLOT(accept()));
+    connect(cancel, SIGNAL(released()), this, SLOT(reject()));
     enableOkButton();
 }
 
@@ -71,23 +72,29 @@ QString IconDialog::getIcon()
     }
 
     QStringList list;
-    foreach ( const QFileInfo &file, files )
+    QMap<QString, QIcon> icons;
+    foreach (const QFileInfo &file, files)
     {
-        QDirIterator it(file.filePath(), QDirIterator::Subdirectories);
-
+        QDirIterator it(file.absoluteFilePath(), allEntries, QDirIterator::Subdirectories);
         while (it.hasNext())
         {
-            if (it.filePath().endsWith("png") && !list.contains(it.fileInfo().baseName()) )
-            {
-                QIcon icon(QPixmap::fromImage(QImageReader(it.filePath()).read()));
-                m_model->appendRow(new QStandardItem(icon, it.fileInfo().baseName()));
-                list << it.fileInfo().baseName();
-            }
-            it.next();
+            const QFileInfo fi(it.next());
+            if (!fi.filePath().toLower().contains("places")
+                    || !fi.baseName().contains("-")
+                    || list.contains(fi.baseName())
+                    || fi.suffix().toLower() != "png")
+                continue;
+            QIcon icon(QPixmap::fromImage(QImageReader(fi.filePath()).read()));
+            list << fi.baseName();
+            icons.insert(fi.baseName(), icon);
         }
     }
+    qStableSort(list);
+    for (int i = 0; i < list.count(); ++i)
+        m_model->appendRow(new QStandardItem(icons.value(list.at(i)), list.at(i)));
+
     exec();
-    if ( result() == Accepted )
+    if (result() == Accepted)
         return m_listView->currentIndex().data().toString();
     return QString();
 }

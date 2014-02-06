@@ -36,19 +36,19 @@ public:
     explicit ColumnsDelegate(ColumnsView *parent = 0)
         : FileItemDelegate(parent)
         , m_view(parent)
-        , m_model(static_cast<FileSystemModel *>(m_view->model())){}
+        , m_model(static_cast<FS::Model *>(m_view->model())){}
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        if ( !index.data().isValid()||!option.rect.isValid() )
+        if (!index.data().isValid()||!option.rect.isValid())
             return;
-        if ( index.data().toString() == m_view->activeFileName() )
+        if (index.data().toString() == m_view->activeFileName())
         {
             QColor h = m_view->palette().color(QPalette::Highlight);
             h.setAlpha(64);
             painter->fillRect(option.rect, h);
         }
         FileItemDelegate::paint(painter, option, index);
-        if ( m_model->isDir(index) )
+        if (m_model->isDir(index))
         {
             painter->save();
             painter->setRenderHint(QPainter::Antialiasing);
@@ -58,7 +58,7 @@ public:
             p.putPoints(0, 4, r.left(), r.top(), r.left(), r.bottom(), r.right(), r.center().y(), r.left(), r.top());
             QPainterPath path;
             QColor arcol = (option.state & QStyle::State_Selected)?option.palette.color(QPalette::HighlightedText):option.palette.color(QPalette::Text);
-            if ( index.data().toString() != m_view->activeFileName() )
+            if (index.data().toString() != m_view->activeFileName())
                 arcol = Ops::colorMid(option.palette.color(QPalette::Base), arcol);
             path.addPolygon(p);
             painter->setPen(QPen(arcol, 2.0f, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
@@ -76,15 +76,15 @@ public:
 
 private:
     ColumnsView *m_view;
-    FileSystemModel *m_model;
+    FS::Model *m_model;
 };
 
-ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QString &rootPath)
+ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QUrl &url)
     : QListView(parent)
     , m_parent(static_cast<ColumnsWidget *>(parent))
     , m_pressPos(QPoint())
     , m_activeFile(QString())
-    , m_rootPath(QString())
+    , m_url(url)
     , m_model(0)
     , m_width(0)
     , m_fsWatcher(new QFileSystemWatcher(this))
@@ -109,18 +109,15 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QStri
     setTextElideMode(Qt::ElideNone);
     setFrameStyle(0);
     setSelectionBehavior(QAbstractItemView::SelectRows);
-//    connect( m_parent, SIGNAL(currentViewChagned(ColumnsView*)), viewport(), SLOT(update()) );
-    if ( FileSystemModel *fsModel = qobject_cast<FileSystemModel *>(model) )
+//    connect(m_parent, SIGNAL(currentViewChagned(ColumnsView*)), viewport(), SLOT(update()));
+    if (FS::Model *fsModel = qobject_cast<FS::Model *>(model))
     {
-        connect(fsModel, SIGNAL(rowsRemoved(QModelIndex,int ,int)), this, SLOT(rowsRemoved(QModelIndex,int,int)));
-        connect(fsModel, SIGNAL(fileRenamed(QString,QString,QString)), this, SLOT(fileRenamed(QString,QString,QString)));
-        connect(fsModel, SIGNAL(directoryLoaded(QString)), this, SLOT(dirLoaded(QString)));
+//        connect(fsModel, SIGNAL(rowsRemoved(QModelIndex,int ,int)), this, SLOT(rowsRemoved(QModelIndex,int,int)));
+//        connect(fsModel, SIGNAL(fileRenamed(QString,QString,QString)), this, SLOT(fileRenamed(QString,QString,QString)));
         setModel(fsModel);
-        if ( QFileInfo(rootPath).exists() )
-            setRootIndex(fsModel->index(rootPath));
+//        if (QFileInfo(rootPath).exists())
+            setRootIndex(fsModel->index(url));
     }
-    //as we are not using the filesystemmodel rootpath we will not get notified...
-    connect(m_fsWatcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirLoaded(QString)));
     verticalScrollBar()->installEventFilter(this);
 }
 
@@ -129,10 +126,10 @@ ColumnsView::eventFilter(QObject *o, QEvent *e)
 {
     // grrrrr, preventing wheel events when control pressed
     // is not enough... the scrollbar still gets them.
-    if ( o == verticalScrollBar() && e->type() == QEvent::Wheel )
+    if (o == verticalScrollBar() && e->type() == QEvent::Wheel)
     {
         QWheelEvent *we = static_cast<QWheelEvent *>(e);
-        if ( we->modifiers() == Qt::ControlModifier )
+        if (we->modifiers() == Qt::ControlModifier)
         {
             QCoreApplication::sendEvent(m_parent, we);
             return true;
@@ -143,52 +140,41 @@ ColumnsView::eventFilter(QObject *o, QEvent *e)
 }
 
 void
-ColumnsView::setRootPath(const QString &path)
+ColumnsView::setUrl(const QUrl &url)
 {
-    setRootIndex(m_model->index(path));
+    setRootIndex(m_model->index(url));
 }
 
+#if 0
 void
 ColumnsView::setRootIndex(const QModelIndex &index)
 {
-    if ( !m_fsWatcher->directories().isEmpty() )
+    if (!m_fsWatcher->directories().isEmpty())
         m_fsWatcher->removePaths(m_fsWatcher->directories());
-    if ( m_model )
+    if (m_model)
     {
-        m_rootPath = m_model->filePath(index);
-        if ( !sanityCheckForDir() )
+        m_rootPath = m_model->url(index).toLocalFile();
+        if (!sanityCheckForDir())
             return;
         m_fsWatcher->addPath(m_rootPath);
     }
     QListView::setRootIndex(index);
     updateWidth();
 }
-
-void
-ColumnsView::setFilter(QString filter)
-{
-    for (int i = 0; i < model()->rowCount(rootIndex()); i++)
-    {
-        const QModelIndex &index = model()->index(i,0,rootIndex());
-        if (index.data().toString().contains(filter, Qt::CaseInsensitive))
-            setRowHidden(i, false);
-        else
-            setRowHidden(i, true);
-    }
-}
+#endif
 
 void
 ColumnsView::keyPressEvent(QKeyEvent *event)
 {
-    if ( event->key() == Qt::Key_Escape )
+    if (event->key() == Qt::Key_Escape)
         clearSelection();
-    if ( event->key() == Qt::Key_Return
+    if (event->key() == Qt::Key_Return
          && event->modifiers() == Qt::NoModifier
-         && state() == NoState )
+         && state() == NoState)
     {
-        if ( selectionModel()->selectedIndexes().count() )
-            foreach ( const QModelIndex &index, selectionModel()->selectedIndexes() )
-                if ( !index.column() )
+        if (selectionModel()->selectedIndexes().count())
+            foreach (const QModelIndex &index, selectionModel()->selectedIndexes())
+                if (!index.column())
                     emit opened(index);
         event->accept();
         return;
@@ -200,21 +186,21 @@ void
 ColumnsView::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu popupMenu;
-    if ( Store::customActions().count() )
+    if (Store::customActions().count())
         popupMenu.addMenu(Store::customActionsMenu());
-    popupMenu.addActions( ViewContainer::rightClickActions() );
-    const QString &file = m_model->filePath( indexAt( event->pos() ) );
-    QMenu openWith( tr( "Open With" ), this );
-    openWith.addActions( Store::openWithActions( file ) );
-    foreach ( QAction *action, actions() )
+    popupMenu.addActions(ViewContainer::rightClickActions());
+    const QString &file = m_model->url(indexAt(event->pos())).toLocalFile();
+    QMenu openWith(tr("Open With"), this);
+    openWith.addActions(Store::openWithActions(file));
+    foreach (QAction *action, actions())
     {
-        popupMenu.addAction( action );
-        if ( action->objectName() == "actionDelete" )
-            popupMenu.insertSeparator( action );
-        if ( action->objectName() == "actionCustomCmd" )
-            popupMenu.insertMenu( action, &openWith );
+        popupMenu.addAction(action);
+        if (action->objectName() == "actionDelete")
+            popupMenu.insertSeparator(action);
+        if (action->objectName() == "actionCustomCmd")
+            popupMenu.insertMenu(action, &openWith);
     }
-    popupMenu.exec( event->globalPos() );
+    popupMenu.exec(event->globalPos());
 }
 
 QRect
@@ -229,11 +215,11 @@ void
 ColumnsView::mouseReleaseEvent(QMouseEvent *e)
 {
     const QModelIndex &index = indexAt(e->pos());
-    if ( !index.isValid() )
+    if (!index.isValid())
         return QListView::mouseReleaseEvent(e);
 
-    if ( expanderRect(index).contains(e->pos())
-         && index == indexAt(m_pressPos) )
+    if (expanderRect(index).contains(e->pos())
+         && index == indexAt(m_pressPos))
     {
         emit expandRequest(index);
         setActiveFileName(index.data().toString());
@@ -241,26 +227,26 @@ ColumnsView::mouseReleaseEvent(QMouseEvent *e)
         return;
     }
 
-    if ( Store::config.views.singleClick
+    if (Store::config.views.singleClick
          && !e->modifiers()
          && e->button() == Qt::LeftButton
          && m_pressPos == e->pos()
-         && state() == NoState )
+         && state() == NoState)
     {
         emit opened(index);
         e->accept();
         return;
     }
 
-    if ( !Store::config.views.singleClick
+    if (!Store::config.views.singleClick
          && e->modifiers() == Qt::NoModifier
          && e->button() == Qt::LeftButton
          && m_pressPos == e->pos()
-         && m_model->isDir(index) )
+         && m_model->isDir(index))
         emit dirActivated(index);
-    else if ( e->button() == Qt::MiddleButton
+    else if (e->button() == Qt::MiddleButton
               && m_pressPos == e->pos()
-              && !e->modifiers() )
+              && !e->modifiers())
         emit newTabRequest(index);
     else
         QListView::mouseReleaseEvent(e);
@@ -270,36 +256,31 @@ void
 ColumnsView::setModel(QAbstractItemModel *model)
 {
     QListView::setModel(model);
-    m_model = qobject_cast<FileSystemModel *>(model);
+    m_model = qobject_cast<FS::Model *>(model);
     setItemDelegate(new ColumnsDelegate(this));
-    connect(m_model, SIGNAL(paintRequest()), viewport(), SLOT(update()));
+//    connect(m_model, SIGNAL(paintRequest()), viewport(), SLOT(update()));
 }
-
+#if 0
 void
 ColumnsView::rowsRemoved(const QModelIndex &parent, int start, int end)
 {
-    if ( !rootIndex().isValid() )
+    if (!rootIndex().isValid())
     {
         emit pathDeleted(this);
         hide();
     }
-    if ( parent == rootIndex() )
+    if (parent == rootIndex())
         updateWidth();
-}
-
-void
-ColumnsView::dirLoaded(const QString &dir)
-{
 }
 
 void
 ColumnsView::fileRenamed(const QString &path, const QString &oldName, const QString &newName)
 {
-    if ( path != m_rootPath )
+    if (path != m_rootPath)
         return;
 
     int w = fontMetrics().boundingRect(newName).width();
-    if ( w > m_width )
+    if (w > m_width)
     {
         m_width = w ;
         w+=40; //icon && expanders...
@@ -313,16 +294,16 @@ ColumnsView::fileRenamed(const QString &path, const QString &oldName, const QStr
 void
 ColumnsView::updateWidth()
 {
-    if ( !sanityCheckForDir() )
+    if (!sanityCheckForDir())
         return;
-    if ( !m_model )
+    if (!m_model)
         return;
-    QStringList list = QDir(m_model->filePath(rootIndex())).entryList(QDir::AllEntries|QDir::AllDirs|QDir::NoDotAndDotDot|QDir::System);
+    QStringList list = QDir(m_model->url(rootIndex()).toLocalFile()).entryList(QDir::AllEntries|QDir::AllDirs|QDir::NoDotAndDotDot|QDir::System);
     int w = 0;
-    while ( !list.isEmpty() )
+    while (!list.isEmpty())
     {
         const int W = fontMetrics().boundingRect(list.takeFirst()).width();
-        if ( W > w )
+        if (W > w)
             w = W;
     }
     w+=40; //icon && expanders...
@@ -333,21 +314,22 @@ ColumnsView::updateWidth()
 bool
 ColumnsView::sanityCheckForDir()
 {
-    if ( !m_rootPath.isEmpty() && !QFileInfo(m_rootPath).exists() )
+    if (!m_rootPath.isEmpty() && !QFileInfo(m_rootPath).exists())
     {
         emit pathDeleted(this);
         hide();
-        if ( m_fsWatcher->directories().contains(m_rootPath) )
+        if (m_fsWatcher->directories().contains(m_rootPath))
             m_fsWatcher->removePath(m_rootPath);
         return false;
     }
     return true;
 }
+#endif
 
 void
 ColumnsView::wheelEvent(QWheelEvent *e)
 {
-    if ( e->modifiers() == Qt::ControlModifier )
+    if (e->modifiers() == Qt::ControlModifier)
     {
         e->ignore();
         return;

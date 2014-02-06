@@ -89,16 +89,16 @@ public:
                    SortDescending
                  };
 
-    MainWindow( const QStringList &arguments = QStringList(), bool autoTab = true );
+    MainWindow(const QStringList &arguments = QStringList(), bool autoTab = true);
     inline ViewContainer *activeContainer() { return m_activeContainer; }
     inline PlacesView *placesView() { return m_placesView; }
     inline QToolBar *toolBar() { return m_toolBar; }
     static ViewContainer *currentContainer();
     static MainWindow *currentWindow();
-    static MainWindow *window( QWidget *w ) { QWidget *p = w; while ( p->parentWidget() ) p = p->parentWidget(); return qobject_cast<MainWindow *>(p); }
+    static MainWindow *window(QWidget *w) { QWidget *p = w; while (p->parentWidget()) p = p->parentWidget(); return qobject_cast<MainWindow *>(p); }
     static PlacesView *places();
     static QList<MainWindow *> openWindows();
-    inline ViewContainer *containerForTab( int tab ) { return static_cast<ViewContainer *>(m_stackedWidget->widget(tab)); }
+    inline ViewContainer *containerForTab(int tab) { return static_cast<ViewContainer *>(m_stackedWidget->widget(tab)); }
     inline InfoWidget *infoWidget() { return m_infoWidget; }
     inline QMenu *mainMenu() { return m_mainMenu; }
     inline QSlider *iconSizeSlider() { return m_iconSizeSlider; }
@@ -108,10 +108,10 @@ public:
     void createMenus();
 
 public slots:
-    void addTab(const QString &path = QDir::homePath());
+    void addTab(const QUrl &url = QUrl());
     void addTab(ViewContainer *container, int index = -1);
     void receiveMessage(const QStringList &message);
-    inline void setRootPath( const QString &path ) { m_model->setPath(path); }
+    inline void setRootPath(const QString &path) { m_model->setUrl(QUrl::fromLocalFile(path)); }
 
 protected:
     void closeEvent(QCloseEvent *event);
@@ -152,8 +152,8 @@ private slots:
     void genPlace();
     void mainSelectionChanged(QItemSelection selected,QItemSelection notselected);
     void togglePath();
-    void rootPathChanged(const QString &path);
-    void updateStatusBar(const QString &path);
+    void urlChanged(const QUrl &url);
+    void updateStatusBar(const QUrl &url);
     void createDirectory();
     void setViewIconSize(int);
     void setSliderPos(int size);
@@ -161,7 +161,7 @@ private slots:
     void setActions();
     void openTab();
     void newTab();
-    void viewItemHovered( const QModelIndex &index );
+    void viewItemHovered(const QModelIndex &index);
     void viewClearHover();
     void showSettings();
     void fileProperties();
@@ -171,14 +171,14 @@ private slots:
     void stackChanged(int);
     void newWindow() { (new MainWindow(QStringList() << m_activeContainer->model()->rootPath()))->show(); }
     void readSettings();
-    void activatePath(const QString &folder);
+    void activateUrl(const QUrl &url);
     void addBookmarks();
     void setSorting();
     void sortingChanged(const int column, const int order);
     void updateToolbarSpacer();
 
 signals:
-    void viewChanged( QAbstractItemView *view );
+    void viewChanged(QAbstractItemView *view);
     void settingsChanged();
 
 private:
@@ -192,7 +192,7 @@ private:
     QLayout *m_statusLayout;
     InfoWidget *m_infoWidget;
     RecentFoldersView *m_recentFoldersView;
-    FileSystemModel *m_model;
+    FS::Model *m_model;
     ViewContainer *m_activeContainer;
     PlacesView *m_placesView;
     QStackedWidget *m_stackedWidget;

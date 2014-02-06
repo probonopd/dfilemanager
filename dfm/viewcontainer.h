@@ -46,16 +46,16 @@ class DetailsView;
 class FlowView;
 class BreadCrumbs;
 class PathNavigator;
-class FileSystemModel;
+namespace FS{class Model;}
 class ViewContainer : public QFrame
 {
     Q_OBJECT
 public:
     enum View { Icon = 0, Details = 1, Columns = 2, Flow = 3 };
-    ViewContainer(QWidget *parent = 0, QString rootPath = QDir::homePath());
+    ViewContainer(QWidget *parent = 0, const QUrl &url = QUrl());
     ~ViewContainer(){}
     static QList<QAction *> rightClickActions();
-    FileSystemModel *model();
+    FS::Model *model();
     void setView(View view, bool store = true);
     QAbstractItemView *currentView() const;
     QList<QAbstractItemView *> views();
@@ -84,7 +84,7 @@ public:
     SearchIndicator *searchIndicator() { return m_searchIndicator; }
     BreadCrumbs *breadCrumbs();
     QString currentFilter();
-    QStringList visited() { return m_backList; }
+    QList<QUrl> visited() { return m_backList; }
     void sort(const int column = 0, const Qt::SortOrder order = Qt::AscendingOrder);
     PathNavigator *pathNav();
     QString rootPath() const;
@@ -101,24 +101,24 @@ signals:
     void iconSizeChanged(int size);
     void itemHovered(QString index);
     void clearHovered();
-    void newTabRequest(QString path);
+    void newTabRequest(const QUrl &url);
     void entered(const QModelIndex &index);
     void viewportEntered();
     void leftView();
     void filterChanged();
     void sortingChanged(const int column, const int order);
-    void rootPathChanged(const QString &path);
+    void urlChanged(const QUrl &url);
     
 public slots:
     void activate(const QModelIndex &index);
     bool setPathVisible(bool visible);
 
 private slots:
-    void setRootPath(const QString &path);
+    void setUrl(const QUrl &url);
     void genNewTabRequest(QModelIndex index);
     void customActionTriggered();
     void scriptTriggered();
-    void dirLoaded(const QString &path);
+    void urlLoaded(const QUrl &url);
     void modelSort(const int column, const int order);
 
 private:
@@ -129,10 +129,9 @@ private:
     DetailsView *m_detailsView;
     ColumnsWidget *m_columnsWidget;
     FlowView *m_flowView;
-    FileSystemModel *m_model;
+    FS::Model *m_model;
     QStackedWidget *m_viewStack;
-    QStringList m_backList;
-    QStringList m_forwardList;
+    QList<QUrl> m_backList, m_forwardList;
     QItemSelectionModel *m_selectModel;
     BreadCrumbs *m_breadCrumbs;
     SearchIndicator *m_searchIndicator;

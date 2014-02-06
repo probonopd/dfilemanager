@@ -32,8 +32,6 @@ ColumnsWidget::ColumnsWidget(QWidget *parent)
     , m_container(static_cast<ViewContainer *>(parent))
     , m_currentView(0)
     , m_rootIndex(QModelIndex())
-    , m_visited(QStringList())
-    , m_rootList(QStringList())
     , m_model(0)
     , m_slctModel(0)
 {
@@ -49,8 +47,8 @@ ColumnsWidget::ColumnsWidget(QWidget *parent)
     m_viewport->setAutoFillBackground(true);
     m_viewport->setBackgroundRole(QPalette::Base);
     m_viewport->setFrameStyle(0);
-    connect( MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(reconnectViews()) );
-    connect( horizontalScrollBar(), SIGNAL(rangeChanged(int,int)), this, SLOT(showCurrent()) );
+    connect(MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(reconnectViews()));
+    connect(horizontalScrollBar(), SIGNAL(rangeChanged(int,int)), this, SLOT(showCurrent()));
     setCursor(Qt::ArrowCursor);
 }
 
@@ -58,14 +56,13 @@ void
 ColumnsWidget::setModel(QAbstractItemModel *model)
 {
 //    qDebug() << model << static_cast<FileProxyModel *>(model)->fsModel();
-    m_model = static_cast<FileSystemModel *>(model);
+    m_model = static_cast<FS::Model *>(model);
 }
 
 QModelIndex ColumnsWidget::currentIndex() { return m_currentView->currentIndex(); }
 ColumnsView *ColumnsWidget::currentView() { return m_currentView; }
-void ColumnsWidget::setFilter( const QString &filter ) { if ( m_currentView ) m_currentView->setFilter(filter); }
-void ColumnsWidget::scrollTo(const QModelIndex &index) { if ( m_currentView ) m_currentView->scrollTo(index); }
-void ColumnsWidget::edit(const QModelIndex &index) { if ( m_currentView ) m_currentView->edit(index); }
+void ColumnsWidget::scrollTo(const QModelIndex &index) { if (m_currentView) m_currentView->scrollTo(index); }
+void ColumnsWidget::edit(const QModelIndex &index) { if (m_currentView) m_currentView->edit(index); }
 
 void
 ColumnsWidget::connectView(ColumnsView *view)
@@ -83,7 +80,7 @@ ColumnsWidget::connectView(ColumnsView *view)
 void
 ColumnsWidget::reconnectViews()
 {
-    foreach ( ColumnsView *view, m_columns )
+    foreach (ColumnsView *view, m_columns)
         connectView(view);
 }
 
@@ -91,7 +88,7 @@ void
 ColumnsWidget::clear()
 {
     m_columns.clear();
-    while ( !m_viewLay->isEmpty() )
+    while (!m_viewLay->isEmpty())
     {
         QLayoutItem *item = m_viewLay->takeAt(0);
         item->widget()->deleteLater();
@@ -105,7 +102,7 @@ ColumnsWidget::insideRoot(const QModelIndex &index)
     QModelIndex idx = index;
     while (idx.isValid())
     {
-        if ( idx == m_rootIndex )
+        if (idx == m_rootIndex)
             return true;
         else
             idx = idx.parent();
@@ -120,29 +117,29 @@ ColumnsWidget::fromRoot()
     QStringList list;
     while (idx.isValid())
     {
-        list.prepend(m_model->filePath(idx));
+        list.prepend(m_model->url(idx).toLocalFile());
         idx = idx.parent();
     }
     return list;
 }
 
 ColumnsView
-*ColumnsWidget::viewFor(const QString &path)
+*ColumnsWidget::viewFor(const QUrl &url)
 {
     ColumnsView *view = 0;
-    int i = at(path);
+    int i = at(url);
 
-    if ( isValid(i) )
+    if (isValid(i))
     {
         view = column(i);
-        if ( view->rootPath() != path )
-            view->setRootPath(path);
-        if ( !view->activeFileName().isEmpty() )
+        if (view->rootUrl() != url)
+            view->setUrl(url);
+        if (!view->activeFileName().isEmpty())
             view->setActiveFileName(QString());
     }
     else
     {
-        view = new ColumnsView(this, m_model, path);
+        view = new ColumnsView(this, m_model, url);
         connectView(view);
         view->setSelectionModel(m_slctModel);
         view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
@@ -155,13 +152,9 @@ ColumnsView
 void
 ColumnsWidget::setRootIndex(const QModelIndex &index)
 {
-    const QString &rootPath = m_model->filePath(index);
-    if ( rootPath.isEmpty() )
-        return;
-
     clear();
-
-    ColumnsView *view = new ColumnsView(this, m_model, rootPath);
+    QUrl url = m_model->url(index);
+    ColumnsView *view = new ColumnsView(this, m_model, url);
     connectView(view);
     view->setSelectionModel(m_slctModel);
     view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
@@ -169,8 +162,8 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
     m_viewLay->insertWidget(m_viewLay->count()-1, view);
     setCurrentView(view);
 
-    if ( isValid(rootPath) )
-        setCurrentView(column(rootPath));
+    if (isValid(url))
+        setCurrentView(column(url));
     showCurrent();
 }
 
@@ -179,13 +172,13 @@ void ColumnsWidget::showCurrent() { ensureWidgetVisible(currentView()); }
 void
 ColumnsWidget::expand(const QModelIndex &index)
 {
-    const QString &dirPath(m_model->filePath(index));
+    const QUrl &url(m_model->url(index));
     int i = m_columns.indexOf(currentView());
-    if ( m_viewLay->count() > ++i )
+    if (m_viewLay->count() > ++i)
     {
         while (QLayoutItem *item = m_viewLay->itemAt(i))
         {
-            if ( item->spacerItem() )
+            if (item->spacerItem())
                 break;
             m_columns.removeOne((ColumnsView *)item->widget());
             m_viewLay->removeItem(item);
@@ -193,7 +186,7 @@ ColumnsWidget::expand(const QModelIndex &index)
             delete item;
         }
     }
-    ColumnsView *view = new ColumnsView(this, m_model, dirPath);
+    ColumnsView *view = new ColumnsView(this, m_model, url);
     connectView(view);
     view->setSelectionModel(m_slctModel);
     view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
@@ -203,29 +196,26 @@ ColumnsWidget::expand(const QModelIndex &index)
 }
 
 void
-ColumnsWidget::setCurrentView( ColumnsView *view )
+ColumnsWidget::setCurrentView(ColumnsView *view)
 {
-    if ( !m_columns.contains(view) )
+    if (!m_columns.contains(view))
         return;
     m_currentView = view;
     emit currentViewChagned(view);
-//    if ( !view->hasFocus() )
-//        view->setFocus();
-//    if ( m_fsModel->index(m_fsModel->rootPath()) != view->rootIndex() )
-//        m_fsModel->setRootPath(m_fsModel->filePath(view->rootIndex()));
 }
 
 void
 ColumnsWidget::showEvent(QShowEvent *e)
 {
     QScrollArea::showEvent(e);
-    if ( isValid(m_model->filePath(m_rootIndex)) )
-        ensureWidgetVisible(column(m_model->filePath(m_rootIndex)));
+    const QUrl &url = m_model->url(m_rootIndex);
+    if (isValid(url))
+        ensureWidgetVisible(column(url));
 }
 
 void
 ColumnsWidget::wheelEvent(QWheelEvent *e)
 {
-    if ( e->orientation() == Qt::Vertical && e->modifiers() == Qt::ControlModifier )
+    if (e->orientation() == Qt::Vertical && e->modifiers() == Qt::ControlModifier)
         horizontalScrollBar()->setValue(horizontalScrollBar()->value()+(-e->delta()/6/*>0?-1:1*/));
 }

@@ -37,26 +37,26 @@ SizeThread::SizeThread(QObject *parent, const QStringList &files)
     , m_fileCount(0)
     , m_size(0)
 {
-    connect( m_timer, SIGNAL(timeout()), this, SLOT(emitSize()) );
-    connect( this, SIGNAL(finished()), this, SLOT(deleteLater()) );
-    connect( this, SIGNAL(finished()), m_timer, SLOT(stop()) );
-    connect( this, SIGNAL(finished()), this, SLOT(emitSize()) );
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(emitSize()));
+    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
+    connect(this, SIGNAL(finished()), m_timer, SLOT(stop()));
+    connect(this, SIGNAL(finished()), this, SLOT(emitSize()));
     m_timer->start(200);
     start();
 }
 
-void SizeThread::run() { while ( m_files.count() ) calculate(m_files.takeFirst()); }
+void SizeThread::run() { while (m_files.count()) calculate(m_files.takeFirst()); }
 
 void
-SizeThread::calculate( const QString &file )
+SizeThread::calculate(const QString &file)
 {
     const QFileInfo f(file);
 
-    if ( f.isDir() )
+    if (f.isDir())
     {
         const QDir::Filters &filter = QDir::AllEntries|QDir::NoDotAndDotDot|QDir::Hidden|QDir::System;
         const QFileInfoList &entries = QDir(file).entryInfoList(filter);
-        foreach ( const QFileInfo &entry, entries )
+        foreach (const QFileInfo &entry, entries)
         {
             if (entry.isDir())
                 ++m_subDirs;
@@ -78,7 +78,7 @@ SizeThread::emitSize()
     s.append(QString("\n%1 byte(s),").arg(QString::number(m_size)));
     s.append(QString("\n%1 file(s),").arg(QString::number(m_fileCount)));
     s.append(QString("\n%1 SubDir(s)").arg(QString::number(m_subDirs)));
-    if ( sender() == m_timer )
+    if (sender() == m_timer)
         s.append("\n ... still calculating.");
     emit newSize(s);
 }
@@ -99,28 +99,28 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     const QString &file = files[0];
     QFileInfo f(file);
 
-    DFM::FileSystemModel *fsModel = DFM::MainWindow::currentContainer()->model();
+    DFM::FS::Model *fsModel = DFM::MainWindow::currentContainer()->model();
     QString location = many ? fsModel->rootPath() : f.path();
     DFM::DeviceItem *di = DFM::MainWindow::places()->deviceManager()->deviceItemForFile(location);
-    if ( f.isSymLink() )
+    if (f.isSymLink())
     {
         location.append(QString("\n(points to: %1)").arg(f.symLinkTarget()));
         di = DFM::MainWindow::places()->deviceManager()->deviceItemForFile(f.symLinkTarget());
     }
 
-    if ( many )
+    if (many)
     {
         int fileCount = 0, dirCount = 0;
-        foreach ( const QString &file, files )
-            if ( QFileInfo(file).isDir() )
+        foreach (const QString &file, files)
+            if (QFileInfo(file).isDir())
                 ++dirCount;
             else
                 ++fileCount;
 
         QString s;
-        if ( dirCount && fileCount )
+        if (dirCount && fileCount)
             s = QString("%1 file(s) and %2 dir(s) selected").arg(QString::number(fileCount), QString::number(dirCount));
-        else if ( dirCount )
+        else if (dirCount)
             s = QString("%1 dir(s) selected").arg(QString::number(dirCount));
         else
             s = QString("%1 file(s) selected").arg(QString::number(fileCount));
@@ -131,13 +131,13 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     {
         window()->setWindowTitle(f.fileName());
         QToolButton *iconLabel = new QToolButton(this);
-        iconLabel->setIcon(fsModel->fileIcon(fsModel->index(f.filePath())));
+        iconLabel->setIcon(fsModel->fileIcon(fsModel->index(QUrl::fromLocalFile(f.filePath()))));
         iconLabel->setToolButtonStyle(Qt::ToolButtonIconOnly);
         iconLabel->setIconSize(QSize(32, 32));
-        if ( f.isDir() )
+        if (f.isDir())
         {
             iconLabel->setProperty("file", f.filePath());
-            connect( iconLabel, SIGNAL(clicked()), this, SLOT(setIcon()) );
+            connect(iconLabel, SIGNAL(clicked()), this, SLOT(setIcon()));
         }
         else
             iconLabel->setEnabled(false);
@@ -161,8 +161,8 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     l->addWidget(new QLabel(tr("Size:"), this), ++row, 0, right);
     QLabel *sl = new QLabel(this);
     l->addWidget(sl, row, 1, left);
-    if ( many || f.isDir() )
-        connect( (new SizeThread(this, files)), SIGNAL(newSize(QString)), sl, SLOT(setText(QString)));
+    if (many || f.isDir())
+        connect((new SizeThread(this, files)), SIGNAL(newSize(QString)), sl, SLOT(setText(QString)));
     else
         sl->setText(DFM::Ops::prettySize(f.size()));
 
@@ -188,7 +188,7 @@ GeneralInfo::setIcon()
 {
     QToolButton *tb = qobject_cast<QToolButton *>(sender());
     QIcon i = QIcon::fromTheme(DFM::IconDialog::iconName());
-    if ( !i.isNull() && QIcon::hasThemeIcon(i.name()) )
+    if (!i.isNull() && QIcon::hasThemeIcon(i.name()))
     {
         const QString &file = tb->property("file").toString();
         QSettings settings(QDir(file).absoluteFilePath(".directory"), QSettings::IniFormat);
@@ -196,6 +196,8 @@ GeneralInfo::setIcon()
         tb->setIcon(i);
 
         qDebug() << QFileInfo(file).path();
+        if (DFM::ThumbsLoader::hasIcon(file))
+            DFM::ThumbsLoader::removeIcon(file);
         DFM::ThumbsLoader::queueFile(file);
     }
 }
@@ -254,12 +256,12 @@ PreViewWidget::PreViewWidget(QWidget *parent, const QStringList &files)
     l->addStretch();
     label->setFixedSize(256, 256);
     const QString &file = files.first();
-    DFM::FileSystemModel *fsModel = DFM::MainWindow::currentContainer()->model();
-    const QModelIndex &index = fsModel->index(file);
-    if ( index.isValid() && fsModel->hasThumb(file) )
+    DFM::FS::Model *fsModel = DFM::MainWindow::currentContainer()->model();
+    const QModelIndex &index = fsModel->index(QUrl::fromLocalFile(file));
+    if (index.isValid() && fsModel->hasThumb(file))
     {
         const QPixmap &pix = qvariant_cast<QPixmap>(fsModel->data(index, Qt::DecorationRole));
-        if ( !pix.isNull() )
+        if (!pix.isNull())
         {
             label->setPixmap(pix);
             label->setFixedSize(pix.size());
@@ -269,15 +271,15 @@ PreViewWidget::PreViewWidget(QWidget *parent, const QStringList &files)
 
     QFile f(file);
     QString s;
-    if ( f.open(QFile::ReadOnly) && DFM::Ops::getMimeType(file).contains("text") )
+    if (f.open(QFile::ReadOnly) && DFM::Ops::getMimeType(file).contains("text"))
     {
-        while ( !f.atEnd() )
+        while (!f.atEnd())
             s.append(QString(f.readLine()));
     }
     f.close();
     label->setText(s.isEmpty() ? tr("Preview not available") : s);
     label->setAlignment(Qt::AlignTop|Qt::AlignLeft);
-    if ( s.isEmpty() )
+    if (s.isEmpty())
         hide();
 }
 
@@ -302,7 +304,7 @@ PropertiesDialog::PropertiesDialog(QWidget *parent, const QStringList &files)
     QVBoxLayout *vbox = new QVBoxLayout(this);
     vbox->setSizeConstraint(QLayout::SetFixedSize);
     vbox->addWidget(m_g = new GeneralInfo(this, files));
-    if ( files.count() == 1 )
+    if (files.count() == 1)
     {
         vbox->addWidget(new PreViewWidget(this, files));
         vbox->addWidget(m_r = new Rights(this, files));
@@ -313,7 +315,7 @@ PropertiesDialog::PropertiesDialog(QWidget *parent, const QStringList &files)
 void
 PropertiesDialog::accept()
 {
-    if ( m_files.count() > 1 )
+    if (m_files.count() > 1)
     {
         QDialog::accept();
         return;
@@ -332,7 +334,7 @@ PropertiesDialog::accept()
         if (m_r->box(Rights::GroupWrite)->isChecked()) permissions |= QFile::WriteGroup; else permissions &= ~QFile::WriteGroup;
         if (m_r->box(Rights::OthersWrite)->isChecked()) permissions |= QFile::WriteOther; else permissions &= ~QFile::WriteOther;
 
-        if ( !fileInfo.isDir() )
+        if (!fileInfo.isDir())
         {
             if (m_r->box(Rights::UserExe)->isChecked()) permissions |= QFile::ExeUser; else permissions &= ~QFile::ExeUser;
             if (m_r->box(Rights::GroupExe)->isChecked()) permissions |= QFile::ExeGroup; else permissions &= ~QFile::ExeGroup;
@@ -340,7 +342,7 @@ PropertiesDialog::accept()
         }
         file.setPermissions(permissions);
         const QString &newFile = fileInfo.dir().absoluteFilePath(m_g->newName());
-        if ( newFile != m_files.first() )
+        if (newFile != m_files.first())
             QFile::rename(fileInfo.filePath(), newFile);
     }
     QDialog::accept();
@@ -355,6 +357,6 @@ PropertiesDialog::forFile(const QString &file)
 void
 PropertiesDialog::forFiles(const QStringList &files)
 {
-    if ( files.count())
+    if (files.count())
         PropertiesDialog(DFM::MainWindow::currentWindow(), files).exec();
 }

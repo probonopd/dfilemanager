@@ -35,14 +35,14 @@
 
 namespace DFM
 {
-class FileSystemModel;
+namespace FS{class Model;}
 class ViewContainer;
 class IconView : public QAbstractItemView
 {
     Q_OBJECT
 public:
     explicit IconView(QWidget *parent = 0);
-    void setNewSize( const int size );
+    void setNewSize(const int size);
     void setModel(QAbstractItemModel *model);
     inline QSize gridSize() const { return m_gridSize; }
     void scrollTo(const QModelIndex &index, ScrollHint hint = EnsureVisible);
@@ -70,6 +70,7 @@ protected:
     void setIconWidth(const int width);
     inline int iconWidth() const { return iconSize().width(); }
     bool isCategorized() const;
+    void renderCategory(const QString &category, const QRect &catRect, QPainter *p = 0, const int index = 0);
     QStyleOptionViewItem viewOptions() const;
 
     int horizontalOffset() const;
@@ -111,7 +112,7 @@ private:
     QHash<void *, QRect> m_rects;
     QHash<QString, QRect> m_catRects;
     bool m_slide, m_startSlide, m_hadSelection;
-    FileSystemModel *m_model;
+    FS::Model *m_model;
     QTimer *m_wheelTimer, *m_sizeTimer, *m_layTimer, *m_scrollTimer, *m_resizeTimer;
     QModelIndex m_firstIndex, m_pressedIndex;
     QPixmap m_homePix, m_bgPix[2];

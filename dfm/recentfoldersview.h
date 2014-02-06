@@ -35,12 +35,12 @@ public:
     explicit RecentFoldersView(QWidget *parent = 0);
     
 signals:
-    void recentFolderClicked( const QString &folder );
+    void recentFolderClicked(const QUrl &url);
     
 public slots:
-    void folderEntered( const QString &folder );
+    void folderEntered(const QUrl &url);
 private slots:
-    void itemActivated( const QModelIndex &index );
+    void itemActivated(const QModelIndex &index);
     void paletteOps();
 private:
     QStandardItemModel *m_model;

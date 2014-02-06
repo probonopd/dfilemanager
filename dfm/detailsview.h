@@ -32,7 +32,7 @@
 
 namespace DFM
 {
-class FileSystemModel;
+namespace FS{class Model;}
 class ViewContainer;
 class DetailsView : public QTreeView
 {
@@ -40,7 +40,6 @@ class DetailsView : public QTreeView
 public:
     explicit DetailsView(QWidget *parent = 0);
     ~DetailsView(){}
-    void setFilter(QString filter);
     void setModel(QAbstractItemModel *model);
     ViewContainer *container();
 
@@ -62,7 +61,7 @@ private slots:
     void sortingChanged(const int column, const Qt::SortOrder order) { emit sortIndicatorChanged(column, (int)order); }
 
 private:
-    FileSystemModel *m_model;
+    FS::Model *m_model;
     QPoint m_pressPos;
     void *m_pressedIndex;
 };

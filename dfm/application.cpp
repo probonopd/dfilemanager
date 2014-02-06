@@ -54,7 +54,7 @@ Application::Application(int &argc, char *argv[])
     const QString &dirPath(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
 #endif
 
-    if ( !QFileInfo(dirPath).exists() )
+    if (!QFileInfo(dirPath).exists())
         QDir::root().mkpath(dirPath);
 
     if (arguments().contains("--iojob"))
@@ -65,18 +65,18 @@ Application::Application(int &argc, char *argv[])
     const QString &fileName = m_type == Browser ? "dfm_browser_file" : m_type == IOJob ? "dfm_iojob_file" : "dfm_file";
     m_filePath = QDir(dirPath).absoluteFilePath(fileName);
     m_file.setFileName(m_filePath);
-    if ( m_sharedMem->attach() )
+    if (m_sharedMem->attach())
         m_isRunning = true;
     else
     {
         setOrganizationName("dfm");
         m_isRunning = false;
-        if ( !m_sharedMem->create(1) )
+        if (!m_sharedMem->create(1))
             qDebug() << "failed to create shared memory";
         //        connect(m_localServer, SIGNAL(newConnection()), this, SLOT(receiveMessage()));
         //        m_localServer->listen(key);
 
-        if ( m_file.open(QFile::WriteOnly|QFile::Truncate) )
+        if (m_file.open(QFile::WriteOnly|QFile::Truncate))
         {
             m_file.write(QByteArray());
             m_file.close();
@@ -101,7 +101,7 @@ static QDateTime s_lastModified;
 void
 Application::fileChanged(const QString &file)
 {
-    if ( isRunning() || (s_lastModified.isValid()&&s_lastModified==QFileInfo(m_file).lastModified()) )
+    if (isRunning() || (s_lastModified.isValid()&&s_lastModified==QFileInfo(m_file).lastModified()))
         return;
 
     s_lastModified = QFileInfo(m_file).lastModified();
@@ -120,7 +120,7 @@ Application::fileChanged(const QString &file)
 bool
 Application::setMessage(const QStringList &message)
 {
-    if ( !isRunning() )
+    if (!isRunning())
         return false;
 
     if (m_file.open(QFile::WriteOnly|QFile::Truncate))
@@ -138,13 +138,13 @@ Application::loadPlugins()
 {
 #ifdef Q_OS_UNIX
     QDir pluginsDir("/usr/lib/dfm");
-    if ( !pluginsDir.exists() )
+    if (!pluginsDir.exists())
     {
         QDir appDir = applicationDirPath();
         appDir.cdUp();
         appDir.cd("plugins");
-        foreach ( const QFileInfo &file, appDir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot) )
-            if ( file.isDir() )
+        foreach (const QFileInfo &file, appDir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot))
+            if (file.isDir())
                 loadPluginsFromDir(QDir(file.absoluteFilePath()));
         return;
     }
@@ -163,9 +163,9 @@ Application::loadPluginsFromDir(const QDir dir)
     {
         QPluginLoader loader(dir.absoluteFilePath(fileName));
         QObject *plugin = loader.instance();
-        if ( ThumbInterface *it = qobject_cast<ThumbInterface *>(plugin) )
+        if (ThumbInterface *it = qobject_cast<ThumbInterface *>(plugin))
         {
-            if ( DFM::Store::config.views.activeThumbIfaces.contains(it->name()) )
+            if (DFM::Store::config.views.activeThumbIfaces.contains(it->name()))
                 m_thumbIfaces.insert(it->name(), it);
             m_allThumbIfaces << it;
         }
@@ -177,15 +177,15 @@ Application::loadPluginsFromDir(const QDir dir)
 void
 Application::activateThumbInterface(const QString &name)
 {
-    if ( m_thumbIfaces.contains(name) ) //already active
+    if (m_thumbIfaces.contains(name)) //already active
         return;
 
-    if ( !DFM::Store::config.views.activeThumbIfaces.contains(name) )
+    if (!DFM::Store::config.views.activeThumbIfaces.contains(name))
         DFM::Store::config.views.activeThumbIfaces << name;
-    for ( int i = 0; i < m_allThumbIfaces.count(); ++i )
+    for (int i = 0; i < m_allThumbIfaces.count(); ++i)
     {
         ThumbInterface *ti = m_allThumbIfaces.at(i);
-        if ( ti->name() == name )
+        if (ti->name() == name)
         {
             activateThumbInterface(ti);
             return;
@@ -196,14 +196,14 @@ Application::activateThumbInterface(const QString &name)
 void
 Application::deActivateThumbInterface(const QString &name)
 {
-    if ( !m_thumbIfaces.contains(name) ) //already inactive
+    if (!m_thumbIfaces.contains(name)) //already inactive
         return;
-    if ( DFM::Store::config.views.activeThumbIfaces.contains(name) )
+    if (DFM::Store::config.views.activeThumbIfaces.contains(name))
         DFM::Store::config.views.activeThumbIfaces.removeOne(name);
-    for ( int i = 0; i < m_allThumbIfaces.count(); ++i )
+    for (int i = 0; i < m_allThumbIfaces.count(); ++i)
     {
         ThumbInterface *ti = m_allThumbIfaces.at(i);
-        if ( ti->name() == name )
+        if (ti->name() == name)
         {
             deActivateThumbInterface(ti);
             return;
@@ -254,7 +254,7 @@ inline static void dockOps(Window win)
 {
     static Atom states[2] = { XInternAtom(DPY, "_NET_WM_STATE_SKIP_TASKBAR", False), XInternAtom(DPY, "_NET_WM_STATE_SKIP_PAGER", False) };
     for (int i = 0; i < 2; ++i)
-        addState( win, states[i] );
+        addState(win, states[i]);
 }
 
 inline static void moveDockToDesktop(const Window &win, const Atom &atom, const int desktop)

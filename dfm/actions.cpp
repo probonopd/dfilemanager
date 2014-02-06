@@ -31,9 +31,9 @@ MainWindow::createActions()
     QColor tbfgc(m_toolBar->palette().color(m_toolBar->foregroundRole()));
     int tbis = m_toolBar->iconSize().height();
     m_actions[DeleteSelection] = new QAction(QIcon::fromTheme("edit-delete"), tr("&Delete"), this);
-    //    delCurrentSelectionAct->setShortcuts( QList<QKeySequence>() << QKeySequence(Qt::SHIFT + Qt::Key_Delete));
+    //    delCurrentSelectionAct->setShortcuts(QList<QKeySequence>() << QKeySequence(Qt::SHIFT + Qt::Key_Delete));
     m_actions[DeleteSelection]->setShortcut(QKeySequence("Shift+Del"));
-    m_actions[DeleteSelection]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[DeleteSelection]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[DeleteSelection]->setObjectName("actionDelete");
     connect(m_actions[DeleteSelection], SIGNAL(triggered()), this, SLOT(deleteCurrentSelection()));
     addAction(m_actions[DeleteSelection]);
@@ -45,23 +45,23 @@ MainWindow::createActions()
     addAction(m_actions[GoHome]);
 
     m_actions[GoBack] = new QAction(tr("&Go Back"), this);
-    m_actions[GoBack]->setShortcuts( QKeySequence::Back);
-    m_actions[GoBack]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[GoBack]->setShortcuts(QKeySequence::Back);
+    m_actions[GoBack]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[GoBack]->setObjectName("actionGoBack");
     //  goBackAct->setStatusTip(tr("Go to previous folder"));
     connect(m_actions[GoBack], SIGNAL(triggered()), this, SLOT(goBack()));
     addAction(m_actions[GoBack]);
 
     m_actions[GoUp] = new QAction(QIcon::fromTheme("go-up"), tr("&Go Up"), this);
-    m_actions[GoUp]->setShortcuts( QList<QKeySequence>() << QKeySequence("Alt+Up") );
-    m_actions[GoUp]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[GoUp]->setShortcuts(QList<QKeySequence>() << QKeySequence("Alt+Up"));
+    m_actions[GoUp]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[GoUp]->setObjectName("actionGoUp");
     connect(m_actions[GoUp], SIGNAL(triggered()), this, SLOT(goUp()));
     addAction(m_actions[GoUp]);
 
     m_actions[GoForward] = new QAction(tr("&Go Forward"), this);
     m_actions[GoForward]->setShortcuts(QKeySequence::Forward);
-    m_actions[GoForward]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[GoForward]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[GoForward]->setObjectName("actionGoForward");
     //  goForwardAct->setStatusTip(tr("Go to next folder"));
     connect(m_actions[GoForward], SIGNAL(triggered()), this, SLOT(goForward()));
@@ -69,7 +69,7 @@ MainWindow::createActions()
 
     m_actions[Exit] = new QAction(tr("E&xit"), this);
     m_actions[Exit]->setShortcuts(QKeySequence::Quit);
-    m_actions[Exit]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[Exit]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[Exit]->setObjectName("actionExit");
     //  exitAct->setStatusTip(tr("Exit the application"));
     connect(m_actions[Exit], SIGNAL(triggered()), this, SLOT(close()));
@@ -88,36 +88,36 @@ MainWindow::createActions()
     addAction(m_actions[AboutQt]);
 
     m_actions[AddPlace] = new QAction(QIcon::fromTheme("bookmark-new"),tr("&Add Place"), this);
-//    placeAct->setShortcuts( QList<QKeySequence>() << QKeySequence("Ctrl+d") );
-//    placeAct->setShortcutContext( Qt::ApplicationShortcut );
+//    placeAct->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+d"));
+//    placeAct->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[AddPlace]->setObjectName("actionPlace");
     connect(m_actions[AddPlace], SIGNAL(triggered()), this, SLOT(genPlace()));
     addAction(m_actions[AddPlace]);
 
     m_actions[RenamePlace] = new QAction(QIcon::fromTheme("bookmarks-organize"),tr("&Rename Place"), this);
-    //  renPlaceAct->setShortcuts( QList<QKeySequence>() << QKeySequence("Ctrl+d") );
-    //  renPlaceAct->setShortcutContext( Qt::ApplicationShortcut );
+    //  renPlaceAct->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+d"));
+    //  renPlaceAct->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[RenamePlace]->setObjectName("actionRenPlace");
     connect(m_actions[RenamePlace], SIGNAL(triggered()), m_placesView, SLOT(renPlace()));
     addAction(m_actions[RenamePlace]);
 
     m_actions[AddPlaceContainer] = new QAction(QIcon::fromTheme("bookmark-new"),tr("&Add Place Container"), this);
-//    placeContAct->setShortcuts( QList<QKeySequence>() << QKeySequence("Ctrl+Alt+P") );
-//    placeContAct->setShortcutContext( Qt::ApplicationShortcut );
+//    placeContAct->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+Alt+P"));
+//    placeContAct->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[AddPlaceContainer]->setObjectName("actionPlaceContainer");
     connect(m_actions[AddPlaceContainer], SIGNAL(triggered()), m_placesView, SLOT(addPlaceCont()));
     addAction(m_actions[AddPlaceContainer]);
 
     m_actions[RemovePlace] = new QAction(QIcon::fromTheme("list-remove"),tr("&Remove Place"), this);
-//    rmPlaceAct->setShortcuts( QList<QKeySequence>() << QKeySequence("Ctrl+Shift+D") );
-//    rmPlaceAct->setShortcutContext( Qt::ApplicationShortcut );
+//    rmPlaceAct->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+Shift+D"));
+//    rmPlaceAct->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[RemovePlace]->setObjectName("actionRmPlace");
     connect(m_actions[RemovePlace], SIGNAL(triggered()), m_placesView, SLOT(removePlace()));
     addAction(m_actions[RemovePlace]);
 
     m_actions[IconView] = new QAction(tr("&Icons View"), this);
-    m_actions[IconView]->setShortcuts( QList<QKeySequence>() << QKeySequence("Ctrl+1") );
-    m_actions[IconView]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[IconView]->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+1"));
+    m_actions[IconView]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[IconView]->setObjectName("actionIconView");
     m_actions[IconView]->setCheckable(true);
     m_actions[IconView]->setChecked(true);
@@ -125,75 +125,75 @@ MainWindow::createActions()
     addAction(m_actions[IconView]);
 
     m_actions[DetailView] = new QAction(tr("&Details View"), this);
-    m_actions[DetailView]->setShortcuts( QList<QKeySequence>() << QKeySequence("Ctrl+2") );
-    m_actions[DetailView]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[DetailView]->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+2"));
+    m_actions[DetailView]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[DetailView]->setObjectName("actionsListView");
     m_actions[DetailView]->setCheckable(true);
     connect(m_actions[DetailView], SIGNAL(triggered()), this, SLOT(setViewDetails()));
     addAction(m_actions[DetailView]);
 
     m_actions[ColumnView] = new QAction(tr("&Columns View"), this);
-    m_actions[ColumnView]->setShortcuts( QList<QKeySequence>() << QKeySequence("Ctrl+3") );
-    m_actions[ColumnView]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[ColumnView]->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+3"));
+    m_actions[ColumnView]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[ColumnView]->setObjectName("actionColView");
     m_actions[ColumnView]->setCheckable(true);
     connect(m_actions[ColumnView], SIGNAL(triggered()), this, SLOT(setViewCols()));
     addAction(m_actions[ColumnView]);
 
     m_actions[FlowView] = new QAction(tr("&Flow"), this);
-    m_actions[FlowView]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+4") );
-    m_actions[FlowView]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[FlowView]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+4"));
+    m_actions[FlowView]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[FlowView]->setObjectName("actionFlow");
     m_actions[FlowView]->setCheckable(true);
     connect(m_actions[FlowView], SIGNAL(triggered()), this, SLOT(flowView()));
     addAction(m_actions[FlowView]);
 
     m_actions[ShowHidden] = new QAction(tr("&Show Hidden"), this);
-    m_actions[ShowHidden]->setShortcuts( QList<QKeySequence>() << QKeySequence("F8") );
-    m_actions[ShowHidden]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[ShowHidden]->setShortcuts(QList<QKeySequence>() << QKeySequence("F8"));
+    m_actions[ShowHidden]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[ShowHidden]->setObjectName("actionShowHidden");
     m_actions[ShowHidden]->setCheckable(true);
     connect(m_actions[ShowHidden], SIGNAL(triggered()), this, SLOT(toggleHidden()));
     addAction(m_actions[ShowHidden]);
 
     m_actions[MkDir] = new QAction(QIcon::fromTheme("folder-new"), tr("&Create Directory"), this);
-    m_actions[MkDir]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("F10") );
-    m_actions[MkDir]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[MkDir]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("F10"));
+    m_actions[MkDir]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[MkDir]->setObjectName("actionMkDir");
     connect(m_actions[MkDir], SIGNAL(triggered()), this, SLOT(createDirectory()));
     addAction(m_actions[MkDir]);
 
     m_actions[Copy] = new QAction(QIcon::fromTheme("edit-copy"), tr("&Copy"), this);
     m_actions[Copy]->setShortcuts(QKeySequence::Copy);
-    m_actions[Copy]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[Copy]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[Copy]->setObjectName("actionCopy");
     connect(m_actions[Copy], SIGNAL(triggered()), this, SLOT(setClipBoard()));
     addAction(m_actions[Copy]);
 
     m_actions[Cut] = new QAction(QIcon::fromTheme("edit-cut"), tr("&Cut"), this);
     m_actions[Cut]->setShortcut(QKeySequence("Ctrl+X"));
-    m_actions[Cut]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[Cut]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[Cut]->setObjectName("actionCut");
     connect(m_actions[Cut], SIGNAL(triggered()), this, SLOT(cutSelection()));
     addAction(m_actions[Cut]);
 
     m_actions[Paste] = new QAction(QIcon::fromTheme("edit-paste"), tr("&Paste"), this);
     m_actions[Paste]->setShortcuts(QKeySequence::Paste);
-    m_actions[Paste]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[Paste]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[Paste]->setObjectName("actionPaste");
     connect(m_actions[Paste], SIGNAL(triggered()), this, SLOT(pasteSelection()));
     addAction(m_actions[Paste]);
 
     m_actions[Rename] = new QAction(QIcon::fromTheme("edit-rename"), tr("&Rename"), this);
-    m_actions[Rename]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("F2") );
-    m_actions[Rename]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[Rename]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("F2"));
+    m_actions[Rename]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[Rename]->setObjectName("actionRename");
     connect(m_actions[Rename], SIGNAL(triggered()), this, SLOT(rename()));
     addAction(m_actions[Rename]);
 
     m_actions[Refresh] = new QAction(QIcon::fromTheme("view-refresh"), tr("&Refresh"), this);
-    m_actions[Refresh]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("F5") );
-    m_actions[Refresh]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[Refresh]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("F5"));
+    m_actions[Refresh]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[Refresh]->setObjectName("acgtionRefresh");
     connect(m_actions[Refresh], SIGNAL(triggered()), this, SLOT(refreshView()));
     addAction(m_actions[Refresh]);
@@ -209,8 +209,8 @@ MainWindow::createActions()
     addAction(m_actions[CustomCommand]);
 
     m_actions[ShowMenuBar] = new QAction(tr("Show MenuBar"),this);
-    m_actions[ShowMenuBar]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+M") );
-    m_actions[ShowMenuBar]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[ShowMenuBar]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+M"));
+    m_actions[ShowMenuBar]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[ShowMenuBar]->setObjectName("actionMenu");
     m_actions[ShowMenuBar]->setCheckable(true);
     m_actions[ShowMenuBar]->setEnabled(!Store::config.behaviour.gayWindow);
@@ -220,21 +220,21 @@ MainWindow::createActions()
     m_actions[ShowStatusBar] = new QAction(tr("Show StatusBar"),this);
     m_actions[ShowStatusBar]->setObjectName("actionStatus");
     m_actions[ShowStatusBar]->setCheckable(true);
-    m_actions[ShowStatusBar]->setShortcut( QKeySequence("Ctrl+S") );
+    m_actions[ShowStatusBar]->setShortcut(QKeySequence("Ctrl+S"));
     connect(m_actions[ShowStatusBar],SIGNAL(triggered()),this, SLOT(toggleStatusVisible()));
     addAction(m_actions[ShowStatusBar]);
 
     m_actions[ShowPathBar] = new QAction(tr("Show Path"),this);
-    m_actions[ShowPathBar]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+P") );
-    m_actions[ShowPathBar]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[ShowPathBar]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+P"));
+    m_actions[ShowPathBar]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[ShowPathBar]->setObjectName("actionPathVisible");
     m_actions[ShowPathBar]->setCheckable(true);
     connect(m_actions[ShowPathBar], SIGNAL(triggered()),this,SLOT(hidePath()));
     addAction(m_actions[ShowPathBar]);
 
     m_actions[AddTab] = new QAction(tr("New Tab"),this);
-    m_actions[AddTab]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+T") );
-    m_actions[AddTab]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[AddTab]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+T"));
+    m_actions[AddTab]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[AddTab]->setObjectName("actionAddTab");
     connect(m_actions[AddTab],SIGNAL(triggered()),this,SLOT(newTab()));
     addAction(m_actions[AddTab]);
@@ -257,8 +257,8 @@ MainWindow::createActions()
     addAction(m_actions[Properties]);
 
     m_actions[EditPath] = new QAction(tr("Edit Path"),this);
-    m_actions[EditPath]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("F6") );
-    m_actions[EditPath]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[EditPath]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("F6"));
+    m_actions[EditPath]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[EditPath]->setObjectName("actionEditPath");
     m_actions[EditPath]->setCheckable(true);
     connect(m_actions[EditPath], SIGNAL(triggered()),this,SLOT(togglePath()));
@@ -266,24 +266,24 @@ MainWindow::createActions()
 
     m_actions[NewWindow] = new QAction(tr("New Window"), this);
     m_actions[NewWindow]->setShortcut(QKeySequence("Ctrl+N"));
-    m_actions[NewWindow]->setShortcutContext( Qt::ApplicationShortcut );
+    m_actions[NewWindow]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[NewWindow]->setObjectName("actionNewWindow");
     connect(m_actions[NewWindow], SIGNAL(triggered()), this, SLOT(newWindow()));
     addAction(m_actions[NewWindow]);
 
     m_actions[SortDescending] = new QAction(tr("Descending"), this);
     m_actions[SortDescending]->setCheckable(true);
-    connect ( m_actions[SortDescending], SIGNAL(triggered()), this, SLOT(setSorting()) );
+    connect (m_actions[SortDescending], SIGNAL(triggered()), this, SLOT(setSorting()));
 
     m_sortActs = new QActionGroup(this);
     m_actions[SortName] = m_sortActs->addAction(tr("Name"));
     m_actions[SortDate] = m_sortActs->addAction(tr("Date"));
     m_actions[SortSize] = m_sortActs->addAction(tr("Size"));
     m_actions[SortType] = m_sortActs->addAction(tr("Type"));
-    foreach ( QAction *a, m_sortActs->actions() )
+    foreach (QAction *a, m_sortActs->actions())
     {
         a->setCheckable(true);
-        connect ( a, SIGNAL(triggered()), this, SLOT(setSorting()) );
+        connect (a, SIGNAL(triggered()), this, SLOT(setSorting()));
     }
     m_sortActs->setExclusive(true);
 }
@@ -332,7 +332,7 @@ MainWindow::createMenus()
     m_goMenu->addSeparator();
     m_goMenu->addAction(m_actions[GoHome]);
     m_goMenu->addSeparator();
-    connect ( m_goMenu, SIGNAL(aboutToShow()), this, SLOT(addBookmarks()) );
+    connect (m_goMenu, SIGNAL(aboutToShow()), this, SLOT(addBookmarks()));
     m_mainMenu->addMenu(m_goMenu);
 
     menuBar()->addSeparator();
@@ -343,17 +343,17 @@ MainWindow::createMenus()
     addAction(m_actions[ShowMenuBar]);
     m_mainMenu->addMenu(m_helpMenu);
 
-    if ( Store::config.behaviour.gayWindow )
+    if (Store::config.behaviour.gayWindow)
         m_actions[ShowMenuBar]->setChecked(false);
 }
 
 void
 MainWindow::addBookmarks()
 {
-    foreach ( QAction *action, m_goMenu->actions() )
-        if ( action->objectName().isEmpty() && !action->isSeparator() )
+    foreach (QAction *action, m_goMenu->actions())
+        if (action->objectName().isEmpty() && !action->isSeparator())
             delete action;
-    for ( int i = 0; i < m_placesView->containerCount(); ++i )
+    for (int i = 0; i < m_placesView->containerCount(); ++i)
         m_goMenu->addMenu(m_placesView->containerAsMenu(i));
 }
 

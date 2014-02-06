@@ -15,21 +15,21 @@ static magic_t s_magicMime;
 static QString getMimeType(const QString &file)
 {
     const QFileInfo f(file);
-    if ( !f.isReadable() )
+    if (!f.isReadable())
         return QString();
 
-    if ( f.isSymLink())
+    if (f.isSymLink())
         return "inode/symlink";
-    if ( f.isDir() )
+    if (f.isDir())
         return "inode/directory";
-    return QString( magic_file( s_magicMime, file.toLocal8Bit().data() ) );;
+    return QString(magic_file(s_magicMime, file.toLocal8Bit().data()));;
 }
 
 void
 ThumbsText::init()
 {
-    s_magicMime = magic_open( MAGIC_MIME_TYPE );
-    magic_load( s_magicMime, NULL );
+    s_magicMime = magic_open(MAGIC_MIME_TYPE);
+    magic_load(s_magicMime, NULL);
 }
 
 bool
@@ -42,7 +42,7 @@ bool
 ThumbsText::thumb(const QString &file, const int size, QImage &thumb)
 {
     QFile f(file);
-    if ( !f.open(QFile::ReadOnly|QIODevice::Text) || !canRead(file) )
+    if (!f.open(QFile::ReadOnly|QIODevice::Text) || !canRead(file))
         return false;
 
     QImage img(QSize(size, size), QImage::Format_RGB32);
@@ -54,7 +54,7 @@ ThumbsText::thumb(const QString &file, const int size, QImage &thumb)
     int pos = h;
     QTextStream data(&f);
     data.setCodec(QTextCodec::codecForLocale());
-    while ( !data.atEnd() && pos < size )
+    while (!data.atEnd() && pos < size)
     {
         p.drawText(0, pos, data.readLine());
         pos += h;

@@ -36,27 +36,25 @@ class ColumnsView : public QListView
 {
     Q_OBJECT
 public:
-    ColumnsView(QWidget *parent = 0, QAbstractItemModel *model = 0, const QString &rootPath = QString());
+    ColumnsView(QWidget *parent = 0, QAbstractItemModel *model = 0, const QUrl &url = QUrl());
     ~ColumnsView(){}
-    void setFilter(QString filter);
     void setModel(QAbstractItemModel *model);
-    void setRootIndex(const QModelIndex &index);
-    inline void setActiveFileName( const QString &fileName ) { QFileInfo f(fileName); m_activeFile = f.exists()?f.fileName():fileName; update(); }
+//    void setRootIndex(const QModelIndex &index);
+    inline void setActiveFileName(const QString &fileName) { QFileInfo f(fileName); m_activeFile = f.exists()?f.fileName():fileName; update(); }
     inline QString activeFileName() { return m_activeFile; }
-    inline QString rootPath() { return m_rootPath; }
-    void setRootPath( const QString &path );
+    inline QUrl rootUrl() { return m_url; }
+    void setUrl(const QUrl &url);
     QRect expanderRect(const QModelIndex &index);
 
 public slots:
-    void updateWidth();
-    void dirLoaded(const QString &dir);
-    void fileRenamed( const QString &path, const QString &oldName, const QString &newName );
+//    void updateWidth();
+//    void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
 
 private slots:
-    void rowsRemoved(const QModelIndex &parent, int start, int end);
+//    void rowsRemoved(const QModelIndex &parent, int start, int end);
     
 signals:
-    void newTabRequest(const QModelIndex &path);
+    void newTabRequest(const QModelIndex &index);
     void focusRequest(ColumnsView *view);
     void showed(ColumnsView *view);
     void pathDeleted(ColumnsView *view);
@@ -74,15 +72,16 @@ protected:
 //    void focusOutEvent(QFocusEvent *event) { QListView::focusOutEvent(event); viewport()->update(); }
     void wheelEvent(QWheelEvent *e);
     bool eventFilter(QObject *o, QEvent *e);
-    bool sanityCheckForDir();
+//    bool sanityCheckForDir();
 
 private:
     ColumnsWidget *m_parent;
-    FileSystemModel *m_model;
+    FS::Model *m_model;
     QSortFilterProxyModel *m_sortModel;
     QFileSystemWatcher *m_fsWatcher;
     QPoint m_pressPos;
-    QString m_activeFile, m_rootPath;
+    QString m_activeFile;
+    QUrl m_url;
     int m_width;
 };
 

@@ -50,23 +50,23 @@ public slots:
     void floatationChanged(const bool floating);
     inline void setFloat() { /*m_mainWindow->raise(); m_timer->start(10);*/ if (isFloating()) m_dirIn = true; else setFloating(true); }
     inline void toggleVisibility() { setVisible(!isVisible()); }
-    inline void toggleLock() { if ( m_isLocked ) setLocked(false); else setLocked(true); }
-    inline void setLocked( const bool locked = false )
+    inline void toggleLock() { if (m_isLocked) setLocked(false); else setLocked(true); }
+    inline void setLocked(const bool locked = false)
     {
-        if ( isFloating() )
+        if (isFloating())
             return;
-        if ( locked )
+        if (locked)
         {
             QLabel *w = new QLabel(this);
             w->setContentsMargins(0, -w->fontMetrics().height(),0,-w->fontMetrics().height());
-            setTitleBarWidget( w );
+            setTitleBarWidget(w);
             m_isLocked = true;
         }
         else
         {
             if (QWidget *w = titleBarWidget())
                 delete w;
-            setTitleBarWidget( 0 );
+            setTitleBarWidget(0);
             m_isLocked = false;
         }
     }

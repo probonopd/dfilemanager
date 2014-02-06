@@ -22,11 +22,22 @@
 #include "pathnavigator.h"
 #include "mainwindow.h"
 #include "iojob.h"
+#include "iconprovider.h"
 #include <QDebug>
 #include <QCompleter>
 #include <QDirModel>
 
 using namespace DFM;
+
+PathSeparator::PathSeparator(QWidget *parent, const QUrl &url, FS::Model *fsModel)
+    : QWidget(parent)
+    , m_url(url)
+    , m_fsModel(fsModel)
+    , m_nav(qobject_cast<PathNavigator *>(parent))
+{
+    setAttribute(Qt::WA_Hover);
+    setFixedSize(9, 9);
+}
 
 void
 PathSeparator::paintEvent(QPaintEvent *)
@@ -44,7 +55,7 @@ PathSeparator::paintEvent(QPaintEvent *)
     triangle.moveTo(r.topLeft());
     triangle.lineTo(r.adjusted(0, r.height()/2, 0, 0).topRight());
     triangle.lineTo(r.bottomLeft());
-    if ( !underMouse() )
+    if (!underMouse())
         p.setOpacity(0.5f);
     p.setBrush(hl);
     p.drawPath(triangle.translated(0, y));
@@ -54,36 +65,27 @@ PathSeparator::paintEvent(QPaintEvent *)
 }
 
 void
-PathSeparator::setPath()
-{
-    QAction *action = static_cast<QAction *>(sender());
-    const QString &path = action->data().toString();
-    m_fsModel->setPath(path);
-}
-
-void
 PathSeparator::mousePressEvent(QMouseEvent *event)
 {
     Menu menu;
-    foreach ( const QFileInfo &info, QDir( m_path ).entryInfoList( QDir::AllDirs | QDir::NoDotAndDotDot ) )
+    const QModelIndex &parent = m_fsModel->index(m_url);
+    for (int i = 0; i < m_fsModel->rowCount(parent); ++i)
     {
-        QAction *action = new QAction( info.fileName(), this );
-        action->setText( info.fileName() );
-        action->setData( info.filePath() );
-        if ( m_nav->path().startsWith(info.filePath()) )
-            action->setEnabled(false);
-        menu.addAction( action );
-        connect( action, SIGNAL( triggered() ), this, SLOT( setPath() ) );
+        const QModelIndex &child = parent.child(i, 0);
+        QAction *action = menu.addAction(child.data().toString(), m_fsModel, SLOT(setUrlFromDynamicPropertyUrl()));
+        action->setProperty("url", QVariant::fromValue(m_fsModel->url(child)));
     }
     menu.exec(event->globalPos());
 }
 
+//-----------------------------------------------------------------------------
+
 void
 Menu::mousePressEvent(QMouseEvent *e)
 {
-    if ( e->button() == Qt::LeftButton )
+    if (e->button() == Qt::LeftButton)
         QMenu::mousePressEvent(e);
-    else if ( e->button() == Qt::MidButton )
+    else if (e->button() == Qt::MidButton)
     {
         e->accept();
         QAction *action = qobject_cast<QAction *>(actionAt(e->pos()));
@@ -94,16 +96,18 @@ Menu::mousePressEvent(QMouseEvent *e)
         e->accept();
 }
 
-NavButton::NavButton(QWidget *parent, const QString &path, const QString &text)
+//-----------------------------------------------------------------------------
+
+NavButton::NavButton(QWidget *parent, const QUrl &url, const QString &text)
     : QWidget(parent)
-    , m_path(path)
+    , m_url(url)
     , m_nav(static_cast<PathNavigator *>(parent))
     , m_hasData(false)
     , m_margin(4)
     , m_text(text)
 {
     setMaximumHeight(16);
-    if ( m_nav->path() != path )
+    if (m_nav->url() != url)
         setMinimumWidth(23);
     setAcceptDrops(true);
 }
@@ -123,8 +127,8 @@ NavButton::minimumSizeHint() const
 void
 NavButton::dragEnterEvent(QDragEnterEvent *e)
 {
-    if ( m_path != m_nav->path() )
-    if ( e->mimeData()->hasUrls() )
+    if (m_url != m_nav->url())
+    if (e->mimeData()->hasUrls())
     {
         e->acceptProposedAction();
         m_hasData = true;
@@ -135,7 +139,8 @@ NavButton::dragEnterEvent(QDragEnterEvent *e)
 void
 NavButton::dropEvent(QDropEvent *e)
 {
-    IO::Manager::copy(e->mimeData()->urls(), m_path, true, true);
+    if (m_url.isLocalFile())
+        IO::Manager::copy(e->mimeData()->urls(), m_url.toLocalFile(), true, true);
     m_hasData = false;
     update();
 }
@@ -160,7 +165,7 @@ void
 NavButton::paintEvent(QPaintEvent *e)
 {
 //    QToolButton::paintEvent(e);
-    const QPixmap &pix = m_nav->model()->fileIcon(m_nav->model()->index(m_path)).pixmap(16);
+    const QPixmap &pix = m_nav->model()->fileIcon(m_nav->model()->index(m_url)).pixmap(16);
     QPainter p(this);
     p.drawTiledPixmap(m_margin, 0, 16, 16, pix);
 
@@ -179,20 +184,20 @@ NavButton::paintEvent(QPaintEvent *e)
     lgb.setColorAt(0.6f, emb);
     lgb.setColorAt(1.0f, Qt::transparent);
 
-    if ( rect().width() < sizeHint().width()-m_margin )
+    if (rect().width() < sizeHint().width()-m_margin)
         p.setPen(QPen(lgb, 1.0f));
     else
         p.setPen(emb);
 
     p.drawText(textRect.translated(0, 1), Qt::AlignLeft|Qt::AlignVCenter, m_text);
 
-    if ( rect().width() < sizeHint().width()-m_margin )
+    if (rect().width() < sizeHint().width()-m_margin)
         p.setPen(QPen(lgf, 1.0f));
     else
         p.setPen(fg);
 
     p.drawText(textRect, Qt::AlignLeft|Qt::AlignVCenter, m_text);
-    if ( m_hasData )
+    if (m_hasData)
     {
         QRectF r(rect());
         r.adjust(0.5f, 0.5f, -0.5f, -0.5f);
@@ -221,22 +226,24 @@ NavButton::mouseReleaseEvent(QMouseEvent *e)
         return QWidget::mouseReleaseEvent(e);
     }
 
-    if ( e->button() == Qt::LeftButton )
+    if (e->button() == Qt::LeftButton)
     {
         m_hasPress = false;
-        emit navPath(m_path);
+        emit urlRequest(m_url);
         e->accept();
         return;
     }
-    else if ( e->button() == Qt::MidButton )
+    else if (e->button() == Qt::MidButton)
     {
         m_hasPress = false;
         e->accept();
-        MainWindow::currentWindow()->addTab( m_path );
+        MainWindow::currentWindow()->addTab(m_url);
     }
     else
         e->accept();
 }
+
+//-----------------------------------------------------------------------------
 
 void
 PathBox::paintEvent(QPaintEvent *)
@@ -259,18 +266,38 @@ PathBox::paintEvent(QPaintEvent *)
     p.end();
 }
 
-PathNavigator::PathNavigator( QWidget *parent, FileSystemModel *model )
-    : QWidget( parent )
+//-----------------------------------------------------------------------------
+
+PathNavigator::PathNavigator(QWidget *parent, FS::Model *model)
+    : QWidget(parent)
     , m_fsModel(model)
     , m_hasPress(false)
     , m_layout(new QHBoxLayout(this))
     , m_bc(static_cast<BreadCrumbs *>(parent))
+    , m_schemeButton(new Button(this))
 {
-    connect( m_fsModel, SIGNAL( directoryLoaded(QString)), this, SLOT( genNavFromPath( QString ) ) );
-    setContentsMargins( 0, 0, 0, 0 );
-    m_layout->setContentsMargins( 0, 0, 0, 0 );
-    m_layout->setSpacing( 0 );
+//    connect(m_fsModel, SIGNAL(directoryLoaded(QString)), this, SLOT(genNavFromPath(QString)));
+    connect(m_fsModel, SIGNAL(urlChanged(QUrl)), this, SLOT(genNavFromUrl(QUrl)));
+    setContentsMargins(0, 0, 0, 0);
+    m_layout->setContentsMargins(24, 0, 0, 0);
+    m_layout->setSpacing(0);
     setLayout(m_layout);
+    QTimer::singleShot(0, this, SLOT(postConstructorJobs()));
+}
+
+void
+PathNavigator::postConstructorJobs()
+{
+    m_schemeButton->setIcon(IconProvider::icon(IconProvider::Configure, 16, palette().color(foregroundRole()), false));
+    m_schemeButton->setMenu(m_fsModel->schemes());
+}
+
+void
+PathNavigator::resizeEvent(QResizeEvent *e)
+{
+    QWidget::resizeEvent(e);
+    m_schemeButton->move(0, 0);
+    m_schemeButton->resize(24, height());
 }
 
 QSize
@@ -280,11 +307,28 @@ PathNavigator::sizeHint() const
 }
 
 void
+PathNavigator::mousePressEvent(QMouseEvent *e)
+{
+    QWidget::mousePressEvent(e);
+    if (!childAt(e->pos()))
+        m_hasPress = true;
+}
+
+void
+PathNavigator::mouseReleaseEvent(QMouseEvent *e)
+{
+    QWidget::mouseReleaseEvent(e);
+    if (m_hasPress && rect().contains(e->pos()))
+        emit edit();
+    m_hasPress = false;
+}
+
+void
 PathNavigator::clear()
 {
     while (QLayoutItem *item = m_layout->takeAt(0))
     {
-        if ( item->widget() )
+        if (item->widget())
             delete item->widget();
         delete item;
     }
@@ -293,56 +337,50 @@ PathNavigator::clear()
 void
 PathNavigator::genNavFromUrl(const QUrl &url)
 {
-
-}
-
-void
-PathNavigator::genNavFromPath( const QString &path )
-{
-    QModelIndex index = m_fsModel->index( path );
-    if ( !index.isValid() )
-        return;
-
-    m_pathList.clear();
+    m_bc->setUrl(url);
     clear();
 
-    while ( index.isValid() )
-    {
-        m_pathList.prepend( m_fsModel->filePath( index ) );
-        index = index.parent();
-    }
+    if (!url.isLocalFile()) //for now....
+        return;
 
-    for ( int i = 0; i < m_pathList.count(); ++i )
-    {
-        const QString &newPath = m_pathList.at(i);
+    const QString &path = url.toLocalFile();
+
+    if (!QFileInfo(path).exists())
+        return;
+
+    QDir dir(path);
+    do {
+        const QString &newPath = dir.path();
         const QFileInfo fi(newPath);
-        const QString buttonText( fi.fileName().isEmpty() ? fi.filePath() : fi.fileName() );
-        NavButton *nb = new NavButton( this, newPath, buttonText );
+        const QString buttonText(fi.fileName().isEmpty() ? fi.filePath() : fi.fileName());
+        const QUrl &pathUrl = QUrl::fromLocalFile(newPath);
+        NavButton *nb = new NavButton(this, pathUrl, buttonText);
 
         QFont f(font());
         f.setPointSize(qMax<int>(Store::config.behaviour.minFontSize, f.pointSize()*0.8));
 
-        if ( newPath == path )
-            f.setBold( true );
+        if (newPath == path)
+            f.setBold(true);
         else
-            nb->setCursor( Qt::PointingHandCursor );
+            nb->setCursor(Qt::PointingHandCursor);
         nb->setFont(f);
 
-        m_layout->addWidget( nb );
-        connect( nb, SIGNAL( navPath( QString ) ), m_fsModel, SLOT( setPath( QString ) ) );
+        m_layout->insertWidget(m_layout->indexOf(m_schemeButton)+1, nb);
+        connect(nb, SIGNAL(urlRequest(QUrl)), m_fsModel, SLOT(setUrl(QUrl)));
 
-        if ( newPath != path )
+        if (newPath != path)
         {
-            PathSeparator *separator = new PathSeparator( this, newPath, m_fsModel );
-            m_layout->addWidget( separator );
+            PathSeparator *separator = new PathSeparator(this, pathUrl, m_fsModel);
+            m_layout->insertWidget(m_layout->indexOf(nb)+1, separator);
         }
-    }
+    } while (dir.cdUp());
     m_layout->addStretch();
     m_bc->pathBox()->setEditText(path);
-    m_bc->pathChanged(path);
 }
 
-BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
+//-----------------------------------------------------------------------------
+
+BreadCrumbs::BreadCrumbs(QWidget *parent, FS::Model *fsModel)
     : QStackedWidget(parent)
     , m_pathNav(new PathNavigator(this, fsModel))
     , m_pathBox(new PathBox(this))
@@ -361,9 +399,9 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FileSystemModel *fsModel)
     completer->setModel(dirModel);
     m_pathBox->setCompleter(completer);
 
-    connect ( m_pathBox, SIGNAL(activated(QString)), this, SLOT(setRootPath(QString)) );
-    connect ( m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()) );
-    connect ( m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()) );
+    connect (m_pathBox, SIGNAL(activated(QString)), this, SLOT(urlFromEdit(QString)));
+    connect (m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()));
+    connect (m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()));
     setCurrentWidget(m_pathNav);
     QTimer::singleShot(0, this, SLOT(paletteOps()));
 }
@@ -375,7 +413,7 @@ BreadCrumbs::paletteOps()
     if (style > 0)
         setAutoFillBackground(true);
     if (style!=0)
-        setFrameStyle( QFrame::StyledPanel | QFrame::Sunken );
+        setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
     else
         setContentsMargins(0, 0, 0, 0);
     QPalette::ColorRole bg = backgroundRole(), fg = foregroundRole();
@@ -384,19 +422,19 @@ BreadCrumbs::paletteOps()
     if (style == 1)
     {
         //base color... slight hihglight tint
-        QColor midC = Ops::colorMid( pal.color( QPalette::Base ), qApp->palette().color( QPalette::Highlight ), 10, 1 );
-        pal.setColor( bg, Ops::colorMid( Qt::black, midC, 1, 10 ) );
-        pal.setColor( fg, qApp->palette().color(QPalette::Text) );
+        QColor midC = Ops::colorMid(pal.color(QPalette::Base), qApp->palette().color(QPalette::Highlight), 10, 1);
+        pal.setColor(bg, Ops::colorMid(Qt::black, midC, 1, 10));
+        pal.setColor(fg, qApp->palette().color(QPalette::Text));
     }
     else if (style == 2)
     {
-        pal.setColor(bg, Ops::colorMid( fgc, qApp->palette().color( QPalette::Highlight ), 10, 1 ));
+        pal.setColor(bg, Ops::colorMid(fgc, qApp->palette().color(QPalette::Highlight), 10, 1));
         pal.setColor(fg, bgc);
     }
     else if (style == 3)
     {
         const QColor &wtext = pal.color(QPalette::WindowText), w = pal.color(QPalette::Window);
-        pal.setColor(bg, Ops::colorMid( wtext, qApp->palette().color( QPalette::Highlight ), 10, 1 ));
+        pal.setColor(bg, Ops::colorMid(wtext, qApp->palette().color(QPalette::Highlight), 10, 1));
         pal.setColor(fg, w);
     }
     pal.setBrush(bg, pal.color(bg));
@@ -415,41 +453,46 @@ BreadCrumbs::sizeHint() const
 }
 
 void
-BreadCrumbs::setRootPath( const QString &rootPath )
+BreadCrumbs::urlFromEdit(const QString &urlString)
 {
-    m_fsModel->setPath( Ops::sanityChecked(rootPath) );
+    const QString &checked = Ops::sanityChecked(urlString);
+    QUrl url(checked);
+    if (url.scheme().isEmpty())
+        url = QUrl::fromLocalFile(checked);
+
+    m_fsModel->setUrl(url);
     setEditable(false);
 }
 
 void
-BreadCrumbs::pathChanged(const QString &path)
+BreadCrumbs::setUrl(const QUrl &url)
 {
-    if ( !m_fsModel )
+    if (!m_fsModel)
         return;
-    if ( path.isNull() || path.isEmpty() || path != m_fsModel->rootPath() )
+    if (url != m_fsModel->rootUrl())
         return;
     bool exists = false;
     for (int i = 0; i < m_pathBox->count(); i++)
-        if (m_pathBox->itemText(i) == path)
+        if (m_pathBox->itemText(i) == url.path())
             exists = true;
-    if (!exists && m_fsModel->index(path).isValid())
-        m_pathBox->addItem(path);
+    if (!exists && m_fsModel->index(url).isValid())
+        m_pathBox->addItem(url.path());
 
-    m_pathBox->setEditText(path);
+    m_pathBox->setEditText(url.path());
 }
 
 void
-BreadCrumbs::complete( const QString &path )
+BreadCrumbs::complete(const QString &path)
 {
 //    QString p = path;
-//    if ( !QDir(p).exists() )
+//    if (!QDir(p).exists())
 //        p = path.mid(0, path.lastIndexOf(QDir::separator()));
-//    if ( !p.endsWith(QDir::separator()) )
+//    if (!p.endsWith(QDir::separator()))
 //        p.append(QDir::separator());
 
 //    const QString &current = path.mid(path.lastIndexOf(QDir::separator())+1);
 //    QStringList paths;
-//    foreach ( const QString &subPath, QDir(p).entryList(QStringList() << "*"+current+"*", QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot, QDir::Name) )
+//    foreach (const QString &subPath, QDir(p).entryList(QStringList() << "*"+current+"*", QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot, QDir::Name))
 //        paths << QString("%1%2%3").arg(p, subPath, QDir::separator());
 
 //    QCompleter comp(paths, m_pathBox);

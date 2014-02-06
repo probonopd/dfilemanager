@@ -57,7 +57,7 @@ class FileExistsDialog : public QDialog
 public:
     FileExistsDialog(const QStringList &files, QWidget *parent = 0);
     QPair<Mode, QString> getMode();
-    static QPair<Mode, QString> mode( const QStringList &files );
+    static QPair<Mode, QString> mode(const QStringList &files);
 
 protected:
     bool event(QEvent *e);
@@ -86,10 +86,10 @@ signals:
     void pauseRequest(bool paused);
 
 public slots:
-    void setInfo( QString from, QString to, int completeProgress, int currentProgress );
-    inline void setSpeed( const QString &speed ) { m_speedLabel->setText(speed); }
+    void setInfo(QString from, QString to, int completeProgress, int currentProgress);
+    inline void setSpeed(const QString &speed) { m_speedLabel->setText(speed); }
     void finished();
-    inline void pauseToggled( const bool pause, const bool cut ) { setWindowTitle(cut ? (pause ? "Moving... [paused]" : "Moving..." ) : (pause ? "Copying... [paused]" : "Copying... ")); }
+    inline void pauseToggled(const bool pause, const bool cut) { setWindowTitle(cut ? (pause ? "Moving... [paused]" : "Moving...") : (pause ? "Copying... [paused]" : "Copying... ")); }
 
 private:
     QProgressBar *m_progress, *m_fileProgress;
@@ -113,7 +113,7 @@ public:
 
     bool paused() const { return m_pause; }
     void pause();
-    void setMode( QPair<Mode, QString> mode );
+    void setMode(QPair<Mode, QString> mode);
 
     static void copy(const QStringList &sourceFiles, const QString &destination, bool cut = false, bool ask = false);
     static void copy(const QList<QUrl> &sourceFiles, const QString & destination, bool cut = false, bool ask = false);
@@ -131,12 +131,12 @@ signals:
     void copyOrMoveFinished();
     void copyProgress(const QString &inFile, const QString &outFile, const int progress, const int currentProgress);
     void fileExists(const QStringList &files);
-    void pauseToggled( const bool pause, const bool cut );
+    void pauseToggled(const bool pause, const bool cut);
     void errorSignal();
-    void speed( const QString &speed );
+    void speed(const QString &speed);
 
 private slots:
-    void fileExistsSlot( const QStringList &files ) { setMode(FileExistsDialog::mode(files)); }
+    void fileExistsSlot(const QStringList &files) { setMode(FileExistsDialog::mode(files)); }
     void emitProgress();
     void errorSlot();
     void finishedSlot() { emit copyProgress(QString(), QString(), 100, 100); emit speed(QString()); }
@@ -150,6 +150,8 @@ protected:
     void reset();
     void doJob(const IOJobData &ioJobData);
     void getDirs(const QString &dir, quint64 &fileSize = (quint64 &)defaultInteger);
+    bool getTotalSize(const QStringList &copyFiles, quint64 &fileSize = (quint64 &)defaultInteger);
+    void error(const QString &error);
     void run();
 
 private:

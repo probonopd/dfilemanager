@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 #endif
     Application app(argc, argv);
 
-    if ( app.isRunning() )
+    if (app.isRunning())
     {
         app.setMessage(app.arguments());
         return 0;
@@ -43,14 +43,14 @@ int main(int argc, char *argv[])
     {
     case Application::Browser :
     {
-        if ( app.font().pointSize() < DFM::Store::config.behaviour.minFontSize )
+        if (app.font().pointSize() < DFM::Store::config.behaviour.minFontSize)
         {
             QFont font = app.font();
             font.setPointSize(DFM::Store::config.behaviour.minFontSize);
             app.setFont(font);
         }
 
-        if ( !DFM::Store::config.styleSheet.isEmpty() )
+        if (!DFM::Store::config.styleSheet.isEmpty())
         {
             QFile file(DFM::Store::config.styleSheet);
             file.open(QFile::ReadOnly);

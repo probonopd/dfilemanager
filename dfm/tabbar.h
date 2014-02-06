@@ -79,7 +79,7 @@ public:
     void setTabBar(TabBar *tabBar);
     static int headHeight(MainWindow *win);
     static QLinearGradient headGrad(MainWindow *win);
-    static QPainterPath tab( const QRect &r, int round = 4, TabShape shape = Standard );
+    static QPainterPath tab(const QRect &r, int round = 4, TabShape shape = Standard);
 
 protected:
     bool eventFilter(QObject *o, QEvent *e);
@@ -155,7 +155,7 @@ protected:
     void dropEvent(QDropEvent *e);
     bool eventFilter(QObject *, QEvent *);
     void correctAddButtonPos();
-    void drawTab( QPainter *p, int index );
+    void drawTab(QPainter *p, int index);
 
 private slots:
     void tabCloseRequest();

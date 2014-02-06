@@ -53,14 +53,14 @@ public:
         m_icon = icon;
     }
     inline Place(const QStringList &texts = QStringList(), const QIcon &icon = QIcon()) : m_values(texts) { while (m_values.count() < 3) m_values << QString(); m_icon = icon; }
-    inline Place( Place *p ) { m_values << p->name() << p->path() << p->iconName(); m_icon = p->fileIcon(); }
+    inline Place(Place *p) { m_values << p->name() << p->path() << p->iconName(); m_icon = p->fileIcon(); }
     virtual QStringList values() { return m_values; }
     virtual QString name() const { return m_values[Name]; }
     virtual QString path() const { return m_values[Path]; }
     virtual QString iconName() const { return m_values[Icon]; }
-    virtual void setName( const QString &name ) { m_values[Name] = name; }
-    virtual void setPath( const QString &path ) { m_values[Path] = path; }
-    virtual void setIconName( const QString &iconName ) { m_values[Icon] = iconName; }
+    virtual void setName(const QString &name) { m_values[Name] = name; }
+    virtual void setPath(const QString &path) { m_values[Path] = path; }
+    virtual void setIconName(const QString &iconName) { m_values[Icon] = iconName; }
     inline QIcon fileIcon() { return m_icon; }
     inline void setFileIcon(const QIcon &icon) { m_icon = icon; }
 
@@ -73,18 +73,18 @@ class Container : public Place
 {
 public:
     typedef QList<Place *> Places;
-    inline Container( const QString &name ) : Place(QStringList() << name) { setSelectable(false); }
-    inline Container( Container *c ) : Place( c )
+    inline Container(const QString &name) : Place(QStringList() << name) { setSelectable(false); }
+    inline Container(Container *c) : Place(c)
     {
-        foreach ( Place *p, c->places() )
-            appendRow( new Place(p) );
+        foreach (Place *p, c->places())
+            appendRow(new Place(p));
         setSelectable(false);
     }
-    inline Place *place( const int i ) { return static_cast<Place *>(child(i)); }
+    inline Place *place(const int i) { return static_cast<Place *>(child(i)); }
     inline Places places()
     {
         Places p;
-        for ( int i = 0; i < rowCount(); ++i )
+        for (int i = 0; i < rowCount(); ++i)
             p << place(i);
         return p;
     }
@@ -98,14 +98,14 @@ public:
     inline explicit PlacesViewDelegate(QWidget *parent = 0) : QStyledItemDelegate(parent), m_placesView(qobject_cast<PlacesView *>(parent)) {}
 protected:
     virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-    QSize sizeHint( const QStyleOptionViewItem & option, const QModelIndex & index ) const
+    QSize sizeHint(const QStyleOptionViewItem & option, const QModelIndex & index) const
     {
-         if ( !isHeader(index) )
+         if (!isHeader(index))
              return QSize(-1, option.decorationSize.height()+2);
          else
              return  QSize(-1, option.fontMetrics.height()*3/2);
     }
-    inline bool isHeader( const QModelIndex &index ) const { return !index.parent().isValid(); }
+    inline bool isHeader(const QModelIndex &index) const { return !index.parent().isValid(); }
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
 
 private:
@@ -117,9 +117,9 @@ class DeviceItem : public QObject, public Place //have to inherit QObject for si
 {
     Q_OBJECT
 public:
-    DeviceItem( DeviceManager *parentItem = 0, PlacesView *view = 0, Device *dev = 0 );
+    DeviceItem(DeviceManager *parentItem = 0, PlacesView *view = 0, Device *dev = 0);
     ~DeviceItem() { m_button->deleteLater(); delete m_device; }
-    void setMounted( const bool mount ) { m_device->setMounted(mount); }
+    void setMounted(const bool mount) { m_device->setMounted(mount); }
     inline bool isMounted() const { return m_device->isMounted(); }
     inline QString mountPath() const { return m_device->mountPath(); }
     inline QString devPath() const { return m_device->devPath(); }
@@ -138,7 +138,7 @@ public:
 
 public slots:
     void updateTb();
-    void setVisible( bool v );
+    void setVisible(bool v);
     void setHidden();
     void hide();
     void show();
@@ -163,17 +163,17 @@ class DeviceManager : public Devices, public Container
 {
     Q_OBJECT
 public:
-    DeviceManager( const QStringList &texts, QObject *parent = 0 );
+    DeviceManager(const QStringList &texts, QObject *parent = 0);
     ~DeviceManager(){}
     inline QMap<Device *, DeviceItem *> deviceItems() { return m_items; }
-    DeviceItem *deviceItemForFile( const QString &file );
-    inline bool isDevice( const QStandardItem *item ) { return (bool)(item->parent() == this); }
+    DeviceItem *deviceItemForFile(const QString &file);
+    inline bool isDevice(const QStandardItem *item) { return (bool)(item->parent() == this); }
     inline QList<QAction *> actions() const { return m_actions; }
 
 private slots:
     void addDevs();
-    void devAdded( Device *dev );
-    void devRemoved( Device *dev );
+    void devAdded(Device *dev);
+    void devRemoved(Device *dev);
     void showHiddenDevices();
 
 private:
@@ -185,7 +185,7 @@ private:
 class PlacesModel : public QStandardItemModel
 {
 public:
-    inline explicit PlacesModel( QObject *parent = 0 ) : QStandardItemModel( parent ), m_places(qobject_cast<PlacesView *>(parent)) {}
+    inline explicit PlacesModel(QObject *parent = 0) : QStandardItemModel(parent), m_places(qobject_cast<PlacesView *>(parent)) {}
 protected:
     QVariant data(const QModelIndex &index, int role) const;
     QStringList mimeTypes() const { return QStringList() << "text/uri-list"; }
@@ -198,34 +198,34 @@ class PlacesView : public QTreeView
     Q_OBJECT
 public:
     typedef QList<Container *> Containers;
-    PlacesView( QWidget *parent );
-    QMenu *containerAsMenu( const int cont );
+    PlacesView(QWidget *parent);
+    QMenu *containerAsMenu(const int cont);
     bool getKdePlaces();
     inline QStringList hiddenDevices() const { return m_hiddenDevices; }
-    inline void addHiddenDevice( const QString &devPath ) { if ( !m_hiddenDevices.contains(devPath) ) m_hiddenDevices << devPath; }
-    inline void removeHiddenDevice( const QString &devPath ) { m_hiddenDevices.removeOne(devPath); }
+    inline void addHiddenDevice(const QString &devPath) { if (!m_hiddenDevices.contains(devPath)) m_hiddenDevices << devPath; }
+    inline void removeHiddenDevice(const QString &devPath) { m_hiddenDevices.removeOne(devPath); }
     inline DeviceManager *deviceManager() { return m_devManager; }
-    inline QModelIndex indexFromItem( QStandardItem *item ) const { return m_model->indexFromItem(item); }
+    inline QModelIndex indexFromItem(QStandardItem *item) const { return m_model->indexFromItem(item); }
 
-    inline QStandardItem *itemFromIndex( const QModelIndex &index ) const { return m_model->itemFromIndex(index); }
-    inline QStandardItem *itemAt( const QPoint &pos ) { return itemFromIndex(indexAt(pos)); }
+    inline QStandardItem *itemFromIndex(const QModelIndex &index) const { return m_model->itemFromIndex(index); }
+    inline QStandardItem *itemAt(const QPoint &pos) { return itemFromIndex(indexAt(pos)); }
     inline QStandardItem *currentItem() const { return itemFromIndex(currentIndex()); }
 
     template<typename T>
-    inline T itemFromIndex( const QModelIndex &index ) const { return dynamic_cast<T>(m_model->itemFromIndex(index)); }
+    inline T itemFromIndex(const QModelIndex &index) const { return dynamic_cast<T>(m_model->itemFromIndex(index)); }
     template<typename T>
-    inline T itemAt( const QPoint &pos ) { return itemFromIndex<T>(indexAt(pos)); }
+    inline T itemAt(const QPoint &pos) { return itemFromIndex<T>(indexAt(pos)); }
     template<typename T>
     inline T currentItem() const { return itemFromIndex<T>(currentIndex()); }
 
-    inline Container *container( const int i ) { return dynamic_cast<Container *>(m_model->item(i)); }
+    inline Container *container(const int i) { return dynamic_cast<Container *>(m_model->item(i)); }
     inline void setCurrentItem(QStandardItem *item) { setCurrentIndex(indexFromItem(item)); }
     inline int containerCount() { return m_model->rowCount(); }
     inline Containers containers()
     {
         Containers c;
-        for ( int i = 0; i < containerCount(); ++i )
-            if ( container(i) != (Container*)m_devManager )
+        for (int i = 0; i < containerCount(); ++i)
+            if (container(i) != (Container*)m_devManager)
                 c << container(i);
         return c;
     }
@@ -256,8 +256,8 @@ protected:
     void paletteChange(const QPalette &pal);
 
 signals:
-    void newTabRequest( const QString &path );
-    void placeActivated( const QString &path );
+    void newTabRequest(const QUrl &url);
+    void placeActivated(const QUrl &url);
     void changed();
 
 private slots:

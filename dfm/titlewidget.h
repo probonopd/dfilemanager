@@ -99,7 +99,7 @@ public:
         genIcons();
     }
 public slots:
-    inline void setFloating( bool f ) { m_floating = f; m_hover = false; }
+    inline void setFloating(bool f) { m_floating = f; m_hover = false; }
 signals:
     void clicked();
     void rightClicked();
@@ -112,7 +112,7 @@ protected:
     inline void mousePressEvent(QMouseEvent *event) { m_hasClick = true; event->accept(); }
     inline void mouseReleaseEvent(QMouseEvent *event)
     {
-        if ( event->button() == Qt::RightButton )
+        if (event->button() == Qt::RightButton)
         {
             emit rightClicked();
             return;
@@ -124,7 +124,7 @@ protected:
     }
     inline void enterEvent(QEvent *event) { m_hasClick = false; m_hover = true; update(); event->accept(); }
     inline void leaveEvent(QEvent *event) { m_hasClick = false; m_hover = false; update(); event->accept(); }
-    inline bool event(QEvent *e) { if ( e->type() == QEvent::PaletteChange ) genIcons(); return QWidget::event(e); }
+    inline bool event(QEvent *e) { if (e->type() == QEvent::PaletteChange) genIcons(); return QWidget::event(e); }
 private slots:
     inline void genIcons()
     {

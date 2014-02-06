@@ -43,14 +43,14 @@ static magic_t s_magicAll;
 Ops
 *Ops::instance()
 {
-    if ( !s_instance )
+    if (!s_instance)
     {
         s_instance = new Ops(qApp);
 #ifdef Q_OS_UNIX
-        s_magicMime = magic_open( MAGIC_MIME_TYPE );
-        magic_load( s_magicMime, NULL );
-        s_magicAll = magic_open( MAGIC_CONTINUE );
-        magic_load( s_magicAll, NULL );
+        s_magicMime = magic_open(MAGIC_MIME_TYPE);
+        magic_load(s_magicMime, NULL);
+        s_magicAll = magic_open(MAGIC_CONTINUE);
+        magic_load(s_magicAll, NULL);
 #endif
     }
     return s_instance;
@@ -60,7 +60,7 @@ QString
 Ops::getMimeType(const QString &file)
 {
     const QFileInfo f(file);
-    if ( !f.isReadable() || !instance() )
+    if (!f.isReadable() || !instance())
         return QString();
 
     if (f.isSymLink())
@@ -68,7 +68,7 @@ Ops::getMimeType(const QString &file)
     if (f.isDir())
         return "inode/directory";
 #ifdef Q_OS_UNIX
-    return QString( magic_file( s_magicMime, file.toStdString().c_str() ) );;
+    return QString(magic_file(s_magicMime, file.toStdString().c_str()));;
 #else
     return QString();
 #endif
@@ -78,9 +78,9 @@ QString
 Ops::getFileType(const QString &file)
 {
 #ifdef Q_OS_UNIX
-    if ( !QFileInfo(file).exists() || !instance() )
+    if (!QFileInfo(file).exists() || !instance())
         return QString();
-    return QString( magic_file( s_magicAll, file.toStdString().c_str() ) );
+    return QString(magic_file(s_magicAll, file.toStdString().c_str()));
 #else
     return QString();
 #endif
@@ -102,12 +102,12 @@ bool
 Ops::openFile(const QString &file)
 {
     const QFileInfo f(file);
-    if ( !f.exists() )
+    if (!f.exists())
         return false;
 
     if (f.isDir())
         return false;
-    else if (f.isExecutable() && ( f.suffix().isEmpty() || f.suffix() == "sh" || f.suffix() == "exe" ))
+    else if (f.isExecutable() && (f.suffix().isEmpty() || f.suffix() == "sh" || f.suffix() == "exe"))
         return QProcess::startDetached(f.filePath());
     else
         return QDesktopServices::openUrl(QUrl::fromLocalFile(f.filePath()));
@@ -116,18 +116,18 @@ Ops::openFile(const QString &file)
 void
 Ops::openWith()
 {
-    QAction *action = static_cast<QAction *>( sender() );
+    QAction *action = static_cast<QAction *>(sender());
     QString program;
     const QString &file = action->property("file").toString();
 #if defined(Q_OS_UNIX)
-    program = action->data().toString().split( " " ).at( 0 );
-    QProcess::startDetached( program, QStringList() << file );
+    program = action->data().toString().split(" ").at(0);
+    QProcess::startDetached(program, QStringList() << file);
 #else
     program = action->data().toString();
     program.prepend("cmd /C start ");
     wchar_t *command = (wchar_t *)program.toStdWString().data();
 
-    if( !CreateProcess( NULL,
+    if(!CreateProcess(NULL,
         command, //command to execute
         NULL,
         NULL,
@@ -136,8 +136,8 @@ Ops::openWith()
         NULL,
         NULL,
         new STARTUPINFO(),
-        new PROCESS_INFORMATION() )
-    )
+        new PROCESS_INFORMATION())
+   )
         qDebug() << "couldnt launch" << program;
 #endif
 }
@@ -148,15 +148,15 @@ Ops::customActionTriggered()
     QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
     const QString &app = action.takeFirst();
 
-    FileSystemModel *fsModel = MainWindow::currentContainer()->model();
+    FS::Model *fsModel = MainWindow::currentContainer()->model();
     QItemSelectionModel *isModel = MainWindow::currentContainer()->selectionModel();
 
-    if ( isModel->hasSelection() )
+    if (isModel->hasSelection())
     {
-        if ( isModel->selectedIndexes().count() )
-            foreach ( const QModelIndex &index, isModel->selectedIndexes() )
-                if ( !index.column() )
-                    QProcess::startDetached(app, QStringList() << action << fsModel->filePath( index ));
+        if (isModel->selectedIndexes().count())
+            foreach (const QModelIndex &index, isModel->selectedIndexes())
+                if (!index.column())
+                    QProcess::startDetached(app, QStringList() << action << fsModel->url(index).toLocalFile());
     }
     else
     {
@@ -168,24 +168,24 @@ void
 Ops::setRootPath()
 {
     QAction *action = static_cast<QAction *>(sender());
-    MainWindow::currentContainer()->model()->setPath(action->data().toString());
+    MainWindow::currentContainer()->model()->setUrl(QUrl::fromLocalFile(action->data().toString()));
 }
 
 QString
 Ops::prettySize(quint64 bytes)
 {
   if (bytes & (0x3fff<<50))
-     return QString::number( (bytes>>50) + ((bytes>>40) & (0x3ff)) / 1024.0, 'f', 2 ) + " PB";
+     return QString::number((bytes>>50) + ((bytes>>40) & (0x3ff)) / 1024.0, 'f', 2) + " PB";
   else if (bytes & (0x3ff<<40))
-     return QString::number( (bytes>>40) + ((bytes>>30) & (0x3ff)) / 1024.0, 'f', 2 ) + " TB";
+     return QString::number((bytes>>40) + ((bytes>>30) & (0x3ff)) / 1024.0, 'f', 2) + " TB";
   else if (bytes & (0x3ff<<30))
-     return QString::number( (bytes>>30) + ((bytes>>20) & (0x3ff)) / 1024.0, 'f', 2 ) + " GB";
+     return QString::number((bytes>>30) + ((bytes>>20) & (0x3ff)) / 1024.0, 'f', 2) + " GB";
   else if (bytes & (0x3ff<<20))
-     return QString::number( (bytes>>20) + ((bytes>>10) & (0x3ff)) / 1024.0, 'f', 2 ) + " MB";
+     return QString::number((bytes>>20) + ((bytes>>10) & (0x3ff)) / 1024.0, 'f', 2) + " MB";
   else if (bytes & (0x3ff<<10))
-     return QString::number( (bytes>>10) + ((bytes) & (0x3ff)) / 1024.0, 'f', 2 ) + " kB";
+     return QString::number((bytes>>10) + ((bytes) & (0x3ff)) / 1024.0, 'f', 2) + " kB";
   else
-     return QString::number( bytes, 'f', 0 ) + " B ";
+     return QString::number(bytes, 'f', 0) + " B ";
 }
 
 /* blurring function below from:
@@ -195,7 +195,7 @@ Ops::prettySize(quint64 bytes)
 QImage
 Ops::blurred(const QImage& image, const QRect& rect, int radius, bool alphaOnly)
 {
-    if ( image.isNull() )
+    if (image.isNull())
         return QImage();
    int tab[] = { 14, 10, 8, 6, 5, 5, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2 };
    int alpha = (radius < 1)  ? 16 : (radius > 17) ? 1 : tab[radius-1];
@@ -264,7 +264,7 @@ Ops::blurred(const QImage& image, const QRect& rect, int radius, bool alphaOnly)
 }
 
 QImage
-Ops::flowImg( const QImage &image )
+Ops::flowImg(const QImage &image)
 {
    QImage p(SIZE, SIZE, QImage::Format_ARGB32);
    p.fill(Qt::transparent);
@@ -279,12 +279,12 @@ Ops::flowImg( const QImage &image )
 }
 
 QImage
-Ops::reflection( const QImage &img )
+Ops::reflection(const QImage &img)
 {
-    if ( img.isNull() )
+    if (img.isNull())
         return QImage();
     QImage refl(QSize(SIZE, SIZE), QImage::Format_ARGB32);
-    refl.fill( Qt::transparent);
+    refl.fill(Qt::transparent);
     QRect r = img.rect();
     if (!r.isValid())
         return QImage();
@@ -299,14 +299,14 @@ Ops::reflection( const QImage &img )
     QRgb *pixel = reinterpret_cast<QRgb *>(refl.bits());
     QColor bg = DFM::Ops::colorMid(qApp->palette().color(QPalette::Highlight), Qt::black);
     bg.setHsv(bg.hue(), qMin(64, bg.saturation()), bg.value(), bg.alpha());
-    for ( int i = 0; i < size; ++i )
-        if ( qAlpha(pixel[i]) )
+    for (int i = 0; i < size; ++i)
+        if (qAlpha(pixel[i]))
         {
             QColor c = QColor(pixel[i]);
             c = DFM::Ops::colorMid(c, bg, 1, 4);
             pixel[i] = qRgba(c.red(), c.green(), c.blue(), qAlpha(pixel[i]));
         }
-    return Ops::blurred( refl, refl.rect(), 5 );
+    return Ops::blurred(refl, refl.rect(), 5);
 }
 
 void
@@ -317,7 +317,7 @@ Ops::getSorting(const QString &file, int &sortCol, Qt::SortOrder &order)
     settings.beginGroup("DFM");
     QVariant varCol = settings.value("sortCol");
     QVariant varOrd = settings.value("sortOrd");
-    if ( varCol.isValid() && varOrd.isValid() )
+    if (varCol.isValid() && varOrd.isValid())
     {
         sortCol = varCol.value<int>();
         order = (Qt::SortOrder)varOrd.value<int>();
@@ -396,5 +396,19 @@ Ops::fromIoJobData(const IOJobData &data)
     args << data.inPaths;
     args << data.outPath;
     return args;
+}
+
+bool
+Ops::sameDisk(const QString &file1, const QString &file2)
+{
+#if defined(Q_OS_UNIX)
+    const quint64 id1 = getDriveInfo<Id>(file1);
+    const quint64 id2 = getDriveInfo<Id>(file2);
+#else //on windows we can simply match the drive letter... the first char in the strings
+    const QChar &id1 = file1.at(0);
+    const QChar &id2 = file2.at(0);
+#endif
+    return bool(id1==id2);
+
 }
 

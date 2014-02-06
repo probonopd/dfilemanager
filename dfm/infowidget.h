@@ -44,11 +44,11 @@ protected:
     {
         QPainter p(this);
         p.setPen(palette().color(foregroundRole()));
-        p.drawText(rect(), Qt::AlignLeft | Qt::AlignVCenter | Qt::TextWrapAnywhere, m_text );
+        p.drawText(rect(), Qt::AlignLeft | Qt::AlignVCenter | Qt::TextWrapAnywhere, m_text);
         p.end();
     }
 public slots:
-    void setText( const QString &text ) { m_text = text; update(); }
+    void setText(const QString &text) { m_text = text; update(); }
 private:
     QString m_text;
 };

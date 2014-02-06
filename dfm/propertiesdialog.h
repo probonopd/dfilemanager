@@ -41,17 +41,17 @@ class SizeThread : public QThread
 {
     Q_OBJECT
 public:
-    SizeThread( QObject *parent = 0, const QStringList &files = QStringList() );
+    SizeThread(QObject *parent = 0, const QStringList &files = QStringList());
 
 signals:
-    void newSize( const QString &size );
+    void newSize(const QString &size);
 
 private slots:
     void emitSize();
 
 protected:
     void run();
-    void calculate( const QString &file );
+    void calculate(const QString &file);
 
 private:
     QTimer *m_timer;
@@ -66,7 +66,7 @@ class GeneralInfo : public QGroupBox
 {
     Q_OBJECT
 public:
-    GeneralInfo( QWidget *parent = 0, const QStringList &files = QStringList() );
+    GeneralInfo(QWidget *parent = 0, const QStringList &files = QStringList());
     inline QString newName() const { return m_nameEdit->text(); }
 
 private slots:
@@ -91,8 +91,8 @@ public:
                 OthersRead,
                 OthersWrite,
                 OthersExe };
-    Rights( QWidget *parent = 0, const QStringList &files = QStringList() );
-    inline QCheckBox *box( Perm p ) { return m_box[p]; }
+    Rights(QWidget *parent = 0, const QStringList &files = QStringList());
+    inline QCheckBox *box(Perm p) { return m_box[p]; }
 
 private:
     QCheckBox *m_box[OthersExe+1];
@@ -102,18 +102,18 @@ class PreViewWidget : public QGroupBox
 {
     Q_OBJECT
 public:
-    PreViewWidget( QWidget *parent = 0, const QStringList &files = QStringList() );
+    PreViewWidget(QWidget *parent = 0, const QStringList &files = QStringList());
 };
 
 class PropertiesDialog : public QDialog
 {
     Q_OBJECT
 public:
-    static void forFile( const QString &file );
-    static void forFiles( const QStringList &files );
+    static void forFile(const QString &file);
+    static void forFiles(const QStringList &files);
 
 protected:
-    PropertiesDialog( QWidget *parent = 0, const QStringList &files = QStringList() );
+    PropertiesDialog(QWidget *parent = 0, const QStringList &files = QStringList());
 
 private slots:
     void accept();

@@ -130,31 +130,31 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
         const int _1pt = size/16, _2pt = size/8, _4pt = size/4, _8pt = size/2;
 
         QPainterPath path;
-        path.moveTo( _8pt - _1pt, _1pt );
-        path.lineTo( _8pt + _1pt, _1pt );
-        path.lineTo( _8pt + _2pt, _8pt );
-        path.lineTo( _8pt - _2pt, _8pt );
-        path.lineTo( _8pt - _1pt, _1pt );
+        path.moveTo(_8pt - _1pt, _1pt);
+        path.lineTo(_8pt + _1pt, _1pt);
+        path.lineTo(_8pt + _2pt, _8pt);
+        path.lineTo(_8pt - _2pt, _8pt);
+        path.lineTo(_8pt - _1pt, _1pt);
         path.closeSubpath();
 
         for(int i = 0; i < 360; i+= 45)
         {
 
-            p.translate( size/2, size/2 );
-            p.rotate( 45 );
+            p.translate(size/2, size/2);
+            p.rotate(45);
             p.translate(-(size/2), -(size/2));
-            p.drawPath( path );
+            p.drawPath(path);
 
         }
         p.resetTransform();
         const int outer = _4pt-_1pt;
         p.setPen(Qt::NoPen);
-        p.drawEllipse( pix.rect().adjusted(outer, outer, -outer, -outer ) );
+        p.drawEllipse(pix.rect().adjusted(outer, outer, -outer, -outer));
         p.setCompositionMode(QPainter::CompositionMode_DestinationOut);
         p.setBrush(Qt::black);
-        p.drawEllipse( pix.rect().adjusted( _8pt-_2pt, _8pt-_2pt, -(_8pt-_2pt), -(_8pt-_2pt) ) );
+        p.drawEllipse(pix.rect().adjusted(_8pt-_2pt, _8pt-_2pt, -(_8pt-_2pt), -(_8pt-_2pt)));
         p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-        p.drawEllipse(pix.rect().adjusted( _1pt, _1pt, -_1pt, -_1pt) );
+        p.drawEllipse(pix.rect().adjusted(_1pt, _1pt, -_1pt, -_1pt));
         break;
     }
     case GoHome :
@@ -208,7 +208,7 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
         p.setBrush(color);
         p.setPen(color);
         int i = 0;
-        while ( i < 4 )
+        while (i < 4)
         {
             p.fillRect(0, i*4, size-i*4, 2, color);
             ++i;
@@ -220,14 +220,14 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
         p.setRenderHint(QPainter::Antialiasing);
         p.setBrush(color);
         int i = 0, half = 0, h = size/2, z = size/4, _z = size/8;
-        while ( i < 4 )
+        while (i < 4)
         {
-            if ( i==1||i==3 )
+            if (i==1||i==3)
                 p.setOpacity(0.33);
             else
                 p.setOpacity(1);
             p.fillRect(half+_z, (i==1||i==3)?h+_z:_z, z, z, color);
-            if ( i )
+            if (i)
                 half = h;
             ++i;
         }

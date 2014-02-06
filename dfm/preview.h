@@ -51,7 +51,7 @@ class ScrollBar : public QScrollBar
 {
     Q_OBJECT
 public:
-    inline explicit ScrollBar( const Qt::Orientation o, QWidget *parent = 0 ) : QScrollBar(o, parent) {}
+    inline explicit ScrollBar(const Qt::Orientation o, QWidget *parent = 0) : QScrollBar(o, parent) {}
 protected:
     void paintEvent(QPaintEvent *);
 };
@@ -60,9 +60,9 @@ class GraphicsScene : public QGraphicsScene
 {
     Q_OBJECT
 public:
-    inline explicit GraphicsScene( const QRectF &rect = QRectF(), QWidget *parent = 0) : QGraphicsScene(rect, parent), m_preview(qobject_cast<PreView *>(parent)) {}
+    inline explicit GraphicsScene(const QRectF &rect = QRectF(), QWidget *parent = 0) : QGraphicsScene(rect, parent), m_preview(qobject_cast<PreView *>(parent)) {}
     inline PreView *preView() { return m_preview; }
-    inline void setForegroundBrush( const QBrush &brush ) { m_fgBrush = brush; }
+    inline void setForegroundBrush(const QBrush &brush) { m_fgBrush = brush; }
 
 protected:
     void drawBackground(QPainter *painter, const QRectF &rect);
@@ -85,8 +85,8 @@ public:
 class PixmapItem : public QGraphicsItem
 {
 public:
-    PixmapItem( GraphicsScene *scene = 0, QGraphicsItem *parent = 0 );
-    void transform( const float angle, const Qt::Axis axis, const float xscale = 1.0f, const float yscale = 1.0f );
+    PixmapItem(GraphicsScene *scene = 0, QGraphicsItem *parent = 0);
+    void transform(const float angle, const Qt::Axis axis, const float xscale = 1.0f, const float yscale = 1.0f);
     QRectF boundingRect() const { return RECT; }
     inline void saveX() { m_savedX = pos().x(); }
     inline float savedX() { return m_savedX; }
@@ -116,20 +116,20 @@ class PreView : public QGraphicsView
 public:
     enum Pos { Prev = 0, New = 1 };
     explicit PreView(QWidget *parent = 0);
-    void setModel( QAbstractItemModel *model );
-    inline void setSelectionModel( QItemSelectionModel *model ) { m_selectionModel = model; }
-    void setCenterIndex( const QModelIndex &index );
-    void showCenterIndex( const QModelIndex &index );
-    inline void animateCenterIndex( const QModelIndex &index ) { m_scrollBar->setValue(index.row()); }
-    inline FileSystemModel *model() { return m_model; }
+    void setModel(QAbstractItemModel *model);
+    inline void setSelectionModel(QItemSelectionModel *model) { m_selectionModel = model; }
+    void setCenterIndex(const QModelIndex &index);
+    void showCenterIndex(const QModelIndex &index);
+    inline void animateCenterIndex(const QModelIndex &index) { m_scrollBar->setValue(index.row()); }
+    inline FS::Model *model() { return m_model; }
     QModelIndex indexOfItem(PixmapItem *item);
     inline bool isAnimating() { return bool(m_timeLine->state() == QTimeLine::Running); }
     
 signals:
-    void centerIndexChanged( const QModelIndex &centerIndex );
+    void centerIndexChanged(const QModelIndex &centerIndex);
     
 public slots:
-    void setRootIndex( const QModelIndex &rootIndex );
+    void setRootIndex(const QModelIndex &rootIndex);
 
 protected:
     void resizeEvent(QResizeEvent *event);
@@ -141,7 +141,7 @@ protected:
     void enterEvent(QEvent *e);
     void populate(const int start, const int end);
     void prepareAnimation();
-    inline bool isValidRow( const int row ) { return bool(row > -1 && row < m_items.count()); }
+    inline bool isValidRow(const int row) { return bool(row > -1 && row < m_items.count()); }
     void correctItemsPos(const int leftStart, const int rightStart);
     void showPrevious();
     void showNext();
@@ -155,16 +155,16 @@ private slots:
     void rowsRemoved(const QModelIndex &parent, int start, int end);
     void reset();
     void clear();
-    void animStep( const qreal value );
+    void animStep(const qreal value);
     void updateItemsPos();
-    void scrollBarMoved( const int value );
+    void scrollBarMoved(const int value);
     void continueIf();
     void updateScene();
 
 private:
     friend class PixmapItem;
     GraphicsScene *m_scene;
-    FileSystemModel *m_model;
+    FS::Model *m_model;
     QModelIndex m_centerIndex, m_prevCenter, m_savedCenter;
     QPersistentModelIndex m_rootIndex;
     int m_row, m_nextRow, m_newRow, m_savedRow;
@@ -180,7 +180,7 @@ private:
     ScrollBar *m_scrollBar;
     QPointF m_pressPos;
     QItemSelectionModel *m_selectionModel;
-    QString m_centerFile, m_rootPath;
+    QUrl m_rootUrl, m_centerUrl;
 };
 
 }

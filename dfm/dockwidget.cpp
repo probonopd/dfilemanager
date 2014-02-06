@@ -36,24 +36,24 @@ DockWidget::DockWidget(QWidget *parent, const QString &title, const Qt::WindowFl
     , m_dirIn(false)
     , m_isLocked(false)
 {
-//    if ( qApp->styleSheet().isEmpty() )
+//    if (qApp->styleSheet().isEmpty())
 //        setStyle(new MyStyle(style()->objectName()));
 //    m_margin = style()->pixelMetric(QStyle::PM_DockWidgetFrameWidth);
     setAllowedAreas(m_position == Left ? Qt::LeftDockWidgetArea : m_position == Right ? Qt::RightDockWidgetArea : Qt::BottomDockWidgetArea);
-    if ( m_position == Bottom )
+    if (m_position == Bottom)
         setAllowedAreas(allowedAreas() | Qt::TopDockWidgetArea);
     setFeatures(DockWidgetClosable | DockWidgetFloatable);
 //    setTitleBarWidget(m_titleWidget);
 //    setFocusPolicy(Qt::NoFocus);
-//    APP->manageDock( this );
+//    APP->manageDock(this);
 //    connect (m_timer, SIGNAL(timeout()), this, SLOT(animate()));
 //    connect (m_titleWidget->floatButton(), SIGNAL(clicked()), this, SLOT(setFloat()));
 //    connect (this, SIGNAL(topLevelChanged(bool)), this, SLOT(floatationChanged(bool)));
 //    connect (this, SIGNAL(topLevelChanged(bool)), m_titleWidget,   SLOT(setIsFloating(bool)));
 //    m_mainWindow->installEventFilter(this);
-    if ( m_position == Bottom )
-        connect ( this, SIGNAL(dockLocationChanged(Qt::DockWidgetArea)), this, SLOT(locationChanged(Qt::DockWidgetArea)) );
-    setLocked( bool( Store::config.docks.lock & pos ) );
+    if (m_position == Bottom)
+        connect (this, SIGNAL(dockLocationChanged(Qt::DockWidgetArea)), this, SLOT(locationChanged(Qt::DockWidgetArea)));
+    setLocked(bool(Store::config.docks.lock & pos));
 }
 
 void
@@ -149,7 +149,7 @@ DockWidget::eventFilter(QObject *object, QEvent *event)
             return false;
         }
         else if (event->type() == QEvent::Move)
-            if ( event->spontaneous() )
+            if (event->spontaneous())
                 adjustPosition();
     return false;
 #endif
@@ -189,7 +189,7 @@ DockWidget::moveEvent(QMoveEvent *event)
 //    qDebug() << mainWin->height() << geometry().height();
 //    if (event->spontaneous())
 //    {
-//        switch ( myPos )
+//        switch (myPos)
 //        {
 //        case Left:
 //            mainWin->move(geometry().right()-margin, geometry().top()-(16+margin*2)); break;

@@ -42,7 +42,6 @@
 namespace DFM
 {
 
-class FileSystemModel;
 class ThumbsLoader : public Thread
 {
     Q_OBJECT
@@ -56,11 +55,14 @@ public:
     static inline QImage thumb(const QString &file) { return instance()->_thumb(file); }
     static inline QString icon(const QString &dir) { return instance()->_icon(dir); }
     static inline void queueFile(const QString &file) { instance()->_queueFile(file); }
+    static inline void removeThumb(const QString &file) { instance()->_removeThumb(file); }
+    static inline void removeIcon(const QString &dir) { instance()->_removeIcon(dir); }
 
 public slots:
     void discontinue() { m_queueMutex.lock(); m_queue.clear(); m_queueMutex.unlock(); Thread::discontinue(); }
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
-    void removeThumb(const QString &file);
+    void _removeThumb(const QString &file);
+    void _removeIcon(const QString &dir);
     
 signals:
     void thumbFor(const QString &file, const QString &name);
@@ -90,25 +92,25 @@ class ImagesThread : public Thread
     Q_OBJECT
 public:
     explicit ImagesThread(QObject *parent = 0);
-    void queueFile( const QString &file, const QImage &source, const bool force = false );
-    void queueName( const QIcon &icon );
-    QImage flowData( const QString &file, const bool refl = false );
-    QImage flowNameData( const QString &name, const bool refl = false );
-    bool hasData( const QString &file );
-    bool hasNameData( const QString &name );
-    void removeData( const QString &file );
-    inline bool hasFileInQueue( const QString &file ) { return m_imgQueue.contains(file); }
+    void queueFile(const QString &file, const QImage &source, const bool force = false);
+    void queueName(const QIcon &icon);
+    QImage flowData(const QString &file, const bool refl = false);
+    QImage flowNameData(const QString &name, const bool refl = false);
+    bool hasData(const QString &file);
+    bool hasNameData(const QString &name);
+    void removeData(const QString &file);
+    inline bool hasFileInQueue(const QString &file) { return m_imgQueue.contains(file); }
 
 public slots:
     void discontinue() { m_imgQueue.clear(); Thread::discontinue(); }
     inline void clearData() { for (int i=0; i<2; ++i) m_images[i].clear(); }
 
 signals:
-    void imagesReady( const QString &file );
+    void imagesReady(const QString &file);
 
 protected:
-    void genImagesFor( const QString &file );
-    void genNameIconsFor( const QString &name );
+    void genImagesFor(const QString &file);
+    void genNameIconsFor(const QString &name);
     void run();
 
 private:
