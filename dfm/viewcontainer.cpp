@@ -138,7 +138,7 @@ FS::Model *ViewContainer::model() { return m_model; }
 QItemSelectionModel *ViewContainer::selectionModel() { return m_selectModel; }
 
 void
-ViewContainer::setView(View view, bool store)
+ViewContainer::setView(const View view, bool store)
 {
     m_myView = view;
     if (view == Icon)
@@ -228,10 +228,7 @@ ViewContainer::activate(const QModelIndex &index)
         return;
 
     if (m_model->isDir(index))
-    {
-        m_model->setUrl(QUrl::fromLocalFile(f.filePath()));
-        m_forwardList.clear();
-    }
+        m_model->setUrl(m_model->localUrl(index));
 }
 
 void
@@ -265,10 +262,6 @@ ViewContainer::setUrl(const QUrl &url)
                 views().at(i)->setMouseTracking(false);
             }
         m_selectModel->clearSelection();
-        if (!m_back && QFileInfo(file.filePath()).isDir() && (m_backList.isEmpty() || m_backList.count() &&  url != m_backList.last()))
-            m_backList << url;
-
-        m_back = false;
     }
 }
 
@@ -288,21 +281,13 @@ ViewContainer::urlLoaded(const QUrl &url)
 void
 ViewContainer::goBack()
 {
-    if (m_backList.count() == 1)
-        return;
-
-    m_back = true;
-    m_forwardList << m_backList.takeLast();
-    m_model->setUrl(m_backList.last());
+    m_model->goBack();
 }
 
 void
 ViewContainer::goForward()
 {
-    if (m_forwardList.isEmpty())
-        return;
-
-    m_model->setUrl(m_forwardList.takeLast());
+    m_model->goForward();
 }
 
 bool
@@ -331,7 +316,7 @@ ViewContainer::rename()
 }
 
 void
-ViewContainer::setFilter(QString filter)
+ViewContainer::setFilter(const QString &filter)
 {
 //    VIEWS(setFilter(filter));
     FS::Node *node = model()->nodeFromIndex(model()->index(model()->rootUrl()));
@@ -450,14 +435,14 @@ QModelIndex ViewContainer::indexAt(const QPoint &p) const { return currentView()
 bool ViewContainer::setPathVisible(bool visible) { m_breadCrumbs->setVisible(visible); }
 bool ViewContainer::pathVisible() { return m_breadCrumbs->isVisible(); }
 
-bool ViewContainer::canGoBack() { return m_backList.count() > 1; }
-bool ViewContainer::canGoForward() { return m_forwardList.count() >= 1; }
+bool ViewContainer::canGoBack() { return m_model->canGoBack(); }
+bool ViewContainer::canGoForward() { return m_model->canGoForward(); }
 
-void ViewContainer::genNewTabRequest(QModelIndex index) { emit newTabRequest(m_model->url(index)); }
+void ViewContainer::genNewTabRequest(const QModelIndex &index) { emit newTabRequest(m_model->localUrl(index)); }
 
 BreadCrumbs *ViewContainer::breadCrumbs() { return m_breadCrumbs; }
 
-void ViewContainer::setPathEditable(bool editable) { m_breadCrumbs->setEditable(editable); }
+void ViewContainer::setPathEditable(const bool editable) { m_breadCrumbs->setEditable(editable); }
 
 void ViewContainer::animateIconSize(int start, int stop) { m_iconView->setNewSize(stop); }
 QSize ViewContainer::iconSize() { return m_iconView->iconSize(); }

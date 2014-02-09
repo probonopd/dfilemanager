@@ -645,7 +645,7 @@ MainWindow::viewItemHovered(const QModelIndex &index)
         return;
     if (m_model->isWorking() || !index.isValid() || index.row() > 100000 || index.column() > 3)
         return;
-    const QString &file = m_model->url(index).toLocalFile();
+    const QString &file = m_model->localUrl(index).path();
     m_statusBar->showMessage(file);
 }
 
@@ -675,7 +675,7 @@ MainWindow::fileProperties()
     {
         if (index.column() != 0)
             continue;
-        files << m_model->url(index).path();
+        files << m_model->localUrl(index).path();
     }
     PropertiesDialog::forFiles(files);
 }

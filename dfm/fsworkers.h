@@ -61,10 +61,9 @@ public:
     int childCount() const;
     void addChild(Node *child);
     void addChild(const QUrl &url);
-    bool hasChild(const QString &name, const bool nameIsPath = false, const bool onlyVisible = false);
     Node *child(const QUrl &url, const bool onlyVisible = false);
     Node *child(const int c);
-    Node *child(const QString &path, const bool nameIsPath = true);
+    Node *child(const QString &name, const bool nameIsPath = true);
 
     void populateScheme() {}
     void removeDeleted();
@@ -88,7 +87,6 @@ public:
 
     void clearVisible();
 
-    Node *fromUrlList(const QUrl &url);
     Node *nodeFromUrl(const QUrl &url);
     Node *node(const QString &path, bool checkOnly = true);
     Node *nodeFromPath(const QString &path, bool checkOnly = true);

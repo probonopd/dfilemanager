@@ -89,6 +89,7 @@ public:
         Search = 1,
         History =2
     };
+    enum History { Back, Forward };
 
     explicit Model(QObject *parent = 0);
     ~Model();
@@ -121,8 +122,6 @@ public:
     QModelIndexList category(const QModelIndex &fromCat);
 
     QUrl rootUrl() { return m_url; }
-    void setRootPath(const QString &path);
-//    inline QString rootPath() const { return m_rootPath; }
     Node *rootNode();
 
     void forceEmitDataChangedFor(const QString &file);
@@ -149,10 +148,12 @@ public:
 
     void setHiddenVisible(bool visible);
     inline bool showHidden() const { return m_showHidden; }
+    bool isWorking() const;
 
-    void startWorking();
-    void endWorking();
-    inline bool isWorking() const { QMutexLocker locker(&m_mutex); return m_isPopulating; }
+    void goBack();
+    void goForward();
+    inline bool canGoBack() const { return m_history[Back].count()>1; }
+    inline bool canGoForward() const { return !m_history[Forward].isEmpty(); }
 
     void search(const QString &fileName, const QString &filePath);
     void search(const QString &fileName);
@@ -174,8 +175,6 @@ private slots:
     void flowDataAvailable(const QString &file);
     void dirChanged(const QString &path);
     void nodeGenerated(const QString &path, Node *node);
-    void removeDeletedLater();
-    void removeDeleted();
     void schemeFromSchemeMenu();
 
 signals:
@@ -193,8 +192,7 @@ private:
     Node *m_current;
     Node *m_rootNode;
     QAbstractItemView *m_view;
-    bool m_showHidden, m_isPopulating;
-    QString m_rootPath;
+    bool m_showHidden, m_goingBack;
     FileIconProvider *m_ip;
     int m_sortColumn;
     Qt::SortOrder m_sortOrder;
@@ -204,10 +202,10 @@ private:
     Worker::Gatherer *m_dataGatherer;
     QMenu *m_schemeMenu;
     QUrl m_url;
+    QList<QUrl> m_history[Forward+1];
     friend class ImagesThread;
     friend class Node;
     friend class Worker::Gatherer;
-    mutable QMutex m_mutex;
 };
 
 }

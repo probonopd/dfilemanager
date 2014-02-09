@@ -375,7 +375,7 @@ PreView::setModel(QAbstractItemModel *model)
     connect(m_model, SIGNAL(layoutChanged()),this, SLOT(reset()));
     connect(m_model, SIGNAL(modelAboutToBeReset()), this, SLOT(clear()));
     connect(m_model, SIGNAL(modelReset()),this, SLOT(reset()));
-    connect(m_model, SIGNAL(urlLoaded(QUrl)),this, SLOT(reset()));
+    connect(m_model, SIGNAL(finishedWorking()),this, SLOT(reset()));
     connect(m_model, SIGNAL(rowsInserted(const QModelIndex & , int , int)), this, SLOT(rowsInserted(const QModelIndex & , int , int)));
     connect(m_model, SIGNAL(rowsAboutToBeRemoved(const QModelIndex & , int , int)), this, SLOT(rowsRemoved(const QModelIndex & , int , int)));
 }
