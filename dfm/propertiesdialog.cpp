@@ -100,7 +100,7 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     QFileInfo f(file);
 
     DFM::FS::Model *fsModel = DFM::MainWindow::currentContainer()->model();
-    QString location = many ? fsModel->rootPath() : f.path();
+    QString location = many ? fsModel->rootUrl().path() : f.path();
     DFM::DeviceItem *di = DFM::MainWindow::places()->deviceManager()->deviceItemForFile(location);
     if (f.isSymLink())
     {

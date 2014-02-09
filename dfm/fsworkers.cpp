@@ -87,7 +87,7 @@ Node::Node(Model *model, const QUrl &url, Node *parent)
 
 Node::~Node()
 {
-    for (int i = 0; i<HiddenFiles+1; ++i)
+    for (int i = 0; i<ChildrenTypeCount+1; ++i)
         if (!m_children[i].isEmpty())
             qDeleteAll(m_children[i]);
 }
@@ -95,18 +95,19 @@ Node::~Node()
 void
 Node::addChild(Node *child)
 {
-    if (child->scheme() != "file")
+    if (child->url().path().isEmpty())
     {
         const QModelIndex &parent = model()->createIndex(row(), 0, this);
-        qDebug() << "Node::addChild parentindex" << parent;
+//        qDebug() << "Node::addChild parentindex" << parent << child->scheme() << child->url();
         model()->beginInsertRows(parent, m_children[Visible].size(), m_children[Visible].size());
         m_mutex.lock();
         m_children[Visible] << child;
         m_mutex.unlock();
         model()->endInsertRows();
+//        qDebug() << model()->rowCount() << model()->data(model()->index(0, 0).child(0, 0));
         return;
     }
-    if (child->isHidden() && !showHidden())
+    if (child->isHidden() && !showHidden() && child->scheme() == "file")
         m_children[Hidden] << child;
     else
     {
@@ -122,6 +123,13 @@ Node::addChild(Node *child)
         m_mutex.unlock();
         model()->endInsertRows();
     }
+}
+
+void
+Node::addChild(const QUrl &url)
+{
+    if (!child(url))
+        addChild(new Node(model(), url, this));
 }
 
 int
@@ -176,7 +184,7 @@ int
 Node::row()
 {
     if (!m_parent)
-        return -1;
+        return 0;
 
     return m_parent->rowFor(this);
 }
@@ -255,6 +263,7 @@ Node::rename(const QString &newName)
         m_filePath = dir().absoluteFilePath(newName);
         m_name = newName;
         setFile(m_filePath);
+        setUrl(QUrl::fromLocalFile(m_filePath));
         refresh();
         return true;
     }
@@ -309,7 +318,7 @@ Node
         else
             rePopulate();
     }
-    for (int i = 0; i < Files; ++i)
+    for (int i = 0; i < ChildrenTypeCount; ++i)
     {
         if (!i)
             m_mutex.lock();
@@ -362,17 +371,41 @@ Node
 }
 
 Node
-*Node::fromUrl(const QUrl &url)
+*Node::fromUrlList(const QUrl &url)
 {
-    Node *scheme = child(url.scheme(), false);
-    if (scheme)
-        return scheme->node(url.path());
+    QUrl u = url;
+    return 0;
+}
+
+Node
+*Node::nodeFromUrl(const QUrl &url)
+{
+    if (url.isEmpty())
+        return this;
+
+    Node *node = child(url.scheme(), false);
+    if (!node)
+        return this;
+    if (url.path().isEmpty())
+        return node;
+
+    if (Node *c = child(url, true))
+        return c;
+
+    node = node->node(url.path());
+    if (!node)
+    {
+//        qDebug() << "unable to get node for url" << url;
+        return 0;
+    }
+//    qDebug() << "requested url:" << url << "got node w/ url" << node->url();
+    return node;
 }
 
 bool
 Node::hasChild(const QString &name, const bool nameIsPath, const bool onlyVisible)
 {
-    int vis = onlyVisible ? 0 : Files;
+    int vis = onlyVisible ? 0 : ChildrenTypeCount;
     for (int i = 0; i < vis; ++i)
     {
         Nodes::const_iterator start = m_children[i].constBegin(), end = m_children[i].constEnd();
@@ -389,95 +422,73 @@ Node::hasChild(const QString &name, const bool nameIsPath, const bool onlyVisibl
     return false;
 }
 
+Node
+*Node::child(const QUrl &url, const bool onlyVisible)
+{
+    const int vis = onlyVisible ? 0 : ChildrenTypeCount;
+    for (int i = 0; i < vis; ++i)
+        for (Nodes::const_iterator start = m_children[i].constBegin(), end = m_children[i].constEnd(); start!=end; ++start)
+            if ((*start)->url() == url)
+                return *start;
+    return false;
+}
+
+void
+Node::removeDeleted()
+{
+    for (int i = 0; i < ChildrenTypeCount; ++i)
+    {
+        int c = m_children[i].count();
+        while (--c > -1)
+        {
+            Node *node = m_children[i].at(c);
+            node->refresh();
+            if (!node->exists())
+            {
+                if (!i)
+                {
+                    model()->beginRemoveRows(model()->createIndex(row(), 0, this), c, c);
+                    m_mutex.lock();
+                }
+                s_deletedNodes << m_children[i].takeAt(c);
+                if (!i)
+                {
+                    m_mutex.unlock();
+                    model()->endRemoveRows();
+                }
+            }
+        }
+    }
+}
+
 void
 Node::rePopulate()
 {
     if (gatherer()->isCancelled())
         return;
     model()->startWorking();
-    if (!m_children[Files].isEmpty())
-    {
-        m_mutex.lock();
-        s_deletedNodes+=m_children[Visible];
-        m_children[Visible].clear();
-        m_children[Visible]=m_children[Files];
-        m_children[Files].clear();
-        m_children[Hidden]=m_children[HiddenFiles];
-        m_children[HiddenFiles].clear();
-        m_mutex.unlock();
-    }
-    if (filePath() == model()->rootPath())
-    {
-        int sc = model()->sortColumn();
-        Qt::SortOrder so = model()->sortOrder();
-        Ops::getSorting(filePath(), sc, so);
-        if (sc != model()->sortColumn() || so != model()->sortOrder())
-            model()->setSort(sc, so);
-    }
-    if (isPopulated())
-        for (int i = 0; i < Files; ++i)
-        {
-            if (gatherer()->isCancelled())
-            {
-                model()->endWorking();
-                return;
-            }
-            int c = m_children[i].count();
-            while (--c > -1)
-            {
-                if (gatherer()->isCancelled())
-                {
-                    model()->endWorking();
-                    return;
-                }
-                Node *node = m_children[i].at(c);
-                node->refresh();
-                if (!node->exists())
-                {
-                    if (!i)
-                    {
-                        model()->beginRemoveRows(model()->createIndex(row(), 0, this), c, c);
-                        m_mutex.lock();
-                    }
-                    s_deletedNodes << m_children[i].takeAt(c);
-                    if (!i)
-                    {
-                        m_mutex.unlock();
-                        model()->endRemoveRows();
-                    }
-                }
-            }
-        }
-    const QDir dir(filePath());
-    if (dir.isAbsolute())
-    {
-        QDirIterator it(filePath(), allEntries);
-        while (it.hasNext())
-        {
-            if (gatherer()->isCancelled())
-            {
-                model()->endWorking();
-                return;
-            }
-            const QFileInfo file(it.next());
-            if (hasChild(file.fileName()))
-                continue;
 
-            addChild(new Node(model(), QUrl::fromLocalFile(file.filePath()), this));
-        }
+    if (url() == model()->rootUrl())
+        model()->getSort(url());
+
+    if (isPopulated())
+        removeDeleted();
+
+    if (isAbsolute())
+    {
+        QDirIterator it(url().path(), allEntries);
+        while (it.hasNext() && !gatherer()->isCancelled())
+            addChild(QUrl::fromLocalFile(it.next())); //this function checks if there already is a node w/ url
     }
-    else
+    else if (scheme() == "file")
     {
         foreach (const QFileInfo &f, QDir::drives())
-        {
-            if (!hasChild(f.filePath(), true))
-                addChild(new Node(model(), QUrl::fromLocalFile(f.filePath()), this));
-        }
+            addChild(QUrl::fromLocalFile(f.filePath()));
     }
 
     m_isPopulated = true;
-    if (filePath() == model()->rootPath())
-        emit model()->urlLoaded(QUrl::fromLocalFile(filePath()));
+    if (url() == model()->rootUrl())
+        emit model()->urlLoaded(url());
 
 //    qDeleteAll(s_deletedNodes);
 //    s_deletedNodes.clear();
@@ -504,7 +515,7 @@ Node::sort()
     while (--i > -1)
     {
         Node *node = m_children[Visible].at(i);
-        if (node->isPopulated())
+        if (node->childCount())
             node->sort();
     }
 }
@@ -534,7 +545,7 @@ Node::setHiddenVisible(bool visible)
 }
 
 void
-Node::clear()
+Node::clearVisible()
 {
     m_mutex.lock();
     qDeleteAll(m_children[Visible]);
@@ -557,6 +568,15 @@ Gatherer::Gatherer(QObject *parent)
 }
 
 void
+Gatherer::setCancelled(bool cancel)
+{
+    m_model->endWorking();
+    m_mutex.lock();
+    m_isCancelled=cancel;
+    m_mutex.unlock();
+}
+
+void
 Gatherer::run()
 {
     switch (m_task)
@@ -573,7 +593,7 @@ Gatherer::run()
         {
             QUrl url;
             url.setScheme("file");
-            m_result = m_model->rootNode()->fromUrl(url)->node(m_path, false);
+            m_result = m_model->rootNode()->nodeFromUrl(url)->node(m_path, false);
         }
         if (m_result)
             emit nodeGenerated(m_path, m_result);
@@ -646,7 +666,7 @@ Gatherer::searchResultsForNode(const QString &name, const QString &filePath, Nod
 {
     m_model->startWorking();
     emit m_model->layoutAboutToBeChanged();
-    node->clear();
+    node->clearVisible();
     emit m_model->layoutChanged();
 
     QDirIterator it(filePath, allEntries, QDirIterator::Subdirectories);
@@ -654,13 +674,7 @@ Gatherer::searchResultsForNode(const QString &name, const QString &filePath, Nod
     {
         const QFileInfo &file(it.next());
         if (file.fileName().contains(name, Qt::CaseInsensitive))
-        {
-            QUrl url;
-            url.setScheme("search");
-            url.setUserName(file.fileName());
-            url.setPath(file.filePath());
-            node->addChild(new Node(m_model, url, node));
-        }
+            node->addChild(new Node(m_model, QUrl::fromLocalFile(file.filePath()), node));
     }
     m_model->endWorking();
 }

@@ -79,7 +79,7 @@ RecentFoldersView::paletteOps()
 void
 RecentFoldersView::folderEntered(const QUrl &url)
 {
-    const QString &folder = url.toLocalFile();
+    const QString &folder = url.path();
     if (!QFileInfo(folder).exists())
         return;
     const QString &folderName = QFileInfo(folder).fileName().isEmpty()?folder:QFileInfo(folder).fileName();
@@ -96,7 +96,7 @@ RecentFoldersView::folderEntered(const QUrl &url)
     FS::Model *fsModel = vc->model();
     if (!fsModel)
         return;
-    QIcon icon(fsModel->fileIcon(fsModel->index(QUrl::fromLocalFile(folder))));
+    QIcon icon(fsModel->fileIcon(fsModel->index(url)));
     if (icon.isNull())
         icon = QFileIconProvider().icon(QFileIconProvider::Folder);
     QStandardItem *item = new QStandardItem(icon, folderName);

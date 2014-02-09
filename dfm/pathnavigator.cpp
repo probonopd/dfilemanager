@@ -140,7 +140,7 @@ void
 NavButton::dropEvent(QDropEvent *e)
 {
     if (m_url.isLocalFile())
-        IO::Manager::copy(e->mimeData()->urls(), m_url.toLocalFile(), true, true);
+        IO::Manager::copy(e->mimeData()->urls(), m_url.path(), true, true);
     m_hasData = false;
     update();
 }
@@ -343,7 +343,7 @@ PathNavigator::genNavFromUrl(const QUrl &url)
     if (!url.isLocalFile()) //for now....
         return;
 
-    const QString &path = url.toLocalFile();
+    const QString &path = url.path();
 
     if (!QFileInfo(path).exists())
         return;

@@ -30,6 +30,7 @@
 #include <QStyledItemDelegate>
 
 #include "globals.h"
+#include "filesystemmodel.h"
 
 #ifdef Q_WS_X11
 #include <magic.h>
@@ -67,6 +68,7 @@ public:
     static bool extractIoData(const QStringList &args, IOJobData &ioJobData = defaultIoJobData);
     static QStringList fromIoJobData(const IOJobData &data);
     static bool sameDisk(const QString &file1, const QString &file2);
+    static QString getStatusBarMessage(const QUrl &url, FS::Model *model);
 
     template<typename T> static inline T absWinFor(QWidget *w)
     {

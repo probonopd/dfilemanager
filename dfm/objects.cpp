@@ -102,7 +102,7 @@ FileItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const
     FS::Model *fsModel = static_cast<FS::Model *>(model);
     if (!edit||!fsModel)
         return;
-    FS::Node *node = fsModel->fromIndex(index);
+    FS::Node *node = fsModel->nodeFromIndex(index);
     const QString &newName = edit->toPlainText();
     if (node->name() == newName)
         return;

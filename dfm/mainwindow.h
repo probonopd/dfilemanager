@@ -124,8 +124,11 @@ protected:
     void createToolBars();
     void writeSettings();
     void createSlider();
+    void connectContainer(ViewContainer *container);
+    Actions viewAction(const ViewContainer::View view);
 
 private slots:
+    void updateStatusBar(const QUrl &url);
     void updateIcons();
     void goHome();
     void goBack();
@@ -153,7 +156,6 @@ private slots:
     void mainSelectionChanged(QItemSelection selected,QItemSelection notselected);
     void togglePath();
     void urlChanged(const QUrl &url);
-    void updateStatusBar(const QUrl &url);
     void createDirectory();
     void setViewIconSize(int);
     void setSliderPos(int size);
@@ -169,7 +171,7 @@ private slots:
     void tabClosed(int);
     void tabMoved(int,int);
     void stackChanged(int);
-    void newWindow() { (new MainWindow(QStringList() << m_activeContainer->model()->rootPath()))->show(); }
+    void newWindow() { (new MainWindow(QStringList() << m_activeContainer->model()->rootUrl().path()))->show(); }
     void readSettings();
     void activateUrl(const QUrl &url);
     void addBookmarks();
