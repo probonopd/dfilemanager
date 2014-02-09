@@ -550,6 +550,12 @@ Model::url(const QModelIndex &index) const
     return nodeFromIndex(index)->url();
 }
 
+QUrl
+Model::localUrl(const QModelIndex &index) const
+{
+    return nodeFromIndex(index)->localUrl();
+}
+
 void
 Model::startWorking()
 {

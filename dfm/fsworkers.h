@@ -45,7 +45,7 @@ class Node : public QFileInfo
     friend class Worker::Gatherer;
 public:
     enum Children { Visible = 0, Hidden = 1, Filtered = 2, ChildrenTypeCount = 3 };
-    Node(FS::Model *model = 0, const QUrl &url = QUrl(), Node *parent = 0);
+    Node(FS::Model *model = 0, const QUrl &url = QUrl(), Node *parent = 0, const QUrl &localUrl = QUrl());
     ~Node();
 
     inline Model *model() { return m_model; }
@@ -93,8 +93,10 @@ public:
     Node *node(const QString &path, bool checkOnly = true);
     Node *nodeFromPath(const QString &path, bool checkOnly = true);
 
-    QUrl url() { return m_url; }
-    void setUrl(const QUrl &url) { m_url = url; }
+    inline QUrl url() { return m_url; }
+    inline QUrl localUrl() { return m_localUrl; }
+    inline void setUrl(const QUrl &url) { m_url = url; }
+    inline void setLocalUrl(const QUrl &url) { m_localUrl = url; }
 
     Node *parent() { return m_parent; }
 
@@ -103,7 +105,7 @@ private:
     Nodes m_children[ChildrenTypeCount];
     Node *m_parent;
     QString m_filePath, m_filter, m_name;
-    QUrl m_url;
+    QUrl m_url, m_localUrl;
     mutable QMutex m_mutex;
     Model *m_model;
 };
