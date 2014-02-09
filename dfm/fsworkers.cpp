@@ -64,9 +64,7 @@ static bool lessThen(Node *n1, Node *n2)
     return desc?!lt:lt;
 }
 
-static Nodes s_deletedNodes;
-
-Node::Node(Model *model, const QUrl &url, Node *parent)
+Node::Node(Model *model, const QUrl &url, Node *parent, const QUrl &localUrl)
     : QFileInfo(url.path())
     , m_isPopulated(false)
     , m_filePath(url.path())
@@ -74,6 +72,7 @@ Node::Node(Model *model, const QUrl &url, Node *parent)
     , m_model(model)
     , m_parent(parent)
     , m_url(url)
+    , m_localUrl(url.isEmpty()?localUrl:url)
 {
     if (url.path().isEmpty() && !url.scheme().isEmpty())
         m_name = url.scheme();
@@ -83,11 +82,17 @@ Node::Node(Model *model, const QUrl &url, Node *parent)
         m_name = filePath();
     else
         m_name = fileName();
+
+    if (!localUrl.isEmpty())
+    {
+        m_filePath = localUrl.path();
+        setFile(m_filePath);
+    }
 }
 
 Node::~Node()
 {
-    for (int i = 0; i<ChildrenTypeCount+1; ++i)
+    for (int i = 0; i<ChildrenTypeCount; ++i)
         if (!m_children[i].isEmpty())
             qDeleteAll(m_children[i]);
 }
@@ -263,7 +268,11 @@ Node::rename(const QString &newName)
         m_filePath = dir().absoluteFilePath(newName);
         m_name = newName;
         setFile(m_filePath);
-        setUrl(QUrl::fromLocalFile(m_filePath));
+        setLocalUrl(QUrl::fromLocalFile(m_filePath));
+        QUrl url = m_url;
+        QFileInfo fi = url.path();
+        url.setPath(QString("%1/%2").arg(fi.path(), newName));
+        setUrl(url);
         refresh();
         return true;
     }
@@ -436,6 +445,7 @@ Node
 void
 Node::removeDeleted()
 {
+    Nodes deleted;
     for (int i = 0; i < ChildrenTypeCount; ++i)
     {
         int c = m_children[i].count();
@@ -450,7 +460,7 @@ Node::removeDeleted()
                     model()->beginRemoveRows(model()->createIndex(row(), 0, this), c, c);
                     m_mutex.lock();
                 }
-                s_deletedNodes << m_children[i].takeAt(c);
+                deleted << m_children[i].takeAt(c);
                 if (!i)
                 {
                     m_mutex.unlock();
@@ -459,6 +469,8 @@ Node::removeDeleted()
             }
         }
     }
+    if (!deleted.isEmpty())
+        qDeleteAll(deleted);
 }
 
 void
@@ -489,9 +501,6 @@ Node::rePopulate()
     m_isPopulated = true;
     if (url() == model()->rootUrl())
         emit model()->urlLoaded(url());
-
-//    qDeleteAll(s_deletedNodes);
-//    s_deletedNodes.clear();
 
     for (int i = 0; i < m_children[Visible].count(); ++i)
         if (m_children[Visible].at(i)->isPopulated())
@@ -547,10 +556,13 @@ Node::setHiddenVisible(bool visible)
 void
 Node::clearVisible()
 {
+    emit m_model->layoutAboutToBeChanged();
     m_mutex.lock();
-    qDeleteAll(m_children[Visible]);
+    Nodes deleted = m_children[Visible];
     m_children[Visible].clear();
     m_mutex.unlock();
+    emit m_model->layoutChanged();
+    qDeleteAll(deleted);
 }
 
 //-----------------------------------------------------------------------------
@@ -632,7 +644,6 @@ void
 Gatherer::populateNode(Node *node)
 {
     QMutexLocker locker(&m_taskMutex);
-
     if (m_task == Populate && node == m_node) //already populating the node....
         return;
 
@@ -653,7 +664,6 @@ Gatherer::generateNode(const QString &path)
     setCancelled(false);
 
     QMutexLocker locker(&m_taskMutex);
-
     m_task = Generate;
     m_path = path;
     m_node = 0;
@@ -665,16 +675,19 @@ void
 Gatherer::searchResultsForNode(const QString &name, const QString &filePath, Node *node)
 {
     m_model->startWorking();
-    emit m_model->layoutAboutToBeChanged();
     node->clearVisible();
-    emit m_model->layoutChanged();
 
     QDirIterator it(filePath, allEntries, QDirIterator::Subdirectories);
     while (it.hasNext()&&!m_model->dataGatherer()->isCancelled())
     {
         const QFileInfo &file(it.next());
         if (file.fileName().contains(name, Qt::CaseInsensitive))
-            node->addChild(new Node(m_model, QUrl::fromLocalFile(file.filePath()), node));
+        {
+            QUrl url;
+            url.setScheme("search");
+            url.setPath(file.fileName());
+            node->addChild(new Node(m_model, url, node, QUrl::fromLocalFile(file.filePath())));
+        }
     }
     m_model->endWorking();
 }

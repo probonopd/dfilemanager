@@ -126,13 +126,13 @@ public:
     Node *rootNode();
 
     void forceEmitDataChangedFor(const QString &file);
-//    inline QDir rootDirectory() const { return QDir(m_rootPath); }
 
     inline FileIconProvider *iconProvider() { return m_ip; }
 
     QIcon fileIcon(const QModelIndex &index) const;
     QString fileName(const QModelIndex &index) const;
     QUrl url(const QModelIndex &index) const;
+    QUrl localUrl(const QModelIndex &index) const;
 
     bool isDir(const QModelIndex &index) const;
     QFileInfo fileInfo(const QModelIndex &index) const;
