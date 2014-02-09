@@ -422,11 +422,14 @@ DeviceManager::addDevs()
 DeviceItem
 *DeviceManager::deviceItemForFile(const QString &file)
 {
-    QString s(file.isEmpty() ? "/" : file);
-    foreach (DeviceItem *item, m_items.values())
-        if (s == item->mountPath())
-            return item;
-    return deviceItemForFile(s.mid(0, s.lastIndexOf("/")));
+    const QFileInfo f(file);
+    QDir dir = f.isDir()?f.filePath():f.path();
+    do {
+        foreach (DeviceItem *item, m_items.values())
+            if (dir.path() == item->mountPath())
+                return item;
+    } while (dir.cdUp());
+    return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -561,7 +564,7 @@ PlacesView::dropEvent(QDropEvent *event)
     QStringList files;
     foreach (const QUrl &url, event->mimeData()->urls())
     {
-        const QString &file = url.toLocalFile();
+        const QString &file = url.path();
         if (QFileInfo(file).isReadable())
             files << file;
     }

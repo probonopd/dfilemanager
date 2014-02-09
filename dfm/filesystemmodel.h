@@ -102,8 +102,7 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     int columnCount(const QModelIndex &parent) const { return 4; }
 
-    Node *nodeForIndex(const QModelIndex &index) const;
-    Node *fromIndex(const QModelIndex &index) const;
+    Node *nodeFromIndex(const QModelIndex &index) const;
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
     QModelIndex parent(const QModelIndex &child) const;
     QModelIndex index(const QUrl &url);
@@ -123,15 +122,15 @@ public:
 
     QUrl rootUrl() { return m_url; }
     void setRootPath(const QString &path);
-    inline QString rootPath() const { return m_rootPath; }
+//    inline QString rootPath() const { return m_rootPath; }
     Node *rootNode();
 
     void forceEmitDataChangedFor(const QString &file);
-    inline QDir rootDirectory() const { return QDir(m_rootPath); }
+//    inline QDir rootDirectory() const { return QDir(m_rootPath); }
 
     inline FileIconProvider *iconProvider() { return m_ip; }
 
-    inline QIcon fileIcon(const QModelIndex &index) const { return bool(index.column()==0)?data(index, Qt::DecorationRole).value<QIcon>():QIcon(); }
+    QIcon fileIcon(const QModelIndex &index) const;
     QString fileName(const QModelIndex &index) const;
     QUrl url(const QModelIndex &index) const;
 
@@ -143,6 +142,7 @@ public:
     inline QFileSystemWatcher *dirWatcher() { return m_watcher; }
     inline FileIconProvider *ip() { return m_ip; }
 
+    void getSort(const QUrl &url);
     void setSort(const int sortColumn, const int sortOrder);
     inline Qt::SortOrder sortOrder() const { return m_sortOrder; }
     inline int sortColumn() const { return m_sortColumn; }
@@ -165,7 +165,6 @@ public:
 public slots:
     void setUrl(const QUrl &url);
     void setUrlFromDynamicPropertyUrl();
-    inline void setPath(const QString &path) { setUrl(QUrl::fromLocalFile(path)); }
     void refresh();
     void endSearch();
     void cancelSearch();
@@ -186,7 +185,6 @@ signals:
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
     void hiddenVisibilityChanged(bool visible);
     void sortingChanged(const int sortCol, const int order);
-    void paintRequest();
     void startedWorking();
     void finishedWorking();
     void urlLoaded(const QUrl &url);

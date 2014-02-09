@@ -651,7 +651,7 @@ TabBar::dropEvent(QDropEvent *e)
     {
         if (r.isValid())
         {
-            const QString &dest = w->containerForTab(tab)->model()->rootPath();
+            const QString &dest = w->containerForTab(tab)->model()->rootUrl().path();
             IO::Manager::copy(e->mimeData()->urls(), dest, true, true);
         }
         else
@@ -738,7 +738,7 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
         connect(drag, SIGNAL(destroyed()), m_dropIndicator, SLOT(hide()));
 //        connect(drag, SIGNAL(targetChanged(QWidget*)), this, SLOT(drag()));
         QMimeData *data = new QMimeData();
-        m_lastDraggedFile = MainWindow::window(this)->containerForTab(tabAt(e->pos()))->model()->rootPath();
+        m_lastDraggedFile = MainWindow::window(this)->containerForTab(tabAt(e->pos()))->model()->rootUrl().path();
         data->setUrls(QList<QUrl>() << QUrl::fromLocalFile(m_lastDraggedFile));
         data->setProperty("tab", tabAt(e->pos()));
         drag->setMimeData(data);

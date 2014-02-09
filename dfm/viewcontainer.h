@@ -87,7 +87,6 @@ public:
     QList<QUrl> visited() { return m_backList; }
     void sort(const int column = 0, const Qt::SortOrder order = Qt::AscendingOrder);
     PathNavigator *pathNav();
-    QString rootPath() const;
 
 protected:
     void leaveEvent(QEvent *) { emit leftView(); }
@@ -107,7 +106,6 @@ signals:
     void leftView();
     void filterChanged();
     void sortingChanged(const int column, const int order);
-    void urlChanged(const QUrl &url);
     
 public slots:
     void activate(const QModelIndex &index);

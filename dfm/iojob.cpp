@@ -313,7 +313,7 @@ Manager::copy(const QList<QUrl> &sourceFiles, const QString &destination, bool c
 {
     QStringList files;
     foreach (const QUrl &url, sourceFiles)
-        files << url.toLocalFile();
+        files << url.path();
     copy(files, destination, cut, ask);
 }
 
@@ -689,7 +689,7 @@ Manager::remove(const QString &path) const
 
     for (int i = 0; i < children.count(); ++i)
     {
-        QFileInfo info(children.at(i));
+        const QFileInfo info(children.at(i));
 
         if (info.isDir())
             error |= QDir().rmdir(info.filePath());

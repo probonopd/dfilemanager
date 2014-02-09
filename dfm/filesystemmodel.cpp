@@ -94,6 +94,16 @@ Model::~Model()
 }
 
 void
+Model::getSort(const QUrl &url)
+{
+    int sc = sortColumn();
+    Qt::SortOrder so = sortOrder();
+    Ops::getSorting(url.path(), sc, so);
+    if (sc != sortColumn() || so != sortOrder())
+        setSort(sc, so);
+}
+
+void
 Model::setSort(const int sortColumn, const int sortOrder)
 {
     m_sortColumn = sortColumn;
@@ -104,7 +114,7 @@ Model::setSort(const int sortColumn, const int sortOrder)
 void
 Model::nodeGenerated(const QString &path, Node *node)
 {
-    if (path != rootPath() || node == m_rootNode)
+    if (node == m_rootNode)
         return;
 
     emit urlChanged(QUrl::fromLocalFile(path));
@@ -121,7 +131,7 @@ Model::setRootPath(const QString &path)
     if (QFileInfo(m_rootPath).exists())
         m_watcher->addPath(m_rootPath);
 
-    Node *node = rootNode()->fromUrl(QUrl::fromLocalFile(path));
+    Node *node = rootNode()->nodeFromUrl(QUrl::fromLocalFile(path));
 
     if (!node)
         dataGatherer()->generateNode(path);
@@ -134,9 +144,16 @@ Model::setUrl(const QUrl &url)
 {
     m_url = url;
     if (url.isLocalFile())
-        setRootPath(url.toLocalFile());
+        setRootPath(url.path());
     else
         emit urlChanged(url);
+    Node *n = rootNode()->nodeFromUrl(url);
+    while (n)
+    {
+        const QModelIndex &idx = index(n->url());
+        qDebug() << n->url() << idx << idx.parent();
+        n = n->parent();
+    }
 }
 
 void
@@ -153,7 +170,7 @@ Model::setUrlFromDynamicPropertyUrl()
 void
 Model::refresh()
 {
-    Node *node = rootNode()->fromUrl(QUrl::fromLocalFile(m_rootPath));
+    Node *node = rootNode()->nodeFromUrl(QUrl::fromLocalFile(m_rootPath));
     dataGatherer()->populateNode(node);
 }
 
@@ -162,7 +179,7 @@ Model::dirChanged(const QString &path)
 {
     const QModelIndex &idx = index(QUrl::fromLocalFile(path));
 
-    Node *node = nodeForIndex(idx);
+    Node *node = nodeFromIndex(idx);
     if (!node)
         return;
 
@@ -179,7 +196,7 @@ Model::dirChanged(const QString &path)
 Qt::ItemFlags
 Model::flags(const QModelIndex &index) const
 {
-    Node *node = fromIndex(index);
+    Node *node = nodeFromIndex(index);
     Qt::ItemFlags flags = QAbstractItemModel::flags(index);
     if (node->isWritable()) flags |= Qt::ItemIsEditable;
     if (node->isDir()) flags |= Qt::ItemIsDropEnabled;
@@ -220,11 +237,9 @@ QVariant
 Model::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid()||index.column()>3||index.row()>100000)
-        return QString("--");
+        return QVariant();
 
-    Node *node = nodeForIndex(index);
-
-    const QString &file = node->filePath();
+    Node *node = nodeFromIndex(index);
     const int col = index.column();
     if (node == m_rootNode)
         return QVariant();
@@ -260,12 +275,12 @@ Model::data(const QModelIndex &index, int role) const
 
     if (role == Qt::DecorationRole)
     {
-        if (ThumbsLoader::hasThumb(file))
-            return QIcon(QPixmap::fromImage(ThumbsLoader::thumb(file)));
+        if (ThumbsLoader::hasThumb(node->filePath()))
+            return QIcon(QPixmap::fromImage(ThumbsLoader::thumb(node->filePath())));
         else
         {
             if ((Store::config.views.showThumbs || node->isDir()) && !isWorking())
-                ThumbsLoader::queueFile(file);
+                ThumbsLoader::queueFile(node->filePath());
             return m_ip->icon(*node);
         }
     }
@@ -274,14 +289,14 @@ Model::data(const QModelIndex &index, int role) const
     {
         const QIcon &icon = m_ip->icon(*node);
 
-        if (m_it->hasData(file))
-            return QPixmap::fromImage(m_it->flowData(file, role == FlowRefl));
+        if (m_it->hasData(node->filePath()))
+            return QPixmap::fromImage(m_it->flowData(node->filePath(), role == FlowRefl));
 
-        if (!ThumbsLoader::hasThumb(file) && Store::config.views.showThumbs)
-            ThumbsLoader::queueFile(file);
+        if (!ThumbsLoader::hasThumb(node->filePath()) && Store::config.views.showThumbs)
+            ThumbsLoader::queueFile(node->filePath());
 
-        if ((ThumbsLoader::hasThumb(file) && !m_it->hasData(file) && Store::config.views.showThumbs) && !isWorking())
-            m_it->queueFile(file, ThumbsLoader::thumb(file));
+        if ((ThumbsLoader::hasThumb(node->filePath()) && !m_it->hasData(node->filePath()) && Store::config.views.showThumbs) && !isWorking())
+            m_it->queueFile(node->filePath(), ThumbsLoader::thumb(node->filePath()));
 
         if (m_it->hasNameData(icon.name()))
             return QPixmap::fromImage(m_it->flowNameData(icon.name(), role == FlowRefl));
@@ -290,7 +305,7 @@ Model::data(const QModelIndex &index, int role) const
         else
         {
             QImage img = icon.pixmap(SIZE).toImage();
-            m_it->queueFile(file, img);
+            m_it->queueFile(node->filePath(), img);
         }
         return QPixmap();
     }
@@ -310,7 +325,7 @@ Model::setData(const QModelIndex &index, const QVariant &value, int role)
     if (!index.isValid() || role != Qt::EditRole)
         return false;
 
-    Node *node = fromIndex(index);
+    Node *node = nodeFromIndex(index);
     const QString &newName = value.toString();
     const QString &oldName = node->fileName();
     const QString &path = node->path();
@@ -352,7 +367,7 @@ QMimeData
         const QModelIndex &index = indexes.at(i);
         if (!index.isValid() || index.column())
             continue;
-        Node *node = fromIndex(index);
+        Node *node = nodeFromIndex(index);
         urls << QUrl::fromLocalFile(node->filePath());
     }
     QMimeData *data = new QMimeData();
@@ -363,17 +378,11 @@ QMimeData
 int
 Model::rowCount(const QModelIndex &parent) const
 {
-    return nodeForIndex(parent)->childCount();
+    return nodeFromIndex(parent)->childCount();
 }
 
 Node
-*Model::fromIndex(const QModelIndex &index) const
-{
-    return nodeForIndex(index);
-}
-
-Node
-*Model::nodeForIndex(const QModelIndex &index) const
+*Model::nodeFromIndex(const QModelIndex &index) const
 {
     Node *node = static_cast<Node *>(index.internalPointer());
     if (index.isValid() && index.row() < 100000 && index.column() < 5 && node)
@@ -384,7 +393,7 @@ Node
 QModelIndex
 Model::index(const QUrl &url)
 {
-    Node *node = rootNode()->fromUrl(url);
+    Node *node = rootNode()->nodeFromUrl(url);
     if (node)
         return createIndex(node->row(), 0, node);
     return QModelIndex();
@@ -393,7 +402,7 @@ Model::index(const QUrl &url)
 QModelIndex
 Model::index(int row, int column, const QModelIndex &parent) const
 {
-    Node *parentNode = nodeForIndex(parent);
+    Node *parentNode = nodeFromIndex(parent);
     Node *childNode = parentNode->child(row);
 
     if (childNode)
@@ -404,7 +413,7 @@ Model::index(int row, int column, const QModelIndex &parent) const
 QModelIndex
 Model::parent(const QModelIndex &child) const
 {
-    Node *childNode = nodeForIndex(child);
+    Node *childNode = nodeFromIndex(child);
     if (Node *parentNode = childNode->parent())
         return createIndex(parentNode->row(), 0, parentNode);
     return QModelIndex();
@@ -413,7 +422,7 @@ Model::parent(const QModelIndex &child) const
 bool
 Model::hasChildren(const QModelIndex &parent) const
 {
-    if (Node *node = fromIndex(parent))
+    if (Node *node = nodeFromIndex(parent))
         return node->isDir();
     return true;
 }
@@ -421,7 +430,7 @@ Model::hasChildren(const QModelIndex &parent) const
 bool
 Model::canFetchMore(const QModelIndex &parent) const
 {
-    if (Node *node = fromIndex(parent))
+    if (Node *node = nodeFromIndex(parent))
         return node->isDir()&&!node->isSearchResult();
     return true;
 }
@@ -431,7 +440,7 @@ Model::fetchMore(const QModelIndex &parent)
 {
     if (parent.isValid() && parent.column() != 0)
         return;
-    Node *node = fromIndex(parent);
+    Node *node = nodeFromIndex(parent);
     if (node && !node->isPopulated())
         dataGatherer()->populateNode(node);
 }
@@ -439,17 +448,17 @@ Model::fetchMore(const QModelIndex &parent)
 void
 Model::sort(int column, Qt::SortOrder order)
 {
-    if (rootPath().isEmpty() || isWorking())
+    if (isWorking())
         return;
     const bool orderChanged = bool(m_sortColumn!=column||m_sortOrder!=order);
     m_sortColumn = column;
     m_sortOrder = order;
-    qDebug() << "sort called" << rootPath() << column << order;
+    qDebug() << "sort called" << m_url << column << order;
     emit layoutAboutToBeChanged();
     const QModelIndexList &oldList = persistentIndexList();
     QList<QPair<int, Node *> > old;
     for (int i = 0; i < oldList.count(); ++i)
-        old << QPair<int, Node *>(oldList.at(i).column(), fromIndex(oldList.at(i)));
+        old << QPair<int, Node *>(oldList.at(i).column(), nodeFromIndex(oldList.at(i)));
 
     rootNode()->sort();
 
@@ -471,7 +480,7 @@ Model::sort(int column, Qt::SortOrder order)
 #ifdef Q_WS_X11
     if (Store::config.views.dirSettings && orderChanged)
     {
-        QDir dir(rootPath());
+        QDir dir(m_url.path());
         QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
         settings.beginGroup("DFM");
         QVariant varCol = settings.value("sortCol");
@@ -514,7 +523,7 @@ Model::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int c
     if (!data->hasUrls())
         return false;
 
-    Node *node = fromIndex(parent);
+    Node *node = nodeFromIndex(parent);
     if (!node->isDir())
         return false;
 
@@ -527,7 +536,7 @@ Model::mkdir(const QModelIndex &parent, const QString &name)
 {
     if (parent.isValid())
     {
-        Node *node = nodeForIndex(parent);
+        Node *node = nodeFromIndex(parent);
         QDir dir(node->filePath());
         dir.mkdir(name);
         return index(QUrl::fromLocalFile(dir.absoluteFilePath(name)));
@@ -538,7 +547,7 @@ Model::mkdir(const QModelIndex &parent, const QString &name)
 QUrl
 Model::url(const QModelIndex &index) const
 {
-    return nodeForIndex(index)->url();
+    return nodeFromIndex(index)->url();
 }
 
 void
@@ -568,7 +577,7 @@ Model::category(const QString &cat)
         const QModelIndex &child = index(i, 0, parent);
         if (!child.isValid())
             continue;
-        if (nodeForIndex(child)->category() == cat)
+        if (nodeFromIndex(child)->category() == cat)
             categ << child;
     }
     return categ;
@@ -577,7 +586,7 @@ Model::category(const QString &cat)
 QModelIndexList
 Model::category(const QModelIndex &fromCat)
 {
-    return category(nodeForIndex(fromCat)->category());
+    return category(nodeFromIndex(fromCat)->category());
 }
 
 QStringList
@@ -594,7 +603,7 @@ Model::categories()
         if (!child.isValid())
             continue;
 
-        if (Node *node = nodeForIndex(child))
+        if (Node *node = nodeFromIndex(child))
             if (!cats.contains(node->category()))
                 cats << node->category();
     }
@@ -604,7 +613,7 @@ Model::categories()
 void
 Model::search(const QString &fileName)
 {
-    search(fileName, m_url.toLocalFile());
+    search(fileName, m_url.path());
 }
 
 void
@@ -612,7 +621,7 @@ Model::search(const QString &fileName, const QString &filePath)
 {
     QUrl url;
     url.setScheme("search");
-    Node *node = rootNode()->fromUrl(url);
+    Node *node = rootNode()->nodeFromUrl(url);
     setUrl(url);
     dataGatherer()->search(fileName, filePath, node);
 }
@@ -635,7 +644,7 @@ Model::currentSearchString()
 {
     QUrl url;
     url.setScheme("search");
-    Node *node = rootNode()->fromUrl(url);
+    Node *node = rootNode()->nodeFromUrl(url);
     return node?node->filter():QString();
 }
 
@@ -654,11 +663,20 @@ Model::schemeFromSchemeMenu()
 QString
 Model::fileName(const QModelIndex &index) const
 {
-    return nodeForIndex(index)->name();
+    return nodeFromIndex(index)->name();
 }
 
-bool Model::isDir(const QModelIndex &index) const { return index.isValid()?fromIndex(index)->isDir():false; }
-QFileInfo Model::fileInfo(const QModelIndex &index) const { return index.isValid()?*fromIndex(index):QFileInfo(); }
+QIcon
+Model::fileIcon(const QModelIndex &index) const
+{
+    return bool(index.column()==0)?data(index, Qt::DecorationRole).value<QIcon>():QIcon();
+}
+
+bool Model::isDir(const QModelIndex &index) const { return index.isValid()?nodeFromIndex(index)->isDir():false; }
+QFileInfo Model::fileInfo(const QModelIndex &index) const
+{
+    return index.isValid()&&url(index).isLocalFile()?*nodeFromIndex(index):QFileInfo();
+}
 
 Node *Model::rootNode() { return m_rootNode; }
 
@@ -686,7 +704,11 @@ Model::title(const QUrl &url)
         return u.scheme();
 
     if (u.isLocalFile())
-        return QFileInfo(url.toLocalFile()).fileName();
-
+    {
+        QString title = QFileInfo(url.path()).fileName();
+        if (title.isEmpty())
+            title = url.path();
+        return title;
+    }
     return u.toString();
 }

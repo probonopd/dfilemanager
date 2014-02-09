@@ -312,117 +312,40 @@ void
 MainWindow::pasteSelection()
 {
     const QMimeData *mimeData = QApplication::clipboard()->mimeData();
-
-    if (!mimeData->hasUrls())
-        return;
-
     const QString &filePath = m_model->url(m_activeContainer->currentView()->rootIndex()).toLocalFile();
 
-    IO::Manager::copy(mimeData->urls(), filePath, m_cut, m_cut);
-
+    if (QFileInfo(filePath).exists() && mimeData->hasUrls())
+        IO::Manager::copy(mimeData->urls(), filePath, m_cut, m_cut);
 
     QApplication::clipboard()->clear();
-
     m_cut = false;
 }
 
 void
 MainWindow::urlChanged(const QUrl &url)
 {
-    const QString &rootPath = m_model->rootPath();
-    const QString &dir = QFileInfo(rootPath).fileName().isEmpty()?rootPath:QFileInfo(rootPath).fileName();
-    setWindowTitle(dir);
+    if (sender() != m_model)
+        return;
+    const QString &title = m_model->title(url);
+    setWindowTitle(title);
     if (m_filterBox->mode() == Filter)
     {
         m_filterBox->clear();
         m_activeContainer->setFilter("");
     }
-    m_placesView->activateAppropriatePlace(rootPath);
-    m_tabBar->setTabText(m_tabBar->currentIndex(), dir);
+    if (url.isLocalFile())
+        m_placesView->activateAppropriatePlace(url.path());
+    m_tabBar->setTabText(m_tabBar->currentIndex(), title);
     if (Store::config.behaviour.gayWindow)
-        m_tabBar->setTabIcon(m_tabBar->currentIndex(), m_model->iconProvider()->icon(QFileInfo(rootPath)));
-    updateStatusBar(url);
+        m_tabBar->setTabIcon(m_tabBar->currentIndex(), m_model->fileIcon(m_model->index(url)));
     setActions();
 }
 
 void
 MainWindow::updateStatusBar(const QUrl &url)
 {
-    QDir crnt = m_model->rootDirectory();
-
-    crnt.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
-    int folders = crnt.count();
-
-    crnt.setFilter(QDir::Dirs | QDir::NoDotAndDotDot | QDir::AllEntries);
-    int allfiles = crnt.count();
-    int files = allfiles - folders;
-
-    qreal size = 0;
-    foreach (const QFileInfo &file, crnt.entryInfoList())
-    {
-        if (!file.isDir())
-            size += file.size();
-    }
-    int sizeType = 0;
-    while(size > 1024)
-    {
-        size = size/1024;
-        sizeType++;
-    }
-    QString statSize;
-    switch (sizeType)
-    {
-    case 0 : statSize = " Byte"; break;
-    case 1 : statSize = " KiB"; break;
-    case 2 : statSize = " MiB"; break;
-    case 3 : statSize = " GiB"; break;
-    default: statSize = " TiB"; //I doubt if we need any higher then this...
-    }
-
-    QString sz = QString::number(size);
-
-    QStringList realSize = sz.split(".");
-    sz = realSize.at(0);
-    QString szEnd;
-    if (realSize.count() == 2)
-        szEnd = realSize.at(1);
-    QString end;
-    if (szEnd.count() >= 3)
-    {
-        QString endSize = szEnd;
-        endSize.truncate(3);
-        endSize.remove(0,2);
-        bool ok = true;
-        int endEnd = endSize.toInt(&ok,10);
-        QString startSize = szEnd;
-        startSize.truncate(2);
-        int endStart = startSize.toInt(&ok,10);
-        if(endEnd >= 5)
-            endStart++;
-        end = QString::number(endStart);
-    }
-    else if (szEnd.count() == 1)
-        end = szEnd + "0";
-    else if (szEnd.count() == 2)
-        end = szEnd;
-
-    if (!end.isEmpty())
-        sz = sz + "." + end;
-
-
-    QString messaage;
-    QString _folder = folders > 1 ? " Folders" : " Folder";
-    QString _file = files > 1 ? " Files " : " File ";
-
-    if (folders >= 1 && files >= 1)
-        messaage = QString::number(folders) + _folder + ", " + QString::number(files) + _file + "(" + sz + statSize + ")";
-    else if (folders >= 1 && files == 0)
-        messaage = QString::number(folders) + _folder;
-    else if (folders == 0 && files >= 1)
-        messaage = QString::number(files) + _file + sz + " " + statSize;
-
-    m_statusMessage = messaage;
-    m_statusBar->showMessage(messaage);
+    m_statusMessage = Ops::getStatusBarMessage(url, m_model);
+    m_statusBar->showMessage(m_statusMessage);
 }
 
 void
@@ -431,8 +354,6 @@ MainWindow::closeEvent(QCloseEvent *event)
     writeSettings();
     s_openWindows.removeOne(this);
     event->accept();
-//    if (s_openWindows.isEmpty())
-//        qApp->quit();
 }
 
 void
@@ -478,42 +399,45 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
 }
 
 void MainWindow::rename() { m_activeContainer->rename(); }
-
 void MainWindow::createDirectory() { m_activeContainer->createDirectory(); }
 
 void MainWindow::goHome() { m_model->setUrl(QUrl::fromLocalFile(QDir::homePath())); }
-
 void MainWindow::goBack() { m_activeContainer->goBack(); }
-
 void MainWindow::goUp() { m_activeContainer->goUp(); }
-
 void MainWindow::goForward() { m_activeContainer->goForward(); }
 
 void MainWindow::setViewIcons() { m_activeContainer->setView(ViewContainer::Icon); }
-
 void MainWindow::setViewDetails() { m_activeContainer->setView(ViewContainer::Details); }
-
 void MainWindow::setViewCols() { m_activeContainer->setView(ViewContainer::Columns); }
-
 void MainWindow::flowView() { m_activeContainer->setView(ViewContainer::Flow); }
 
 void
 MainWindow::genPlace()
 {
-    QFileInfo file(m_model->rootPath());
+    QFileInfo file(m_model->rootUrl().path());
     QString path = file.filePath();
     QString name = file.fileName();
     QIcon icon = QIcon::fromTheme("folder");
     m_placesView->addPlace(name, path, icon);
 }
 
+MainWindow::Actions
+MainWindow::viewAction(const ViewContainer::View view)
+{
+    switch (view)
+    {
+    case ViewContainer::Icon: return IconView;
+    case ViewContainer::Details: return DetailView;
+    case ViewContainer::Columns: return ColumnView;
+    case ViewContainer::Flow: return FlowView;
+    default: return IconView;
+    }
+}
+
 void
 MainWindow::checkViewAct()
 {
-    m_actions[IconView]->setChecked(m_activeContainer->currentViewType() == ViewContainer::Icon);
-    m_actions[DetailView]->setChecked(m_activeContainer->currentViewType() == ViewContainer::Details);
-    m_actions[ColumnView]->setChecked(m_activeContainer->currentViewType() == ViewContainer::Columns);
-    m_actions[FlowView]->setChecked(m_activeContainer->currentViewType() == ViewContainer::Flow);
+    m_actions[viewAction(m_activeContainer->currentViewType())]->setChecked(true);
     m_iconSizeSlider->setVisible(m_activeContainer->currentViewType() == ViewContainer::Icon);
     emit viewChanged(m_activeContainer->currentView());
 }
@@ -540,11 +464,11 @@ void MainWindow::toggleMenuVisible() { menuBar()->setVisible(m_actions[ShowMenuB
 void MainWindow::toggleStatusVisible() { m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked()); }
 
 void
-MainWindow::addTab(const QUrl &url)
+MainWindow::connectContainer(ViewContainer *container)
 {
-    ViewContainer *container = new ViewContainer(this, url);
     container->installEventFilter(this);
     connect(container->model(), SIGNAL(urlLoaded(QUrl)), this, SLOT(urlChanged(QUrl)));
+    connect(container->model(), SIGNAL(urlLoaded(QUrl)), this, SLOT(updateStatusBar(QUrl)));
     connect(container->model(), SIGNAL(urlLoaded(QUrl)), m_recentFoldersView, SLOT(folderEntered(QUrl)));
     connect(container, SIGNAL(viewChanged()), this, SLOT(checkViewAct()));
     connect(container->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(mainSelectionChanged(QItemSelection,QItemSelection)));
@@ -563,16 +487,23 @@ MainWindow::addTab(const QUrl &url)
             << m_actions[GoBack] << m_actions[GoForward] << m_actions[Properties];
 
     container->addActions(actList);
+}
+
+void
+MainWindow::addTab(const QUrl &url)
+{
+    ViewContainer *container = new ViewContainer(this, url);
+    connectContainer(container);
     m_stackedWidget->addWidget(container);
     if (!m_model)
         m_model = container->model();
 
-    const QString &text = container->model()->title(url);
+    const QString &title = container->model()->title(url);
 
     if (Store::config.behaviour.gayWindow)
-        m_tabBar->addTab(m_model->iconProvider()->icon(QFileInfo(container->model()->rootPath())), text);
+        m_tabBar->addTab(m_model->fileIcon(m_model->index(url)), title);
     else
-        m_tabBar->addTab(text);
+        m_tabBar->addTab(title);
 
     if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
         m_tabBar->setVisible(m_tabBar->count() > 1);
@@ -583,40 +514,23 @@ MainWindow::addTab(ViewContainer *container, int index)
 {
     if (index == -1)
         index = m_stackedWidget->count();
-    container->installEventFilter(this);
-    connect(container->model(), SIGNAL(urlLoaded(QUrl)), this, SLOT(urlChanged(QUrl)));
-    connect(container->model(), SIGNAL(urlLoaded(QUrl)), m_recentFoldersView, SLOT(folderEntered(QUrl)));
-    connect(container->model(), SIGNAL(hiddenVisibilityChanged(bool)), m_actions[ShowHidden], SLOT(setChecked(bool)));
-    connect(container->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(mainSelectionChanged(QItemSelection,QItemSelection)));
-
-    connect(container, SIGNAL(viewChanged()), this, SLOT(checkViewAct()));
-    connect(container, SIGNAL(iconSizeChanged(int)), this, SLOT(setSliderPos(int)));
-    connect(container, SIGNAL(viewportEntered()), this, SLOT(viewClearHover()));
-    connect(container, SIGNAL(leftView()), this, SLOT(viewClearHover()));
-    connect(container, SIGNAL(newTabRequest(QString)), this, SLOT(addTab(QString)));
-    connect(container, SIGNAL(entered(QModelIndex)), m_infoWidget, SLOT(hovered(QModelIndex)));
-    connect(container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
-    connect(container, SIGNAL(sortingChanged(int,int)), this, SLOT(sortingChanged(int,int)));
-
-
-    QList<QAction *> actList;
-    actList << m_actions[OpenInTab] << m_actions[MkDir] << m_actions[Paste] << m_actions[Copy] << m_actions[Cut]
-            << m_actions[DeleteSelection] << m_actions[Rename] << m_actions[CustomCommand] << m_actions[GoUp]
-            << m_actions[GoBack] << m_actions[GoForward] << m_actions[Properties];
-
-    container->addActions(actList);
+    connectContainer(container);
     m_stackedWidget->insertWidget(index, container);
     if (!m_model)
         m_model = container->model();
     if (!m_activeContainer)
         m_activeContainer = container;
 
-    const QString &fileName = QFileInfo(container->model()->rootPath()).fileName().isEmpty()?container->model()->rootPath():QFileInfo(container->model()->rootPath()).fileName();
+
+    FS::Model *model = container->model();
+    const QUrl &url = model->rootUrl();
+    const QString &title = model->title(url);
+    const QModelIndex &idx = model->index(url);
 
     if (Store::config.behaviour.gayWindow)
-        m_tabBar->insertTab(index, m_model->iconProvider()->icon(QFileInfo(container->model()->rootPath())), fileName);
+        m_tabBar->insertTab(index, model->fileIcon(idx), title);
     else
-        m_tabBar->insertTab(index, fileName);
+        m_tabBar->insertTab(index, title);
 
     if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
         m_tabBar->setVisible(m_tabBar->count() > 1);
@@ -634,13 +548,13 @@ MainWindow::tabChanged(int currentIndex)
     m_model = m_activeContainer->model();
 
     sortingChanged(m_activeContainer->model()->sortColumn(), (int)m_activeContainer->model()->sortOrder());
-    m_recentFoldersView->folderEntered(m_model->rootPath());
+    m_recentFoldersView->folderEntered(m_model->rootUrl());
     setWindowTitle(m_tabBar->tabText(currentIndex));
     m_activeContainer->setPathEditable(m_actions[EditPath]->isChecked());
     m_iconSizeSlider->setValue(m_activeContainer->iconSize().width()/16);
     m_iconSizeSlider->setToolTip("Size: " + QString::number(m_activeContainer->iconSize().width()) + " px");
-    m_placesView->activateAppropriatePlace(m_model->rootPath());
-    updateStatusBar(m_model->rootPath());
+    m_placesView->activateAppropriatePlace(m_model->rootUrl().path()); //TODO: placesview url based
+    updateStatusBar(m_model->rootUrl());
     m_filterBox->setText(m_model->currentSearchString());
     m_actions[ShowHidden]->setChecked(m_model->showHidden());
     setActions();
@@ -682,13 +596,7 @@ MainWindow::openTab()
         }
 }
 
-void
-MainWindow::newTab()
-{
-    QString rootPath;
-    rootPath = m_model->rootPath();
-    addTab(rootPath);
-}
+void MainWindow::newTab() { addTab(m_model->rootUrl()); }
 
 ViewContainer
 *MainWindow::takeContainer(int tab)
@@ -767,7 +675,7 @@ MainWindow::fileProperties()
     {
         if (index.column() != 0)
             continue;
-        files << m_model->url(index).toLocalFile();
+        files << m_model->url(index).path();
     }
     PropertiesDialog::forFiles(files);
 }

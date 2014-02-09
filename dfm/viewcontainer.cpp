@@ -154,7 +154,7 @@ ViewContainer::setView(View view, bool store)
 #ifdef Q_WS_X11
     if (Store::config.views.dirSettings && store)
     {
-        QDir dir(m_model->rootPath());
+        QDir dir(m_model->rootUrl().path());
         QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
         settings.beginGroup("DFM");
         settings.setValue("view", (int)view);
@@ -204,7 +204,7 @@ ViewContainer::customActionTriggered()
     }
     else
     {
-        QProcess::startDetached(app, QStringList() << action << m_model->rootPath());
+        QProcess::startDetached(app, QStringList() << action << m_model->rootUrl().path());
     }
 }
 
@@ -213,8 +213,8 @@ ViewContainer::scriptTriggered()
 {
     QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
     const QString &app = action.takeFirst();
-    qDebug() << "trying to launch" << app << "in" << m_model->rootPath();
-    QProcess::startDetached(app, QStringList() << m_model->rootPath());
+    qDebug() << "trying to launch" << app << "in" << m_model->rootUrl().path();
+    QProcess::startDetached(app, QStringList() << m_model->rootUrl().path());
 }
 
 void
@@ -240,8 +240,8 @@ ViewContainer::setUrl(const QUrl &url)
     const QModelIndex &rootIndex = m_model->index(url);
     qDebug() << "viewcontainer::seturl" << url << rootIndex;
     setRootIndex(rootIndex);
-    const QFileInfo &file = url.toLocalFile();
-    if (url.scheme() == "file" && file.exists())
+    const QFileInfo &file = url.path();
+    if (url.isLocalFile() && file.exists())
     {
         if (Store::config.views.dirSettings)
         {
@@ -270,7 +270,6 @@ ViewContainer::setUrl(const QUrl &url)
 
         m_back = false;
     }
-    emit urlChanged(url);
 }
 
 void
@@ -335,7 +334,7 @@ void
 ViewContainer::setFilter(QString filter)
 {
 //    VIEWS(setFilter(filter));
-    FS::Node *node = model()->fromIndex(model()->index(model()->rootUrl()));
+    FS::Node *node = model()->nodeFromIndex(model()->index(model()->rootUrl()));
     if (!node)
         return;
     node->setFilter(filter);
@@ -403,7 +402,7 @@ ViewContainer::customCommand()
         return;
 
     QStringList args(text.split(" "));
-    args << (m_model->url(idx).isEmpty() ? m_model->rootPath() : m_model->url(idx).toLocalFile());
+    args << (m_model->url(idx).path().isEmpty() ? m_model->rootUrl().path() : m_model->url(idx).path());
     QString program = args.takeFirst();
     QProcess::startDetached(program, args);
 }
@@ -419,7 +418,7 @@ ViewContainer::sort(const int column, const Qt::SortOrder order)
 void
 ViewContainer::createDirectory()
 {
-    QModelIndex newFolder = m_model->mkdir(m_model->index(m_model->rootUrl()), "new_directory");
+    const QModelIndex &newFolder = m_model->mkdir(m_model->index(m_model->rootUrl()), "new_directory");
     currentView()->scrollTo(newFolder);
     currentView()->edit(newFolder);
 }
@@ -464,5 +463,3 @@ void ViewContainer::animateIconSize(int start, int stop) { m_iconView->setNewSiz
 QSize ViewContainer::iconSize() { return m_iconView->iconSize(); }
 
 QString ViewContainer::currentFilter() { return m_dirFilter; }
-
-QString ViewContainer::rootPath() const { return m_model->rootPath(); }

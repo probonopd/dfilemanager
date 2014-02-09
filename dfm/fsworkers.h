@@ -44,7 +44,7 @@ class Node : public QFileInfo
     friend class Model;
     friend class Worker::Gatherer;
 public:
-    enum Children { Visible = 0, Hidden = 1, Filtered = 2, Files = 3, HiddenFiles = 4 };
+    enum Children { Visible = 0, Hidden = 1, Filtered = 2, ChildrenTypeCount = 3 };
     Node(FS::Model *model = 0, const QUrl &url = QUrl(), Node *parent = 0);
     ~Node();
 
@@ -60,11 +60,14 @@ public:
     int rowFor(Node *child);
     int childCount() const;
     void addChild(Node *child);
+    void addChild(const QUrl &url);
     bool hasChild(const QString &name, const bool nameIsPath = false, const bool onlyVisible = false);
+    Node *child(const QUrl &url, const bool onlyVisible = false);
     Node *child(const int c);
     Node *child(const QString &path, const bool nameIsPath = true);
 
     void populateScheme() {}
+    void removeDeleted();
     void rePopulate();
     inline bool isPopulated() const { return m_isPopulated; }
 
@@ -83,9 +86,10 @@ public:
     void setFilter(const QString &filter);
     inline QString filter() const { return m_filter; }
 
-    void clear();
+    void clearVisible();
 
-    Node *fromUrl(const QUrl &url);
+    Node *fromUrlList(const QUrl &url);
+    Node *nodeFromUrl(const QUrl &url);
     Node *node(const QString &path, bool checkOnly = true);
     Node *nodeFromPath(const QString &path, bool checkOnly = true);
 
@@ -96,7 +100,7 @@ public:
 
 private:
     bool m_isPopulated;
-    Nodes m_children[HiddenFiles+1];
+    Nodes m_children[ChildrenTypeCount];
     Node *m_parent;
     QString m_filePath, m_filter, m_name;
     QUrl m_url;
@@ -132,7 +136,7 @@ public:
     void populateNode(Node *node);
     void generateNode(const QString &path);
     void search(const QString &name, const QString &filePath, Node *node);
-    void setCancelled(bool cancel) { m_mutex.lock(); m_isCancelled=cancel; m_mutex.unlock(); }
+    void setCancelled(bool cancel);
     bool isCancelled() { QMutexLocker locker(&m_mutex); return m_isCancelled; }
 
 protected:

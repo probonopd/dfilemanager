@@ -115,7 +115,9 @@ MainWindow::createActions()
     connect(m_actions[RemovePlace], SIGNAL(triggered()), m_placesView, SLOT(removePlace()));
     addAction(m_actions[RemovePlace]);
 
-    m_actions[IconView] = new QAction(tr("&Icons View"), this);
+    QActionGroup *viewActs = new QActionGroup(this);
+    viewActs->setExclusive(true);
+    m_actions[IconView] = viewActs->addAction(new QAction(tr("&Icons View"), this));
     m_actions[IconView]->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+1"));
     m_actions[IconView]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[IconView]->setObjectName("actionIconView");
@@ -124,7 +126,7 @@ MainWindow::createActions()
     connect(m_actions[IconView], SIGNAL(triggered()), this, SLOT(setViewIcons()));
     addAction(m_actions[IconView]);
 
-    m_actions[DetailView] = new QAction(tr("&Details View"), this);
+    m_actions[DetailView] = viewActs->addAction(new QAction(tr("&Details View"), this));
     m_actions[DetailView]->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+2"));
     m_actions[DetailView]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[DetailView]->setObjectName("actionsListView");
@@ -132,7 +134,7 @@ MainWindow::createActions()
     connect(m_actions[DetailView], SIGNAL(triggered()), this, SLOT(setViewDetails()));
     addAction(m_actions[DetailView]);
 
-    m_actions[ColumnView] = new QAction(tr("&Columns View"), this);
+    m_actions[ColumnView] = viewActs->addAction(new QAction(tr("&Columns View"), this));
     m_actions[ColumnView]->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+3"));
     m_actions[ColumnView]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[ColumnView]->setObjectName("actionColView");
@@ -140,7 +142,7 @@ MainWindow::createActions()
     connect(m_actions[ColumnView], SIGNAL(triggered()), this, SLOT(setViewCols()));
     addAction(m_actions[ColumnView]);
 
-    m_actions[FlowView] = new QAction(tr("&Flow"), this);
+    m_actions[FlowView] = viewActs->addAction(new QAction(tr("&Flow"), this));
     m_actions[FlowView]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+4"));
     m_actions[FlowView]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[FlowView]->setObjectName("actionFlow");
