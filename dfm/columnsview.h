@@ -36,22 +36,12 @@ class ColumnsView : public QListView
 {
     Q_OBJECT
 public:
-    ColumnsView(QWidget *parent = 0, QAbstractItemModel *model = 0, const QUrl &url = QUrl());
+    ColumnsView(QWidget *parent = 0, QAbstractItemModel *model = 0, const QModelIndex &rootIndex = QModelIndex());
     ~ColumnsView(){}
     void setModel(QAbstractItemModel *model);
-//    void setRootIndex(const QModelIndex &index);
     inline void setActiveFileName(const QString &fileName) { QFileInfo f(fileName); m_activeFile = f.exists()?f.fileName():fileName; update(); }
     inline QString activeFileName() { return m_activeFile; }
-    inline QUrl rootUrl() { return m_url; }
-    void setUrl(const QUrl &url);
     QRect expanderRect(const QModelIndex &index);
-
-public slots:
-//    void updateWidth();
-//    void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
-
-private slots:
-//    void rowsRemoved(const QModelIndex &parent, int start, int end);
     
 signals:
     void newTabRequest(const QModelIndex &index);
@@ -72,7 +62,6 @@ protected:
 //    void focusOutEvent(QFocusEvent *event) { QListView::focusOutEvent(event); viewport()->update(); }
     void wheelEvent(QWheelEvent *e);
     bool eventFilter(QObject *o, QEvent *e);
-//    bool sanityCheckForDir();
 
 private:
     ColumnsWidget *m_parent;
@@ -81,7 +70,6 @@ private:
     QFileSystemWatcher *m_fsWatcher;
     QPoint m_pressPos;
     QString m_activeFile;
-    QUrl m_url;
     int m_width;
 };
 

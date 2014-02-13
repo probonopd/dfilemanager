@@ -398,7 +398,6 @@ PreView::setCenterIndex(const QModelIndex &index)
 {
     if (!index.isValid())
         return;
-    const QString &name = index.data().toString();
 
     if (index.row())
     {
@@ -417,7 +416,7 @@ PreView::setCenterIndex(const QModelIndex &index)
     m_centerIndex = index;
     m_nextRow = m_row;
     m_row = qMin(index.row(), m_items.count()-1);
-    m_textItem->setText(name);
+    m_textItem->setText(index.data().toString());
     m_textItem->setZValue(m_items.count()+2);
     m_gfxProxy->setZValue(m_items.count()+2);
     m_textItem->setPos(m_x-m_textItem->boundingRect().width()/2.0f, rect().bottom()-(bMargin+m_scrollBar->height()+m_textItem->boundingRect().height()));
@@ -427,11 +426,7 @@ void
 PreView::reset()
 {
     clear();
-
-    if (!m_rootIndex.isValid())
-        m_rootIndex = m_model->index(m_rootUrl);
-
-    if (m_rootIndex.isValid() && m_model && m_model->rowCount(m_rootIndex))
+    if (m_model && m_model->rowCount(m_rootIndex))
     {
         populate(0, m_model->rowCount(m_rootIndex)-1);
         m_scrollBar->setRange(0, m_items.count()-1);
@@ -459,8 +454,12 @@ PreView::updateScene()
     if (!m_textItem)
         return;
 
+    QModelIndex center = m_model->index(m_centerUrl);
+    if (!center.isValid())
+        center = m_model->index(0, 0, m_rootIndex);
+
     if (m_textItem->text().isEmpty())
-        m_textItem->setText(QFileInfo(m_centerUrl.path()).fileName());
+        m_textItem->setText(center.data().toString());
     m_scene->setSceneRect(QRect(QPoint(0, 0), size()));
     const float bottom = bMargin+m_scrollBar->height()+m_textItem->boundingRect().height();
     m_y = (height()/2.0f-SIZE/2.0f)-bottom;
@@ -491,7 +490,7 @@ PreView::rowsRemoved(const QModelIndex &parent, int start, int end)
     if (!parent.isValid())
         return;
 
-    if (m_model->url(m_rootIndex) != m_model->url(parent) || m_items.isEmpty())
+    if (m_items.isEmpty())
         return;
 
     m_timeLine->stop();
@@ -515,20 +514,18 @@ void
 PreView::setRootIndex(const QModelIndex &rootIndex)
 {
     clear();
-    if (!rootIndex.isValid())
-        return;
-
     m_rootIndex = rootIndex;
     m_rootUrl = m_model->url(rootIndex);
     m_savedRow = 0;
     m_savedCenter = QModelIndex();
     m_centerUrl = QUrl();
+    reset();
 }
 
 void
 PreView::rowsInserted(const QModelIndex &parent, int start, int end)
 {
-    if (!parent.isValid() || m_rootIndex != parent || m_model->isWorking())
+    if (m_model->isWorking())
         return;
 
     populate(start, end);
@@ -540,19 +537,20 @@ PreView::rowsInserted(const QModelIndex &parent, int start, int end)
 void
 PreView::populate(const int start, const int end)
 {
-    if (!m_rootIndex.isValid())
-        return;
-
     for (int i = start; i <= end; i++)
         m_items.insert(i, new PixmapItem(m_scene, m_rootItem));
 
-    QModelIndex index = m_model->index(m_centerUrl);
+    QModelIndex index;
+    if (m_centerUrl.isValid())
+        index = m_model->index(m_centerUrl);
     if (!index.isValid())
         index = m_model->index(validate(m_savedRow), 0, m_rootIndex);
 
     setCenterIndex(index);
     updateItemsPos();
     update();
+    if (!m_items.isEmpty())
+        setCenterIndex(m_model->index(0, 0, m_rootIndex));
 }
 
 void
@@ -665,11 +663,11 @@ PreView::mouseReleaseEvent(QMouseEvent *event)
         {
             if (index == m_centerIndex)
             {
-                const QString &file = m_model->url(index).toLocalFile();
-                if (QFileInfo(file).isDir())
-                    m_model->setUrl(QUrl::fromLocalFile(file));
+                const QFileInfo &file = m_model->fileInfo(index);
+                if (file.isDir())
+                    m_model->setUrl(QUrl::fromLocalFile(file.filePath()));
                 else
-                    Ops::openFile(file);
+                    Ops::openFile(file.filePath());
             }
             else
                 m_scrollBar->setValue(index.row());

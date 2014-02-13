@@ -458,7 +458,7 @@ PlacesModel::data(const QModelIndex &index, int role) const
             {
                 QIcon icon = QIcon::fromTheme(p->iconName());
                 if (icon.isNull())
-                    icon = FileIconProvider().icon(QFileInfo(p->path()));
+                    icon = FS::FileIconProvider::fileIcon(QFileInfo(p->path()));
                 return icon;
             }
     }
@@ -564,7 +564,7 @@ PlacesView::dropEvent(QDropEvent *event)
     QStringList files;
     foreach (const QUrl &url, event->mimeData()->urls())
     {
-        const QString &file = url.path();
+        const QString &file = url.toLocalFile();
         if (QFileInfo(file).isReadable())
             files << file;
     }
@@ -590,7 +590,7 @@ PlacesView::dropEvent(QDropEvent *event)
             QSettings settings(QDir(file).absoluteFilePath(".directory"), QSettings::IniFormat);
             QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
             if (icon.isNull()||icon.name().isNull())
-                icon = FileIconProvider().icon(f);
+                icon = FS::FileIconProvider::fileIcon(f);
             places->appendRow(new Place(f.fileName(), f.filePath(), icon.name(), icon));
         }
         expand(indexFromItem(places));
@@ -628,7 +628,7 @@ PlacesView::dropEvent(QDropEvent *event)
                     QSettings settings(QDir(file).absoluteFilePath(".directory"), QSettings::IniFormat);
                     QIcon icon = QIcon::fromTheme(settings.value("Desktop Entry/Icon").toString(), QIcon::fromTheme("inode-directory", QIcon::fromTheme("folder")));
                     if (icon.isNull()||icon.name().isNull())
-                        icon = FileIconProvider().icon(f);
+                        icon = FS::FileIconProvider::fileIcon(f);
                     addPlace(f.fileName(), f.filePath(), icon, cont);
                 }
                 emit changed();

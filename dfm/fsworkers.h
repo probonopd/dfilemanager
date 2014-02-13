@@ -57,13 +57,13 @@ public:
     inline bool isSearchResult() { return false; }
 
     int row();
-    int rowFor(Node *child);
     int childCount() const;
     void addChild(Node *child);
     void addChild(const QUrl &url);
     Node *child(const QUrl &url, const bool onlyVisible = false);
     Node *child(const int c);
     Node *child(const QString &name, const bool nameIsPath = true);
+    inline bool hasChildren() const { return !m_children[Visible].isEmpty(); }
 
     void populateScheme() {}
     void removeDeleted();
@@ -74,6 +74,7 @@ public:
     QString permissionsString();
     QString category();
     inline QString scheme() { return url().scheme(); }
+    QIcon icon();
 
     void sort();
     int sortColumn();
@@ -88,8 +89,9 @@ public:
     void clearVisible();
 
     Node *nodeFromUrl(const QUrl &url);
-    Node *node(const QString &path, bool checkOnly = true);
-    Node *nodeFromPath(const QString &path, bool checkOnly = true);
+    Node *localNode(const QString &path, bool checkOnly = true);
+    Node *nodeFromLocalPath(const QString &path, bool checkOnly = true);
+    Node *nodeFromUrlPath(const QString &path);
 
     inline QUrl url() { return m_url; }
     inline QUrl localUrl() { return m_localUrl; }
@@ -134,7 +136,7 @@ class Gatherer : public Thread
 public:
     explicit Gatherer(QObject *parent = 0);
     void populateNode(Node *node);
-    void generateNode(const QString &path);
+    void generateNode(const QString &path, Node *parent);
     void search(const QString &name, const QString &filePath, Node *node);
     void setCancelled(bool cancel);
     bool isCancelled() { QMutexLocker locker(&m_mutex); return m_isCancelled; }
@@ -142,19 +144,22 @@ public:
 protected:
     void run();
     void searchResultsForNode(const QString &name, const QString &filePath, Node *node);
+    void loadLocalDir(Node *node);
+    Node *generateLocalNode(const QUrl &localUrl, Node *from);
+    Node *nodeFromLocalPath(const QString &path, Node *parent, const bool checkOnly = true);
 
 signals:
     void nodeGenerated(const QString &path, Node *node);
 
 private:
+    QString m_path, m_searchPath, m_searchName;
     QMutex m_taskMutex;
     Node *m_node, *m_result;
     FS::Model *m_model;
     Task m_task;
-    QString m_path, m_searchPath, m_searchName;
     bool m_isCancelled;
     friend class Node;
-    friend class Model;
+    friend class FS::Model;
 };
 
 } //namespace worker

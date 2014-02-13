@@ -63,14 +63,14 @@ DeleteDialog::DeleteDialog(const QModelIndexList &idxList, QWidget *parent) : QD
 
     m_model->clear();
     m_textLabel->clear();
-    if(idxList.count() > 1)
+    if (idxList.count() > 1)
         m_textLabel->setText("Are you sure you want to delete these " + QString::number(idxList.count()) + " items?");
     else
         m_textLabel->setText("Are you sure you want to delete this item?");
 
-    foreach(QModelIndex index, idxList)
+    foreach (const QModelIndex &index, idxList)
     {
-        QStandardItem *item = new QStandardItem(m_fsModel->fileIcon(index), m_fsModel->url(index).toLocalFile());
+        QStandardItem *item = new QStandardItem(m_fsModel->fileIcon(index), m_fsModel->fileInfo(index).filePath());
         item->setEditable(false);
         item->setSelectable(false);
         m_model->appendRow(item);

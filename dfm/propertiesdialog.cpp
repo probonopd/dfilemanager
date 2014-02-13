@@ -95,13 +95,21 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
             right = Qt::AlignRight|Qt::AlignVCenter;
 
     int row = 0;
-    bool many = bool(files.count() > 1);
+    const bool many = bool(files.count() > 1);
     const QString &file = files[0];
     QFileInfo f(file);
 
     DFM::FS::Model *fsModel = DFM::MainWindow::currentContainer()->model();
-    QString location = many ? fsModel->rootUrl().path() : f.path();
-    DFM::DeviceItem *di = DFM::MainWindow::places()->deviceManager()->deviceItemForFile(location);
+    QString location;
+    DFM::DeviceItem *di = 0;
+    if (fsModel->rootUrl().isLocalFile() || (!many && f.exists()))
+    {
+        location = f.path();
+        di = DFM::MainWindow::places()->deviceManager()->deviceItemForFile(location);
+    }
+    else
+        location = "unknown";
+
     if (f.isSymLink())
     {
         location.append(QString("\n(points to: %1)").arg(f.symLinkTarget()));
@@ -170,13 +178,13 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     l->addWidget(new QLabel(location, this), row, 1, left);
 
     l->addWidget(new QLabel(tr("MountPath:"), this), ++row, 0, right);
-    l->addWidget(new QLabel(di->mountPath(), this), row, 1, left);
+    l->addWidget(new QLabel(di?di->mountPath():"", this), row, 1, left);
 
     QProgressBar *pb = new QProgressBar(this);
     pb->setMinimum(0);
     pb->setMaximum(100);
-    pb->setValue(di->used());
-    QString free = QString("%1 Free").arg(DFM::Ops::prettySize(di->freeBytes()));
+    pb->setValue(di?di->used():100);
+    QString free = QString("%1 Free").arg(DFM::Ops::prettySize(di?di->freeBytes():0));
     pb->setFormat(free);
     pb->setMinimumWidth(128);
     l->addWidget(new QLabel(tr("Device Usage:"), this), ++row, 0, right);
@@ -195,7 +203,6 @@ GeneralInfo::setIcon()
         settings.setValue("Desktop Entry/Icon", i.name());
         tb->setIcon(i);
 
-        qDebug() << QFileInfo(file).path();
         if (DFM::ThumbsLoader::hasIcon(file))
             DFM::ThumbsLoader::removeIcon(file);
         DFM::ThumbsLoader::queueFile(file);

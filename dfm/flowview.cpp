@@ -76,11 +76,8 @@ FlowView::setModel(QAbstractItemModel *model)
 void
 FlowView::setRootIndex(const QModelIndex &rootIndex)
 {
-    if (rootIndex.isValid())
-    {
-        m_dView->setRootIndex(rootIndex);
-        m_preView->setRootIndex(rootIndex);
-    }
+    m_dView->setRootIndex(rootIndex);
+    m_preView->setRootIndex(rootIndex);
 }
 
 void

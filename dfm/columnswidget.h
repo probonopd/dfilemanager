@@ -62,15 +62,12 @@ protected:
     void connectView(ColumnsView *view);
     void showEvent(QShowEvent *e);
     void wheelEvent(QWheelEvent *e);
-    bool insideRoot(const QModelIndex &index);
     int at(const QUrl &url) { return m_rootList.indexOf(url); }
-    inline bool isValid(const QUrl &url) { return !url.isEmpty()&&!m_columns.isEmpty()&&at(url)<m_columns.count(); }
+    inline bool isValid(const QUrl &url) { return !m_columns.isEmpty()&&at(url)<m_columns.count(); }
     inline bool isValid(const int i) { return i>-1&&!m_columns.isEmpty()&&i<m_columns.count(); }
     inline ColumnsView *column(const int i) { return isValid(i) ? m_columns.at(i): 0; }
     inline ColumnsView *column(const QUrl &url) { return isValid(url) ? column(at(url)) : 0; }
     inline int count() { return m_columns.count(); }
-    ColumnsView *viewFor(const QUrl &url);
-    QStringList fromRoot();
 
 private:
     FS::Model *m_model;

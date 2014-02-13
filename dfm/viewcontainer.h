@@ -44,7 +44,7 @@ class ColumnsWidget;
 class IconView;
 class DetailsView;
 class FlowView;
-class BreadCrumbs;
+class NavBar;
 class PathNavigator;
 namespace FS{class Model;}
 class ViewContainer : public QFrame
@@ -82,7 +82,7 @@ public:
     void goHome();
     void animateIconSize(int start, int stop);
     SearchIndicator *searchIndicator() { return m_searchIndicator; }
-    BreadCrumbs *breadCrumbs();
+    NavBar *breadCrumbs();
     QString currentFilter();
     void sort(const int column = 0, const Qt::SortOrder order = Qt::AscendingOrder);
     PathNavigator *pathNav();
@@ -129,7 +129,7 @@ private:
     FS::Model *m_model;
     QStackedWidget *m_viewStack;
     QItemSelectionModel *m_selectModel;
-    BreadCrumbs *m_breadCrumbs;
+    NavBar *m_breadCrumbs;
     SearchIndicator *m_searchIndicator;
 };
 

@@ -50,19 +50,19 @@ class ThumbsLoader;
 class ImagesThread;
 class ViewContainer;
 
-namespace FS {class Model;}
+namespace FS
+{
+
 class FileIconProvider : public QFileIconProvider
 {
 public:
-    inline explicit FileIconProvider(FS::Model *model = 0) : QFileIconProvider(), m_fsModel(model){}
+    FileIconProvider();
     QIcon icon(const QFileInfo &info) const;
-
-private:
-    FS::Model *m_fsModel;
+    QIcon icon(IconType type) const;
+    static QIcon fileIcon(const QFileInfo &fileInfo);
+    static QIcon typeIcon(IconType type);
+    static FileIconProvider *instance();
 };
-
-namespace FS
-{
 
 class Model;
 namespace Worker {class Gatherer;}
@@ -95,6 +95,7 @@ public:
     ~Model();
 
     static bool hasThumb(const QString &file);
+    bool hasThumb(const QModelIndex &index);
 
     Qt::ItemFlags flags(const QModelIndex &index) const;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
@@ -126,8 +127,6 @@ public:
 
     void forceEmitDataChangedFor(const QString &file);
 
-    inline FileIconProvider *iconProvider() { return m_ip; }
-
     QIcon fileIcon(const QModelIndex &index) const;
     QString fileName(const QModelIndex &index) const;
     QUrl url(const QModelIndex &index) const;
@@ -139,7 +138,6 @@ public:
 
     inline Worker::Gatherer *dataGatherer() { return m_dataGatherer; }
     inline QFileSystemWatcher *dirWatcher() { return m_watcher; }
-    inline FileIconProvider *ip() { return m_ip; }
 
     void getSort(const QUrl &url);
     void setSort(const int sortColumn, const int sortOrder);
@@ -160,6 +158,7 @@ public:
     QString currentSearchString();
 
     inline QMenu *schemes() { return m_schemeMenu; }
+    Node *schemeNode(const QString &scheme);
 
     QString title(const QUrl &url = QUrl());
 
@@ -191,9 +190,10 @@ signals:
 private:
     Node *m_current;
     Node *m_rootNode;
+    mutable QMap<QString, Node *> m_schemeNodes;
+    QHash<QUrl, Node *> m_nodes;
     QAbstractItemView *m_view;
     bool m_showHidden, m_goingBack;
-    FileIconProvider *m_ip;
     int m_sortColumn;
     Qt::SortOrder m_sortOrder;
     ImagesThread *m_it;

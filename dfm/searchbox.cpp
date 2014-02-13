@@ -193,6 +193,8 @@ SearchBox::search()
     if (text().isEmpty()||m_mode == Filter)
         return;
 
-    MainWindow *mw = MainWindow::window(this);
-    mw->currentContainer()->model()->search(text());
+    FS::Model *fsModel = MainWindow::window(this)->currentContainer()->model();
+    if (!fsModel)
+        return;
+    fsModel->search(text());
 }

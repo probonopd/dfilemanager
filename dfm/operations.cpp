@@ -155,12 +155,19 @@ Ops::customActionTriggered()
     {
         if (isModel->selectedIndexes().count())
             foreach (const QModelIndex &index, isModel->selectedIndexes())
-                if (!index.column())
-                    QProcess::startDetached(app, QStringList() << action << fsModel->url(index).path());
+            {
+                if (index.column())
+                    continue;
+                const QFileInfo &fi = fsModel->fileInfo(index);
+                if (fi.exists())
+                    QProcess::startDetached(app, QStringList() << action << fi.filePath());
+            }
     }
     else
     {
-        QProcess::startDetached(app, QStringList() << action << fsModel->rootUrl().path());
+        const QFileInfo &fi = fsModel->rootUrl().toLocalFile();
+        if (fi.exists())
+            QProcess::startDetached(app, QStringList() << action << fi.filePath());
     }
 }
 
@@ -416,7 +423,7 @@ QString
 Ops::getStatusBarMessage(const QUrl &url, FS::Model *model)
 {
     QString messaage;
-    if (url.scheme() == "file")
+    if (url.isLocalFile() || url.scheme() == "search")
     {
         quint64 size = 0;
         int dirCount = 0, fileCount = 0;
@@ -437,13 +444,11 @@ Ops::getStatusBarMessage(const QUrl &url, FS::Model *model)
                 size += f.size();
             }
         }
-
-
         if (dirCount)
             messaage.append(QString("%1 %2%3").arg(QString::number(dirCount), dirCount==1?"Folder":"Folders", fileCount?", ":""));
         if (fileCount)
             messaage.append(QString("%1 %2").arg(QString::number(fileCount), fileCount==1?"File":"Files"));
-        if (size)
+        if (size && url.isLocalFile())
             messaage.append(QString(" ( %1 )").arg(Ops::prettySize(size)));
     }
     else

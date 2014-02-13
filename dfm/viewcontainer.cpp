@@ -51,7 +51,7 @@ ViewContainer::ViewContainer(QWidget *parent, const QUrl &url)
     , m_columnsWidget(new ColumnsWidget(this))
     , m_detailsView(new DetailsView(this))
     , m_flowView(new FlowView(this))
-    , m_breadCrumbs(new BreadCrumbs(this, m_model))
+    , m_breadCrumbs(new NavBar(this, m_model))
     , m_searchIndicator(new SearchIndicator(this))
 
 {
@@ -152,9 +152,9 @@ ViewContainer::setView(const View view, bool store)
     emit viewChanged();
 
 #ifdef Q_WS_X11
-    if (Store::config.views.dirSettings && store)
+    if (Store::config.views.dirSettings && store && m_model->rootUrl().isLocalFile())
     {
-        QDir dir(m_model->rootUrl().path());
+        QDir dir(m_model->rootUrl().toLocalFile());
         QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
         settings.beginGroup("DFM");
         settings.setValue("view", (int)view);
@@ -195,17 +195,17 @@ ViewContainer::customActionTriggered()
 
     if (selectionModel()->hasSelection())
     {
-        if (selectionModel()->selectedRows().count())
-            foreach (const QModelIndex &index, selectionModel()->selectedRows())
-                QProcess::startDetached(app, QStringList() << action << m_model->url(index).toLocalFile());
-        else if (selectionModel()->selectedIndexes().count())
-            foreach (const QModelIndex &index, selectionModel()->selectedIndexes())
-                QProcess::startDetached(app, QStringList() << action << m_model->url(index).toLocalFile());
+        foreach (const QModelIndex &index, selectionModel()->selectedIndexes())
+        {
+            if (index.column())
+                continue;
+            const QFileInfo &fi = m_model->fileInfo(index);
+            if (fi.exists())
+                QProcess::startDetached(app, QStringList() << action << fi.filePath());
+        }
     }
-    else
-    {
-        QProcess::startDetached(app, QStringList() << action << m_model->rootUrl().path());
-    }
+    else if (m_model->rootUrl().isLocalFile())
+        QProcess::startDetached(app, QStringList() << action << m_model->rootUrl().toLocalFile());
 }
 
 void
@@ -213,8 +213,10 @@ ViewContainer::scriptTriggered()
 {
     QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
     const QString &app = action.takeFirst();
-    qDebug() << "trying to launch" << app << "in" << m_model->rootUrl().path();
-    QProcess::startDetached(app, QStringList() << m_model->rootUrl().path());
+    if (!m_model->rootUrl().isLocalFile())
+        return;
+    qDebug() << "trying to launch" << app << "in" << m_model->rootUrl().toLocalFile();
+    QProcess::startDetached(app, QStringList() << m_model->rootUrl().toLocalFile());
 }
 
 void
@@ -224,20 +226,23 @@ ViewContainer::activate(const QModelIndex &index)
         return;
 
     const QFileInfo f(m_model->fileInfo(index));
-    if (Ops::openFile(f.filePath()))
+    if (f.exists())
+    {
+        if (Ops::openFile(f.filePath()))
+            return;
+        if (f.isDir())
+            m_model->setUrl(QUrl::fromLocalFile(f.absoluteFilePath()));
         return;
-
-    if (m_model->isDir(index))
-        m_model->setUrl(m_model->localUrl(index));
+    }
+    if (m_model->isDir(index) || m_model->hasChildren(index))
+        m_model->setUrl(m_model->url(index));
 }
 
 void
 ViewContainer::setUrl(const QUrl &url)
 {
-    const QModelIndex &rootIndex = m_model->index(url);
-    qDebug() << "viewcontainer::seturl" << url << rootIndex;
-    setRootIndex(rootIndex);
-    const QFileInfo &file = url.path();
+    setRootIndex(m_model->index(url));
+    const QFileInfo &file = url.toLocalFile();
     if (url.isLocalFile() && file.exists())
     {
         if (Store::config.views.dirSettings)
@@ -293,8 +298,11 @@ ViewContainer::goForward()
 bool
 ViewContainer::goUp()
 {
-    QUrl url = m_breadCrumbs->url();
-    m_model->setUrl(url.resolved(QString("..")));
+    const QModelIndex &index = m_model->index(m_breadCrumbs->url());
+    if (!index.parent().isValid())
+        return false;
+
+    m_model->setUrl(m_model->url(index.parent()));
     return true;
 }
 
@@ -322,6 +330,7 @@ ViewContainer::setFilter(const QString &filter)
     FS::Node *node = model()->nodeFromIndex(model()->index(model()->rootUrl()));
     if (!node)
         return;
+
     node->setFilter(filter);
     m_dirFilter = filter;
     emit filterChanged();
@@ -331,21 +340,29 @@ void
 ViewContainer::deleteCurrentSelection()
 {
     QModelIndexList delUs;
-    if(m_selectModel->selectedRows(0).count())
-        delUs = m_selectModel->selectedRows(0);
-    else
-        delUs = m_selectModel->selectedIndexes();
+    delUs = m_selectModel->selectedIndexes();
+
+    QStringList delList;
+    foreach (const QModelIndex &index, delUs)
+    {
+        if (index.column())
+        {
+            delUs.removeOne(index);
+            continue;
+        }
+        const QFileInfo &file = m_model->fileInfo(index);
+        if (file.isWritable())
+            delList << file.filePath();
+        else
+            delUs.removeOne(index);
+    }
+
+    if (delUs.isEmpty())
+        return;
 
     if (DeleteDialog(delUs).result() == 0)
         return;
 
-    QStringList delList;
-    for (int i = 0; i < delUs.count(); ++i)
-    {
-        QFileInfo file(m_model->url(delUs.at(i)).toLocalFile());
-        if (file.isWritable())
-            delList << file.filePath();
-    }
     if (!delList.isEmpty())
         IO::Manager::remove(delList);
 }
@@ -387,7 +404,7 @@ ViewContainer::customCommand()
         return;
 
     QStringList args(text.split(" "));
-    args << (m_model->url(idx).path().isEmpty() ? m_model->rootUrl().path() : m_model->url(idx).path());
+    args << (m_model->url(idx).toLocalFile().isEmpty() ? m_model->rootUrl().toLocalFile() : m_model->url(idx).toLocalFile());
     QString program = args.takeFirst();
     QProcess::startDetached(program, args);
 }
@@ -414,8 +431,8 @@ QAbstractItemView
     if (m_myView == Columns)
         return m_columnsWidget->currentView();
     if (m_myView != Flow)
-        return static_cast<QAbstractItemView*>(m_viewStack->currentWidget());
-    return static_cast<QAbstractItemView*>(m_flowView->detailsView());
+        return static_cast<QAbstractItemView *>(m_viewStack->currentWidget());
+    return static_cast<QAbstractItemView *>(m_flowView->detailsView());
 }
 
 void
@@ -425,9 +442,18 @@ ViewContainer::resizeEvent(QResizeEvent *e)
     m_searchIndicator->move(width()-256, height()-256);
 }
 
-void ViewContainer::setRootIndex(const QModelIndex &index)
+void
+ViewContainer::setRootIndex(const QModelIndex &index)
 {
     VIEWS(setRootIndex(index));
+}
+
+void
+ViewContainer::genNewTabRequest(const QModelIndex &index)
+{
+    const QFileInfo &fi = m_model->fileInfo(index);
+    if (fi.exists())
+        emit newTabRequest(QUrl::fromLocalFile(fi.filePath()));
 }
 
 QModelIndex ViewContainer::indexAt(const QPoint &p) const { return currentView()->indexAt(mapFromParent(p)); }
@@ -438,9 +464,7 @@ bool ViewContainer::pathVisible() { return m_breadCrumbs->isVisible(); }
 bool ViewContainer::canGoBack() { return m_model->canGoBack(); }
 bool ViewContainer::canGoForward() { return m_model->canGoForward(); }
 
-void ViewContainer::genNewTabRequest(const QModelIndex &index) { emit newTabRequest(m_model->localUrl(index)); }
-
-BreadCrumbs *ViewContainer::breadCrumbs() { return m_breadCrumbs; }
+NavBar *ViewContainer::breadCrumbs() { return m_breadCrumbs; }
 
 void ViewContainer::setPathEditable(const bool editable) { m_breadCrumbs->setEditable(editable); }
 
@@ -448,3 +472,5 @@ void ViewContainer::animateIconSize(int start, int stop) { m_iconView->setNewSiz
 QSize ViewContainer::iconSize() { return m_iconView->iconSize(); }
 
 QString ViewContainer::currentFilter() { return m_dirFilter; }
+
+

@@ -96,75 +96,19 @@ ColumnsWidget::clear()
     }
 }
 
-bool
-ColumnsWidget::insideRoot(const QModelIndex &index)
-{
-    QModelIndex idx = index;
-    while (idx.isValid())
-    {
-        if (idx == m_rootIndex)
-            return true;
-        else
-            idx = idx.parent();
-    }
-    return false;
-}
-
-QStringList
-ColumnsWidget::fromRoot()
-{
-    QModelIndex idx = m_rootIndex;
-    QStringList list;
-    while (idx.isValid())
-    {
-        list.prepend(m_model->url(idx).toLocalFile());
-        idx = idx.parent();
-    }
-    return list;
-}
-
-ColumnsView
-*ColumnsWidget::viewFor(const QUrl &url)
-{
-    ColumnsView *view = 0;
-    int i = at(url);
-
-    if (isValid(i))
-    {
-        view = column(i);
-        if (view->rootUrl() != url)
-            view->setUrl(url);
-        if (!view->activeFileName().isEmpty())
-            view->setActiveFileName(QString());
-    }
-    else
-    {
-        view = new ColumnsView(this, m_model, url);
-        connectView(view);
-        view->setSelectionModel(m_slctModel);
-        view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-        m_columns.insert(i, view);
-        m_viewLay->insertWidget(i, view);
-    }
-    return view;
-}
-
 void
 ColumnsWidget::setRootIndex(const QModelIndex &index)
 {
     clear();
-    QUrl url = m_model->url(index);
-    ColumnsView *view = new ColumnsView(this, m_model, url);
+    ColumnsView *view = new ColumnsView(this, m_model, index);
     connectView(view);
     view->setSelectionModel(m_slctModel);
     view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
     m_columns << view;
     m_viewLay->insertWidget(m_viewLay->count()-1, view);
     setCurrentView(view);
-
-    if (isValid(url))
-        setCurrentView(column(url));
-    showCurrent();
+    if (m_columns.count() > 1)
+        showCurrent();
 }
 
 void ColumnsWidget::showCurrent() { ensureWidgetVisible(currentView()); }
@@ -172,7 +116,7 @@ void ColumnsWidget::showCurrent() { ensureWidgetVisible(currentView()); }
 void
 ColumnsWidget::expand(const QModelIndex &index)
 {
-    const QUrl &url(m_model->url(index));
+    const QUrl &url = m_model->url(index);
     int i = m_columns.indexOf(currentView());
     if (m_viewLay->count() > ++i)
     {
@@ -186,7 +130,7 @@ ColumnsWidget::expand(const QModelIndex &index)
             delete item;
         }
     }
-    ColumnsView *view = new ColumnsView(this, m_model, url);
+    ColumnsView *view = new ColumnsView(this, m_model, index);
     connectView(view);
     view->setSelectionModel(m_slctModel);
     view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);

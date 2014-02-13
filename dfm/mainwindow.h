@@ -171,7 +171,7 @@ private slots:
     void tabClosed(int);
     void tabMoved(int,int);
     void stackChanged(int);
-    void newWindow() { (new MainWindow(QStringList() << m_activeContainer->model()->rootUrl().path()))->show(); }
+    void newWindow();
     void readSettings();
     void activateUrl(const QUrl &url);
     void addBookmarks();

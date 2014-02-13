@@ -153,9 +153,11 @@ DetailsView::contextMenuEvent(QContextMenuEvent *event)
     if (Store::customActions().count())
         popupMenu.addMenu(Store::customActionsMenu());
     popupMenu.addActions(actions());
-    const QString &file = static_cast<FS::Model *>(model())->url(indexAt(event->pos())).toLocalFile();
+
     QMenu openWith(tr("Open With"), this);
-    openWith.addActions(Store::openWithActions(file));
+    const QFileInfo &file = static_cast<FS::Model *>(model())->fileInfo(indexAt(event->pos()));
+    if (file.exists())
+        openWith.addActions(Store::openWithActions(file.filePath()));
     foreach(QAction *action, actions())
     {
         popupMenu.addAction(action);
