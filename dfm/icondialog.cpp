@@ -81,8 +81,7 @@ QString IconDialog::getIcon()
             const QFileInfo fi(it.next());
             if (!fi.filePath().toLower().contains("places")
                     || !fi.baseName().contains("-")
-                    || list.contains(fi.baseName())
-                    || fi.suffix().toLower() != "png")
+                    || list.contains(fi.baseName()))
                 continue;
             QIcon icon(QPixmap::fromImage(QImageReader(fi.filePath()).read()));
             list << fi.baseName();
