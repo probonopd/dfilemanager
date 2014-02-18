@@ -99,7 +99,6 @@ public:
     bool hasData(const QString &file);
     bool hasNameData(const QString &name);
     void removeData(const QString &file);
-    inline bool hasFileInQueue(const QString &file) { return m_imgQueue.contains(file); }
 
 public slots:
     void discontinue() { m_imgQueue.clear(); Thread::discontinue(); }
@@ -109,15 +108,15 @@ signals:
     void imagesReady(const QString &file);
 
 protected:
-    void genImagesFor(const QString &file);
-    void genNameIconsFor(const QString &name);
+    void genImagesFor(const QString &file, const QImage &img);
+    void genNameIconsFor(const QString &name, const QImage &img);
     void run();
 
 private:
-    QMap<QString, QImage> m_imgQueue;
+    QList<QPair<QString, QImage> > m_imgQueue;
     QMap<QString, QImage> m_names[2];
     QMap<QString, QImage> m_images[2];
-    QMap<QString, QImage> m_nameQueue;
+    QList<QPair<QString, QImage> > m_nameQueue;
     mutable QMutex m_queueMutex, m_thumbsMutex;
 };
 
