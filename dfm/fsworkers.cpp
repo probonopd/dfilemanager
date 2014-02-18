@@ -68,7 +68,6 @@ Node::Node(Model *model, const QUrl &url, Node *parent, const QString &filePath)
     , m_model(model)
     , m_parent(parent)
     , m_url(url)
-    , m_localUrl(url.isEmpty()?localUrl:url)
 {
     if (url.path().isEmpty() && !url.scheme().isEmpty())
         m_name = url.scheme();
@@ -150,13 +149,6 @@ Node::addChild(Node *node)
         insertChild(node, i);
         m_model->endInsertRows();
     }
-}
-
-void
-Node::addChild(const QUrl &url)
-{
-    if (!child(url))
-        addChild(new Node(model(), url, this));
 }
 
 int
