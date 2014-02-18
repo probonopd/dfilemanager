@@ -329,12 +329,9 @@ MainWindow::urlChanged(const QUrl &url)
     const QString &title = m_model->title(url);
     setWindowTitle(title);
     if (m_filterBox->mode() == Filter)
-    {
         m_filterBox->clear();
-        m_activeContainer->setFilter("");
-    }
     if (url.isLocalFile())
-        m_placesView->activateAppropriatePlace(url.path());
+        m_placesView->activateAppropriatePlace(url.toLocalFile());
     m_tabBar->setTabText(m_tabBar->currentIndex(), title);
     if (Store::config.behaviour.gayWindow)
         m_tabBar->setTabIcon(m_tabBar->currentIndex(), m_model->fileIcon(m_model->index(url)));
@@ -414,7 +411,13 @@ void MainWindow::flowView() { m_activeContainer->setView(ViewContainer::Flow); }
 void
 MainWindow::genPlace()
 {
+<<<<<<< HEAD
     QFileInfo file(m_model->rootUrl().path());
+=======
+    if (!m_model->rootUrl().isLocalFile())
+        return;
+    QFileInfo file(m_model->rootUrl().toLocalFile());
+>>>>>>> playground
     QString path = file.filePath();
     QString name = file.fileName();
     QIcon icon = QIcon::fromTheme("folder");
@@ -467,9 +470,15 @@ void
 MainWindow::connectContainer(ViewContainer *container)
 {
     container->installEventFilter(this);
+<<<<<<< HEAD
     connect(container->model(), SIGNAL(urlLoaded(QUrl)), this, SLOT(urlChanged(QUrl)));
     connect(container->model(), SIGNAL(urlLoaded(QUrl)), this, SLOT(updateStatusBar(QUrl)));
     connect(container->model(), SIGNAL(urlLoaded(QUrl)), m_recentFoldersView, SLOT(folderEntered(QUrl)));
+=======
+    connect(container->model(), SIGNAL(urlChanged(QUrl)), this, SLOT(urlChanged(QUrl)));
+    connect(container->model(), SIGNAL(urlLoaded(QUrl)), this, SLOT(updateStatusBar(QUrl)));
+    connect(container->model(), SIGNAL(urlChanged(QUrl)), m_recentFoldersView, SLOT(folderEntered(QUrl)));
+>>>>>>> playground
     connect(container, SIGNAL(viewChanged()), this, SLOT(checkViewAct()));
     connect(container->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(mainSelectionChanged(QItemSelection,QItemSelection)));
     connect(container, SIGNAL(iconSizeChanged(int)), this, SLOT(setSliderPos(int)));
@@ -553,7 +562,11 @@ MainWindow::tabChanged(int currentIndex)
     m_activeContainer->setPathEditable(m_actions[EditPath]->isChecked());
     m_iconSizeSlider->setValue(m_activeContainer->iconSize().width()/16);
     m_iconSizeSlider->setToolTip("Size: " + QString::number(m_activeContainer->iconSize().width()) + " px");
+<<<<<<< HEAD
     m_placesView->activateAppropriatePlace(m_model->rootUrl().path()); //TODO: placesview url based
+=======
+    m_placesView->activateAppropriatePlace(m_model->rootUrl().toLocalFile()); //TODO: placesview url based
+>>>>>>> playground
     updateStatusBar(m_model->rootUrl());
     m_filterBox->setText(m_model->currentSearchString());
     m_actions[ShowHidden]->setChecked(m_model->showHidden());
@@ -591,8 +604,9 @@ MainWindow::openTab()
         {
             if (index.column() > 0)
                 continue;
-            const QString &filePath = m_model->url(index).toLocalFile();
-            addTab(filePath);
+            const QFileInfo &file = m_model->fileInfo(index);
+            if (file.exists())
+                addTab(QUrl::fromLocalFile(file.filePath()));
         }
 }
 
@@ -645,8 +659,9 @@ MainWindow::viewItemHovered(const QModelIndex &index)
         return;
     if (m_model->isWorking() || !index.isValid() || index.row() > 100000 || index.column() > 3)
         return;
-    const QString &file = m_model->url(index).toLocalFile();
-    m_statusBar->showMessage(file);
+    const QFileInfo &file = m_model->fileInfo(index);
+    if (file.exists())
+        m_statusBar->showMessage(file.filePath());
 }
 
 void
@@ -675,7 +690,13 @@ MainWindow::fileProperties()
     {
         if (index.column() != 0)
             continue;
+<<<<<<< HEAD
         files << m_model->url(index).path();
+=======
+        const QFileInfo &fi = m_model->fileInfo(index);
+        if (fi.exists())
+            files << fi.filePath();
+>>>>>>> playground
     }
     PropertiesDialog::forFiles(files);
 }
@@ -683,7 +704,7 @@ MainWindow::fileProperties()
 void
 MainWindow::hidePath()
 {
-    foreach (BreadCrumbs *bc, findChildren<BreadCrumbs *>())
+    foreach (NavBar *bc, findChildren<NavBar *>())
         bc->setVisible(m_actions[ShowPathBar]->isChecked());
     Store::settings()->setValue("pathVisible", m_actions[ShowPathBar]->isChecked());
 }
@@ -713,6 +734,7 @@ MainWindow::setSorting()
         i = 2;
     else if (m_actions[SortDate]->isChecked())
         i = 3;
+
     m_activeContainer->sort(i, (Qt::SortOrder)m_actions[SortDescending]->isChecked());
 }
 
@@ -856,6 +878,14 @@ MainWindow::updateConfig()
     updateIcons();
     m_placesView->viewport()->update();
     emit settingsChanged();
+}
+
+void
+MainWindow::newWindow()
+{
+    const QFileInfo &fi = m_model->rootUrl().toLocalFile();
+    if (fi.exists())
+        (new MainWindow(QStringList() << fi.filePath()))->show();
 }
 
 void

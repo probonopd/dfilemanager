@@ -139,8 +139,9 @@ NavButton::dragEnterEvent(QDragEnterEvent *e)
 void
 NavButton::dropEvent(QDropEvent *e)
 {
-    if (m_url.isLocalFile())
-        IO::Manager::copy(e->mimeData()->urls(), m_url.path(), true, true);
+    const QFileInfo &fi = m_url.toLocalFile();
+    if (fi.exists() && e->mimeData()->hasUrls())
+        IO::Manager::copy(e->mimeData()->urls(), fi.filePath(), true, true);
     m_hasData = false;
     update();
 }
@@ -245,6 +246,10 @@ NavButton::mouseReleaseEvent(QMouseEvent *e)
 
 //-----------------------------------------------------------------------------
 
+PathBox::PathBox(QWidget *parent) : QComboBox(parent)
+{
+}
+
 void
 PathBox::paintEvent(QPaintEvent *)
 {
@@ -273,31 +278,12 @@ PathNavigator::PathNavigator(QWidget *parent, FS::Model *model)
     , m_fsModel(model)
     , m_hasPress(false)
     , m_layout(new QHBoxLayout(this))
-    , m_bc(static_cast<BreadCrumbs *>(parent))
-    , m_schemeButton(new Button(this))
+    , m_bc(static_cast<NavBar *>(parent))
 {
-//    connect(m_fsModel, SIGNAL(directoryLoaded(QString)), this, SLOT(genNavFromPath(QString)));
     connect(m_fsModel, SIGNAL(urlChanged(QUrl)), this, SLOT(genNavFromUrl(QUrl)));
-    setContentsMargins(0, 0, 0, 0);
-    m_layout->setContentsMargins(24, 0, 0, 0);
+    m_layout->setContentsMargins(0, 0, 0, 0);
     m_layout->setSpacing(0);
     setLayout(m_layout);
-    QTimer::singleShot(0, this, SLOT(postConstructorJobs()));
-}
-
-void
-PathNavigator::postConstructorJobs()
-{
-    m_schemeButton->setIcon(IconProvider::icon(IconProvider::Configure, 16, palette().color(foregroundRole()), false));
-    m_schemeButton->setMenu(m_fsModel->schemes());
-}
-
-void
-PathNavigator::resizeEvent(QResizeEvent *e)
-{
-    QWidget::resizeEvent(e);
-    m_schemeButton->move(0, 0);
-    m_schemeButton->resize(24, height());
 }
 
 QSize
@@ -337,6 +323,7 @@ PathNavigator::clear()
 void
 PathNavigator::genNavFromUrl(const QUrl &url)
 {
+    m_url = url;
     m_bc->setUrl(url);
     clear();
 
@@ -365,7 +352,7 @@ PathNavigator::genNavFromUrl(const QUrl &url)
             nb->setCursor(Qt::PointingHandCursor);
         nb->setFont(f);
 
-        m_layout->insertWidget(m_layout->indexOf(m_schemeButton)+1, nb);
+        m_layout->insertWidget(0, nb);
         connect(nb, SIGNAL(urlRequest(QUrl)), m_fsModel, SLOT(setUrl(QUrl)));
 
         if (newPath != path)
@@ -375,16 +362,16 @@ PathNavigator::genNavFromUrl(const QUrl &url)
         }
     } while (dir.cdUp());
     m_layout->addStretch();
-    m_bc->pathBox()->setEditText(path);
 }
 
 //-----------------------------------------------------------------------------
 
-BreadCrumbs::BreadCrumbs(QWidget *parent, FS::Model *fsModel)
+NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
     : QStackedWidget(parent)
     , m_pathNav(new PathNavigator(this, fsModel))
     , m_pathBox(new PathBox(this))
     , m_fsModel(fsModel)
+//    , m_schemeButton(new Button(this))
 {
     addWidget(m_pathNav);
     addWidget(m_pathBox);
@@ -393,26 +380,37 @@ BreadCrumbs::BreadCrumbs(QWidget *parent, FS::Model *fsModel)
     m_pathBox->setEditable(true);
     m_pathBox->setDuplicatesEnabled(false);
 
-    QCompleter *completer = new QCompleter(m_pathBox);
-    QDirModel *dirModel = new QDirModel(completer); //this is no work w/ filesystemmodel?
-    dirModel->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot);
-    completer->setModel(dirModel);
+    PathCompleter *completer = new PathCompleter(m_fsModel, m_pathBox);
+    completer->setMaxVisibleItems(20);
+    completer->setCaseSensitivity(Qt::CaseInsensitive);
+    completer->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
     m_pathBox->setCompleter(completer);
 
+//    connect (m_fsModel, SIGNAL(finishedWorking()), completer, SLOT(complete()));
+    connect (m_pathBox, SIGNAL(editTextChanged(QString)), completer, SLOT(textChanged(QString)));
+//    connect (m_pathBox, SIGNAL(textChanged(QString)), completer, SLOT(textChanged(QString)));
     connect (m_pathBox, SIGNAL(activated(QString)), this, SLOT(urlFromEdit(QString)));
     connect (m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()));
     connect (m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()));
     setCurrentWidget(m_pathNav);
     QTimer::singleShot(0, this, SLOT(paletteOps()));
+//    QTimer::singleShot(0, this, SLOT(postConstructorJobs()));
 }
 
 void
-BreadCrumbs::paletteOps()
+NavBar::postConstructorJobs()
+{
+    m_schemeButton->setIcon(IconProvider::icon(IconProvider::Configure, 16, palette().color(foregroundRole()), false));
+    m_schemeButton->setMenu(m_fsModel->schemes());
+}
+
+void
+NavBar::paletteOps()
 {
     const int style = Store::config.behaviour.pathBarStyle;
     if (style > 0)
         setAutoFillBackground(true);
-    if (style!=0)
+    if (style != 0)
         setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
     else
         setContentsMargins(0, 0, 0, 0);
@@ -447,25 +445,29 @@ BreadCrumbs::paletteOps()
 }
 
 QSize
-BreadCrumbs::sizeHint() const
+NavBar::sizeHint() const
 {
     return QSize(QFrame::sizeHint().width(), 16);
 }
 
 void
-BreadCrumbs::urlFromEdit(const QString &urlString)
+NavBar::urlFromEdit(const QString &urlString)
 {
     const QString &checked = Ops::sanityChecked(urlString);
-    QUrl url(checked);
-    if (url.scheme().isEmpty())
+    QUrl url;
+    if (QFileInfo(checked).isDir())
         url = QUrl::fromLocalFile(checked);
+    else
+        url = QUrl(checked);
+
+    url = url.toEncoded(QUrl::StripTrailingSlash);
 
     m_fsModel->setUrl(url);
-    setEditable(false);
+    setEditable(!url.isLocalFile());
 }
 
 void
-BreadCrumbs::setUrl(const QUrl &url)
+NavBar::setUrl(const QUrl &url)
 {
     if (!m_fsModel)
         return;
@@ -473,30 +475,89 @@ BreadCrumbs::setUrl(const QUrl &url)
         return;
     bool exists = false;
     for (int i = 0; i < m_pathBox->count(); i++)
-        if (m_pathBox->itemText(i) == url.path())
+        if (m_pathBox->itemText(i) == url.toString())
             exists = true;
     if (!exists && m_fsModel->index(url).isValid())
-        m_pathBox->addItem(url.path());
+        m_pathBox->addItem(url.toString());
 
-    m_pathBox->setEditText(url.path());
+    m_pathBox->setEditText(url.toString());
+//    if (!url.isLocalFile())
+        setEditable(!url.isLocalFile());
 }
 
 void
-BreadCrumbs::complete(const QString &path)
+NavBar::setEditable(const bool editable)
 {
-//    QString p = path;
-//    if (!QDir(p).exists())
-//        p = path.mid(0, path.lastIndexOf(QDir::separator()));
-//    if (!p.endsWith(QDir::separator()))
-//        p.append(QDir::separator());
+    if (!editable && url().isLocalFile())
+        setCurrentWidget(m_pathNav);
+    else
+        setCurrentWidget(m_pathBox);
+    currentWidget()->setFocus();
+}
 
-//    const QString &current = path.mid(path.lastIndexOf(QDir::separator())+1);
-//    QStringList paths;
-//    foreach (const QString &subPath, QDir(p).entryList(QStringList() << "*"+current+"*", QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot, QDir::Name))
-//        paths << QString("%1%2%3").arg(p, subPath, QDir::separator());
+void
+NavBar::toggleEditable()
+{
+    setEditable(currentWidget() == m_pathNav);
+}
 
-//    QCompleter comp(paths, m_pathBox);
-//    comp.setCompletionMode(QCompleter::PopupCompletion);
-//    comp.setCaseSensitivity(Qt::CaseInsensitive);
-//    m_pathBox->setCompleter(&comp);
+void
+NavBar::resizeEvent(QResizeEvent *e)
+{
+    QStackedWidget::resizeEvent(e);
+//    m_pathBox->resize(size()-QSize(32, 0));
+//    m_pathBox->move(32, 0);
+//    m_schemeButton->move(0, 0);
+}
+
+//-----------------------------------------------------------------------------
+
+PathCompleter::PathCompleter(QAbstractItemModel *model, QWidget *parent)
+    :QCompleter(model, parent)
+{
+}
+
+QString
+PathCompleter::pathFromIndex(const QModelIndex &index) const
+{
+    const FS::Model *fsModel = static_cast<const FS::Model *>(index.model());
+    QString path = fsModel->url(index).toString();
+    if (fsModel->fileInfo(index).isDir())
+        path.append("/");
+    return path;
+}
+
+QStringList
+PathCompleter::splitPath(const QString &path) const
+{
+    QUrl url(path);
+    if (!url.isLocalFile())
+        return QStringList();
+    QStringList list;
+    list << url.scheme();
+    QStringList plist = QStringList() << url.path().split("/", QString::SkipEmptyParts);
+#if defined(Q_OS_UNIX)
+    list << "/";
+    list << plist;
+#else
+    if (plist.isEmpty())
+        return list;
+    QString partition = plist.takeFirst();
+    partition.append("/");
+    list << partition;
+    list << plist;
+#endif
+    if (path.endsWith("/"))
+        list << "*";
+
+    return list;
+}
+
+void
+PathCompleter::textChanged(const QString &text)
+{
+    if (text.endsWith("/"))
+        setCompletionMode(QCompleter::UnfilteredPopupCompletion);
+    else
+        setCompletionMode(QCompleter::PopupCompletion);
 }

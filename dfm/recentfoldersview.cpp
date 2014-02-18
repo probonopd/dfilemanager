@@ -98,7 +98,7 @@ RecentFoldersView::folderEntered(const QUrl &url)
         return;
     QIcon icon(fsModel->fileIcon(fsModel->index(url)));
     if (icon.isNull())
-        icon = QFileIconProvider().icon(QFileIconProvider::Folder);
+        icon = FS::FileIconProvider::typeIcon(QFileIconProvider::Folder);
     QStandardItem *item = new QStandardItem(icon, folderName);
     item->setData(folder);
     item->setToolTip(folder);

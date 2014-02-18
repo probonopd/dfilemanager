@@ -52,8 +52,6 @@ class Ops : public QObject
 {
     Q_OBJECT
 public:
-    static QString getMimeType(const QString &file);
-    static QString getFileType(const QString &file);
     static QColor colorMid(const QColor c1, const QColor c2, int i1 = 1, int i2 = 1);
     static bool openFile(const QString &file);
     static Ops *instance();

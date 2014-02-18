@@ -313,8 +313,13 @@ Manager::copy(const QList<QUrl> &sourceFiles, const QString &destination, bool c
 {
     QStringList files;
     foreach (const QUrl &url, sourceFiles)
-        files << url.path();
-    copy(files, destination, cut, ask);
+    {
+        const QFileInfo &i = url.toLocalFile();
+        if (i.exists())
+            files << i.filePath();
+    }
+    if (!files.isEmpty())
+        copy(files, destination, cut, ask);
 }
 
 Manager::Manager(QObject *parent)

@@ -24,7 +24,6 @@
 
 #include <QToolBar>
 #include <QToolButton>
-#include <QPropertyAnimation>
 #include <QAction>
 #include <QMenu>
 #include <QMouseEvent>
@@ -33,6 +32,7 @@
 #include <QStyleOptionComboBox>
 #include <QEvent>
 #include <QBoxLayout>
+#include <QCompleter>
 
 #include "filesystemmodel.h"
 #include "operations.h"
@@ -41,7 +41,7 @@
 namespace DFM
 {
 class PathNavigator;
-class BreadCrumbs;
+class NavBar;
 class PathBox;
 class NavButton : public QWidget
 {
@@ -110,7 +110,7 @@ class PathBox : public QComboBox
 {
     Q_OBJECT
 public:
-    inline explicit PathBox(QWidget *parent = 0) : QComboBox(parent) {}
+    explicit PathBox(QWidget *parent = 0);
 
 signals:
     void cancelEdit();
@@ -139,12 +139,10 @@ signals:
 protected:
     void mousePressEvent(QMouseEvent *e);
     void mouseReleaseEvent(QMouseEvent *e);
-    void resizeEvent(QResizeEvent *);
     void clear();
 
 private slots:
      void genNavFromUrl(const QUrl &url);
-     void postConstructorJobs();
 
 private:
     QUrl m_url;
@@ -152,31 +150,33 @@ private:
     FS::Model *m_fsModel;
     QHBoxLayout *m_layout;
     QList<QWidget *> m_widgets;
-    BreadCrumbs *m_bc;
-    Button *m_schemeButton;
+    NavBar *m_bc;
     bool m_hasPress;
 };
 
 //-----------------------------------------------------------------------------
 
-class BreadCrumbs : public QStackedWidget
+class NavBar : public QStackedWidget
 {
     Q_OBJECT
 public:
-    explicit BreadCrumbs(QWidget *parent = 0, FS::Model *fsModel = 0);
-    inline void setEditable(const bool editable) { setCurrentWidget(editable ? static_cast<QWidget *>(m_pathBox) : static_cast<QWidget *>(m_pathNav)); currentWidget()->setFocus(); }
+    NavBar(QWidget *parent = 0, FS::Model *fsModel = 0);
+    void setEditable(const bool editable);
     inline QUrl url() { return m_pathNav->url(); }
     inline bool isEditable() { return currentWidget() == static_cast<QWidget *>(m_pathBox); }
     inline PathNavigator *pathNav() { return m_pathNav; }
     inline PathBox *pathBox() { return m_pathBox; }
     QSize sizeHint() const;
 
+protected:
+    void resizeEvent(QResizeEvent *);
+
 public slots:
     void urlFromEdit(const QString &urlString);
-    inline void toggleEditable() { currentWidget() == m_pathNav ? setEditable(true) : setEditable(false); }
-    void complete(const QString &path);
+    void toggleEditable();
     void setUrl(const QUrl &url);
     void paletteOps();
+    void postConstructorJobs();
 
 signals:
     void newPath(const QString &path);
@@ -185,6 +185,19 @@ private:
     PathBox *m_pathBox;
     PathNavigator *m_pathNav;
     FS::Model *m_fsModel;
+    Button *m_schemeButton;
+};
+
+class PathCompleter : public QCompleter
+{
+    Q_OBJECT
+public:
+    PathCompleter(QAbstractItemModel *model = 0, QWidget *parent = 0);
+    QStringList splitPath(const QString &path) const;
+    QString pathFromIndex(const QModelIndex &index) const;
+
+public slots:
+    void textChanged(const QString &text);
 };
 
 }

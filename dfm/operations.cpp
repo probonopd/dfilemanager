@@ -35,55 +35,13 @@
 using namespace DFM;
 
 static Ops *s_instance = 0;
-#ifdef Q_WS_X11
-static magic_t s_magicMime;
-static magic_t s_magicAll;
-#endif
 
 Ops
 *Ops::instance()
 {
     if (!s_instance)
-    {
         s_instance = new Ops(qApp);
-#ifdef Q_OS_UNIX
-        s_magicMime = magic_open(MAGIC_MIME_TYPE);
-        magic_load(s_magicMime, NULL);
-        s_magicAll = magic_open(MAGIC_CONTINUE);
-        magic_load(s_magicAll, NULL);
-#endif
-    }
     return s_instance;
-}
-
-QString
-Ops::getMimeType(const QString &file)
-{
-    const QFileInfo f(file);
-    if (!f.isReadable() || !instance())
-        return QString();
-
-    if (f.isSymLink())
-        return "inode/symlink";
-    if (f.isDir())
-        return "inode/directory";
-#ifdef Q_OS_UNIX
-    return QString(magic_file(s_magicMime, file.toStdString().c_str()));;
-#else
-    return QString();
-#endif
-}
-
-QString
-Ops::getFileType(const QString &file)
-{
-#ifdef Q_OS_UNIX
-    if (!QFileInfo(file).exists() || !instance())
-        return QString();
-    return QString(magic_file(s_magicAll, file.toStdString().c_str()));
-#else
-    return QString();
-#endif
 }
 
 QColor
@@ -155,12 +113,19 @@ Ops::customActionTriggered()
     {
         if (isModel->selectedIndexes().count())
             foreach (const QModelIndex &index, isModel->selectedIndexes())
-                if (!index.column())
-                    QProcess::startDetached(app, QStringList() << action << fsModel->url(index).path());
+            {
+                if (index.column())
+                    continue;
+                const QFileInfo &fi = fsModel->fileInfo(index);
+                if (fi.exists())
+                    QProcess::startDetached(app, QStringList() << action << fi.filePath());
+            }
     }
     else
     {
-        QProcess::startDetached(app, QStringList() << action << fsModel->rootUrl().path());
+        const QFileInfo &fi = fsModel->rootUrl().toLocalFile();
+        if (fi.exists())
+            QProcess::startDetached(app, QStringList() << action << fi.filePath());
     }
 }
 
@@ -416,7 +381,7 @@ QString
 Ops::getStatusBarMessage(const QUrl &url, FS::Model *model)
 {
     QString messaage;
-    if (url.scheme() == "file")
+    if (url.isLocalFile() || url.scheme() == "search")
     {
         quint64 size = 0;
         int dirCount = 0, fileCount = 0;
@@ -437,13 +402,11 @@ Ops::getStatusBarMessage(const QUrl &url, FS::Model *model)
                 size += f.size();
             }
         }
-
-
         if (dirCount)
             messaage.append(QString("%1 %2%3").arg(QString::number(dirCount), dirCount==1?"Folder":"Folders", fileCount?", ":""));
         if (fileCount)
             messaage.append(QString("%1 %2").arg(QString::number(fileCount), fileCount==1?"File":"Files"));
-        if (size)
+        if (size && url.isLocalFile())
             messaage.append(QString(" ( %1 )").arg(Ops::prettySize(size)));
     }
     else

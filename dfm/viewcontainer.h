@@ -44,7 +44,7 @@ class ColumnsWidget;
 class IconView;
 class DetailsView;
 class FlowView;
-class BreadCrumbs;
+class NavBar;
 class PathNavigator;
 namespace FS{class Model;}
 class ViewContainer : public QFrame
@@ -56,15 +56,15 @@ public:
     ~ViewContainer(){}
     static QList<QAction *> rightClickActions();
     FS::Model *model();
-    void setView(View view, bool store = true);
+    void setView(const View view, bool store = true);
     QAbstractItemView *currentView() const;
     QList<QAbstractItemView *> views();
     View currentViewType() const { return m_myView; }
     DetailsView *detailsView() { return m_detailsView; }
-    void setPathEditable(bool editable);
+    void setPathEditable(const bool editable);
     void setRootIndex(const QModelIndex &index);
     void createDirectory();
-    void setFilter(QString filter);
+    void setFilter(const QString &filter);
     void deleteCurrentSelection();
     void customCommand();
     QSize iconSize();
@@ -82,9 +82,8 @@ public:
     void goHome();
     void animateIconSize(int start, int stop);
     SearchIndicator *searchIndicator() { return m_searchIndicator; }
-    BreadCrumbs *breadCrumbs();
+    NavBar *breadCrumbs();
     QString currentFilter();
-    QList<QUrl> visited() { return m_backList; }
     void sort(const int column = 0, const Qt::SortOrder order = Qt::AscendingOrder);
     PathNavigator *pathNav();
 
@@ -97,8 +96,8 @@ protected:
     
 signals:
     void viewChanged();
-    void iconSizeChanged(int size);
-    void itemHovered(QString index);
+    void iconSizeChanged(const int size);
+    void itemHovered(const QString &index);
     void clearHovered();
     void newTabRequest(const QUrl &url);
     void entered(const QModelIndex &index);
@@ -113,7 +112,7 @@ public slots:
 
 private slots:
     void setUrl(const QUrl &url);
-    void genNewTabRequest(QModelIndex index);
+    void genNewTabRequest(const QModelIndex &index);
     void customActionTriggered();
     void scriptTriggered();
     void urlLoaded(const QUrl &url);
@@ -129,9 +128,8 @@ private:
     FlowView *m_flowView;
     FS::Model *m_model;
     QStackedWidget *m_viewStack;
-    QList<QUrl> m_backList, m_forwardList;
     QItemSelectionModel *m_selectModel;
-    BreadCrumbs *m_breadCrumbs;
+    NavBar *m_breadCrumbs;
     SearchIndicator *m_searchIndicator;
 };
 

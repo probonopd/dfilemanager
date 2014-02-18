@@ -32,7 +32,8 @@ HEADERS = mainwindow.h \
     widgets.h \
     objects.h \
     fsworkers.h \
-    globals.h
+    globals.h \
+    helpers.h
 SOURCES = main.cpp \
     mainwindow.cpp \
     iconview.cpp \
@@ -65,7 +66,8 @@ SOURCES = main.cpp \
     devices.cpp \
     widgets.cpp \
     objects.cpp \
-    fsworkers.cpp
+    fsworkers.cpp \
+    helpers.cpp
 #RESOURCES = resources.qrc
 TARGET = dfm
 

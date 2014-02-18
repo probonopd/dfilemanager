@@ -37,11 +37,11 @@
 #include <QMap>
 #include <QWaitCondition>
 #include <QAbstractItemModel>
-#include <QMutex>
 
 #include "thumbsloader.h"
 #include "viewcontainer.h"
 #include "fsworkers.h"
+#include "helpers.h"
 
 namespace DFM
 {
@@ -50,19 +50,19 @@ class ThumbsLoader;
 class ImagesThread;
 class ViewContainer;
 
-namespace FS {class Model;}
+namespace FS
+{
+
 class FileIconProvider : public QFileIconProvider
 {
 public:
-    inline explicit FileIconProvider(FS::Model *model = 0) : QFileIconProvider(), m_fsModel(model){}
+    FileIconProvider();
     QIcon icon(const QFileInfo &info) const;
-
-private:
-    FS::Model *m_fsModel;
+    QIcon icon(IconType type) const;
+    static QIcon fileIcon(const QFileInfo &fileInfo);
+    static QIcon typeIcon(IconType type);
+    static FileIconProvider *instance();
 };
-
-namespace FS
-{
 
 class Model;
 namespace Worker {class Gatherer;}
@@ -81,7 +81,8 @@ public:
         FlowImg = Qt::UserRole +4,
         FlowRefl = Qt::UserRole +5,
         FlowShape = Qt::UserRole +6,
-        Category = Qt::UserRole +7
+        Category = Qt::UserRole +7,
+        MimeType = Qt::UserRole +8
     };
     enum Scheme
     {
@@ -89,11 +90,13 @@ public:
         Search = 1,
         History =2
     };
+    enum History { Back, Forward };
 
     explicit Model(QObject *parent = 0);
     ~Model();
 
     static bool hasThumb(const QString &file);
+    bool hasThumb(const QModelIndex &index);
 
     Qt::ItemFlags flags(const QModelIndex &index) const;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
@@ -121,13 +124,9 @@ public:
     QModelIndexList category(const QModelIndex &fromCat);
 
     QUrl rootUrl() { return m_url; }
-    void setRootPath(const QString &path);
-//    inline QString rootPath() const { return m_rootPath; }
     Node *rootNode();
 
     void forceEmitDataChangedFor(const QString &file);
-
-    inline FileIconProvider *iconProvider() { return m_ip; }
 
     QIcon fileIcon(const QModelIndex &index) const;
     QString fileName(const QModelIndex &index) const;
@@ -140,7 +139,6 @@ public:
 
     inline Worker::Gatherer *dataGatherer() { return m_dataGatherer; }
     inline QFileSystemWatcher *dirWatcher() { return m_watcher; }
-    inline FileIconProvider *ip() { return m_ip; }
 
     void getSort(const QUrl &url);
     void setSort(const int sortColumn, const int sortOrder);
@@ -149,16 +147,20 @@ public:
 
     void setHiddenVisible(bool visible);
     inline bool showHidden() const { return m_showHidden; }
+    bool isWorking() const;
 
-    void startWorking();
-    void endWorking();
-    inline bool isWorking() const { QMutexLocker locker(&m_mutex); return m_isPopulating; }
+    void goBack();
+    void goForward();
+    inline bool canGoBack() const { return m_history[Back].count()>1; }
+    inline bool canGoForward() const { return !m_history[Forward].isEmpty(); }
 
     void search(const QString &fileName, const QString &filePath);
     void search(const QString &fileName);
+    void setFilter(const QString &setFilter);
     QString currentSearchString();
 
     inline QMenu *schemes() { return m_schemeMenu; }
+    Node *schemeNode(const QString &scheme);
 
     QString title(const QUrl &url = QUrl());
 
@@ -174,9 +176,8 @@ private slots:
     void flowDataAvailable(const QString &file);
     void dirChanged(const QString &path);
     void nodeGenerated(const QString &path, Node *node);
-    void removeDeletedLater();
-    void removeDeleted();
     void schemeFromSchemeMenu();
+    void refreshCurrent();
 
 signals:
     void flowDataChanged(const QModelIndex &start, const QModelIndex &end);
@@ -190,12 +191,12 @@ signals:
     void urlLoaded(const QUrl &url);
 
 private:
-    Node *m_current;
-    Node *m_rootNode;
+    Node *m_rootNode, *m_current;
+    QList<Node *> m_deleted;
+    mutable QMap<QString, Node *> m_schemeNodes;
+    QHash<QUrl, Node *> m_nodes;
     QAbstractItemView *m_view;
-    bool m_showHidden, m_isPopulating;
-    QString m_rootPath;
-    FileIconProvider *m_ip;
+    bool m_showHidden, m_goingBack;
     int m_sortColumn;
     Qt::SortOrder m_sortOrder;
     ImagesThread *m_it;
@@ -204,10 +205,12 @@ private:
     Worker::Gatherer *m_dataGatherer;
     QMenu *m_schemeMenu;
     QUrl m_url;
+    QList<QUrl> m_history[Forward+1];
+    MimeProvider m_mimes;
+    QTimer *m_timer;
     friend class ImagesThread;
     friend class Node;
     friend class Worker::Gatherer;
-    mutable QMutex m_mutex;
 };
 
 }

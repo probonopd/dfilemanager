@@ -48,7 +48,7 @@ public:
             painter->fillRect(option.rect, h);
         }
         FileItemDelegate::paint(painter, option, index);
-        if (m_model->isDir(index))
+        if (m_model->isDir(index) && m_model->url(index).scheme() == "file")
         {
             painter->save();
             painter->setRenderHint(QPainter::Antialiasing);
@@ -79,16 +79,13 @@ private:
     FS::Model *m_model;
 };
 
-ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QUrl &url)
+ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QModelIndex &rootIndex)
     : QListView(parent)
     , m_parent(static_cast<ColumnsWidget *>(parent))
     , m_pressPos(QPoint())
     , m_activeFile(QString())
-    , m_url(url)
     , m_model(0)
     , m_width(0)
-    , m_fsWatcher(new QFileSystemWatcher(this))
-    , m_sortModel(0)
 {
     setViewMode(QListView::ListMode);
     setResizeMode(QListView::Adjust);
@@ -109,14 +106,10 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QUrl 
     setTextElideMode(Qt::ElideNone);
     setFrameStyle(0);
     setSelectionBehavior(QAbstractItemView::SelectRows);
-//    connect(m_parent, SIGNAL(currentViewChagned(ColumnsView*)), viewport(), SLOT(update()));
     if (FS::Model *fsModel = qobject_cast<FS::Model *>(model))
     {
-//        connect(fsModel, SIGNAL(rowsRemoved(QModelIndex,int ,int)), this, SLOT(rowsRemoved(QModelIndex,int,int)));
-//        connect(fsModel, SIGNAL(fileRenamed(QString,QString,QString)), this, SLOT(fileRenamed(QString,QString,QString)));
         setModel(fsModel);
-//        if (QFileInfo(rootPath).exists())
-            setRootIndex(fsModel->index(url));
+        setRootIndex(rootIndex);
     }
     verticalScrollBar()->installEventFilter(this);
 }
@@ -138,30 +131,6 @@ ColumnsView::eventFilter(QObject *o, QEvent *e)
     else
         return QListView::eventFilter(o, e);
 }
-
-void
-ColumnsView::setUrl(const QUrl &url)
-{
-    setRootIndex(m_model->index(url));
-}
-
-#if 0
-void
-ColumnsView::setRootIndex(const QModelIndex &index)
-{
-    if (!m_fsWatcher->directories().isEmpty())
-        m_fsWatcher->removePaths(m_fsWatcher->directories());
-    if (m_model)
-    {
-        m_rootPath = m_model->url(index).toLocalFile();
-        if (!sanityCheckForDir())
-            return;
-        m_fsWatcher->addPath(m_rootPath);
-    }
-    QListView::setRootIndex(index);
-    updateWidth();
-}
-#endif
 
 void
 ColumnsView::keyPressEvent(QKeyEvent *event)
@@ -189,9 +158,10 @@ ColumnsView::contextMenuEvent(QContextMenuEvent *event)
     if (Store::customActions().count())
         popupMenu.addMenu(Store::customActionsMenu());
     popupMenu.addActions(ViewContainer::rightClickActions());
-    const QString &file = m_model->url(indexAt(event->pos())).toLocalFile();
+    const QFileInfo &file = m_model->fileInfo(indexAt(event->pos()));
     QMenu openWith(tr("Open With"), this);
-    openWith.addActions(Store::openWithActions(file));
+    if (file.exists())
+        openWith.addActions(Store::openWithActions(file.filePath()));
     foreach (QAction *action, actions())
     {
         popupMenu.addAction(action);
@@ -258,73 +228,7 @@ ColumnsView::setModel(QAbstractItemModel *model)
     QListView::setModel(model);
     m_model = qobject_cast<FS::Model *>(model);
     setItemDelegate(new ColumnsDelegate(this));
-//    connect(m_model, SIGNAL(paintRequest()), viewport(), SLOT(update()));
 }
-#if 0
-void
-ColumnsView::rowsRemoved(const QModelIndex &parent, int start, int end)
-{
-    if (!rootIndex().isValid())
-    {
-        emit pathDeleted(this);
-        hide();
-    }
-    if (parent == rootIndex())
-        updateWidth();
-}
-
-void
-ColumnsView::fileRenamed(const QString &path, const QString &oldName, const QString &newName)
-{
-    if (path != m_rootPath)
-        return;
-
-    int w = fontMetrics().boundingRect(newName).width();
-    if (w > m_width)
-    {
-        m_width = w ;
-        w+=40; //icon && expanders...
-        w+=style()->pixelMetric(QStyle::PM_ScrollBarExtent, 0, this);
-        setFixedWidth(w);
-    }
-    else
-        updateWidth();
-}
-
-void
-ColumnsView::updateWidth()
-{
-    if (!sanityCheckForDir())
-        return;
-    if (!m_model)
-        return;
-    QStringList list = QDir(m_model->url(rootIndex()).toLocalFile()).entryList(QDir::AllEntries|QDir::AllDirs|QDir::NoDotAndDotDot|QDir::System);
-    int w = 0;
-    while (!list.isEmpty())
-    {
-        const int W = fontMetrics().boundingRect(list.takeFirst()).width();
-        if (W > w)
-            w = W;
-    }
-    w+=40; //icon && expanders...
-    w+=style()->pixelMetric(QStyle::PM_ScrollBarExtent, 0, this);
-    setFixedWidth(qMax(64, w));
-}
-
-bool
-ColumnsView::sanityCheckForDir()
-{
-    if (!m_rootPath.isEmpty() && !QFileInfo(m_rootPath).exists())
-    {
-        emit pathDeleted(this);
-        hide();
-        if (m_fsWatcher->directories().contains(m_rootPath))
-            m_fsWatcher->removePath(m_rootPath);
-        return false;
-    }
-    return true;
-}
-#endif
 
 void
 ColumnsView::wheelEvent(QWheelEvent *e)
