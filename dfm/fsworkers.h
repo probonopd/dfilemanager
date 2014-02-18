@@ -51,7 +51,7 @@ public:
     inline Model *model() { return m_model; }
     Worker::Gatherer *gatherer();
 
-    inline QString name() const { return m_name; }
+    virtual QString name() const { return m_name; }
     bool rename(const QString &newName);
     inline QString filePath() const { return m_filePath; }
 
@@ -69,13 +69,13 @@ public:
     void rePopulate();
     bool isPopulated() const;
 
-    QVariant data(int column);
+    virtual QVariant data(const int column);
     QString permissionsString();
-    QString category();
+    virtual QString category();
     inline QString scheme() { return url().scheme(); }
-    inline QString iconName();
+    QString iconName();
     QString mimeType();
-    QIcon icon();
+    virtual QIcon icon();
 
     void sort();
     int sortColumn();
@@ -108,9 +108,29 @@ private:
     QIcon m_icon;
 };
 
+//-----------------------------------------------------------------------------
+
+class AppNode : public Node
+{
+public:
+    AppNode(Model *model = 0, Node *parent = 0, const QUrl &url = QUrl(), const QString &filePath = QString());
+
+    QString name() const;
+    QString category();
+    QString comment() { return m_comment; }
+    QString command() { return m_appCmd; }
+    QIcon icon();
+    QVariant data(const int column);
+
+private:
+    QString m_appName, m_appCmd, m_appIcon, m_category, m_comment, m_type;
+};
+
+//-----------------------------------------------------------------------------
+
 namespace Worker
 {
-enum Task { Populate = 0, Generate = 1, Search = 2, NoTask = 3 };
+enum Task { Populate = 0, Generate = 1, Search = 2, GetApps = 3, NoTask = 4 };
 
 class Job
 {
@@ -136,18 +156,20 @@ public:
     void populateNode(Node *node);
     void generateNode(const QString &path, Node *parent);
     void search(const QString &name, const QString &filePath, Node *node);
+    void populateApplications(const QString &appsPath, Node *node);
     void setCancelled(bool cancel);
     bool isCancelled() { QMutexLocker locker(&m_mutex); return m_isCancelled; }
 
 protected:
     void run();
     void searchResultsForNode(const QString &name, const QString &filePath, Node *node);
+    void getApplications(const QString &appsPath, Node *node);
 
 signals:
     void nodeGenerated(const QString &path, Node *node);
 
 private:
-    QString m_path, m_searchPath, m_searchName;
+    QString m_path, m_searchPath, m_searchName, m_appsPath;
     QMutex m_taskMutex;
     Node *m_node, *m_result;
     FS::Model *m_model;

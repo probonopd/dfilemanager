@@ -109,6 +109,7 @@ public:
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
     QModelIndex parent(const QModelIndex &child) const;
     QModelIndex index(const QUrl &url);
+    QModelIndex indexForLocalFile(const QString &filePath);
 
     void fetchMore(const QModelIndex &parent);
     bool canFetchMore(const QModelIndex &parent) const;

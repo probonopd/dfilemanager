@@ -22,10 +22,8 @@ QString
 MimeProvider::getMimeType(const QString &file) const
 {
     QMutexLocker locker(&m_mutex);
-    if (file.isEmpty())
-        return QString();
 #if defined(Q_OS_UNIX)
-    return magic_file(m_mime, file.toStdString().c_str());
+    return magic_file(m_mime, file.toLocal8Bit().data());
 #else
     return QString();
 #endif
@@ -35,10 +33,8 @@ QString
 MimeProvider::getFileType(const QString &file) const
 {
     QMutexLocker locker(&m_mutex);
-    if (file.isEmpty())
-        return QString();
 #ifdef Q_OS_UNIX
-    return magic_file(m_all, file.toStdString().c_str());
+    return magic_file(m_all, file.toLocal8Bit().data());
 #else
     return QString();
 #endif

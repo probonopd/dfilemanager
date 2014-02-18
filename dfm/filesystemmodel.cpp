@@ -205,6 +205,14 @@ Model::setUrl(const QUrl &url)
 #endif
         search(searchName, searchPath);
     }
+#if defined(Q_OS_UNIX)
+    else if (url.scheme() == "applications")
+    {
+        Node *node = schemeNode(url.scheme());
+        emit urlChanged(url);
+        m_dataGatherer->populateApplications("/usr/share/applications", node);
+    }
+#endif
     else
     {
         emit urlChanged(url);
@@ -286,10 +294,9 @@ Model::forceEmitDataChangedFor(const QString &file)
 {
     QModelIndex idx;
     if (m_url.isLocalFile())
-        idx = index(QUrl::fromLocalFile(file));
+        idx = indexForLocalFile(file);
     else
         idx = index(QUrl(QString("%1%2").arg(m_url.toString(), file)));
-
 
     if (idx.isValid())
     {
@@ -303,7 +310,7 @@ Model::flowDataAvailable(const QString &file)
 {
     QModelIndex idx;
     if (m_url.isLocalFile())
-        idx = index(QUrl::fromLocalFile(file));
+        idx = indexForLocalFile(file);
     else
         idx = index(QUrl(QString("%1%2").arg(m_url.toString(), file)));
 
@@ -316,7 +323,7 @@ Model::thumbFor(const QString &file, const QString &iconName)
 {
     QModelIndex idx;
     if (m_url.isLocalFile())
-        idx = index(QUrl::fromLocalFile(file));
+        idx = indexForLocalFile(file);
     else
         idx = index(QUrl(QString("%1%2").arg(m_url.toString(), file)));
 
@@ -502,6 +509,15 @@ Node
 }
 
 QModelIndex
+Model::indexForLocalFile(const QString &filePath)
+{
+    Node *node = schemeNode("file")->localNode(filePath);
+    if (node)
+        return createIndex(node->row(), 0, node);
+    return QModelIndex();
+}
+
+QModelIndex
 Model::index(const QUrl &url)
 {
     if (url.scheme().isEmpty())
@@ -513,15 +529,13 @@ Model::index(const QUrl &url)
         return createIndex(sNode->row(), 0, sNode);
 
     if (url.isLocalFile())
-        if (Node *localNode = sNode->localNode(url.toLocalFile()))
-            return createIndex(localNode->row(), 0, localNode);
+        return indexForLocalFile(url.toLocalFile());
 
     if (m_nodes.contains(url))
     {
         Node *node = m_nodes.value(url);
         return createIndex(node->row(), 0, node);
     }
-    qDebug() << "return invalid index for url" << url;
     return QModelIndex();
 }
 

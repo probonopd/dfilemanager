@@ -128,7 +128,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
                 continue;
             if (QFileInfo(Ops::sanityChecked(argument)).isDir())
             {
-                addTab(argument);
+                addTab(QUrl::fromLocalFile(Ops::sanityChecked(argument)));
                 needTab = false;
             }
         }

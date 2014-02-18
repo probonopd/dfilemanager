@@ -282,7 +282,7 @@ Node::category()
 }
 
 QVariant
-Node::data(int column)
+Node::data(const int column)
 {
     if (exists())
         switch (column)
@@ -307,7 +307,7 @@ Node::data(int column)
         case 4: return permissionsString(); break;
         default: return QString("--");
         }
-    return !column?name():QString("--");
+    return !column?m_name:QString("--");
 }
 
 Node
@@ -525,6 +525,56 @@ Node::rePopulate()
 
 //-----------------------------------------------------------------------------
 
+AppNode::AppNode(Model *model, Node *parent, const QUrl &url, const QString &filePath)
+    : Node(model, url, parent, filePath)
+{
+    QSettings info(filePath, QSettings::IniFormat);
+    info.beginGroup("Desktop Entry");
+    m_appName = info.value("Name").toString();
+    qDebug() << "constructing appnode for" << m_appName;
+    m_comment = info.value("Comment").toString();
+    m_appCmd = info.value("Exec").toString();
+    m_appIcon = info.value("Icon").toString();
+    m_type = info.value("Type").toString();
+    QStringList categories = info.value("Categories").toString().split(";", QString::SkipEmptyParts);
+    if (!categories.isEmpty())
+        m_category = categories.first();
+}
+
+QIcon
+AppNode::icon()
+{
+    return QIcon::fromTheme(m_appIcon, FileIconProvider::fileIcon(*this));
+}
+
+QString
+AppNode::category()
+{
+    return m_category;
+}
+
+QString
+AppNode::name() const
+{
+    return m_appName;
+}
+
+QVariant
+AppNode::data(const int column)
+{
+    if (exists())
+        switch (column)
+        {
+        case 0: return m_appName; break;
+        case 1: return QString("--"); break;
+        case 2: return m_type; break;
+        default: break;
+        }
+    return Node::data(column);
+}
+
+//-----------------------------------------------------------------------------
+
 using namespace Worker;
 
 Gatherer::Gatherer(QObject *parent)
@@ -569,6 +619,11 @@ Gatherer::run()
         searchResultsForNode(m_searchName, m_searchPath, m_node);
         break;
     }
+    case GetApps:
+    {
+        getApplications(m_appsPath, m_node);
+        break;
+    }
     default:
         break;
     }
@@ -603,6 +658,20 @@ Gatherer::search(const QString &name, const QString &path, Node *node)
 }
 
 void
+Gatherer::populateApplications(const QString &appsPath, Node *node)
+{
+    setCancelled(true);
+    wait();
+    setCancelled(false);
+
+    QMutexLocker locker(&m_taskMutex);
+    m_task = GetApps;
+    m_node = node;
+    m_appsPath = appsPath;
+    start();
+}
+
+void
 Gatherer::populateNode(Node *node)
 {
     QMutexLocker locker(&m_taskMutex);
@@ -631,6 +700,21 @@ Gatherer::generateNode(const QString &path, Node *parent)
     m_node = parent;
     m_result = 0;
     start();
+}
+
+void
+Gatherer::getApplications(const QString &appsPath, Node *node)
+{
+    QDirIterator it(appsPath, allEntries, QDirIterator::Subdirectories);
+    while (it.hasNext()&&!m_model->m_dataGatherer->isCancelled())
+    {
+        const QString &file(it.next());
+        if (QFileInfo(file).isDir())
+            continue;
+        const QUrl &url = QUrl(QString("%1%2").arg(m_model->m_url.toString(), file));
+        new AppNode(m_model, node, url, file);
+    }
+    emit m_model->urlLoaded(m_model->m_url);
 }
 
 void

@@ -226,8 +226,10 @@ ImagesThread::genImagesFor(const QString &file)
     m_queueMutex.unlock();
     if (!source.isNull())
     {
+        m_thumbsMutex.lock();
         m_images[0].insert(file, Ops::flowImg(source));
         m_images[1].insert(file, Ops::reflection(source));
+        m_thumbsMutex.unlock();
         emit imagesReady(file);
     }
 }
@@ -240,8 +242,10 @@ ImagesThread::genNameIconsFor(const QString &name)
     m_queueMutex.unlock();
     if (!source.isNull())
     {
+        m_thumbsMutex.lock();
         s_themeIcons[0].insert(name, Ops::flowImg(source));
         s_themeIcons[1].insert(name, Ops::reflection(source));
+        m_thumbsMutex.unlock();
     }
 }
 
