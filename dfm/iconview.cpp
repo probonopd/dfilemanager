@@ -786,9 +786,10 @@ IconView::setModel(QAbstractItemModel *model)
     QAbstractItemView::setModel(model);
     if (m_model = qobject_cast<FS::Model *>(model))
     {
-        m_layTimer->setInterval(20);
+        m_layTimer->setInterval(50);
         connect(m_model, SIGNAL(finishedWorking()), this, SLOT(updateLayout()));
         connect(m_model, SIGNAL(urlLoaded(QUrl)), this, SLOT(updateLayout()));
+        connect(m_model, SIGNAL(finishedWorking()), m_layTimer, SLOT(stop()));
         connect(m_model, SIGNAL(startedWorking()), m_layTimer, SLOT(start()));
         connect(m_model, SIGNAL(urlChanged(QUrl)), this, SLOT(clear()));
         connect(m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(calculateRects()));
@@ -837,7 +838,7 @@ IconView::visualRect(const QString &cat) const
 QModelIndex
 IconView::indexAt(const QPoint &p) const
 {
-    if (m_wheelTimer->isActive()||m_sizeTimer->isActive()||m_layTimer->isActive())
+    if (m_wheelTimer->isActive()||m_sizeTimer->isActive())
         return QModelIndex();
     for (int i = 0; i < m_model->rowCount(rootIndex()); ++i)
     {

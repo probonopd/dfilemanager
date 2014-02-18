@@ -22,6 +22,7 @@
 #include "config.h"
 #include "mainwindow.h"
 #include "application.h"
+#include "helpers.h"
 #include <QDir>
 #include <QProcess>
 
@@ -327,7 +328,7 @@ Store::openWithActions(const QString &file)
         }
     }
 
-    QStringList apps = QStringList() << appsMap[Ops::getMimeType(file)] << appsMap[mimeMap[QFileInfo(file).suffix()]];
+    QStringList apps = QStringList() << appsMap[MimeProvider().getMimeType(file)] << appsMap[mimeMap[QFileInfo(file).suffix()]];
     apps.removeDuplicates();
 
     foreach(QString app, apps)

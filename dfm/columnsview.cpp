@@ -86,8 +86,6 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QMode
     , m_activeFile(QString())
     , m_model(0)
     , m_width(0)
-    , m_fsWatcher(new QFileSystemWatcher(this))
-    , m_sortModel(0)
 {
     setViewMode(QListView::ListMode);
     setResizeMode(QListView::Adjust);

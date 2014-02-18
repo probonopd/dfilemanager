@@ -25,6 +25,7 @@
 #include "mainwindow.h"
 #include "icondialog.h"
 #include "thumbsloader.h"
+#include "helpers.h"
 #include <QDateTime>
 #include <QGroupBox>
 #include <QProgressBar>
@@ -154,7 +155,7 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
         m_nameEdit->setMinimumWidth(128);
 
         l->addWidget(new QLabel(tr("Mimetype:"), this), ++row, 0, right);
-        l->addWidget(new QLabel(DFM::Ops::getMimeType(file), this), row, 1, left);
+        l->addWidget(new QLabel(MimeProvider().getMimeType(file), this), row, 1, left);
 
         l->addWidget(new QLabel(tr("Created:"), this), ++row, 0, right);
         l->addWidget(new QLabel(f.created().toString(), this), row, 1, left);
@@ -278,7 +279,7 @@ PreViewWidget::PreViewWidget(QWidget *parent, const QStringList &files)
 
     QFile f(file);
     QString s;
-    if (f.open(QFile::ReadOnly) && DFM::Ops::getMimeType(file).contains("text"))
+    if (f.open(QFile::ReadOnly) && MimeProvider().getMimeType(file).contains("text"))
     {
         while (!f.atEnd())
             s.append(QString(f.readLine()));

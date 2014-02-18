@@ -35,55 +35,13 @@
 using namespace DFM;
 
 static Ops *s_instance = 0;
-#ifdef Q_WS_X11
-static magic_t s_magicMime;
-static magic_t s_magicAll;
-#endif
 
 Ops
 *Ops::instance()
 {
     if (!s_instance)
-    {
         s_instance = new Ops(qApp);
-#ifdef Q_OS_UNIX
-        s_magicMime = magic_open(MAGIC_MIME_TYPE);
-        magic_load(s_magicMime, NULL);
-        s_magicAll = magic_open(MAGIC_CONTINUE);
-        magic_load(s_magicAll, NULL);
-#endif
-    }
     return s_instance;
-}
-
-QString
-Ops::getMimeType(const QString &file)
-{
-    const QFileInfo f(file);
-    if (!f.isReadable() || !instance())
-        return QString();
-
-    if (f.isSymLink())
-        return "inode/symlink";
-    if (f.isDir())
-        return "inode/directory";
-#ifdef Q_OS_UNIX
-    return QString(magic_file(s_magicMime, file.toStdString().c_str()));;
-#else
-    return QString();
-#endif
-}
-
-QString
-Ops::getFileType(const QString &file)
-{
-#ifdef Q_OS_UNIX
-    if (!QFileInfo(file).exists() || !instance())
-        return QString();
-    return QString(magic_file(s_magicAll, file.toStdString().c_str()));
-#else
-    return QString();
-#endif
 }
 
 QColor

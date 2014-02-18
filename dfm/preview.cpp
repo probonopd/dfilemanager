@@ -56,27 +56,30 @@ ScrollBar::paintEvent(QPaintEvent *)
 
     // we need to paint to pixmaps first to get antialiasing...
 
+    //groove
     QPixmap grvPix(groove.size());
     grvPix.fill(Qt::transparent);
     const int grvR = qCeil(grvPix.height()/2.0f);
     QPainter grvPt(&grvPix);
     const int h = palette().color(QPalette::Highlight).hue();
-    QColor c; c.setHsv(h, 127, 32, 192);
+    QColor c; c.setHsv(h, 128, 32, 192);
     grvPt.setRenderHint(QPainter::Antialiasing);
-    grvPt.setPen(QColor(0,0,0,128));
+    grvPt.setPen(Qt::NoPen);
     grvPt.setBrush(c);
-    grvPt.drawRoundedRect(grvPix.rect(),grvR,grvR);
+    grvPt.drawRoundedRect(grvPix.rect(), grvR, grvR);
     grvPt.end();
     p.drawTiledPixmap(groove, grvPix);
 
+    //slider
+    c.setHsv(h, 32, 222, underMouse()?128:64);
     QPixmap sldrPix(slider.size());
     sldrPix.fill(Qt::transparent);
     const int sldrR = qCeil(sldrPix.height()/2.0f);
     QPainter sldrPt(&sldrPix);
     sldrPt.setRenderHint(QPainter::Antialiasing);
     sldrPt.setPen(Qt::NoPen);
-    sldrPt.setBrush(Qt::white);
-    sldrPt.drawRoundedRect(sldrPix.rect(),sldrR,sldrR);
+    sldrPt.setBrush(c);
+    sldrPt.drawRoundedRect(sldrPix.rect(), sldrR, sldrR);
     sldrPt.end();
     p.drawTiledPixmap(slider, sldrPix);
 
@@ -471,7 +474,7 @@ PreView::updateScene()
     const float scale = qMin<float>(1.0f, ((float)height()/SIZE)*0.8);
     m_textItem->setPos(qMax<float>(0.0f, m_x-m_textItem->boundingRect().width()/2.0f), rect().bottom()-(bMargin+m_scrollBar->height()+m_textItem->boundingRect().height()));
     m_textItem->setZValue(m_items.count()+2);
-    m_gfxProxy->setPos(m_x-m_gfxProxy->boundingRect().width()/2.0f, rect().bottom()-(bMargin+m_scrollBar->height()));
+    m_gfxProxy->setPos(qRound(m_x-m_gfxProxy->boundingRect().width()/2.0f), qRound(rect().bottom()-(bMargin+m_scrollBar->height())));
     m_rootItem->setTransformOriginPoint(rect().center());
     m_rootItem->setTransform(QTransform().translate(rect().width()/2.0f, y).rotate(m_perception, Qt::XAxis).translate(-rect().width()/2.0f, -y));
     m_rootItem->setScale(scale);

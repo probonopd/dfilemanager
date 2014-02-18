@@ -66,8 +66,6 @@ protected:
 private:
     ColumnsWidget *m_parent;
     FS::Model *m_model;
-    QSortFilterProxyModel *m_sortModel;
-    QFileSystemWatcher *m_fsWatcher;
     QPoint m_pressPos;
     QString m_activeFile;
     int m_width;

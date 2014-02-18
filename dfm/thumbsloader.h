@@ -78,7 +78,7 @@ protected:
     void _queueFile(const QString &file);
 
 private:
-    QMutex m_queueMutex;
+    mutable QMutex m_queueMutex, m_thumbsMutex;
     QHash<QString, QImage> m_thumbs;
     QHash<QString, QString> m_dateCheck;
     QHash<QString, QString> m_icons;
@@ -118,6 +118,7 @@ private:
     QMap<QString, QImage> m_names[2];
     QMap<QString, QImage> m_images[2];
     QMap<QString, QImage> m_nameQueue;
+    mutable QMutex m_queueMutex, m_thumbsMutex;
 };
 
 }

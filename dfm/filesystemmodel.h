@@ -37,11 +37,11 @@
 #include <QMap>
 #include <QWaitCondition>
 #include <QAbstractItemModel>
-#include <QMutex>
 
 #include "thumbsloader.h"
 #include "viewcontainer.h"
 #include "fsworkers.h"
+#include "helpers.h"
 
 namespace DFM
 {
@@ -81,7 +81,8 @@ public:
         FlowImg = Qt::UserRole +4,
         FlowRefl = Qt::UserRole +5,
         FlowShape = Qt::UserRole +6,
-        Category = Qt::UserRole +7
+        Category = Qt::UserRole +7,
+        MimeType = Qt::UserRole +8
     };
     enum Scheme
     {
@@ -130,7 +131,6 @@ public:
     QIcon fileIcon(const QModelIndex &index) const;
     QString fileName(const QModelIndex &index) const;
     QUrl url(const QModelIndex &index) const;
-    QUrl localUrl(const QModelIndex &index) const;
 
     bool isDir(const QModelIndex &index) const;
     QFileInfo fileInfo(const QModelIndex &index) const;
@@ -155,6 +155,7 @@ public:
 
     void search(const QString &fileName, const QString &filePath);
     void search(const QString &fileName);
+    void setFilter(const QString &setFilter);
     QString currentSearchString();
 
     inline QMenu *schemes() { return m_schemeMenu; }
@@ -175,6 +176,7 @@ private slots:
     void dirChanged(const QString &path);
     void nodeGenerated(const QString &path, Node *node);
     void schemeFromSchemeMenu();
+    void refreshCurrent();
 
 signals:
     void flowDataChanged(const QModelIndex &start, const QModelIndex &end);
@@ -188,8 +190,8 @@ signals:
     void urlLoaded(const QUrl &url);
 
 private:
-    Node *m_current;
-    Node *m_rootNode;
+    Node *m_rootNode, *m_current;
+    QList<Node *> m_deleted;
     mutable QMap<QString, Node *> m_schemeNodes;
     QHash<QUrl, Node *> m_nodes;
     QAbstractItemView *m_view;
@@ -203,6 +205,8 @@ private:
     QMenu *m_schemeMenu;
     QUrl m_url;
     QList<QUrl> m_history[Forward+1];
+    MimeProvider m_mimes;
+    QTimer *m_timer;
     friend class ImagesThread;
     friend class Node;
     friend class Worker::Gatherer;

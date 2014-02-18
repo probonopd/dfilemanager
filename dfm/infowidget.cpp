@@ -25,6 +25,7 @@
 #include "filesystemmodel.h"
 #include "thumbsloader.h"
 #include "config.h"
+#include "helpers.h"
 
 using namespace DFM;
 
@@ -144,6 +145,8 @@ InfoWidget::paintEvent(QPaintEvent *event)
     QFrame::paintEvent(event);
 }
 
+static MimeProvider s_mimes;
+
 void
 InfoWidget::hovered(const QModelIndex &index)
 {
@@ -163,11 +166,11 @@ InfoWidget::hovered(const QModelIndex &index)
     m_tw->setPixmap(fsModel->fileIcon(index.sibling(index.row(), 0)).pixmap(64));
     m_fileName->setText(i.fileName());
     m_ownerLbl->setText(i.owner());
-    m_typeLbl->setText(Ops::getFileType(i.filePath()));
-    m_mimeLbl->setText(Ops::getMimeType(i.filePath()));
+    m_typeLbl->setText(s_mimes.getFileType(i.filePath()));
+    m_mimeLbl->setText(index.data(FS::Model::MimeType).toString());
 
     m_lastMod[1]->setText(i.lastModified().toString());
-    const QString &s(fsModel->data(index, FS::Model::FilePermissions).toString());
+    const QString &s(index.data(FS::Model::FilePermissions).toString());
     m_perm[1]->setText(s);
 
     m_sizeLbl->setText(i.isDir() ? "--" : Ops::prettySize(i.size()));

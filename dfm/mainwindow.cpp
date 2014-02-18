@@ -469,7 +469,7 @@ MainWindow::connectContainer(ViewContainer *container)
     container->installEventFilter(this);
     connect(container->model(), SIGNAL(urlChanged(QUrl)), this, SLOT(urlChanged(QUrl)));
     connect(container->model(), SIGNAL(urlLoaded(QUrl)), this, SLOT(updateStatusBar(QUrl)));
-    connect(container->model(), SIGNAL(urlLoaded(QUrl)), m_recentFoldersView, SLOT(folderEntered(QUrl)));
+    connect(container->model(), SIGNAL(urlChanged(QUrl)), m_recentFoldersView, SLOT(folderEntered(QUrl)));
     connect(container, SIGNAL(viewChanged()), this, SLOT(checkViewAct()));
     connect(container->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(mainSelectionChanged(QItemSelection,QItemSelection)));
     connect(container, SIGNAL(iconSizeChanged(int)), this, SLOT(setSliderPos(int)));
@@ -717,6 +717,7 @@ MainWindow::setSorting()
         i = 2;
     else if (m_actions[SortDate]->isChecked())
         i = 3;
+
     m_activeContainer->sort(i, (Qt::SortOrder)m_actions[SortDescending]->isChecked());
 }
 

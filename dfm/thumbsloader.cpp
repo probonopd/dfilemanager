@@ -60,6 +60,7 @@ ThumbsLoader::fileRenamed(const QString &path, const QString &oldName, const QSt
 void
 ThumbsLoader::_removeThumb(const QString &file)
 {
+    QMutexLocker locker(&m_thumbsMutex);
     if (m_thumbs.contains(file))
     {
         m_thumbs.remove(file);
@@ -70,13 +71,15 @@ ThumbsLoader::_removeThumb(const QString &file)
 bool
 ThumbsLoader::_hasIcon(const QString &dir) const
 {
+    QMutexLocker locker(&m_thumbsMutex);
     return m_icons.contains(dir);
 }
 
 QString
 ThumbsLoader::_icon(const QString &dir) const
 {
-    if (_hasIcon(dir))
+    QMutexLocker locker(&m_thumbsMutex);
+    if (m_icons.contains(dir))
         return m_icons.value(dir);
     return QString();
 }
@@ -84,6 +87,7 @@ ThumbsLoader::_icon(const QString &dir) const
 void
 ThumbsLoader::_removeIcon(const QString &dir)
 {
+    QMutexLocker locker(&m_thumbsMutex);
     if (m_icons.contains(dir))
         m_icons.remove(dir);
 }
@@ -91,6 +95,7 @@ ThumbsLoader::_removeIcon(const QString &dir)
 bool
 ThumbsLoader::_hasThumb(const QString &file) const
 {
+    QMutexLocker locker(&m_thumbsMutex);
     return m_thumbs.contains(file) && m_dateCheck.value(file) == QFileInfo(file).lastModified().toString();
 }
 
@@ -104,18 +109,24 @@ ThumbsLoader::clearQ()
 void
 ThumbsLoader::_queueFile(const QString &file)
 {
-    QMutexLocker locker(&m_queueMutex);
-    if (_hasThumb(file) || _hasIcon(file) /*|| m_tried.contains(file)*/)
+    if (_hasThumb(file))
         return;
-
-    if (m_queue.contains(file))
+    if (_hasIcon(file))
+        return;
+    m_queueMutex.lock();
+    const bool inQueue = m_queue.contains(file);
+    m_queueMutex.unlock();
+    if (inQueue)
     {
+        m_queueMutex.lock();
         int i = m_queue.indexOf(file);
         m_queue.move(i, qMax(0, i-10));
+        m_queueMutex.unlock();
         return;
     }
-
+    m_queueMutex.lock();
     m_queue << file;
+    m_queueMutex.unlock();
     if (isPaused())
         setPause(false);
 }
@@ -123,7 +134,8 @@ ThumbsLoader::_queueFile(const QString &file)
 QImage
 ThumbsLoader::_thumb(const QString &file) const
 {
-    if (_hasThumb(file))
+    QMutexLocker locker(&m_thumbsMutex);
+    if (m_thumbs.contains(file))
         return m_thumbs.value(file);
     return QImage();
 }
@@ -137,7 +149,7 @@ ThumbsLoader::genThumb(const QString &path)
         _removeThumb(path);
         return;
     }
-
+#if defined(Q_OS_UNIX)
     if (fi.isDir())
     {
         const QString &dirFile(fi.absoluteFilePath());
@@ -146,19 +158,24 @@ ThumbsLoader::genThumb(const QString &path)
         const QString &iconName = settings.value("Desktop Entry/Icon").toString();
         if (!iconName.isEmpty())
             if (!hasIcon(dirFile))
-        {
-            m_icons.insert(dirFile, iconName);
-            emit thumbFor(path, iconName); 
-        }
+            {
+                m_thumbsMutex.lock();
+                m_icons.insert(dirFile, iconName);
+                m_thumbsMutex.unlock();
+                emit thumbFor(path, iconName);
+            }
         return;
     }
+#endif
     QImage image;
     if (!APP->activeThumbIfaces().isEmpty())
         for (int i = 0; i<APP->activeThumbIfaces().count(); ++i)
             if (APP->activeThumbIfaces().at(i)->thumb(path, m_extent, image))
             {
+                m_thumbsMutex.lock();
                 m_dateCheck.insert(path, fi.lastModified().toString());
                 m_thumbs.insert(path, image);
+                m_thumbsMutex.unlock();
                 emit thumbFor(path, QString());
                 return;
             }
@@ -195,6 +212,7 @@ ImagesThread::ImagesThread(QObject *parent)
 void
 ImagesThread::removeData(const QString &file)
 {
+    QMutexLocker locker(&m_thumbsMutex);
     for (int i = 0; i < 2; ++i)
         m_images[i].remove(file);
     m_imgQueue.remove(file);
@@ -203,7 +221,9 @@ ImagesThread::removeData(const QString &file)
 void
 ImagesThread::genImagesFor(const QString &file)
 {
+    m_queueMutex.lock();
     const QImage &source = m_imgQueue.take(file);
+    m_queueMutex.unlock();
     if (!source.isNull())
     {
         m_images[0].insert(file, Ops::flowImg(source));
@@ -215,7 +235,9 @@ ImagesThread::genImagesFor(const QString &file)
 void
 ImagesThread::genNameIconsFor(const QString &name)
 {
+    m_queueMutex.lock();
     const QImage &source = m_nameQueue.take(name);
+    m_queueMutex.unlock();
     if (!source.isNull())
     {
         s_themeIcons[0].insert(name, Ops::flowImg(source));
@@ -228,10 +250,19 @@ void ImagesThread::run()
     while (!m_quit)
     {
         while (!m_nameQueue.isEmpty())
-            genNameIconsFor(m_nameQueue.keys().first());
+        {
+            m_queueMutex.lock();
+            const QString &key = m_nameQueue.keys().first();
+            m_queueMutex.unlock();
+            genNameIconsFor(key);
+        }
         while (!m_imgQueue.isEmpty())
-            genImagesFor(m_imgQueue.keys().first());
-
+        {
+            m_queueMutex.lock();
+            const QString &key = m_nameQueue.keys().first();
+            m_queueMutex.unlock();
+            genImagesFor(key);
+        }
         setPause(!m_quit);
         pause();
     }
@@ -240,7 +271,8 @@ void ImagesThread::run()
 QImage
 ImagesThread::flowData(const QString &file, const bool refl)
 {
-    if (hasData(file))
+    QMutexLocker locker(&m_thumbsMutex);
+    if (m_images[refl].contains(file))
         return m_images[refl].value(file);
     return QImage();
 }
@@ -248,7 +280,8 @@ ImagesThread::flowData(const QString &file, const bool refl)
 QImage
 ImagesThread::flowNameData(const QString &name, const bool refl)
 {
-    if (hasNameData(name))
+    QMutexLocker locker(&m_thumbsMutex);
+    if (s_themeIcons[refl].contains(name))
         return s_themeIcons[refl].value(name);
     return QImage();
 }
@@ -256,23 +289,32 @@ ImagesThread::flowNameData(const QString &name, const bool refl)
 bool
 ImagesThread::hasData(const QString &file)
 {
+    QMutexLocker locker(&m_thumbsMutex);
     return m_images[0].contains(file);
 }
 
 bool
 ImagesThread::hasNameData(const QString &name)
 {
+    QMutexLocker locker(&m_thumbsMutex);
     return s_themeIcons[0].contains(name);
 }
 
 void
 ImagesThread::queueName(const QIcon &icon)
 {
-    if (m_nameQueue.contains(icon.name()) || hasNameData(icon.name()))
+    if (hasNameData(icon.name()))
+        return;
+    m_queueMutex.lock();
+    const bool inQueue = m_nameQueue.contains(icon.name());
+    m_queueMutex.unlock();
+    if (inQueue)
         return;
 
     const QImage &source = icon.pixmap(SIZE).toImage();
+    m_queueMutex.lock();
     m_nameQueue.insert(icon.name(), source);
+    m_queueMutex.unlock();
     if (isPaused())
         setPause(false);
     if (!isRunning())
@@ -282,10 +324,18 @@ ImagesThread::queueName(const QIcon &icon)
 void
 ImagesThread::queueFile(const QString &file, const QImage &source, const bool force)
 {
-    if ((m_imgQueue.contains(file) || m_images[0].contains(file)) && !force)
+    if (hasData(file) && !force)
+        return;
+    m_queueMutex.lock();
+    const bool inQueue = m_imgQueue.contains(file);
+    m_queueMutex.unlock();
+    if (inQueue && !force)
         return;
 
+    m_queueMutex.lock();
     m_imgQueue.insert(file, source);
+    m_queueMutex.unlock();
+
     if (isPaused())
         setPause(false);
     if (!isRunning())

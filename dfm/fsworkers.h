@@ -45,7 +45,7 @@ class Node : public QFileInfo
     friend class Worker::Gatherer;
 public:
     enum Children { Visible = 0, Hidden = 1, Filtered = 2, ChildrenTypeCount = 3 };
-    Node(FS::Model *model = 0, const QUrl &url = QUrl(), Node *parent = 0, const QUrl &localUrl = QUrl());
+    Node(FS::Model *model = 0, const QUrl &url = QUrl(), Node *parent = 0, const QString &filePath = QString());
     ~Node();
 
     inline Model *model() { return m_model; }
@@ -54,26 +54,27 @@ public:
     inline QString name() const { return m_name; }
     bool rename(const QString &newName);
     inline QString filePath() const { return m_filePath; }
-    inline bool isSearchResult() { return false; }
 
     int row();
-    int childCount() const;
-    void addChild(Node *child);
-    void addChild(const QUrl &url);
-    Node *child(const QUrl &url, const bool onlyVisible = false);
-    Node *child(const int c);
-    Node *child(const QString &name, const bool nameIsPath = true);
+    int rowOf(Node *child) const;
+    int childCount(Children children = Visible) const;
+    void addChild(Node *node);
+    Node *child(const int c, Children fromChildren = Visible);
+    bool hasChild(const QString &name, const bool nameIsPath = true);
     inline bool hasChildren() const { return !m_children[Visible].isEmpty(); }
+    void insertChild(Node *n, const int i);
 
     void populateScheme() {}
     void removeDeleted();
     void rePopulate();
-    inline bool isPopulated() const { return m_isPopulated; }
+    bool isPopulated() const;
 
     QVariant data(int column);
     QString permissionsString();
     QString category();
     inline QString scheme() { return url().scheme(); }
+    inline QString iconName();
+    QString mimeType();
     QIcon icon();
 
     void sort();
@@ -87,16 +88,12 @@ public:
     inline QString filter() const { return m_filter; }
 
     void clearVisible();
+    void removeChild(Node *node);
 
-    Node *nodeFromUrl(const QUrl &url);
     Node *localNode(const QString &path, bool checkOnly = true);
     Node *nodeFromLocalPath(const QString &path, bool checkOnly = true);
-    Node *nodeFromUrlPath(const QString &path);
-
-    inline QUrl url() { return m_url; }
-    inline QUrl localUrl() { return m_localUrl; }
+    inline QUrl url() const { return m_url; }
     inline void setUrl(const QUrl &url) { m_url = url; }
-    inline void setLocalUrl(const QUrl &url) { m_localUrl = url; }
 
     Node *parent() { return m_parent; }
 
@@ -104,10 +101,11 @@ private:
     bool m_isPopulated;
     Nodes m_children[ChildrenTypeCount];
     Node *m_parent;
-    QString m_filePath, m_filter, m_name;
-    QUrl m_url, m_localUrl;
+    QString m_filePath, m_filter, m_name, m_mimeType, m_iconName;
+    QUrl m_url;
     mutable QMutex m_mutex;
     Model *m_model;
+    QIcon m_icon;
 };
 
 namespace Worker
@@ -144,9 +142,6 @@ public:
 protected:
     void run();
     void searchResultsForNode(const QString &name, const QString &filePath, Node *node);
-    void loadLocalDir(Node *node);
-    Node *generateLocalNode(const QUrl &localUrl, Node *from);
-    Node *nodeFromLocalPath(const QString &path, Node *parent, const bool checkOnly = true);
 
 signals:
     void nodeGenerated(const QString &path, Node *node);

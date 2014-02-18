@@ -326,13 +326,7 @@ ViewContainer::rename()
 void
 ViewContainer::setFilter(const QString &filter)
 {
-//    VIEWS(setFilter(filter));
-    FS::Node *node = model()->nodeFromIndex(model()->index(model()->rootUrl()));
-    if (!node)
-        return;
-
-    node->setFilter(filter);
-    m_dirFilter = filter;
+    m_model->setFilter(filter);
     emit filterChanged();
 }
 

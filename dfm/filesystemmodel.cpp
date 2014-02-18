@@ -20,7 +20,6 @@
 
 #include <QImageReader>
 #include <QDirIterator>
-#include <QMutexLocker>
 
 #include "filesystemmodel.h"
 #include "iojob.h"
@@ -82,14 +81,6 @@ FileIconProvider::icon(const QFileInfo &info) const
 //    if (i.suffix().contains(QRegExp("r[0-9]{2}"))) //splitted rar files .r00, r01 etc...
 //        i.setFile(QString("%1%2.rar").arg(i.filePath(), i.baseName()));
 
-    QString mimeType = Ops::getMimeType(i.filePath());
-    if (!mimeType.isEmpty())
-    {
-        mimeType.replace("/", "-");
-        if (QIcon::hasThemeIcon(mimeType))
-            return QIcon::fromTheme(mimeType);
-    }
-
     const QIcon &icn = QFileIconProvider::icon(i);
     return QIcon::fromTheme(icn.name(), icn);
 }
@@ -109,6 +100,8 @@ Model::Model(QObject *parent)
     , m_dataGatherer(new Worker::Gatherer(this))
     , m_goingBack(false)
     , m_schemeMenu(new QMenu())
+    , m_current(0)
+    , m_timer(new QTimer(this))
 {
     if (ViewContainer *vc = qobject_cast<ViewContainer *>(parent))
         m_container = vc;
@@ -119,6 +112,7 @@ Model::Model(QObject *parent)
     connect (m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)));
     connect (m_dataGatherer, SIGNAL(nodeGenerated(QString,Node*)), this, SLOT(nodeGenerated(QString,Node*)));
     connect(this, SIGNAL(fileRenamed(QString,QString,QString)), ThumbsLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
+    connect (m_timer, SIGNAL(timeout()), this, SLOT(refreshCurrent()));
 }
 
 Model::~Model()
@@ -157,7 +151,8 @@ Model::nodeGenerated(const QString &path, Node *node)
         return;
 
     emit urlChanged(QUrl::fromLocalFile(path));
-    dataGatherer()->populateNode(node);
+    m_current = node;
+    m_dataGatherer->populateNode(node);
 }
 
 void
@@ -165,6 +160,15 @@ Model::setUrl(const QUrl &url)
 {
     if (m_url == url)
         return;
+
+    if (isWorking())
+    {
+        m_dataGatherer->setCancelled(true);
+        m_dataGatherer->wait();
+    }
+
+    setFilter(QString());
+    m_current = 0;
 
     m_history[Back] << url;
     if (!m_goingBack)
@@ -177,7 +181,7 @@ Model::setUrl(const QUrl &url)
 
     if (url.isLocalFile() && QFileInfo(url.toLocalFile()).exists())
     {
-        const QString file(url.toLocalFile());
+        const QString &file = url.toLocalFile();
         m_watcher->addPath(file);
         Node *sNode = schemeNode(url.scheme());
         Node *node = sNode->localNode(file);
@@ -191,7 +195,8 @@ Model::setUrl(const QUrl &url)
         QString searchPath = url.path();
 #if !defined(Q_OS_UNIX)
         if (!searchPath.isEmpty())
-            searchPath.remove(0, 1);
+            while (searchPath.startsWith("/"))
+                searchPath.remove(0, 1);
 #endif
 #if QT_VERSION < 0x050000
         const QString &searchName = url.encodedQuery();
@@ -250,20 +255,19 @@ Model::refresh()
 void
 Model::dirChanged(const QString &path)
 {
-    const QModelIndex &idx = index(QUrl::fromLocalFile(path));
-
-    Node *node = nodeFromIndex(idx);
-    if (!node)
+    if (m_current->filePath() != path || !m_current->url().isLocalFile())
         return;
 
-    node->refresh();
-    if (!node->exists())
-    {
-        if (Node *parent = node->parent())
-            parent->rePopulate();
-    }
-    else
-        dataGatherer()->populateNode(node);
+    m_timer->start(50);
+}
+
+void
+Model::refreshCurrent()
+{
+    m_timer->stop();
+    if (!m_current || !m_current->url().isLocalFile())
+        return;
+    dataGatherer()->populateNode(m_current);
 }
 
 Qt::ItemFlags
@@ -280,23 +284,44 @@ Model::flags(const QModelIndex &index) const
 void
 Model::forceEmitDataChangedFor(const QString &file)
 {
-    const QModelIndex &idx = index(QUrl::fromLocalFile(file));
-    emit dataChanged(idx, idx);
-    emit flowDataChanged(idx, idx);
+    QModelIndex idx;
+    if (m_url.isLocalFile())
+        idx = index(QUrl::fromLocalFile(file));
+    else
+        idx = index(QUrl(QString("%1%2").arg(m_url.toString(), file)));
+
+
+    if (idx.isValid())
+    {
+        emit dataChanged(idx, idx);
+        emit flowDataChanged(idx, idx);
+    }
 }
 
 void
 Model::flowDataAvailable(const QString &file)
 {
-    const QModelIndex &idx = index(QUrl::fromLocalFile(file));
-    emit flowDataChanged(idx, idx);
+    QModelIndex idx;
+    if (m_url.isLocalFile())
+        idx = index(QUrl::fromLocalFile(file));
+    else
+        idx = index(QUrl(QString("%1%2").arg(m_url.toString(), file)));
+
+    if (idx.isValid())
+        emit flowDataChanged(idx, idx);
 }
 
 void
 Model::thumbFor(const QString &file, const QString &iconName)
 {
-    const QModelIndex &idx = index(QUrl::fromLocalFile(file));
-    emit dataChanged(idx, idx);
+    QModelIndex idx;
+    if (m_url.isLocalFile())
+        idx = index(QUrl::fromLocalFile(file));
+    else
+        idx = index(QUrl(QString("%1%2").arg(m_url.toString(), file)));
+
+    if (idx.isValid())
+        emit dataChanged(idx, idx);
     if (m_container->currentViewType() == ViewContainer::Flow)
         if (!QFileInfo(file).isDir())
             m_it->queueFile(file, ThumbsLoader::thumb(file), true);
@@ -359,6 +384,8 @@ Model::data(const QModelIndex &index, int role) const
     {
         if (ThumbsLoader::hasThumb(node->filePath()))
             return QIcon(QPixmap::fromImage(ThumbsLoader::thumb(node->filePath())));
+        else if (node->isDir() && ThumbsLoader::hasIcon(node->filePath()))
+            return QIcon::fromTheme(ThumbsLoader::icon(node->filePath()), FileIconProvider::typeIcon(FileIconProvider::Folder));
         else
         {
             if ((Store::config.views.showThumbs || node->isDir()) && !isWorking())
@@ -367,7 +394,7 @@ Model::data(const QModelIndex &index, int role) const
         }
     }
 
-    if (role >= FlowImg && role != Category)
+    if (role > FilePermissions && role < Category) //flow stuff
     {
         const QIcon &icon = node->icon();
 
@@ -385,15 +412,16 @@ Model::data(const QModelIndex &index, int role) const
         else if (!icon.name().isEmpty())
             m_it->queueName(icon);
         else
-        {
-            QImage img = icon.pixmap(SIZE).toImage();
-            m_it->queueFile(node->filePath(), img);
-        }
+            m_it->queueFile(node->filePath(), icon.pixmap(SIZE).toImage());
+
         return QPixmap();
     }
 
     if (role == Category)
         return node->category();
+
+    if (role == MimeType)
+        return node->mimeType();
 
     if (role != Qt::DisplayRole && role != Qt::EditRole)
         return QVariant();
@@ -511,7 +539,7 @@ QModelIndex
 Model::parent(const QModelIndex &child) const
 {
     Node *childNode = nodeFromIndex(child);
-    if (Node *parentNode = childNode->parent())
+    if (Node * parentNode = childNode->parent())
         return createIndex(parentNode->row(), 0, parentNode);
     return QModelIndex();
 }
@@ -519,17 +547,14 @@ Model::parent(const QModelIndex &child) const
 bool
 Model::hasChildren(const QModelIndex &parent) const
 {
-    if (Node *node = nodeFromIndex(parent))
-        return node->isDir()||node->hasChildren();
-    return true;
+    Node *n = nodeFromIndex(parent);
+    return n->hasChildren()||n->isDir();
 }
 
 bool
 Model::canFetchMore(const QModelIndex &parent) const
 {
-    if (Node *node = nodeFromIndex(parent))
-        return (node->isDir()&&!node->isSearchResult());
-    return true;
+    return nodeFromIndex(parent)->isDir();
 }
 
 void
@@ -538,14 +563,14 @@ Model::fetchMore(const QModelIndex &parent)
     if (parent.isValid() && parent.column() != 0)
         return;
     Node *node = nodeFromIndex(parent);
-    if (node && !node->isPopulated())
+    if (node && !node->isPopulated() && node->exists())
         dataGatherer()->populateNode(node);
 }
 
 void
 Model::sort(int column, Qt::SortOrder order)
 {
-    if (isWorking())
+    if (isWorking() || m_url.isEmpty())
         return;
     const bool orderChanged = bool(m_sortColumn!=column||m_sortOrder!=order);
     m_sortColumn = column;
@@ -610,8 +635,10 @@ Model::setHiddenVisible(bool visible)
         return;
 
     m_showHidden = visible;
-    m_rootNode->setHiddenVisible(showHidden());
-    emit hiddenVisibilityChanged(m_showHidden);
+    emit layoutAboutToBeChanged();
+    schemeNode("file")->setHiddenVisible(visible);
+    emit layoutChanged();
+    emit hiddenVisibilityChanged(visible);
 }
 
 bool
@@ -647,12 +674,6 @@ Model::url(const QModelIndex &index) const
     return nodeFromIndex(index)->url();
 }
 
-QUrl
-Model::localUrl(const QModelIndex &index) const
-{
-    return nodeFromIndex(index)->localUrl();
-}
-
 QModelIndexList
 Model::category(const QString &cat)
 {
@@ -680,8 +701,6 @@ QStringList
 Model::categories()
 {
     const QModelIndex &parent = index(m_url);
-//    if (!parent.isValid())
-//        return QStringList();
     const int count = rowCount(parent);
     QStringList cats;
     for (int i = 0; i<count; ++i)
@@ -695,6 +714,16 @@ Model::categories()
                 cats << node->category();
     }
     return cats;
+}
+
+void
+Model::setFilter(const QString &filter)
+{
+    if (!m_current)
+        return;
+    emit layoutAboutToBeChanged();
+    m_current->setFilter(filter);
+    emit layoutChanged();
 }
 
 void
@@ -722,24 +751,18 @@ Model::search(const QString &fileName, const QString &filePath)
     Node *sNode = schemeNode("search");
     if (fileName.isEmpty())
         return;
-    Node *node = 0;
-    if (m_nodes.contains(m_url))
-    {
-        node = m_nodes.value(m_url);
-    }
-    else
-    {
-        node = new Node(this, m_url, sNode);
-        sNode->addChild(node);
-    }
+
+    sNode->clearVisible();
+    m_current = new Node(this, m_url, sNode);
     emit urlChanged(m_url);
-    dataGatherer()->search(fileName, filePath, node);
+    dataGatherer()->search(fileName, filePath, m_current);
 }
 
 void
 Model::endSearch()
 {
-    setUrl(QUrl::fromLocalFile(m_dataGatherer->m_searchPath));
+    if (!m_url.isLocalFile())
+        setUrl(QUrl::fromLocalFile(m_dataGatherer->m_searchPath));
 }
 
 void
@@ -751,10 +774,7 @@ Model::cancelSearch()
 QString
 Model::currentSearchString()
 {
-    QUrl url;
-    url.setScheme("search");
-    Node *node = rootNode()->nodeFromUrl(url);
-    return node?node->filter():QString();
+    return QString();
 }
 
 void
@@ -824,7 +844,6 @@ Node
     url.setScheme(scheme);
     Node *node = new Node(this, url, m_rootNode);
     m_schemeMenu->addAction(scheme, this, SLOT(schemeFromSchemeMenu()));
-    m_rootNode->addChild(node);
     m_schemeNodes.insert(scheme, node);
     return node;
 }

@@ -387,7 +387,8 @@ NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
     m_pathBox->setCompleter(completer);
 
 //    connect (m_fsModel, SIGNAL(finishedWorking()), completer, SLOT(complete()));
-    connect (m_pathBox, SIGNAL(textChanged(QString)), completer, SLOT(textChanged(QString)));
+    connect (m_pathBox, SIGNAL(editTextChanged(QString)), completer, SLOT(textChanged(QString)));
+//    connect (m_pathBox, SIGNAL(textChanged(QString)), completer, SLOT(textChanged(QString)));
     connect (m_pathBox, SIGNAL(activated(QString)), this, SLOT(urlFromEdit(QString)));
     connect (m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()));
     connect (m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()));
