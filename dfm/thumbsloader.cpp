@@ -218,26 +218,26 @@ ImagesThread::removeData(const QString &file)
 }
 
 void
-ImagesThread::genImagesFor(const QString &file, const QImage &img)
+ImagesThread::genImagesFor(const QPair<QString, QImage> &strImg)
 {
-    if (!img.isNull())
+    if (!strImg.first.isNull() || strImg.second.isNull())
     {
         m_thumbsMutex.lock();
-        m_images[0].insert(file, Ops::flowImg(img));
-        m_images[1].insert(file, Ops::reflection(img));
+        m_images[0].insert(strImg.first, Ops::flowImg(strImg.second));
+        m_images[1].insert(strImg.first, Ops::reflection(strImg.second));
         m_thumbsMutex.unlock();
-        emit imagesReady(file);
+        emit imagesReady(strImg.first);
     }
 }
 
 void
-ImagesThread::genNameIconsFor(const QString &name, const QImage &img)
+ImagesThread::genNameIconsFor(const QPair<QString, QImage> &strImg)
 {
-    if (!img.isNull() && !name.isEmpty())
+    if (!strImg.first.isNull() || strImg.second.isNull())
     {
         m_thumbsMutex.lock();
-        s_themeIcons[0].insert(name, Ops::flowImg(img));
-        s_themeIcons[1].insert(name, Ops::reflection(img));
+        s_themeIcons[0].insert(strImg.first, Ops::flowImg(strImg.second));
+        s_themeIcons[1].insert(strImg.first, Ops::reflection(strImg.second));
         m_thumbsMutex.unlock();
     }
 }
@@ -249,16 +249,16 @@ void ImagesThread::run()
         while (!m_nameQueue.isEmpty())
         {
             m_queueMutex.lock();
-            const QPair<QString, QImage> vals = m_nameQueue.takeFirst();
+            const QPair<QString, QImage> &vals = m_nameQueue.take(m_nameQueue.keys().first());
             m_queueMutex.unlock();
-            genNameIconsFor(vals.first, vals.second);
+            genNameIconsFor(vals);
         }
         while (!m_imgQueue.isEmpty())
         {
             m_queueMutex.lock();
-            const QPair<QString, QImage> vals = m_imgQueue.takeFirst();
+            const QPair<QString, QImage> &vals = m_imgQueue.take(m_imgQueue.keys().first());
             m_queueMutex.unlock();
-            genImagesFor(vals.first, vals.second);
+            genImagesFor(vals);
         }
         setPause(!m_quit);
         pause();
@@ -297,19 +297,21 @@ ImagesThread::hasNameData(const QString &name)
     return s_themeIcons[0].contains(name);
 }
 
-static QStringList s_triedNames;
-
 void
 ImagesThread::queueName(const QIcon &icon)
 {
     const QString &name = icon.name();
-    if (hasNameData(name) || s_triedNames.contains(name))
+    if (hasNameData(name))
         return;
-    s_triedNames << name;
 
-    const QImage &source = icon.pixmap(SIZE).toImage();
     m_queueMutex.lock();
-    m_nameQueue << QPair<QString, QImage>(icon.name(), source);
+    const bool inQueue = m_nameQueue.contains(name);
+    m_queueMutex.unlock();
+    if (inQueue)
+        return;
+
+    m_queueMutex.lock();
+    m_nameQueue.insert(name, QPair<QString, QImage>(icon.name(), icon.pixmap(SIZE).toImage()));
     m_queueMutex.unlock();
     if (isPaused())
         setPause(false);
@@ -317,16 +319,20 @@ ImagesThread::queueName(const QIcon &icon)
         start();
 }
 
-static QStringList s_triedFiles;
-
 void
 ImagesThread::queueFile(const QString &file, const QImage &source, const bool force)
 {
-    if ((hasData(file) || s_triedFiles.contains(file)) && !force)
+    if (hasData(file) && !force)
         return;
 
     m_queueMutex.lock();
-    m_imgQueue << QPair<QString, QImage>(file, source);
+    const bool inQueue = m_imgQueue.contains(file);
+    m_queueMutex.unlock();
+    if (inQueue && !force)
+        return;
+
+    m_queueMutex.lock();
+    m_imgQueue.insert(file, QPair<QString, QImage>(file, source));
     m_queueMutex.unlock();
 
     if (isPaused())

@@ -108,15 +108,15 @@ signals:
     void imagesReady(const QString &file);
 
 protected:
-    void genImagesFor(const QString &file, const QImage &img);
-    void genNameIconsFor(const QString &name, const QImage &img);
+    void genImagesFor(const QPair<QString, QImage> &strImg);
+    void genNameIconsFor(const QPair<QString, QImage> &strImg);
     void run();
 
 private:
-    QList<QPair<QString, QImage> > m_imgQueue;
+    QMap<QString, QPair<QString, QImage> > m_imgQueue;
     QMap<QString, QImage> m_names[2];
     QMap<QString, QImage> m_images[2];
-    QList<QPair<QString, QImage> > m_nameQueue;
+    QMap<QString, QPair<QString, QImage> > m_nameQueue;
     mutable QMutex m_queueMutex, m_thumbsMutex;
 };
 

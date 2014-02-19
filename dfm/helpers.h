@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QMutex>
+#include <QKeyEvent>
 
 #if defined(Q_OS_UNIX)
 #include <magic.h>
@@ -22,5 +23,18 @@ private:
 #endif
     mutable QMutex m_mutex;
 };
+
+namespace DFM
+{
+class ViewBase
+{
+public:
+    ViewBase(){}
+    ~ViewBase(){}
+
+protected:
+    virtual void keyPressEvent(QKeyEvent *ke);
+};
+}
 
 #endif // HELPERS_H

@@ -57,7 +57,7 @@ class FileIconProvider : public QFileIconProvider
 {
 public:
     FileIconProvider();
-    QIcon icon(const QFileInfo &info) const;
+    QIcon icon(const QFileInfo &i) const;
     QIcon icon(IconType type) const;
     static QIcon fileIcon(const QFileInfo &fileInfo);
     static QIcon typeIcon(IconType type);
@@ -75,20 +75,14 @@ public:
     enum Roles
     {
         FileIconRole = Qt::DecorationRole,
+        FileNameRole = Qt::DisplayRole,
         FilePathRole = Qt::UserRole + 1,
-        FileNameRole = Qt::UserRole + 2,
-        FilePermissions = Qt::UserRole + 3,
-        FlowImg = Qt::UserRole +4,
-        FlowRefl = Qt::UserRole +5,
-        FlowShape = Qt::UserRole +6,
-        Category = Qt::UserRole +7,
-        MimeType = Qt::UserRole +8
-    };
-    enum Scheme
-    {
-        File = 0,
-        Search = 1,
-        History =2
+        FilePermissions = Qt::UserRole + 2,
+        FlowImg = Qt::UserRole +3,
+        FlowRefl = Qt::UserRole +4,
+        FlowShape = Qt::UserRole +5,
+        Category = Qt::UserRole +6,
+        MimeType = Qt::UserRole +7
     };
     enum History { Back, Forward };
 
@@ -135,6 +129,7 @@ public:
     QUrl localUrl(const QModelIndex &index) const;
 
     bool isDir(const QModelIndex &index) const;
+    void exec(const QModelIndex &index);
     QFileInfo fileInfo(const QModelIndex &index) const;
     QModelIndex mkdir(const QModelIndex &parent, const QString &name);
 
@@ -196,7 +191,6 @@ private:
     QList<Node *> m_deleted;
     mutable QMap<QString, Node *> m_schemeNodes;
     QHash<QUrl, Node *> m_nodes;
-    QAbstractItemView *m_view;
     bool m_showHidden, m_goingBack;
     int m_sortColumn;
     Qt::SortOrder m_sortOrder;

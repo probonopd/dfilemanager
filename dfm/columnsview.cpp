@@ -148,6 +148,7 @@ ColumnsView::keyPressEvent(QKeyEvent *event)
         event->accept();
         return;
     }
+    ViewBase::keyPressEvent(event);
     QListView::keyPressEvent(event);
 }
 

@@ -104,6 +104,7 @@ public:
     inline QSlider *iconSizeSlider() { return m_iconSizeSlider; }
     inline QAction *action(const Actions action) { return m_actions[action]; }
     ViewContainer *takeContainer(int tab);
+    SearchBox *searchBox() { return m_filterBox; }
     void updateConfig();
     void createMenus();
 

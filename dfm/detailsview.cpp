@@ -143,6 +143,7 @@ DetailsView::keyPressEvent(QKeyEvent *event)
         event->accept();
         return;
     }
+    ViewBase::keyPressEvent(event);
     QTreeView::keyPressEvent(event);
 }
 

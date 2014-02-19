@@ -20,9 +20,12 @@
 
 #include <QDirIterator>
 #include <QList>
+#include <QDesktopServices>
+#include <QProcess>
 
 #include "fsworkers.h"
 #include "helpers.h"
+#include "config.h"
 
 using namespace DFM;
 using namespace FS;
@@ -68,6 +71,7 @@ Node::Node(Model *model, const QUrl &url, Node *parent, const QString &filePath)
     , m_model(model)
     , m_parent(parent)
     , m_url(url)
+    , m_isExe(-1)
 {
     if (url.path().isEmpty() && !url.scheme().isEmpty())
         m_name = url.scheme();
@@ -80,13 +84,6 @@ Node::Node(Model *model, const QUrl &url, Node *parent, const QString &filePath)
 
     if (m_name.isEmpty())
         m_name = url.toEncoded(QUrl::RemoveScheme);
-
-    if (exists())
-    {
-        m_iconName = m_mimeType = m_model->m_mimes.getMimeType(filePath);
-        if (!m_iconName.isEmpty())
-            m_iconName.replace("/", "-");
-    }
 
     if (parent)
         parent->addChild(this);
@@ -197,14 +194,26 @@ Node::rowOf(Node *child) const
 QIcon
 Node::icon()
 {
-    if (m_icon.isNull())
-        m_icon = QIcon::fromTheme(iconName(), FileIconProvider::fileIcon(*this));
-    return m_icon;
+    if (ThumbsLoader::hasThumb(m_filePath))
+        return QIcon(QPixmap::fromImage(ThumbsLoader::thumb(m_filePath)));
+    else if (isDir() && ThumbsLoader::hasIcon(m_filePath))
+        return QIcon::fromTheme(ThumbsLoader::icon(m_filePath), FileIconProvider::fileIcon(*this));
+    else if ((Store::config.views.showThumbs || isDir()) && !m_model->isWorking())
+            ThumbsLoader::queueFile(m_filePath);
+    return QIcon::fromTheme(iconName(), FileIconProvider::fileIcon(*this));
 }
 
 QString
 Node::iconName()
 {
+    if (m_iconName.isEmpty() && size())
+    {
+        m_iconName = mimeType();
+        if (!m_iconName.isEmpty())
+            m_iconName.replace("/", "-");
+        if (!QIcon::hasThemeIcon(m_iconName))
+            m_iconName = FileIconProvider::fileIcon(*this).name();
+    }
     return m_iconName;
 }
 
@@ -226,6 +235,8 @@ Worker::Gatherer *Node::gatherer() { return m_model->dataGatherer(); }
 QString
 Node::mimeType()
 {
+    if (size())
+        m_mimeType = m_model->m_mimes.getMimeType(m_filePath);
     return m_mimeType;
 }
 
@@ -523,6 +534,36 @@ Node::rePopulate()
     }
 }
 
+bool
+Node::isExec()
+{
+    if (m_isExe == -1)
+    {
+        const bool exeSuffix = bool(suffix().isEmpty() || suffix() == "sh" || suffix() == "exe");
+        if (isExecutable() && (exeSuffix || mimeType().contains("application", Qt::CaseInsensitive)))
+            m_isExe = 1;
+        else
+            m_isExe = 0;
+    }
+    return m_isExe;
+}
+
+void
+Node::exec()
+{
+    if (!isAbsolute())
+        return;
+    if (isDir())
+    {
+        m_model->setUrl(m_url);
+        return;
+    }
+    if (isExec())
+        QProcess::startDetached(m_filePath);
+    else
+        QDesktopServices::openUrl(QUrl::fromLocalFile(m_filePath));
+}
+
 //-----------------------------------------------------------------------------
 
 AppNode::AppNode(Model *model, Node *parent, const QUrl &url, const QString &filePath)
@@ -531,7 +572,6 @@ AppNode::AppNode(Model *model, Node *parent, const QUrl &url, const QString &fil
     QSettings info(filePath, QSettings::IniFormat);
     info.beginGroup("Desktop Entry");
     m_appName = info.value("Name").toString();
-    qDebug() << "constructing appnode for" << m_appName;
     m_comment = info.value("Comment").toString();
     m_appCmd = info.value("Exec").toString();
     m_appIcon = info.value("Icon").toString();
@@ -571,6 +611,27 @@ AppNode::data(const int column)
         default: break;
         }
     return Node::data(column);
+}
+
+void
+AppNode::exec()
+{
+    if (m_appCmd.isEmpty())
+        return;
+#if defined(Q_OS_UNIX)
+    QString app = m_appCmd.split(" ", QString::SkipEmptyParts).first();
+    const QStringList p = QString(getenv("PATH")).split(":", QString::SkipEmptyParts);
+    for (QStringList::const_iterator b = p.constBegin(), e = p.constEnd(); b!=e; ++b)
+    {
+        const QString &file = QString("%1/%2").arg(*b, app);
+        if (QFileInfo(file).exists())
+        {
+            QProcess::startDetached(file);
+            return;
+        }
+    }
+#endif
+
 }
 
 //-----------------------------------------------------------------------------

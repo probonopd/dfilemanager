@@ -29,10 +29,12 @@
 #include <columnswidget.h>
 #include <QSortFilterProxyModel>
 
+#include "helpers.h"
+
 namespace DFM
 {
 class ColumnsWidget;
-class ColumnsView : public QListView
+class ColumnsView : public QListView, public ViewBase
 {
     Q_OBJECT
 public:

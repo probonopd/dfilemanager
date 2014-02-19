@@ -32,12 +32,13 @@
 
 #include "filesystemmodel.h"
 #include "viewcontainer.h"
+#include "helpers.h"
 
 namespace DFM
 {
 namespace FS{class Model;}
 class ViewContainer;
-class IconView : public QAbstractItemView
+class IconView : public QAbstractItemView, public ViewBase
 {
     Q_OBJECT
 public:

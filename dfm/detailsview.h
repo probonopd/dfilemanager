@@ -29,12 +29,13 @@
 #include <QHeaderView>
 #include "filesystemmodel.h"
 #include "viewcontainer.h"
+#include "helpers.h"
 
 namespace DFM
 {
 namespace FS{class Model;}
 class ViewContainer;
-class DetailsView : public QTreeView
+class DetailsView : public QTreeView, public ViewBase
 {
     Q_OBJECT
 public:

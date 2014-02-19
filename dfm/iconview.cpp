@@ -453,6 +453,7 @@ IconView::keyPressEvent(QKeyEvent *event)
         event->accept();
         return;
     }
+    ViewBase::keyPressEvent(event);
     QAbstractItemView::keyPressEvent(event);
 }
 

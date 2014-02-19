@@ -64,7 +64,6 @@ public:
     inline bool hasChildren() const { return !m_children[Visible].isEmpty(); }
     void insertChild(Node *n, const int i);
 
-    void populateScheme() {}
     void removeDeleted();
     void rePopulate();
     bool isPopulated() const;
@@ -75,8 +74,9 @@ public:
     inline QString scheme() { return url().scheme(); }
     QString iconName();
     QString mimeType();
+    bool isExec();
     virtual QIcon icon();
-
+    virtual void exec();
     void sort();
     int sortColumn();
     Qt::SortOrder sortOrder();
@@ -99,6 +99,7 @@ public:
 
 private:
     bool m_isPopulated;
+    int m_isExe;
     Nodes m_children[ChildrenTypeCount];
     Node *m_parent;
     QString m_filePath, m_filter, m_name, m_mimeType, m_iconName;
@@ -121,6 +122,7 @@ public:
     QString command() { return m_appCmd; }
     QIcon icon();
     QVariant data(const int column);
+    void exec();
 
 private:
     QString m_appName, m_appCmd, m_appIcon, m_category, m_comment, m_type;

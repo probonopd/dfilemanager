@@ -63,26 +63,13 @@ FileIconProvider::icon(IconType type) const
 }
 
 QIcon
-FileIconProvider::icon(const QFileInfo &info) const
+FileIconProvider::icon(const QFileInfo &i) const
 {
-    QFileInfo i(info);
     if (!i.exists())
         return QFileIconProvider::icon(QFileIconProvider::File);
-    if (i.absoluteFilePath() == QDir::rootPath())
-        if (QIcon::hasThemeIcon("folder-system"))
-            return QIcon::fromTheme("folder-system");
-        else if (QIcon::hasThemeIcon("inode-directory"))
-            return QIcon::fromTheme("inode-directory");
-
-    if (ThumbsLoader::hasIcon(i.absoluteFilePath()))
-        if (QIcon::hasThemeIcon(ThumbsLoader::icon(i.absoluteFilePath())))
-            return QIcon::fromTheme(ThumbsLoader::icon(i.absoluteFilePath()));
-
 //    if (i.suffix().contains(QRegExp("r[0-9]{2}"))) //splitted rar files .r00, r01 etc...
 //        i.setFile(QString("%1%2.rar").arg(i.filePath(), i.baseName()));
-
-    const QIcon &icn = QFileIconProvider::icon(i);
-    return QIcon::fromTheme(icn.name(), icn);
+    return QFileIconProvider::icon(i);
 }
 
 //-----------------------------------------------------------------------------
@@ -90,7 +77,6 @@ FileIconProvider::icon(const QFileInfo &info) const
 Model::Model(QObject *parent)
     : QAbstractItemModel(parent)
     , m_rootNode(new Node(this))
-    , m_view(0)
     , m_showHidden(false)
     , m_sortOrder(Qt::AscendingOrder)
     , m_sortColumn(0)
@@ -208,9 +194,9 @@ Model::setUrl(const QUrl &url)
 #if defined(Q_OS_UNIX)
     else if (url.scheme() == "applications")
     {
-        Node *node = schemeNode(url.scheme());
+        m_current = schemeNode(url.scheme());
         emit urlChanged(url);
-        m_dataGatherer->populateApplications("/usr/share/applications", node);
+        m_dataGatherer->populateApplications("/usr/share/applications", m_current);
     }
 #endif
     else
@@ -355,57 +341,29 @@ Model::data(const QModelIndex &index, int role) const
 
     Node *node = nodeFromIndex(index);
     const int col = index.column();
-    if (node == m_rootNode)
+    if (node == m_rootNode || (role == FileIconRole && col > 0))
         return QVariant();
-    if (role == Qt::DecorationRole && col > 0)
-        return QVariant();
-    if (role == FileNameRole)
-        return node->name();
+
     if (role == FilePathRole)
         return node->filePath();
     if (role == FilePermissions)
         return node->permissionsString();
-
+    if (role == FileIconRole)
+        return node->icon();
     if (role == Qt::TextAlignmentRole)
-        if (col == 1)
-            return int(Qt::AlignVCenter|Qt::AlignRight);
-        else
-            return int(Qt::AlignLeft|Qt::AlignVCenter);
+        return bool(col == 1) ? int(Qt::AlignVCenter|Qt::AlignRight) : int(Qt::AlignLeft|Qt::AlignVCenter);
 
-    if (role == Qt::FontRole && !col)
+    if (role == Qt::FontRole && !col && !node->isDir())
     {
         QFont f(qApp->font());
-        if (node->isSymLink())
-        {
-            f.setItalic(true);
-            return f;
-        }
-        if (!node->isDir() && node->isExecutable() && (node->suffix().isEmpty()||node->suffix()=="sh"||node->suffix()=="exe"))
-        {
-            f.setUnderline(true);
-            return f;
-        }
-    }
-
-    if (role == Qt::DecorationRole)
-    {
-        if (ThumbsLoader::hasThumb(node->filePath()))
-            return QIcon(QPixmap::fromImage(ThumbsLoader::thumb(node->filePath())));
-
-        else if (node->isDir() && ThumbsLoader::hasIcon(node->filePath()))
-            return QIcon::fromTheme(ThumbsLoader::icon(node->filePath()), FileIconProvider::typeIcon(FileIconProvider::Folder));
-        else
-        {
-            if ((Store::config.views.showThumbs || node->isDir()) && !isWorking())
-                ThumbsLoader::queueFile(node->filePath());
-            return node->icon();
-        }
+        f.setItalic(node->isSymLink());
+        f.setUnderline(node->isExec());
+        return f;
     }
 
     if (role > FilePermissions && role < Category) //flow stuff
     {
         const QIcon &icon = node->icon();
-
         if (m_it->hasData(node->filePath()))
             return QPixmap::fromImage(m_it->flowData(node->filePath(), role == FlowRefl));
 
@@ -522,6 +480,9 @@ Model::index(const QUrl &url)
 {
     if (url.scheme().isEmpty())
         return QModelIndex();
+
+    if (url == m_url && m_current)
+        return createIndex(m_current->row(), 0, m_current);
 
     Node *sNode = schemeNode(url.scheme());
 
@@ -732,6 +693,12 @@ Model::categories()
 }
 
 void
+Model::exec(const QModelIndex &index)
+{
+    nodeFromIndex(index)->exec();
+}
+
+void
 Model::setFilter(const QString &filter)
 {
     if (!m_current)
@@ -813,13 +780,16 @@ Model::fileName(const QModelIndex &index) const
 QIcon
 Model::fileIcon(const QModelIndex &index) const
 {
-    return bool(index.column()==0)?data(index, Qt::DecorationRole).value<QIcon>():QIcon();
+    return nodeFromIndex(index)->icon();
 }
 
-bool Model::isDir(const QModelIndex &index) const { return index.isValid()?nodeFromIndex(index)->isDir():false; }
+bool Model::isDir(const QModelIndex &index) const
+{
+    return nodeFromIndex(index)->isDir();
+}
 QFileInfo Model::fileInfo(const QModelIndex &index) const
 {
-    return index.isValid()?*nodeFromIndex(index):QFileInfo();
+    return *nodeFromIndex(index);
 }
 
 Node *Model::rootNode() { return m_rootNode; }

@@ -222,20 +222,7 @@ ViewContainer::scriptTriggered()
 void
 ViewContainer::activate(const QModelIndex &index)
 {
-    if (!index.isValid())
-        return;
-
-    const QFileInfo f(m_model->fileInfo(index));
-    if (f.exists())
-    {
-        if (Ops::openFile(f.filePath()))
-            return;
-        if (f.isDir())
-            m_model->setUrl(QUrl::fromLocalFile(f.absoluteFilePath()));
-        return;
-    }
-    if (m_model->isDir(index) || m_model->hasChildren(index))
-        m_model->setUrl(m_model->url(index));
+    m_model->exec(index);
 }
 
 void

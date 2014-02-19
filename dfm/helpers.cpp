@@ -1,4 +1,5 @@
 #include "helpers.h"
+#include "mainwindow.h"
 
 MimeProvider::MimeProvider()
 {
@@ -38,4 +39,17 @@ MimeProvider::getFileType(const QString &file) const
 #else
     return QString();
 #endif
+}
+
+//-----------------------------------------------------------------------------
+
+void
+DFM::ViewBase::keyPressEvent(QKeyEvent *ke)
+{
+    SearchBox *searchBox = DFM::MainWindow::currentWindow()->searchBox();
+    if (!ke->text().isEmpty() && !ke->modifiers())
+    {
+        searchBox->setText(QString("%1%2").arg(searchBox->text(), ke->text()));
+        searchBox->setFocus();
+    }
 }
