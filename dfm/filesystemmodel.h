@@ -46,7 +46,7 @@
 namespace DFM
 {
 
-class ThumbsLoader;
+class DataLoader;
 class ImagesThread;
 class ViewContainer;
 
@@ -97,7 +97,7 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int role);
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
-    int columnCount(const QModelIndex &parent) const { return 4; }
+    int columnCount(const QModelIndex &parent = QModelIndex()) const { return 4; }
 
     Node *nodeFromIndex(const QModelIndex &index) const;
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
@@ -168,7 +168,7 @@ public slots:
     void cancelSearch();
 
 private slots:
-    void thumbFor(const QString &file, const QString &iconName);
+    void newData(const QString &file, const QString &iconName);
     void flowDataAvailable(const QString &file);
     void dirChanged(const QString &path);
     void nodeGenerated(const QString &path, Node *node);

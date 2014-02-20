@@ -38,53 +38,52 @@
 #include "filesystemmodel.h"
 #include "interfaces.h"
 #include "objects.h"
+#include "helpers.h"
 
 namespace DFM
 {
 
-class ThumbsLoader : public Thread
+struct Data
+{
+    QImage thumb, flowImage, flowReflection;
+    QString count; //entries for dirs...
+    QString mimeType, iconName;
+};
+
+class DataLoader : public Thread
 {
     Q_OBJECT
 public:
-    explicit ThumbsLoader(QObject *parent = 0);
+    explicit DataLoader(QObject *parent = 0);
     enum Type { Thumb = 0, FlowPic, Reflection, FallBackRefl };
-    static ThumbsLoader *instance();
+    static DataLoader *instance();
     static inline void clearQueue() { instance()->clearQ(); }
-    static inline bool hasIcon(const QString &dir) { return instance()->_hasIcon(dir); }
-    static inline bool hasThumb(const QString &file) { return instance()->_hasThumb(file); }
-    static inline QImage thumb(const QString &file) { return instance()->_thumb(file); }
-    static inline QString icon(const QString &dir) { return instance()->_icon(dir); }
-    static inline void queueFile(const QString &file) { instance()->_queueFile(file); }
-    static inline void removeThumb(const QString &file) { instance()->_removeThumb(file); }
-    static inline void removeIcon(const QString &dir) { instance()->_removeIcon(dir); }
+    static inline void removeData(const QString &file) { instance()->_removeData(file); }
+    static inline struct Data *data(const QString &file) { return instance()->_data(file); }
 
 public slots:
     void discontinue() { m_queueMutex.lock(); m_queue.clear(); m_queueMutex.unlock(); Thread::discontinue(); }
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
-    void _removeThumb(const QString &file);
-    void _removeIcon(const QString &dir);
+    void _removeData(const QString &file);
     
 signals:
-    void thumbFor(const QString &file, const QString &name);
+    void newData(const QString &file, const QString &name);
 
 protected:
     void run();
-    void genThumb(const QString &path);
+    void getData(const QString &path);
     void clearQ();
-    bool _hasIcon(const QString &dir) const;
-    bool _hasThumb(const QString &file) const;
-    QImage _thumb(const QString &file) const;
-    QString _icon(const QString &dir) const;
-    void _queueFile(const QString &file);
+    Data *_data(const QString &file);
 
 private:
-    mutable QMutex m_queueMutex, m_thumbsMutex;
+    mutable QMutex m_queueMutex, m_dataMutex;
     QHash<QString, QImage> m_thumbs;
     QHash<QString, QString> m_dateCheck;
     QHash<QString, QString> m_icons;
     QStringList m_queue, m_tried;
     int m_extent;
-    static ThumbsLoader *m_instance;
+    MimeProvider mimeProvider;
+    static DataLoader *m_instance;
 };
 
 class ImagesThread : public Thread

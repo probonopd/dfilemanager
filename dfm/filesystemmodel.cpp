@@ -69,7 +69,8 @@ FileIconProvider::icon(const QFileInfo &i) const
         return QFileIconProvider::icon(QFileIconProvider::File);
 //    if (i.suffix().contains(QRegExp("r[0-9]{2}"))) //splitted rar files .r00, r01 etc...
 //        i.setFile(QString("%1%2.rar").arg(i.filePath(), i.baseName()));
-    return QFileIconProvider::icon(i);
+    const QIcon &icon = QFileIconProvider::icon(i);
+    return QIcon::fromTheme(icon.name(), icon);
 }
 
 //-----------------------------------------------------------------------------
@@ -92,12 +93,12 @@ Model::Model(QObject *parent)
     if (ViewContainer *vc = qobject_cast<ViewContainer *>(parent))
         m_container = vc;
 
-    connect (ThumbsLoader::instance(), SIGNAL(thumbFor(QString,QString)), this, SLOT(thumbFor(QString,QString)));
+    connect (DataLoader::instance(), SIGNAL(newData(QString,QString)), this, SLOT(newData(QString,QString)));
     connect (m_it, SIGNAL(imagesReady(QString)), this, SLOT(flowDataAvailable(QString)));
     connect (this, SIGNAL(urlChanged(QUrl)), m_it, SLOT(clearData()));
     connect (m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)));
     connect (m_dataGatherer, SIGNAL(nodeGenerated(QString,Node*)), this, SLOT(nodeGenerated(QString,Node*)));
-    connect(this, SIGNAL(fileRenamed(QString,QString,QString)), ThumbsLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
+    connect(this, SIGNAL(fileRenamed(QString,QString,QString)), DataLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
     connect (m_timer, SIGNAL(timeout()), this, SLOT(refreshCurrent()));
 }
 
@@ -161,7 +162,7 @@ Model::setUrl(const QUrl &url)
         m_history[Forward].clear();
     m_url = url;
 
-    ThumbsLoader::clearQueue();
+    DataLoader::clearQueue();
     if (!m_watcher->directories().isEmpty())
         m_watcher->removePaths(m_watcher->directories());
 
@@ -305,7 +306,7 @@ Model::flowDataAvailable(const QString &file)
 }
 
 void
-Model::thumbFor(const QString &file, const QString &iconName)
+Model::newData(const QString &file, const QString &iconName)
 {
     QModelIndex idx;
     if (m_url.isLocalFile())
@@ -314,15 +315,27 @@ Model::thumbFor(const QString &file, const QString &iconName)
         idx = index(QUrl(QString("%1%2").arg(m_url.toString(), file)));
 
     if (idx.isValid())
+    {
         emit dataChanged(idx, idx);
+        for (int i = 1; i<columnCount(); ++i)
+        {
+            const QModelIndex &sibling = idx.sibling(idx.row(), i);
+            emit dataChanged(sibling, sibling);
+        }
+    }
     if (m_container->currentViewType() == ViewContainer::Flow)
-        if (!QFileInfo(file).isDir())
-            m_it->queueFile(file, ThumbsLoader::thumb(file), true);
+        if (!QFileInfo(file).isDir() && hasThumb(file))
+            m_it->queueFile(file, DataLoader::data(file)->thumb, true);
         else if (!iconName.isNull())
             m_it->queueName(QIcon::fromTheme(iconName));
 }
 
-bool Model::hasThumb(const QString &file) { return ThumbsLoader::instance()->hasThumb(file); }
+bool Model::hasThumb(const QString &file)
+{
+    if (Data *d = DataLoader::data(file))
+        return !d->thumb.isNull();
+    return false;
+}
 
 bool
 Model::hasThumb(const QModelIndex &index)
@@ -367,11 +380,8 @@ Model::data(const QModelIndex &index, int role) const
         if (m_it->hasData(node->filePath()))
             return QPixmap::fromImage(m_it->flowData(node->filePath(), role == FlowRefl));
 
-        if (!ThumbsLoader::hasThumb(node->filePath()) && Store::config.views.showThumbs)
-            ThumbsLoader::queueFile(node->filePath());
-
-        if ((ThumbsLoader::hasThumb(node->filePath()) && !m_it->hasData(node->filePath()) && Store::config.views.showThumbs) && !isWorking())
-            m_it->queueFile(node->filePath(), ThumbsLoader::thumb(node->filePath()));
+        if ((hasThumb(node->filePath()) && !m_it->hasData(node->filePath()) && Store::config.views.showThumbs) && !isWorking())
+            m_it->queueFile(node->filePath(), DataLoader::data(node->filePath())->thumb);
 
         if (m_it->hasNameData(icon.name()))
             return QPixmap::fromImage(m_it->flowNameData(icon.name(), role == FlowRefl));

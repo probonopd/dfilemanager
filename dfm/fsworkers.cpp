@@ -194,27 +194,13 @@ Node::rowOf(Node *child) const
 QIcon
 Node::icon()
 {
-    if (ThumbsLoader::hasThumb(m_filePath))
-        return QIcon(QPixmap::fromImage(ThumbsLoader::thumb(m_filePath)));
-    else if (isDir() && ThumbsLoader::hasIcon(m_filePath))
-        return QIcon::fromTheme(ThumbsLoader::icon(m_filePath), FileIconProvider::fileIcon(*this));
-    else if ((Store::config.views.showThumbs || isDir()) && !m_model->isWorking())
-            ThumbsLoader::queueFile(m_filePath);
-    return QIcon::fromTheme(iconName(), FileIconProvider::fileIcon(*this));
-}
+    Data *d = moreData();
+    if (!d)
+        return FileIconProvider::fileIcon(*this);
 
-QString
-Node::iconName()
-{
-    if (m_iconName.isEmpty() && size())
-    {
-        m_iconName = mimeType();
-        if (!m_iconName.isEmpty())
-            m_iconName.replace("/", "-");
-        if (!QIcon::hasThemeIcon(m_iconName))
-            m_iconName = FileIconProvider::fileIcon(*this).name();
-    }
-    return m_iconName;
+    if (!d->thumb.isNull())
+        return QIcon(QPixmap::fromImage(d->thumb));
+    return QIcon::fromTheme(d->iconName, FileIconProvider::fileIcon(*this));
 }
 
 bool
@@ -235,9 +221,17 @@ Worker::Gatherer *Node::gatherer() { return m_model->dataGatherer(); }
 QString
 Node::mimeType()
 {
-    if (size())
-        m_mimeType = m_model->m_mimes.getMimeType(m_filePath);
-    return m_mimeType;
+    if (Data *d = moreData())
+        return d->mimeType;
+    return QString();
+}
+
+struct Data
+*Node::moreData()
+{
+    if (m_model->isWorking())
+        return 0;
+    return DataLoader::data(m_filePath);
 }
 
 QString
@@ -299,7 +293,7 @@ Node::data(const int column)
         switch (column)
         {
         case 0: return m_name; break;
-        case 1: return isDir()?QString("--"):Ops::prettySize(size()); break;
+        case 1: return isDir()?(moreData()?moreData()->count:QString("--")):Ops::prettySize(size()); break;
         case 2:
         {
             if (isDir())
@@ -631,7 +625,6 @@ AppNode::exec()
         }
     }
 #endif
-
 }
 
 //-----------------------------------------------------------------------------

@@ -32,9 +32,11 @@
 
 using namespace DFM;
 
-ThumbsLoader *ThumbsLoader::m_instance = 0;
+DataLoader *DataLoader::m_instance = 0;
 
-ThumbsLoader::ThumbsLoader(QObject *parent) :
+static QHash<QString, Data *> s_data;
+
+DataLoader::DataLoader(QObject *parent) :
     Thread(parent),
     m_extent(256)
 {
@@ -42,77 +44,39 @@ ThumbsLoader::ThumbsLoader(QObject *parent) :
     start();
 }
 
-ThumbsLoader
-*ThumbsLoader::instance()
+DataLoader
+*DataLoader::instance()
 {
     if (!m_instance)
-        m_instance = new ThumbsLoader(APP);
+        m_instance = new DataLoader(APP);
     return m_instance;
 }
 
 void
-ThumbsLoader::fileRenamed(const QString &path, const QString &oldName, const QString &newName)
+DataLoader::fileRenamed(const QString &path, const QString &oldName, const QString &newName)
 {
     const QString &file = QDir(path).absoluteFilePath(oldName);
-    _removeThumb(file);
+    _removeData(file);
 }
 
 void
-ThumbsLoader::_removeThumb(const QString &file)
+DataLoader::_removeData(const QString &file)
 {
-    QMutexLocker locker(&m_thumbsMutex);
-    if (m_thumbs.contains(file))
+    QMutexLocker locker(&m_dataMutex);
+    if (s_data.contains(file))
     {
-        m_thumbs.remove(file);
+
+        Data *data = s_data.take(file);
         m_dateCheck.remove(file);
+        delete data;
     }
 }
 
-bool
-ThumbsLoader::_hasIcon(const QString &dir) const
+Data
+*DataLoader::_data(const QString &file)
 {
-    QMutexLocker locker(&m_thumbsMutex);
-    return m_icons.contains(dir);
-}
-
-QString
-ThumbsLoader::_icon(const QString &dir) const
-{
-    QMutexLocker locker(&m_thumbsMutex);
-    if (m_icons.contains(dir))
-        return m_icons.value(dir);
-    return QString();
-}
-
-void
-ThumbsLoader::_removeIcon(const QString &dir)
-{
-    QMutexLocker locker(&m_thumbsMutex);
-    if (m_icons.contains(dir))
-        m_icons.remove(dir);
-}
-
-bool
-ThumbsLoader::_hasThumb(const QString &file) const
-{
-    QMutexLocker locker(&m_thumbsMutex);
-    return m_thumbs.contains(file) && m_dateCheck.value(file) == QFileInfo(file).lastModified().toString();
-}
-
-void
-ThumbsLoader::clearQ()
-{
-    QMutexLocker locker(&m_queueMutex);
-    m_queue.clear();
-}
-
-void
-ThumbsLoader::_queueFile(const QString &file)
-{
-    if (_hasThumb(file))
-        return;
-    if (_hasIcon(file))
-        return;
+    if (s_data.contains(file))
+        return s_data.value(file);
     m_queueMutex.lock();
     const bool inQueue = m_queue.contains(file);
     m_queueMutex.unlock();
@@ -122,67 +86,81 @@ ThumbsLoader::_queueFile(const QString &file)
         int i = m_queue.indexOf(file);
         m_queue.move(i, qMax(0, i-10));
         m_queueMutex.unlock();
-        return;
+        return 0;
     }
     m_queueMutex.lock();
     m_queue << file;
     m_queueMutex.unlock();
     if (isPaused())
         setPause(false);
-}
-
-QImage
-ThumbsLoader::_thumb(const QString &file) const
-{
-    QMutexLocker locker(&m_thumbsMutex);
-    if (m_thumbs.contains(file))
-        return m_thumbs.value(file);
-    return QImage();
+    return 0;
 }
 
 void
-ThumbsLoader::genThumb(const QString &path)
+DataLoader::clearQ()
+{
+    QMutexLocker locker(&m_queueMutex);
+    m_queue.clear();
+}
+
+void
+DataLoader::getData(const QString &path)
 {
     const QFileInfo fi(path);
     if (!fi.isReadable())
     {
-        _removeThumb(path);
+        _removeData(path);
         return;
     }
+    Data *data = new Data();
 #if defined(Q_OS_UNIX)
     if (fi.isDir())
     {
         const QString &dirFile(fi.absoluteFilePath());
-        const QString &settingsFile(QDir(dirFile).absoluteFilePath(".directory"));
+        const QDir dir(dirFile);
+        const QString &settingsFile(dir.absoluteFilePath(".directory"));
         const QSettings settings(settingsFile, QSettings::IniFormat);
         const QString &iconName = settings.value("Desktop Entry/Icon").toString();
         if (!iconName.isEmpty())
-            if (!hasIcon(dirFile))
-            {
-                m_thumbsMutex.lock();
-                m_icons.insert(dirFile, iconName);
-                m_thumbsMutex.unlock();
-                emit thumbFor(path, iconName);
-            }
+            data->iconName = iconName;
+
+        QString count;
+        int c = dir.entryList(allEntries).count();
+        const QString &children = QString::number(c);
+        if (c > 1)
+            count = QString("%1%2").arg(children, " Entries");
+        else
+            count = QString("%1%2").arg(children, " Entry");
+        data->count = count;
+        data->mimeType = mimeProvider.getMimeType(path);
+        m_dataMutex.lock();
+        s_data.insert(path, data);
+        m_dataMutex.unlock();
+        emit newData(path, iconName);
         return;
     }
 #endif
     QImage image;
-    if (!APP->activeThumbIfaces().isEmpty())
+    if (!APP->activeThumbIfaces().isEmpty() && Store::config.views.showThumbs)
         for (int i = 0; i<APP->activeThumbIfaces().count(); ++i)
             if (APP->activeThumbIfaces().at(i)->thumb(path, m_extent, image))
             {
-                m_thumbsMutex.lock();
-                m_dateCheck.insert(path, fi.lastModified().toString());
-                m_thumbs.insert(path, image);
-                m_thumbsMutex.unlock();
-                emit thumbFor(path, QString());
-                return;
+                data->thumb = image;
+                break;
             }
+    data->mimeType = mimeProvider.getMimeType(path);
+    QString iconName = data->mimeType;
+    iconName.replace("/", "-");
+    data->iconName = iconName;
+    m_dataMutex.lock();
+    m_dateCheck.insert(path, fi.lastModified().toString());
+    s_data.insert(path, data);
+    m_dataMutex.unlock();
+    emit newData(path, iconName);
 }
 
 void
-ThumbsLoader::run()
+DataLoader::run()
 {
     foreach (ThumbInterface *ti, APP->thumbIfaces())
         ti->init();
@@ -194,7 +172,7 @@ ThumbsLoader::run()
             m_queueMutex.lock();
             const QString &file = m_queue.takeFirst();
             m_queueMutex.unlock();
-            genThumb(file);
+            getData(file);
         }
         setPause(!m_quit);
         pause();

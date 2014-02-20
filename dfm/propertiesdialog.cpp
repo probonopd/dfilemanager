@@ -203,9 +203,9 @@ GeneralInfo::setIcon()
         settings.setValue("Desktop Entry/Icon", i.name());
         tb->setIcon(i);
 
-        if (DFM::ThumbsLoader::hasIcon(file))
-            DFM::ThumbsLoader::removeIcon(file);
-        DFM::ThumbsLoader::queueFile(file);
+        if (DFM::DataLoader::data(file))
+            DFM::DataLoader::removeData(file);
+        DFM::DataLoader::data(file);
     }
 }
 

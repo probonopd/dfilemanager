@@ -26,6 +26,7 @@
 
 #include "objects.h"
 #include "filesystemmodel.h"
+#include "thumbsloader.h"
 
 namespace DFM
 {
@@ -72,7 +73,6 @@ public:
     QString permissionsString();
     virtual QString category();
     inline QString scheme() { return url().scheme(); }
-    QString iconName();
     QString mimeType();
     bool isExec();
     virtual QIcon icon();
@@ -80,6 +80,8 @@ public:
     void sort();
     int sortColumn();
     Qt::SortOrder sortOrder();
+
+    struct Data *moreData();
 
     void setHiddenVisible(bool visible);
     bool showHidden();
