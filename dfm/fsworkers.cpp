@@ -549,7 +549,7 @@ Node::exec()
         return;
     if (isDir())
     {
-        m_model->setUrl(m_url);
+        m_model->setUrl(QUrl::fromLocalFile(m_filePath));
         return;
     }
     if (isExec())
