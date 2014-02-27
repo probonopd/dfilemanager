@@ -105,7 +105,7 @@ private:
     GraphicsScene *m_scene;
     PreView *m_preView;
     float m_rotate, m_savedX;
-    bool m_isFirstPaint;
+    bool m_isDirty;
     QPainterPath m_shape;
     mutable QMutex m_mutex;
     friend class PreView;
@@ -122,6 +122,7 @@ class PreView : public QGraphicsView
 public:
     enum Pos { Prev = 0, New = 1 };
     explicit PreView(QWidget *parent = 0);
+    ~PreView();
     void setModel(QAbstractItemModel *model);
     inline void setSelectionModel(QItemSelectionModel *model) { m_selectionModel = model; }
     void setCenterIndex(const QModelIndex &index);

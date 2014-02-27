@@ -165,7 +165,6 @@ public slots:
 
 private slots:
     void newData(const QString &file);
-    void newFlowData(const QString &file);
     void dirChanged(const QString &path);
     void nodeGenerated(const QString &path, Node *node);
     void schemeFromSchemeMenu();

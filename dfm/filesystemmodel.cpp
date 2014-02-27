@@ -291,19 +291,6 @@ Model::newData(const QString &file)
     }
 }
 
-void
-Model::newFlowData(const QString &file)
-{
-    QModelIndex idx;
-    if (m_url.isLocalFile())
-        idx = indexForLocalFile(file);
-    else
-        idx = index(QUrl(QString("%1%2").arg(m_url.toString(), file)));
-
-    if (idx.isValid())
-        emit flowDataChanged(idx, idx);
-}
-
 bool
 Model::hasThumb(const QString &file)
 {

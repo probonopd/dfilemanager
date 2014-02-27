@@ -110,7 +110,7 @@ GraphicsScene::drawForeground(QPainter *painter, const QRectF &rect)
 PixmapItem::PixmapItem(GraphicsScene *scene, QGraphicsItem *parent, QPixmap *pix)
     : QGraphicsItem(parent)
     , m_scene(scene)
-    , m_isFirstPaint(true)
+    , m_isDirty(true)
 {
     for (int i=0; i<2; ++i)
         m_pix[i]=pix[i];
@@ -130,10 +130,10 @@ PixmapItem::~PixmapItem()
 void
 PixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    if (m_isFirstPaint)
+    if (m_isDirty)
     {
         m_preView->m_dataLoader->updateItem(this);
-        m_isFirstPaint = false;
+        m_isDirty = false;
     }
     if (painter->transform().isScaling())
         painter->setRenderHints(QPainter::SmoothPixmapTransform);
@@ -271,6 +271,12 @@ PreView::PreView(QWidget *parent)
         else
             w = w->parentWidget();
     }
+}
+
+PreView::~PreView()
+{
+    m_dataLoader->discontinue();
+    m_dataLoader->wait();
 }
 
 QModelIndex
@@ -426,19 +432,20 @@ PreView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
     if (!topLeft.isValid() || !bottomRight.isValid())
         return;
 
-    if (m_container->currentViewType() != ViewContainer::Flow)
-        return;
-
+    const bool isFlowing = (m_container->currentViewType() == ViewContainer::Flow);
     const int start = topLeft.row(), end = bottomRight.row();
 
     if (m_items.count() > end)
-    for (int i = start; i <= end; ++i)
-    {
-        PixmapItem *item = m_items.at(i);
-        if (m_dataLoader->hasInQueue(item))
-            m_dataLoader->removeFromQueue(item);
-        m_dataLoader->updateItem(item);
-    }
+        for (int i = start; i <= end; ++i)
+        {
+            PixmapItem *item = m_items.at(i);
+            if (m_dataLoader->hasInQueue(item))
+                m_dataLoader->removeFromQueue(item);
+            if (isFlowing)
+                m_dataLoader->updateItem(item);
+            else
+                item->m_isDirty=true;
+        }
 }
 
 void

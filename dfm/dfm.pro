@@ -67,7 +67,7 @@ SOURCES = main.cpp \
     objects.cpp \
     fsworkers.cpp \
     helpers.cpp \
-    datasloader.cpp
+    dataloader.cpp
 #RESOURCES = resources.qrc
 TARGET = dfm
 
