@@ -24,7 +24,6 @@ HEADERS = mainwindow.h \
     operations.h \
     recentfoldersview.h \
     iojob.h \
-    thumbsloader.h \
     preview.h \
     columnswidget.h \
     interfaces.h \
@@ -33,7 +32,8 @@ HEADERS = mainwindow.h \
     objects.h \
     fsworkers.h \
     globals.h \
-    helpers.h
+    helpers.h \
+    dataloader.h
 SOURCES = main.cpp \
     mainwindow.cpp \
     iconview.cpp \
@@ -59,7 +59,6 @@ SOURCES = main.cpp \
     infowidget.cpp \
     recentfoldersview.cpp \
     iojob.cpp \
-    thumbsloader.cpp \
     preview.cpp \
     config.cpp \
     columnswidget.cpp \
@@ -67,7 +66,8 @@ SOURCES = main.cpp \
     widgets.cpp \
     objects.cpp \
     fsworkers.cpp \
-    helpers.cpp
+    helpers.cpp \
+    datasloader.cpp
 #RESOURCES = resources.qrc
 TARGET = dfm
 

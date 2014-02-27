@@ -19,8 +19,8 @@
 ***************************************************************************/
 
 
-#ifndef THUMBSLOADER_H
-#define THUMBSLOADER_H
+#ifndef DATALOADER_H
+#define DATALOADER_H
 
 #include <QObject>
 #include <QHash>
@@ -35,6 +35,7 @@
 #include <QFileSystemWatcher>
 #include <QWaitCondition>
 #include <QMutex>
+#include <QQueue>
 #include "filesystemmodel.h"
 #include "interfaces.h"
 #include "objects.h"
@@ -45,80 +46,48 @@ namespace DFM
 
 struct Data
 {
-    QImage thumb, flowImage, flowReflection;
+    QImage thumb;
     QString count; //entries for dirs...
-    QString mimeType, iconName;
+    QString mimeType, iconName, lastModified;
 };
 
 class DataLoader : public Thread
 {
     Q_OBJECT
 public:
-    explicit DataLoader(QObject *parent = 0);
-    enum Type { Thumb = 0, FlowPic, Reflection, FallBackRefl };
     static DataLoader *instance();
-    static inline void clearQueue() { instance()->clearQ(); }
+
+    static inline void clearQueue() { instance()->_clearQueue(); }
     static inline void removeData(const QString &file) { instance()->_removeData(file); }
     static inline struct Data *data(const QString &file) { return instance()->_data(file); }
 
 public slots:
-    void discontinue() { m_queueMutex.lock(); m_queue.clear(); m_queueMutex.unlock(); Thread::discontinue(); }
+    void discontinue() { m_mtx.lock(); m_queue.clear(); m_mtx.unlock(); Thread::discontinue(); }
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
     void _removeData(const QString &file);
     
 signals:
-    void newData(const QString &file, const QString &name);
+    void newData(const QString &file);
 
 protected:
+    explicit DataLoader(QObject *parent = 0);
     void run();
     void getData(const QString &path);
-    void clearQ();
+    void _clearQueue();
+    bool hasQueue() const;
+    bool enqueue(const QString &file);
+    QString dequeue();
     Data *_data(const QString &file);
 
 private:
-    mutable QMutex m_queueMutex, m_dataMutex;
-    QHash<QString, QImage> m_thumbs;
-    QHash<QString, QString> m_dateCheck;
-    QHash<QString, QString> m_icons;
-    QStringList m_queue, m_tried;
+    mutable QMutex m_mtx;
+    QHash<QString, Data *> m_data;
+    QQueue<QString> m_queue;
     int m_extent;
-    MimeProvider mimeProvider;
+    MimeProvider m_mimeProvider;
     static DataLoader *m_instance;
-};
-
-class ImagesThread : public Thread
-{
-    Q_OBJECT
-public:
-    explicit ImagesThread(QObject *parent = 0);
-    void queueFile(const QString &file, const QImage &source, const bool force = false);
-    void queueName(const QIcon &icon);
-    QImage flowData(const QString &file, const bool refl = false);
-    QImage flowNameData(const QString &name, const bool refl = false);
-    bool hasData(const QString &file);
-    bool hasNameData(const QString &name);
-    void removeData(const QString &file);
-
-public slots:
-    void discontinue() { m_imgQueue.clear(); Thread::discontinue(); }
-    inline void clearData() { for (int i=0; i<2; ++i) m_images[i].clear(); }
-
-signals:
-    void imagesReady(const QString &file);
-
-protected:
-    void genImagesFor(const QPair<QString, QImage> &strImg);
-    void genNameIconsFor(const QPair<QString, QImage> &strImg);
-    void run();
-
-private:
-    QMap<QString, QPair<QString, QImage> > m_imgQueue;
-    QMap<QString, QImage> m_names[2];
-    QMap<QString, QImage> m_images[2];
-    QMap<QString, QPair<QString, QImage> > m_nameQueue;
-    mutable QMutex m_queueMutex, m_thumbsMutex;
 };
 
 }
 
-#endif // THUMBSLOADER_H
+#endif // DATALOADER_H

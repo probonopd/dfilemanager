@@ -107,45 +107,63 @@ GraphicsScene::drawForeground(QPainter *painter, const QRectF &rect)
     painter->fillRect(rect, m_fgBrush);
 }
 
-PixmapItem::PixmapItem(GraphicsScene *scene, QGraphicsItem *parent)
+PixmapItem::PixmapItem(GraphicsScene *scene, QGraphicsItem *parent, QPixmap *pix)
     : QGraphicsItem(parent)
     , m_scene(scene)
-    , m_isUpdateingPixmaps(false)
+    , m_isFirstPaint(true)
 {
+    for (int i=0; i<2; ++i)
+        m_pix[i]=pix[i];
     m_preView = m_scene->preView();
     setY(m_preView->m_y);
     setTransformOriginPoint(boundingRect().center());
 }
 
-void
-PixmapItem::updatePixmaps()
+PixmapItem::~PixmapItem()
 {
-    const QModelIndex &index = m_preView->indexOfItem(this);
-    m_pix[0] = m_preView->model()->data(index, FS::Model::FlowImg).value<QPixmap>();
-    m_pix[1] = m_preView->model()->data(index, FS::Model::FlowRefl).value<QPixmap>();
-    updateShape();
-    m_preView->viewport()->update();
+    if (m_preView->m_items.contains(this))
+        m_preView->m_items.removeOne(this);
+    if (m_preView->m_dataLoader->hasInQueue(this))
+        m_preView->m_dataLoader->removeFromQueue(this);
 }
 
 void
 PixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    if ((m_pix[0].isNull()||m_pix[1].isNull())&&m_preView->indexOfItem(this).data(Qt::DecorationRole).isValid())
-        updatePixmaps();
-    painter->drawTiledPixmap(QRect(0, SIZE, SIZE, SIZE), m_pix[1]);
+    if (m_isFirstPaint)
+    {
+        m_preView->m_dataLoader->updateItem(this);
+        m_isFirstPaint = false;
+    }
     if (painter->transform().isScaling())
         painter->setRenderHints(QPainter::SmoothPixmapTransform);
+    painter->drawTiledPixmap(QRect(0, SIZE, SIZE, SIZE), m_pix[1]);
     painter->drawTiledPixmap(QRect(0, 1, SIZE, SIZE), m_pix[0]);
     painter->setRenderHints(QPainter::SmoothPixmapTransform, false);
+}
+
+QPainterPath
+PixmapItem::shape() const
+{
+    return m_shape;
+}
+
+QModelIndex
+PixmapItem::index()
+{
+    return m_preView->indexOfItem(this);
 }
 
 void
 PixmapItem::updateShape()
 {
+    if (m_pix[0].isNull())
+        return;
     QRegion r = m_pix[0].mask();
     QPainterPath p;
     p.addRegion(r);
     m_shape = p;
+    m_preView->viewport()->update();
 }
 
 void
@@ -181,6 +199,7 @@ PreView::PreView(QWidget *parent)
     , m_pressPos(QPointF())
     , m_hasZUpdate(false)
     , m_xpos(0.0f)
+    , m_dataLoader(new FlowDataLoader(this))
 {
     QGLFormat glf = QGLFormat::defaultFormat();
     glf.setSampleBuffers(false);
@@ -234,6 +253,24 @@ PreView::PreView(QWidget *parent)
     setMouseTracking(false);
     setAttribute(Qt::WA_Hover, false);
     setCursor(Qt::ArrowCursor);
+
+    QImage img[2];
+    img[0] = FS::FileIconProvider::typeIcon(FS::FileIconProvider::File).pixmap(SIZE).toImage();
+    img[1] = FS::FileIconProvider::typeIcon(FS::FileIconProvider::Folder).pixmap(SIZE).toImage();
+    for (int d=0; d<2; ++d) //isDir
+    {
+        m_defaultPix[d][0] = QPixmap::fromImage(Ops::flowImg(img[d]));
+        m_defaultPix[d][1] = QPixmap::fromImage(Ops::reflection(img[d]));
+    }
+
+    QWidget *w = this;
+    while (w->parentWidget())
+    {
+        if (m_container = qobject_cast<ViewContainer *>(w))
+            break;
+        else
+            w = w->parentWidget();
+    }
 }
 
 QModelIndex
@@ -373,7 +410,7 @@ void
 PreView::setModel(QAbstractItemModel *model)
 {
     m_model = static_cast<FS::Model *>(model);
-    connect(m_model, SIGNAL(flowDataChanged(const QModelIndex & , const QModelIndex &)), this, SLOT(dataChanged(const QModelIndex & , const QModelIndex &)));
+    connect(m_model, SIGNAL(dataChanged(const QModelIndex & , const QModelIndex &)), this, SLOT(dataChanged(const QModelIndex & , const QModelIndex &)));
     connect(m_model, SIGNAL(layoutAboutToBeChanged()),this, SLOT(clear()));
     connect(m_model, SIGNAL(layoutChanged()),this, SLOT(reset()));
     connect(m_model, SIGNAL(modelAboutToBeReset()), this, SLOT(clear()));
@@ -389,11 +426,19 @@ PreView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
     if (!topLeft.isValid() || !bottomRight.isValid())
         return;
 
+    if (m_container->currentViewType() != ViewContainer::Flow)
+        return;
+
     const int start = topLeft.row(), end = bottomRight.row();
 
     if (m_items.count() > end)
     for (int i = start; i <= end; ++i)
-        m_items.at(i)->updatePixmaps();
+    {
+        PixmapItem *item = m_items.at(i);
+        if (m_dataLoader->hasInQueue(item))
+            m_dataLoader->removeFromQueue(item);
+        m_dataLoader->updateItem(item);
+    }
 }
 
 void
@@ -541,7 +586,13 @@ void
 PreView::populate(const int start, const int end)
 {
     for (int i = start; i <= end; i++)
-        m_items.insert(i, new PixmapItem(m_scene, m_rootItem));
+    {
+        bool isDir = m_model->isDir(m_model->index(i, 0, m_rootIndex));
+        QPixmap pix[2];
+        for (int i=0; i<2; ++i)
+            pix[i]=m_defaultPix[isDir][i];
+        m_items.insert(i, new PixmapItem(m_scene, m_rootItem, pix));
+    }
 
     QModelIndex index;
     if (m_centerUrl.isValid())
@@ -742,8 +793,7 @@ PreView::clear()
     m_savedCenter = QModelIndex();
     m_centerUrl = QUrl();
     m_savedRow = 0;
-    while (!m_items.isEmpty())
-        delete m_items.takeFirst();
+    qDeleteAll(m_items);
     m_textItem->setText(QString("--"));
     m_scrollBar->setValue(0);
     m_scrollBar->setRange(0, 0);
@@ -755,3 +805,103 @@ PreView::scrollBarMoved(const int value)
     if (m_items.count())
         showCenterIndex(m_model->index(qBound(0, value, m_items.count()), 0, m_rootIndex));
 }
+
+//-----------------------------------------------------------------------------
+
+FlowDataLoader::FlowDataLoader(QObject *parent)
+    : Thread(parent)
+    , m_preView(static_cast<PreView *>(parent))
+{
+    connect(this, SIGNAL(newData(PixmapItem*,QImage,QImage)), this, SLOT(setPixmaps(PixmapItem*,QImage,QImage)));
+    start();
+}
+
+void
+FlowDataLoader::updateItem(PixmapItem *item)
+{
+    const QImage &img = item->index().data(Qt::DecorationRole).value<QIcon>().pixmap(SIZE).toImage();
+    if (!img.isNull() && !hasInQueue(item))
+    {
+        m_mtx.lock();
+        m_queue << QPair<PixmapItem *, QImage>(item, img);
+        m_mtx.unlock();
+        setPause(false);
+    }
+}
+
+void
+FlowDataLoader::setPixmaps(PixmapItem *item, const QImage &img, const QImage &refl)
+{
+    if (m_preView->m_items.contains(item))
+    {
+        item->m_pix[0] = QPixmap::fromImage(img);
+        item->m_pix[1] = QPixmap::fromImage(refl);
+        item->updateShape();
+    }
+}
+
+void
+FlowDataLoader::genNewData(const QPair<PixmapItem *, QImage> &pair)
+{
+    PixmapItem *item = pair.first;
+    const QImage &img = Ops::flowImg(pair.second);
+    const QImage &refl = Ops::reflection(pair.second);
+    emit newData(item, img, refl);
+}
+
+void
+FlowDataLoader::run()
+{
+    while (!m_quit)
+    {
+        while (hasQueue())
+            genNewData(dequeue());
+        setPause(!m_quit);
+        pause();
+    }
+}
+
+bool
+FlowDataLoader::hasQueue()
+{
+    QMutexLocker locker(&m_mtx);
+    return !m_queue.isEmpty();
+}
+
+QPair<PixmapItem *, QImage>
+FlowDataLoader::dequeue()
+{
+    QMutexLocker locker(&m_mtx);
+    return m_queue.dequeue();
+}
+
+void
+FlowDataLoader::discontinue()
+{
+    QMutexLocker locker(&m_mtx);
+    m_queue.clear();
+    Thread::discontinue();
+}
+
+bool
+FlowDataLoader::hasInQueue(PixmapItem *item)
+{
+    QMutexLocker locker(&m_mtx);
+    for (int i=0; i<m_queue.size(); ++i)
+        if (m_queue.at(i).first == item)
+            return true;
+    return false;
+}
+
+void
+FlowDataLoader::removeFromQueue(PixmapItem *item)
+{
+    QMutexLocker locker(&m_mtx);
+    for (int i=0; i<m_queue.size(); ++i)
+        if (m_queue.at(i).first == item)
+        {
+            m_queue.removeAt(i);
+            return;
+        }
+}
+

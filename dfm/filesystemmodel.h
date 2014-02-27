@@ -37,8 +37,9 @@
 #include <QMap>
 #include <QWaitCondition>
 #include <QAbstractItemModel>
+#include <QCache>
 
-#include "thumbsloader.h"
+#include "dataloader.h"
 #include "viewcontainer.h"
 #include "fsworkers.h"
 #include "helpers.h"
@@ -47,7 +48,7 @@ namespace DFM
 {
 
 class DataLoader;
-class ImagesThread;
+class FlowDataLoader;
 class ViewContainer;
 
 namespace FS
@@ -78,11 +79,8 @@ public:
         FileNameRole = Qt::DisplayRole,
         FilePathRole = Qt::UserRole + 1,
         FilePermissions = Qt::UserRole + 2,
-        FlowImg = Qt::UserRole +3,
-        FlowRefl = Qt::UserRole +4,
-        FlowShape = Qt::UserRole +5,
-        Category = Qt::UserRole +6,
-        MimeType = Qt::UserRole +7
+        Category = Qt::UserRole +3,
+        MimeType = Qt::UserRole +4
     };
     enum History { Back, Forward };
 
@@ -120,8 +118,6 @@ public:
 
     QUrl rootUrl() { return m_url; }
     Node *rootNode();
-
-    void forceEmitDataChangedFor(const QString &file);
 
     QIcon fileIcon(const QModelIndex &index) const;
     QString fileName(const QModelIndex &index) const;
@@ -168,8 +164,8 @@ public slots:
     void cancelSearch();
 
 private slots:
-    void newData(const QString &file, const QString &iconName);
-    void flowDataAvailable(const QString &file);
+    void newData(const QString &file);
+    void newFlowData(const QString &file);
     void dirChanged(const QString &path);
     void nodeGenerated(const QString &path, Node *node);
     void schemeFromSchemeMenu();
@@ -189,21 +185,21 @@ signals:
 private:
     Node *m_rootNode, *m_current;
     QList<Node *> m_deleted;
+    QCache<Node *, QVariant> m_cache;
     mutable QMap<QString, Node *> m_schemeNodes;
     QHash<QUrl, Node *> m_nodes;
     bool m_showHidden, m_goingBack;
-    int m_sortColumn;
     Qt::SortOrder m_sortOrder;
-    ImagesThread *m_it;
-    ViewContainer *m_container;
+    int m_sortColumn;
     QFileSystemWatcher *m_watcher;
+    ViewContainer *m_container;
     Worker::Gatherer *m_dataGatherer;
     QMenu *m_schemeMenu;
     QUrl m_url;
     QList<QUrl> m_history[Forward+1];
     MimeProvider m_mimes;
     QTimer *m_timer;
-    friend class ImagesThread;
+    friend class FlowDataLoader;
     friend class Node;
     friend class Worker::Gatherer;
 };

@@ -20,10 +20,11 @@
 
 #include <QImageReader>
 #include <QDirIterator>
+#include <QDesktopServices>
 
 #include "filesystemmodel.h"
 #include "iojob.h"
-#include "thumbsloader.h"
+#include "dataloader.h"
 #include "mainwindow.h"
 #include "viewcontainer.h"
 
@@ -81,7 +82,6 @@ Model::Model(QObject *parent)
     , m_showHidden(false)
     , m_sortOrder(Qt::AscendingOrder)
     , m_sortColumn(0)
-    , m_it(new ImagesThread(this))
     , m_watcher(new QFileSystemWatcher(this))
     , m_container(0)
     , m_dataGatherer(new Worker::Gatherer(this))
@@ -93,9 +93,7 @@ Model::Model(QObject *parent)
     if (ViewContainer *vc = qobject_cast<ViewContainer *>(parent))
         m_container = vc;
 
-    connect (DataLoader::instance(), SIGNAL(newData(QString,QString)), this, SLOT(newData(QString,QString)));
-    connect (m_it, SIGNAL(imagesReady(QString)), this, SLOT(flowDataAvailable(QString)));
-    connect (this, SIGNAL(urlChanged(QUrl)), m_it, SLOT(clearData()));
+    connect (DataLoader::instance(), SIGNAL(newData(QString)), this, SLOT(newData(QString)));
     connect (m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)));
     connect (m_dataGatherer, SIGNAL(nodeGenerated(QString,Node*)), this, SLOT(nodeGenerated(QString,Node*)));
     connect(this, SIGNAL(fileRenamed(QString,QString,QString)), DataLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
@@ -104,9 +102,6 @@ Model::Model(QObject *parent)
 
 Model::~Model()
 {
-    m_it->discontinue();
-    if (m_it->isRunning())
-        m_it->wait();
     delete m_rootNode;
     m_schemeMenu->deleteLater();
 }
@@ -277,36 +272,7 @@ Model::flags(const QModelIndex &index) const
 }
 
 void
-Model::forceEmitDataChangedFor(const QString &file)
-{
-    QModelIndex idx;
-    if (m_url.isLocalFile())
-        idx = indexForLocalFile(file);
-    else
-        idx = index(QUrl(QString("%1%2").arg(m_url.toString(), file)));
-
-    if (idx.isValid())
-    {
-        emit dataChanged(idx, idx);
-        emit flowDataChanged(idx, idx);
-    }
-}
-
-void
-Model::flowDataAvailable(const QString &file)
-{
-    QModelIndex idx;
-    if (m_url.isLocalFile())
-        idx = indexForLocalFile(file);
-    else
-        idx = index(QUrl(QString("%1%2").arg(m_url.toString(), file)));
-
-    if (idx.isValid())
-        emit flowDataChanged(idx, idx);
-}
-
-void
-Model::newData(const QString &file, const QString &iconName)
+Model::newData(const QString &file)
 {
     QModelIndex idx;
     if (m_url.isLocalFile())
@@ -323,14 +289,23 @@ Model::newData(const QString &file, const QString &iconName)
             emit dataChanged(sibling, sibling);
         }
     }
-    if (m_container->currentViewType() == ViewContainer::Flow)
-        if (!QFileInfo(file).isDir() && hasThumb(file))
-            m_it->queueFile(file, DataLoader::data(file)->thumb, true);
-        else if (!iconName.isNull())
-            m_it->queueName(QIcon::fromTheme(iconName));
 }
 
-bool Model::hasThumb(const QString &file)
+void
+Model::newFlowData(const QString &file)
+{
+    QModelIndex idx;
+    if (m_url.isLocalFile())
+        idx = indexForLocalFile(file);
+    else
+        idx = index(QUrl(QString("%1%2").arg(m_url.toString(), file)));
+
+    if (idx.isValid())
+        emit flowDataChanged(idx, idx);
+}
+
+bool
+Model::hasThumb(const QString &file)
 {
     if (Data *d = DataLoader::data(file))
         return !d->thumb.isNull();
@@ -365,6 +340,10 @@ Model::data(const QModelIndex &index, int role) const
         return node->icon();
     if (role == Qt::TextAlignmentRole)
         return bool(col == 1) ? int(Qt::AlignVCenter|Qt::AlignRight) : int(Qt::AlignLeft|Qt::AlignVCenter);
+    if (role == Category)
+        return node->category();
+    if (role == MimeType)
+        return node->mimeType();
 
     if (role == Qt::FontRole && !col && !node->isDir())
     {
@@ -374,35 +353,10 @@ Model::data(const QModelIndex &index, int role) const
         return f;
     }
 
-    if (role > FilePermissions && role < Category) //flow stuff
-    {
-        const QIcon &icon = node->icon();
-        if (m_it->hasData(node->filePath()))
-            return QPixmap::fromImage(m_it->flowData(node->filePath(), role == FlowRefl));
+    if (role == Qt::DisplayRole || role == Qt::EditRole)
+        return node->data(col);
 
-        if ((hasThumb(node->filePath()) && !m_it->hasData(node->filePath()) && Store::config.views.showThumbs) && !isWorking())
-            m_it->queueFile(node->filePath(), DataLoader::data(node->filePath())->thumb);
-
-        if (m_it->hasNameData(icon.name()))
-            return QPixmap::fromImage(m_it->flowNameData(icon.name(), role == FlowRefl));
-        else if (!icon.name().isEmpty())
-            m_it->queueName(icon);
-        else
-            m_it->queueFile(node->filePath(), icon.pixmap(SIZE).toImage());
-
-        return QPixmap();
-    }
-
-    if (role == Category)
-        return node->category();
-
-    if (role == MimeType)
-        return node->mimeType();
-
-    if (role != Qt::DisplayRole && role != Qt::EditRole)
-        return QVariant();
-
-    return node->data(col);
+    return QVariant();
 }
 
 bool

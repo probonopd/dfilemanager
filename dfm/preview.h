@@ -38,7 +38,8 @@
 #include <QList>
 #include <QTimeLine>
 #include "filesystemmodel.h"
-#include "thumbsloader.h"
+#include "dataloader.h"
+#include "objects.h"
 
 namespace DFM
 {
@@ -46,6 +47,7 @@ namespace DFM
 #define SIZE 258.0f
 #define RECT QRectF(0.0f, 0.0f, SIZE, SIZE)
 class PreView;
+class FlowDataLoader;
 
 class ScrollBar : public QScrollBar
 {
@@ -85,13 +87,14 @@ public:
 class PixmapItem : public QGraphicsItem
 {
 public:
-    PixmapItem(GraphicsScene *scene = 0, QGraphicsItem *parent = 0);
+    PixmapItem(GraphicsScene *scene = 0, QGraphicsItem *parent = 0, QPixmap *pix = 0);
+    ~PixmapItem();
     void transform(const float angle, const Qt::Axis axis, const float xscale = 1.0f, const float yscale = 1.0f);
     QRectF boundingRect() const { return RECT; }
     inline void saveX() { m_savedX = pos().x(); }
     inline float savedX() { return m_savedX; }
-    void updatePixmaps();
-    QPainterPath shape() const { return m_shape; }
+    QPainterPath shape() const;
+    QModelIndex index();
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
 
 protected:
@@ -102,8 +105,11 @@ private:
     GraphicsScene *m_scene;
     PreView *m_preView;
     float m_rotate, m_savedX;
-    bool m_isUpdateingPixmaps;
+    bool m_isFirstPaint;
     QPainterPath m_shape;
+    mutable QMutex m_mutex;
+    friend class PreView;
+    friend class FlowDataLoader;
 };
 
 /* THE
@@ -162,7 +168,6 @@ private slots:
     void updateScene();
 
 private:
-    friend class PixmapItem;
     GraphicsScene *m_scene;
     FS::Model *m_model;
     QModelIndex m_centerIndex, m_prevCenter, m_savedCenter;
@@ -181,6 +186,44 @@ private:
     QPointF m_pressPos;
     QItemSelectionModel *m_selectionModel;
     QUrl m_rootUrl, m_centerUrl;
+    FlowDataLoader *m_dataLoader;
+    QPixmap m_defaultPix[2][2];
+    ViewContainer *m_container;
+    friend class PixmapItem;
+    friend class FlowDataLoader;
+};
+
+class FlowDataLoader : public Thread
+{
+    Q_OBJECT
+public:
+    enum Type { ThemeIcon = 0, FileIcon = 1 };
+    explicit FlowDataLoader(QObject *parent = 0);
+    void updateItem(PixmapItem *item);
+
+public slots:
+    void discontinue();
+
+signals:
+    void newData(PixmapItem *item, const QImage &img, const QImage &refl);
+
+protected:
+    void run();
+    void genNewData(const QPair<PixmapItem *, QImage> &pair);
+    bool hasInQueue(PixmapItem *item);
+    void removeFromQueue(PixmapItem *item);
+    bool hasQueue();
+    QPair<PixmapItem *, QImage> dequeue();
+
+protected slots:
+    void setPixmaps(PixmapItem *item, const QImage &img, const QImage &refl);
+
+private:
+    QQueue<QPair<PixmapItem *, QImage> > m_queue;
+    PreView *m_preView;
+    mutable QMutex m_mtx;
+    friend class PixmapItem;
+    friend class PreView;
 };
 
 }

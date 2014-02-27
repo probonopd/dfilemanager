@@ -24,7 +24,7 @@
 #include "placesview.h"
 #include "mainwindow.h"
 #include "icondialog.h"
-#include "thumbsloader.h"
+#include "dataloader.h"
 #include "helpers.h"
 #include <QDateTime>
 #include <QGroupBox>

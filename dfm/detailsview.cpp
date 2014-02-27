@@ -118,7 +118,7 @@ void
 DetailsView::setModel(QAbstractItemModel *model)
 {
     QTreeView::setModel(model);
-    m_model = qobject_cast<FS::Model *>(model);
+    m_model = static_cast<FS::Model *>(model);
     for (int i = 0; i<header()->count(); ++i)
 #if QT_VERSION < 0x050000
         header()->setResizeMode(i, QHeaderView::Fixed);
@@ -183,11 +183,12 @@ DetailsView::mouseReleaseEvent(QMouseEvent *e)
     }
 
     if (Store::config.views.singleClick
-         && !e->modifiers()
-         && e->button() == Qt::LeftButton
-         && m_pressedIndex == index.internalPointer()
-         && visualRect(index).contains(e->pos()) //clicking on expanders should not open the dir...
-         && !state())
+            && !e->modifiers()
+            && e->button() == Qt::LeftButton
+            && m_pressedIndex == index.internalPointer()
+            && visualRect(index).contains(e->pos()) //clicking on expanders should not open the dir...
+            && !state()
+            && !index.column())
     {
         emit opened(index);
         e->accept();
@@ -209,7 +210,7 @@ DetailsView::mouseReleaseEvent(QMouseEvent *e)
 void
 DetailsView::mousePressEvent(QMouseEvent *event)
 {
-    if (event->modifiers() == Qt::MetaModifier)
+    if (event->modifiers() == Qt::MetaModifier || indexAt(event->pos()).column())
         setDragEnabled(false);
     m_pressedIndex = indexAt(event->pos()).internalPointer();
     m_pressPos = event->pos();

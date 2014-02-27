@@ -23,7 +23,7 @@
 #include <QLayout>
 #include "operations.h"
 #include "filesystemmodel.h"
-#include "thumbsloader.h"
+#include "dataloader.h"
 #include "config.h"
 #include "helpers.h"
 

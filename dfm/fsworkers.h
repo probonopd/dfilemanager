@@ -26,7 +26,7 @@
 
 #include "objects.h"
 #include "filesystemmodel.h"
-#include "thumbsloader.h"
+#include "dataloader.h"
 
 namespace DFM
 {
@@ -104,7 +104,7 @@ private:
     int m_isExe;
     Nodes m_children[ChildrenTypeCount];
     Node *m_parent;
-    QString m_filePath, m_filter, m_name, m_mimeType, m_iconName;
+    QString m_filePath, m_filter, m_name;
     QUrl m_url;
     mutable QMutex m_mutex;
     Model *m_model;
