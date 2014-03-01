@@ -40,6 +40,20 @@ struct IOJobData
 static int defaultInteger = 0;
 static QDir::Filters allEntries = QDir::AllEntries|QDir::NoDotAndDotDot|QDir::Hidden|QDir::System;
 
+namespace FS
+{
+enum Roles
+{
+    FileIconRole = Qt::DecorationRole,
+    FileNameRole = Qt::DisplayRole,
+    FilePathRole = Qt::UserRole + 1,
+    FilePermissions = Qt::UserRole + 2,
+    Category = Qt::UserRole + 3,
+    MimeType = Qt::UserRole + 4,
+    FileType = Qt::UserRole + 5
+};
+}
+
 }
 
 #endif // GLOBALS_H

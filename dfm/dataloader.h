@@ -48,7 +48,7 @@ struct Data
 {
     QImage thumb;
     QString count; //entries for dirs...
-    QString mimeType, iconName, lastModified;
+    QString mimeType, iconName, lastModified, fileType;
 };
 
 class DataLoader : public Thread

@@ -73,15 +73,6 @@ class Model : public QAbstractItemModel
 {
     Q_OBJECT
 public:
-    enum Roles
-    {
-        FileIconRole = Qt::DecorationRole,
-        FileNameRole = Qt::DisplayRole,
-        FilePathRole = Qt::UserRole + 1,
-        FilePermissions = Qt::UserRole + 2,
-        Category = Qt::UserRole +3,
-        MimeType = Qt::UserRole +4
-    };
     enum History { Back, Forward };
 
     explicit Model(QObject *parent = 0);

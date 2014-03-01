@@ -34,6 +34,25 @@
 namespace DFM
 {
 class ColumnsWidget;
+
+class ResizeCorner : public QWidget
+{
+    Q_OBJECT
+public:
+    ResizeCorner(QWidget *parent = 0);
+
+protected:
+    void paintEvent(QPaintEvent *);
+    void mousePressEvent(QMouseEvent *);
+    void mouseReleaseEvent(QMouseEvent *);
+    void mouseMoveEvent(QMouseEvent *);
+    bool eventFilter(QObject *, QEvent *);
+
+private:
+    bool m_hasPress;
+    int m_prevPos;
+};
+
 class ColumnsView : public QListView, public ViewBase
 {
     Q_OBJECT
@@ -67,10 +86,10 @@ protected:
 
 private:
     ColumnsWidget *m_parent;
+    ResizeCorner *m_corner;
     FS::Model *m_model;
     QPoint m_pressPos;
     QString m_activeFile;
-    int m_width;
 };
 
 }

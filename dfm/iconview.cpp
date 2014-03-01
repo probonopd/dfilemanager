@@ -540,10 +540,7 @@ IconView::mousePressEvent(QMouseEvent *event)
         m_startPos = event->pos();
         m_startSlide = true;
         setDragEnabled(false);   //we will likely not want to drag items around at this point...
-        event->accept();
-        return;
     }
-    viewport()->update(); //required for itemdelegate toggling between bold / normal font.... just update(index) doesnt work.
 }
 
 void
@@ -559,9 +556,7 @@ IconView::mouseReleaseEvent(QMouseEvent *e)
     {
         if (index == m_pressedIndex)
             emit opened(index);
-        e->accept();
         m_pressedIndex = QModelIndex();
-        viewport()->update();
         return;
     }
     if (e->button() == Qt::MiddleButton)
@@ -579,14 +574,10 @@ IconView::mouseReleaseEvent(QMouseEvent *e)
             m_startSlide = false;
             setDragEnabled(true);
             viewport()->update();
-            e->accept();
             m_startPos = QPoint();
             return;
         }
     }
-
-
-    viewport()->update(); //required for itemdelegate toggling between bold / normal font.... just update(index) doesnt work.
 }
 
 void
@@ -795,7 +786,6 @@ IconView::setModel(QAbstractItemModel *model)
         connect(m_model, SIGNAL(urlChanged(QUrl)), this, SLOT(clear()));
         connect(m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(calculateRects()));
         connect(m_model, SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(clear(QModelIndex,QModelIndex)));
-//        connect(m_model, SIGNAL(hiddenVisibilityChanged(bool)), this, SLOT(updateLayout()));
         connect(m_model, SIGNAL(layoutChanged()), this, SLOT(updateLayout()));
         connect(m_model, SIGNAL(modelReset()), this, SLOT(updateLayout()));
         static_cast<IconDelegate*>(itemDelegate())->setModel(m_model);

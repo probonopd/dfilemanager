@@ -132,8 +132,8 @@ Model::nodeGenerated(const QString &path, Node *node)
     if (node == m_rootNode)
         return;
 
-    emit urlChanged(QUrl::fromLocalFile(path));
     m_current = node;
+    emit urlChanged(QUrl::fromLocalFile(path));
     m_dataGatherer->populateNode(node);
 }
 
@@ -331,8 +331,10 @@ Model::data(const QModelIndex &index, int role) const
         return node->category();
     if (role == MimeType)
         return node->mimeType();
+    if (role == FileType)
+        return node->fileType();
 
-    if (role == Qt::FontRole && !col && !node->isDir())
+    if (role == Qt::FontRole && !col)
     {
         QFont f(qApp->font());
         f.setItalic(node->isSymLink());

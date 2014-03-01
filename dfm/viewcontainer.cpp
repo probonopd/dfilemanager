@@ -201,11 +201,17 @@ ViewContainer::customActionTriggered()
                 continue;
             const QFileInfo &fi = m_model->fileInfo(index);
             if (fi.exists())
+            {
+                qDebug() << "trying to launch" << app << "in" << fi.filePath();
                 QProcess::startDetached(app, QStringList() << action << fi.filePath());
+            }
         }
     }
     else if (m_model->rootUrl().isLocalFile())
+    {
+        qDebug() << "trying to launch" << app << "in" << m_model->rootUrl().toLocalFile();
         QProcess::startDetached(app, QStringList() << action << m_model->rootUrl().toLocalFile());
+    }
 }
 
 void

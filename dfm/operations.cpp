@@ -118,15 +118,22 @@ Ops::customActionTriggered()
                     continue;
                 const QFileInfo &fi = fsModel->fileInfo(index);
                 if (fi.exists())
+                {
+                    qDebug() << "trying to launch" << app << "in" << fi.filePath();
                     QProcess::startDetached(app, QStringList() << action << fi.filePath());
+                }
             }
     }
     else
     {
         const QFileInfo &fi = fsModel->rootUrl().toLocalFile();
         if (fi.exists())
+        {
+            qDebug() << "trying to launch" << app << "in" << fi.filePath();
             QProcess::startDetached(app, QStringList() << action << fi.filePath());
+        }
     }
+
 }
 
 void

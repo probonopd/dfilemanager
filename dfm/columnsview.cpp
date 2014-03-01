@@ -30,6 +30,62 @@
 
 using namespace DFM;
 
+ResizeCorner::ResizeCorner(QWidget *parent)
+    : QWidget(parent)
+    , m_hasPress(false)
+    , m_prevPos(-1)
+{
+    parent->installEventFilter(this);
+}
+
+void
+ResizeCorner::paintEvent(QPaintEvent *)
+{
+//    QPainter p(this);
+//    p.fillRect(rect(), Qt::red);
+//    p.end();
+}
+
+void
+ResizeCorner::mousePressEvent(QMouseEvent *e)
+{
+    QWidget::mousePressEvent(e);
+    m_hasPress=true;
+    m_prevPos=e->globalPos().x();
+}
+
+void
+ResizeCorner::mouseReleaseEvent(QMouseEvent *e)
+{
+    QWidget::mouseReleaseEvent(e);
+    m_hasPress=false;
+}
+
+void
+ResizeCorner::mouseMoveEvent(QMouseEvent *e)
+{
+    QWidget::mouseMoveEvent(e);
+    if (!m_hasPress)
+        return;
+
+    int diff = e->globalPos().x()-m_prevPos;
+    move(pos().x()+diff, pos().y());
+    parentWidget()->setFixedWidth(parentWidget()->width()+diff);
+    m_prevPos = e->globalPos().x();
+}
+
+bool
+ResizeCorner::eventFilter(QObject *o, QEvent *e)
+{
+    if (o == parentWidget() && e->type() == QEvent::Resize)
+    {
+        QResizeEvent *re = static_cast<QResizeEvent *>(e);
+        if (!m_hasPress)
+            move(re->size().width()-this->width(), re->size().height()-this->height());
+    }
+    return QWidget::eventFilter(o, e);
+}
+
 class ColumnsDelegate : public FileItemDelegate
 {
 public:
@@ -82,10 +138,10 @@ private:
 ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QModelIndex &rootIndex)
     : QListView(parent)
     , m_parent(static_cast<ColumnsWidget *>(parent))
+    , m_corner(new ResizeCorner(this))
     , m_pressPos(QPoint())
     , m_activeFile(QString())
     , m_model(0)
-    , m_width(0)
 {
     setViewMode(QListView::ListMode);
     setResizeMode(QListView::Adjust);
@@ -112,6 +168,7 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QMode
         setRootIndex(rootIndex);
     }
     verticalScrollBar()->installEventFilter(this);
+    m_corner->setFixedSize(16, 16);
 }
 
 bool
@@ -179,7 +236,7 @@ ColumnsView::expanderRect(const QModelIndex &index)
 {
     QRect vr = visualRect(index);
     const int s = vr.height();
-    return QRect(vr.right()-s, vr.top(), s, s);
+    return QRect(viewport()->rect().right()-s, vr.top(), s, s);
 }
 
 void

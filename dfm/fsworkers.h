@@ -74,6 +74,7 @@ public:
     virtual QString category();
     inline QString scheme() { return url().scheme(); }
     QString mimeType();
+    QString fileType();
     bool isExec();
     virtual QIcon icon();
     virtual void exec();

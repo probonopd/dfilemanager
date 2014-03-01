@@ -117,6 +117,7 @@ DataLoader::getData(const QString &path)
             count = QString("%1%2").arg(children, " Entry");
         data->count = count;
         data->mimeType = m_mimeProvider.getMimeType(path);
+        data->fileType = m_mimeProvider.getFileType(path);
         data->lastModified = fi.lastModified().toString();
         m_mtx.lock();
         m_data.insert(path, data);
@@ -137,6 +138,7 @@ DataLoader::getData(const QString &path)
     iconName.replace("/", "-");
     data->iconName = iconName;
     data->lastModified = fi.lastModified().toString();
+    data->fileType = m_mimeProvider.getFileType(path);
     m_mtx.lock();
     m_data.insert(path, data);
     m_mtx.unlock();

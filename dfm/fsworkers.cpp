@@ -226,6 +226,20 @@ Node::mimeType()
     return QString();
 }
 
+QString
+Node::fileType()
+{
+    if (isSymLink())
+        return QString("symlink");
+    else if (isDir())
+        return QString("directory");
+    else if (isExec())
+        return QString("exec");
+    if (Data *d = moreData())
+        return d->fileType;
+    return suffix();
+}
+
 struct Data
 *Node::moreData()
 {
@@ -296,11 +310,11 @@ Node::data(const int column)
         case 1: return isDir()?(moreData()?moreData()->count:QString("--")):Ops::prettySize(size()); break;
         case 2:
         {
-            if (isDir())
-                return QString("directory");
-            else if (isSymLink())
+            if (isSymLink())
                 return QString("symlink");
-            else if (suffix().isEmpty() && isExecutable())
+            else if (isDir())
+                return QString("directory");
+            else if (isExec())
                 return QString("exec");
             else if (suffix().isEmpty())
                 return QString("file");
@@ -533,11 +547,16 @@ Node::isExec()
 {
     if (m_isExe == -1)
     {
-        const bool exeSuffix = bool(suffix().isEmpty() || suffix() == "sh" || suffix() == "exe");
-        if (isExecutable() && (exeSuffix || mimeType().contains("application", Qt::CaseInsensitive)))
-            m_isExe = 1;
+        if (moreData())
+        {
+            const bool exeSuffix = bool(suffix().isEmpty() || suffix() == "sh" || suffix() == "exe");
+            if (isExecutable() && (exeSuffix || mimeType().contains("executable", Qt::CaseInsensitive)) && !isDir())
+                m_isExe = 1;
+            else
+                m_isExe = 0;
+        }
         else
-            m_isExe = 0;
+            return false;
     }
     return m_isExe;
 }
