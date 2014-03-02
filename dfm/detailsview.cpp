@@ -229,3 +229,14 @@ DetailsView::resizeEvent(QResizeEvent *event)
 //    for (int i = 1; i < header()->count(); ++i)
 //        setColumnWidth(i, w*0.1f);
 }
+
+bool
+DetailsView::edit(const QModelIndex &index, EditTrigger trigger, QEvent *event)
+{
+    if (!index.isValid())
+        return false;
+    QModelIndex idx = index;
+    if (idx.column())
+        idx = idx.sibling(idx.row(), 0);
+    return QTreeView::edit(idx, trigger, event);
+}

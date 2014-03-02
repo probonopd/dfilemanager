@@ -32,24 +32,26 @@ using namespace DFM;
 
 ResizeCorner::ResizeCorner(QWidget *parent)
     : QWidget(parent)
+    , m_managed(parent)
     , m_hasPress(false)
     , m_prevPos(-1)
 {
-    parent->installEventFilter(this);
+    setAttribute(Qt::WA_NoMousePropagation);
+    m_managed->installEventFilter(this);
 }
 
 void
 ResizeCorner::paintEvent(QPaintEvent *)
 {
-//    QPainter p(this);
-//    p.fillRect(rect(), Qt::red);
-//    p.end();
+    QPainter p(this);
+    p.fillRect(rect(), Qt::red);
+    p.end();
 }
 
 void
 ResizeCorner::mousePressEvent(QMouseEvent *e)
 {
-    QWidget::mousePressEvent(e);
+    e->accept();
     m_hasPress=true;
     m_prevPos=e->globalPos().x();
 }
@@ -57,31 +59,58 @@ ResizeCorner::mousePressEvent(QMouseEvent *e)
 void
 ResizeCorner::mouseReleaseEvent(QMouseEvent *e)
 {
-    QWidget::mouseReleaseEvent(e);
+    e->accept();
     m_hasPress=false;
 }
 
 void
 ResizeCorner::mouseMoveEvent(QMouseEvent *e)
 {
-    QWidget::mouseMoveEvent(e);
+    e->accept();
     if (!m_hasPress)
         return;
 
     int diff = e->globalPos().x()-m_prevPos;
     move(pos().x()+diff, pos().y());
-    parentWidget()->setFixedWidth(parentWidget()->width()+diff);
+    m_managed->setFixedWidth(m_managed->width()+diff);
     m_prevPos = e->globalPos().x();
 }
 
 bool
 ResizeCorner::eventFilter(QObject *o, QEvent *e)
 {
-    if (o == parentWidget() && e->type() == QEvent::Resize)
+    if (o != m_managed)
+        return QWidget::eventFilter(o, e);
+
+    switch (e->type())
+    {
+    case QEvent::Resize:
     {
         QResizeEvent *re = static_cast<QResizeEvent *>(e);
         if (!m_hasPress)
             move(re->size().width()-this->width(), re->size().height()-this->height());
+        break;
+    }
+    case QEvent::Show:
+        show();
+        break;
+    case QEvent::Hide:
+        hide();
+        break;
+    case QEvent::MouseButtonPress:
+        if (geometry().contains(static_cast<QMouseEvent *>(e)->pos()))
+        {
+            QCoreApplication::sendEvent(this, e);
+            return true;
+        }
+    case QEvent::MouseButtonRelease:
+    case QEvent::MouseMove:
+        if (m_hasPress)
+        {
+            QCoreApplication::sendEvent(this, e);
+            return true;
+        }
+    default: break;
     }
     return QWidget::eventFilter(o, e);
 }
@@ -167,8 +196,12 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QMode
         setModel(fsModel);
         setRootIndex(rootIndex);
     }
-    verticalScrollBar()->installEventFilter(this);
-    m_corner->setFixedSize(16, 16);
+    QScrollBar *v = verticalScrollBar();
+    v->installEventFilter(this);
+    QStyleOptionSlider opt;
+    opt.initFrom(v);
+    int sz = style()->pixelMetric(QStyle::PM_ScrollBarExtent, &opt, v);
+    m_corner->setFixedSize(sz, sz);
 }
 
 bool
@@ -310,4 +343,12 @@ ColumnsView::mouseDoubleClickEvent(QMouseEvent *event)
             && event->button() == Qt::LeftButton
             && state() == NoState)
         emit opened(index);
+}
+
+void
+ColumnsView::resizeEvent(QResizeEvent *e)
+{
+    QListView::resizeEvent(e);
+    QScrollBar *v = verticalScrollBar();
+    v->resize(16, height()-16);
 }

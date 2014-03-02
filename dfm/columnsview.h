@@ -51,6 +51,7 @@ protected:
 private:
     bool m_hasPress;
     int m_prevPos;
+    QWidget *m_managed;
 };
 
 class ColumnsView : public QListView, public ViewBase
@@ -83,6 +84,7 @@ protected:
 //    void focusOutEvent(QFocusEvent *event) { QListView::focusOutEvent(event); viewport()->update(); }
     void wheelEvent(QWheelEvent *e);
     bool eventFilter(QObject *o, QEvent *e);
+    void resizeEvent(QResizeEvent *e);
 
 private:
     ColumnsWidget *m_parent;

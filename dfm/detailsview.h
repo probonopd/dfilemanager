@@ -44,6 +44,9 @@ public:
     void setModel(QAbstractItemModel *model);
     ViewContainer *container();
 
+public slots:
+    inline void edit(const QModelIndex &index) { QTreeView::edit(index); }
+
 protected:
     void contextMenuEvent(QContextMenuEvent *event);
     void mouseReleaseEvent(QMouseEvent *e);
@@ -51,6 +54,7 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *);
     void resizeEvent(QResizeEvent *event);
+    bool edit(const QModelIndex &index, EditTrigger trigger, QEvent *event);
 
 signals:
     void newTabRequest(const QModelIndex &path);
