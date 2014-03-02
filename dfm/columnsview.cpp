@@ -30,21 +30,52 @@
 
 using namespace DFM;
 
+static QPixmap resizePix(int size, const QColor &color)
+{
+    QPixmap p(size, size);
+    p.fill(Qt::transparent);
+    QPolygon pol;
+    if (size&1)
+        --size;
+    int half = size>>1;
+    static const int points[] = { half, 0, size, half, half, size, 0, half };
+    pol.setPoints(4, points);
+    QPainter pt(&p);
+//    pt.setRenderHint(QPainter::Antialiasing);
+    pt.setPen(Qt::NoPen);
+    pt.setBrush(color);
+    pt.drawPolygon(pol);
+    pt.setCompositionMode(QPainter::CompositionMode_DestinationOut);
+    pt.drawRect(QRect(half-1, 0, 2, size));
+    pt.end();
+    return p;
+}
+
 ResizeCorner::ResizeCorner(QWidget *parent)
     : QWidget(parent)
     , m_managed(parent)
     , m_hasPress(false)
     , m_prevPos(-1)
 {
-    setAttribute(Qt::WA_NoMousePropagation);
+    setCursor(Qt::SizeHorCursor);
+    setAttribute(Qt::WA_Hover);
+    setAttribute(Qt::WA_MouseTracking);
     m_managed->installEventFilter(this);
+    QTimer::singleShot(0, this, SLOT(postConstructor()));
+}
+
+void
+ResizeCorner::postConstructor()
+{
+    m_pix = resizePix(size().width(), palette().color(foregroundRole()));
+    update();
 }
 
 void
 ResizeCorner::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
-    p.fillRect(rect(), Qt::red);
+    p.drawTiledPixmap(rect(), m_pix);
     p.end();
 }
 
@@ -71,8 +102,11 @@ ResizeCorner::mouseMoveEvent(QMouseEvent *e)
         return;
 
     int diff = e->globalPos().x()-m_prevPos;
+    int newWidth = m_managed->width()+diff;
+    if (newWidth < 64)
+        return;
     move(pos().x()+diff, pos().y());
-    m_managed->setFixedWidth(m_managed->width()+diff);
+    m_managed->setFixedWidth(newWidth);
     m_prevPos = e->globalPos().x();
 }
 
@@ -350,5 +384,5 @@ ColumnsView::resizeEvent(QResizeEvent *e)
 {
     QListView::resizeEvent(e);
     QScrollBar *v = verticalScrollBar();
-    v->resize(16, height()-16);
+    v->resize(v->width(), height()-m_corner->height());
 }

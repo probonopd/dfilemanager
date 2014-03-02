@@ -48,10 +48,14 @@ protected:
     void mouseMoveEvent(QMouseEvent *);
     bool eventFilter(QObject *, QEvent *);
 
+protected slots:
+    void postConstructor();
+
 private:
     bool m_hasPress;
     int m_prevPos;
     QWidget *m_managed;
+    QPixmap m_pix;
 };
 
 class ColumnsView : public QListView, public ViewBase
