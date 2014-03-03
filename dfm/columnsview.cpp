@@ -32,29 +32,37 @@ using namespace DFM;
 
 static QPixmap resizePix(int size, const QColor &color)
 {
-    QPixmap p(size, size);
-    p.fill(Qt::transparent);
-    QPolygon pol;
-    if (size&1)
+    QPixmap pix(size, size);
+    if (size%2)
         --size;
-    int half = size>>1;
-    static const int points[] = { half, 0, size, half, half, size, 0, half };
-    pol.setPoints(4, points);
-    QPainter pt(&p);
-//    pt.setRenderHint(QPainter::Antialiasing);
-    pt.setPen(Qt::NoPen);
+    int half = size>>1, q = half>>1;
+    pix.fill(Qt::transparent);
+    QPainter pt(&pix);
+//    pt.translate(0.5f, 0.5f);
+    pt.setRenderHint(QPainter::Antialiasing);
     pt.setBrush(color);
+    pt.setPen(color);
+    static const int points[] = { 0,half, half,0, size,half, half,size };
+    QPolygon pol(4, points);
     pt.drawPolygon(pol);
     pt.setCompositionMode(QPainter::CompositionMode_DestinationOut);
-    pt.drawRect(QRect(half-1, 0, 2, size));
+    pt.setPen(Qt::NoPen);
+    QRect r(half-q, 0, q*2, size);
+    pt.drawRect(r);
+    pt.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    int height = half-qMax(1, size/8);
+    r.setTop(r.top()+height);
+    r.setBottom(r.bottom()-height);
+    pt.drawRect(r);
     pt.end();
-    return p;
+    return pix;
 }
 
 ResizeCorner::ResizeCorner(QWidget *parent)
     : QWidget(parent)
     , m_managed(parent)
     , m_hasPress(false)
+    , m_hasHover(false)
     , m_prevPos(-1)
 {
     setCursor(Qt::SizeHorCursor);
@@ -67,7 +75,8 @@ ResizeCorner::ResizeCorner(QWidget *parent)
 void
 ResizeCorner::postConstructor()
 {
-    m_pix = resizePix(size().width(), palette().color(foregroundRole()));
+    m_pix[0] = resizePix(size().width(), palette().color(foregroundRole()));
+    m_pix[1] = resizePix(size().width(), palette().color(QPalette::Highlight));
     update();
 }
 
@@ -75,7 +84,8 @@ void
 ResizeCorner::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
-    p.drawTiledPixmap(rect(), m_pix);
+    p.setOpacity(m_hasHover||m_hasPress?1.0f:0.5f);
+    p.drawTiledPixmap(rect(), m_pix[m_hasPress]);
     p.end();
 }
 
@@ -84,6 +94,7 @@ ResizeCorner::mousePressEvent(QMouseEvent *e)
 {
     e->accept();
     m_hasPress=true;
+    update();
     m_prevPos=e->globalPos().x();
 }
 
@@ -92,6 +103,7 @@ ResizeCorner::mouseReleaseEvent(QMouseEvent *e)
 {
     e->accept();
     m_hasPress=false;
+    update();
 }
 
 void
@@ -127,6 +139,8 @@ ResizeCorner::eventFilter(QObject *o, QEvent *e)
     }
     case QEvent::Show:
         show();
+        if (!m_hasPress)
+            move(m_managed->width()-this->width(), m_managed->height()-this->height());
         break;
     case QEvent::Hide:
         hide();
@@ -139,11 +153,29 @@ ResizeCorner::eventFilter(QObject *o, QEvent *e)
         }
     case QEvent::MouseButtonRelease:
     case QEvent::MouseMove:
+    {
         if (m_hasPress)
         {
             QCoreApplication::sendEvent(this, e);
             return true;
         }
+    }
+    case QEvent::HoverEnter:
+    case QEvent::HoverLeave:
+    case QEvent::HoverMove:
+    {
+        QHoverEvent *ev = static_cast<QHoverEvent *>(e);
+        if (rect().contains(mapFrom(m_managed, ev->pos())))
+        {
+            m_hasHover=true;
+            update();
+        }
+        else
+        {
+            m_hasHover=false;
+            update();
+        }
+    }
     default: break;
     }
     return QWidget::eventFilter(o, e);
@@ -173,8 +205,8 @@ public:
             painter->setRenderHint(QPainter::Antialiasing);
             QRect r(0,0,7,7);
             r.moveCenter(m_view->expanderRect(index).center());
-            QPolygon p;
-            p.putPoints(0, 4, r.left(), r.top(), r.left(), r.bottom(), r.right(), r.center().y(), r.left(), r.top());
+            const int points[] = { r.left(),r.top(), r.left(),r.bottom(), r.right(),r.center().y(), r.left(),r.top() };
+            QPolygon p(4, points);
             QPainterPath path;
             QColor arcol = (option.state & QStyle::State_Selected)?option.palette.color(QPalette::HighlightedText):option.palette.color(QPalette::Text);
             if (index.data().toString() != m_view->activeFileName())
@@ -219,10 +251,10 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QMode
     setSelectionMode(QAbstractItemView::ExtendedSelection);
     setSelectionRectVisible(true);
     setMouseTracking(true);
+    setAttribute(Qt::WA_Hover);
     setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    setTextElideMode(Qt::ElideNone);
     setFrameStyle(0);
     setSelectionBehavior(QAbstractItemView::SelectRows);
     if (FS::Model *fsModel = qobject_cast<FS::Model *>(model))
@@ -313,15 +345,6 @@ ColumnsView::mouseReleaseEvent(QMouseEvent *e)
     if (!index.isValid())
         return QListView::mouseReleaseEvent(e);
 
-    if (expanderRect(index).contains(e->pos())
-         && index == indexAt(m_pressPos))
-    {
-        emit expandRequest(index);
-        setActiveFileName(index.data().toString());
-        e->accept();
-        return;
-    }
-
     if (Store::config.views.singleClick
          && !e->modifiers()
          && e->button() == Qt::LeftButton
@@ -383,6 +406,14 @@ void
 ColumnsView::resizeEvent(QResizeEvent *e)
 {
     QListView::resizeEvent(e);
+    QScrollBar *v = verticalScrollBar();
+    v->resize(v->width(), height()-m_corner->height());
+}
+
+void
+ColumnsView::showEvent(QShowEvent *e)
+{
+    QListView::showEvent(e);
     QScrollBar *v = verticalScrollBar();
     v->resize(v->width(), height()-m_corner->height());
 }

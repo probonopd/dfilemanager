@@ -219,6 +219,7 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
   , m_lineCount(new QSpinBox(this))
   , m_dirSettings(new QCheckBox(tr("Store view for each dir separately (unix only)"), this))
   , m_categorized(new QCheckBox(tr("Show categorized"), this))
+  , m_colWidth(new QSpinBox(this))
 {
     m_smoothScroll->setChecked(Store::config.views.iconView.smoothScroll);
     m_categorized->setChecked(Store::config.views.iconView.categorized);
@@ -295,6 +296,17 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     detailLay->addWidget(new QLabel(tr("Padding added to rowheight:"), detailsBox), ++row, 0, right);
     detailLay->addWidget(m_rowPadding, row, 1, right);
 
+    //ColumnsView
+    m_colWidth->setMinimum(64);
+    m_colWidth->setMaximum(1024);
+    m_colWidth->setValue(Store::config.views.columnsView.colWidth);
+
+    QGroupBox *colsBox = new QGroupBox(tr("ColumnsView"), this);
+    QGridLayout *colLay = new QGridLayout(colsBox);
+    row = -1;
+    colLay->addWidget(new QLabel(tr("Default size of columns:"), colsBox), ++row, 0, right);
+    colLay->addWidget(m_colWidth, row, 1, right);
+
     m_viewBox->insertItems(0, QStringList() << "Icons" << "Details" << "Columns" << "Flow");
     m_viewBox->setCurrentIndex(Store::config.behaviour.view);
     QHBoxLayout *defView = new QHBoxLayout();
@@ -309,6 +321,7 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     vLayout->addLayout(defView);
     vLayout->addWidget(gBox);
     vLayout->addWidget(detailsBox);
+    vLayout->addWidget(colsBox);
     vLayout->addStretch();
     setLayout(vLayout);
 }
@@ -383,6 +396,7 @@ SettingsDialog::accept()
     Store::config.behaviour.devUsage = m_behWidget->m_drawDevUsage->isChecked();
     Store::config.views.iconView.textWidth = m_viewWidget->m_iconWidth->value();
     Store::config.views.detailsView.rowPadding = m_viewWidget->m_rowPadding->value();
+    Store::config.views.columnsView.colWidth = m_viewWidget->m_colWidth->value();
     Store::config.behaviour.view = m_viewWidget->m_viewBox->currentIndex();
     Store::config.views.iconView.iconSize = m_viewWidget->m_iconSlider->value();
     Store::config.views.singleClick = m_viewWidget->m_singleClick->isChecked();

@@ -52,10 +52,10 @@ protected slots:
     void postConstructor();
 
 private:
-    bool m_hasPress;
+    bool m_hasPress, m_hasHover;
     int m_prevPos;
     QWidget *m_managed;
-    QPixmap m_pix;
+    QPixmap m_pix[2];
 };
 
 class ColumnsView : public QListView, public ViewBase
@@ -89,6 +89,7 @@ protected:
     void wheelEvent(QWheelEvent *e);
     bool eventFilter(QObject *o, QEvent *e);
     void resizeEvent(QResizeEvent *e);
+    void showEvent(QShowEvent *e);
 
 private:
     ColumnsWidget *m_parent;

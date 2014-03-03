@@ -79,6 +79,7 @@ Store::readConfiguration()
     config.views.iconView.lineCount = settings()->value("iconView.lineCount", 3).toInt();
     config.views.iconView.categorized = settings()->value("iconView.categorized", false).toBool();
     config.views.iconView.categoryStyle = settings()->value("iconView.categoryStyle", 0).toInt();
+    config.views.columnsView.colWidth = settings()->value("columnsView.colWidth", 200).toInt();
 
     config.behaviour.gayWindow = settings()->value("behaviour.gayWindow", false).toBool();
     config.behaviour.tabShape = settings()->value("behaviour.gayWindow.tabShape", 0).toInt();
@@ -165,6 +166,8 @@ Store::writeConfiguration()
     settings()->setValue("pluginPath", config.pluginPath);
 
     settings()->setValue("activeThumbIfaces", config.views.activeThumbIfaces);
+
+    settings()->setValue("columnsView.colWidth", config.views.columnsView.colWidth);
 
 //    settings()->setValue("behaviour.gayWindow", config.behaviour.gayWindow);
 //    settings()->setValue("behaviour.gayWindow.tabShape", config.behaviour.tabShape);

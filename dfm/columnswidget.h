@@ -41,8 +41,8 @@ public:
     inline void setSelectionModel(QItemSelectionModel *model) { m_slctModel = model; }
     QModelIndex currentIndex();
     ColumnsView *currentView();
-    ViewContainer *container() { return m_container; }
-    void clear();
+    inline ViewContainer *container() { return m_container; }
+    void clear(const QModelIndexList &list = QModelIndexList());
     void scrollTo(const QModelIndex &index);
     
 signals:
@@ -55,29 +55,20 @@ public slots:
     void reconnectViews();
     void showCurrent();
 
-private slots:
-    void expand(const QModelIndex &index);
-
 protected:
     void connectView(ColumnsView *view);
     void showEvent(QShowEvent *e);
     void wheelEvent(QWheelEvent *e);
-    int at(const QUrl &url) { return m_rootList.indexOf(url); }
-    inline bool isValid(const QUrl &url) { return !m_columns.isEmpty()&&at(url)<m_columns.count(); }
-    inline bool isValid(const int i) { return i>-1&&!m_columns.isEmpty()&&i<m_columns.count(); }
-    inline ColumnsView *column(const int i) { return isValid(i) ? m_columns.at(i): 0; }
-    inline ColumnsView *column(const QUrl &url) { return isValid(url) ? column(at(url)) : 0; }
-    inline int count() { return m_columns.count(); }
 
 private:
     FS::Model *m_model;
     QItemSelectionModel *m_slctModel;
     QFrame *m_viewport;
     QHBoxLayout *m_viewLay;
-    QList<ColumnsView *> m_columns;
+    QMap<QPersistentModelIndex, ColumnsView *> m_map;
     ViewContainer *m_container;
     ColumnsView *m_currentView;
-    QModelIndex m_rootIndex;
+    QPersistentModelIndex m_rootIndex;
     QList<QUrl> m_rootList;
 };
 

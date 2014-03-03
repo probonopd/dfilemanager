@@ -76,6 +76,10 @@ typedef struct Config
         {
             int rowPadding;
         } detailsView;
+        struct columnsView
+        {
+            int colWidth;
+        } columnsView;
     } views;
 
     struct docks

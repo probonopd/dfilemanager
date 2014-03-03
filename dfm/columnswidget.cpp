@@ -74,75 +74,70 @@ ColumnsWidget::connectView(ColumnsView *view)
     connect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
     connect(view, SIGNAL(viewportEntered()), m_container, SIGNAL(viewportEntered()));
     connect(view, SIGNAL(focusRequest(ColumnsView*)), this, SLOT(setCurrentView(ColumnsView*)));
-    connect(view, SIGNAL(expandRequest(QModelIndex)), this, SLOT(expand(QModelIndex)));
 }
 
 void
 ColumnsWidget::reconnectViews()
 {
-    foreach (ColumnsView *view, m_columns)
-        connectView(view);
+    foreach (ColumnsView *view, m_map.values())
+        connectView(view);  
 }
 
 void
-ColumnsWidget::clear()
+ColumnsWidget::clear(const QModelIndexList &list)
 {
-    m_columns.clear();
-    while (!m_viewLay->isEmpty())
-    {
-        QLayoutItem *item = m_viewLay->takeAt(0);
-        item->widget()->deleteLater();
-        delete item;
-    }
+    m_currentView=0;
+    foreach (const QModelIndex &index, m_map.keys())
+        if (!list.contains(index))
+        {
+            int at = m_viewLay->indexOf(m_map.take(index));
+            QLayoutItem *item = m_viewLay->takeAt(at);
+            item->widget()->deleteLater();
+            delete item;
+        }
 }
 
 void
 ColumnsWidget::setRootIndex(const QModelIndex &index)
 {
-    clear();
-    ColumnsView *view = new ColumnsView(this, m_model, index);
-    connectView(view);
-    view->setSelectionModel(m_slctModel);
-    view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-    m_columns << view;
-    m_viewLay->insertWidget(m_viewLay->count()-1, view);
-    setCurrentView(view);
-    if (m_columns.count() > 1)
-        showCurrent();
+    m_rootIndex = index;
+    QModelIndexList list;
+    QModelIndex idx = index;
+    while (idx.parent().isValid())
+    {
+        list.prepend(idx);
+        idx=idx.parent();
+    }
+    clear(list);
+
+    for (int i=0; i<list.size(); ++i)
+    {
+        const QModelIndex &index = list.at(i);
+        if (m_map.contains(index))
+        {
+            if (i+1<list.size())
+                m_map.value(index)->setActiveFileName(list.at(i+1).data().toString());
+            continue;
+        }
+        ColumnsView *view = new ColumnsView(this, m_model, index);
+        view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+        view->setFixedWidth(Store::config.views.columnsView.colWidth);
+        if (i+1<list.size())
+            view->setActiveFileName(list.at(i+1).data().toString());
+        connectView(view);
+        view->setSelectionModel(m_slctModel);
+        m_map.insert(index, view);
+        m_viewLay->insertWidget(m_viewLay->count()-1, view);
+    }
+    m_currentView = m_map.value(index, 0);
 }
 
 void ColumnsWidget::showCurrent() { ensureWidgetVisible(currentView()); }
 
 void
-ColumnsWidget::expand(const QModelIndex &index)
-{
-    const QUrl &url = m_model->url(index);
-    int i = m_columns.indexOf(currentView());
-    if (m_viewLay->count() > ++i)
-    {
-        while (QLayoutItem *item = m_viewLay->itemAt(i))
-        {
-            if (item->spacerItem())
-                break;
-            m_columns.removeOne((ColumnsView *)item->widget());
-            m_viewLay->removeItem(item);
-            delete item->widget();
-            delete item;
-        }
-    }
-    ColumnsView *view = new ColumnsView(this, m_model, index);
-    connectView(view);
-    view->setSelectionModel(m_slctModel);
-    view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-    m_columns << view;
-    m_viewLay->insertWidget(m_viewLay->count()-1, view);
-    setCurrentView(view);
-}
-
-void
 ColumnsWidget::setCurrentView(ColumnsView *view)
 {
-    if (!m_columns.contains(view))
+    if (!m_map.values().contains(view))
         return;
     m_currentView = view;
     emit currentViewChagned(view);
@@ -152,9 +147,7 @@ void
 ColumnsWidget::showEvent(QShowEvent *e)
 {
     QScrollArea::showEvent(e);
-    const QUrl &url = m_model->url(m_rootIndex);
-    if (isValid(url))
-        ensureWidgetVisible(column(url));
+    ensureWidgetVisible(m_map.value(m_rootIndex, 0));
 }
 
 void
