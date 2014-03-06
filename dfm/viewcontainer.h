@@ -129,7 +129,7 @@ private:
     FS::Model *m_model;
     QStackedWidget *m_viewStack;
     QItemSelectionModel *m_selectModel;
-    NavBar *m_breadCrumbs;
+    NavBar *m_navBar;
     SearchIndicator *m_searchIndicator;
 };
 

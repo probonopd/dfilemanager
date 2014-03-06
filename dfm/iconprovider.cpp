@@ -231,7 +231,59 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
                 half = h;
             ++i;
         }
+        break;
     }
+    case Animator:
+    {
+        QPixmap temp(pix.size());
+        temp.fill(Qt::transparent);
+        QPainter tp(&temp);
+        tp.setPen(Qt::NoPen);
+        tp.setBrush(color);
+        int t = size/2;
+        QRect region = QRect(t-1, -t, 1, size);
+        for (int i = 1; i<360; ++i)
+        {
+            tp.translate(t, t);
+            tp.rotate(1.0f);
+            tp.translate(-t, -t);
+
+            tp.setCompositionMode(QPainter::CompositionMode_DestinationOut);
+            tp.fillRect(region, Qt::black);
+            tp.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
+            float opacity = (float)i/(360.0f);
+            color.setAlpha(255*opacity);
+            tp.fillRect(region, color);
+        }
+        tp.end();
+
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setPen(QPen(temp, 3));
+        p.drawEllipse(rect.adjusted(3, 3, -3, -3));
+        break;
+    }
+    case OK:
+    {
+        const int third = size/3, thirds = third*2, sixth=third/2;
+        const int points[] = { third,third+sixth, third+sixth,thirds+sixth, thirds+sixth,third-sixth };
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setPen(QPen(color, third*0.66f));
+        p.setBrush(Qt::NoBrush);
+        QPainterPath path;
+        path.addPolygon(QPolygon(3, points));
+        p.drawPath(path);
+        break;
+    }
+    case Circle:
+    {
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setPen(Qt::NoPen);
+        p.setBrush(color);
+        int third = size/3;
+        p.drawEllipse(third, third, third, third);
+    }
+        default: break;
     }
     p.end();
     return QIcon(pix);

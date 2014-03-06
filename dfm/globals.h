@@ -50,7 +50,8 @@ enum Roles
     FilePermissions = Qt::UserRole + 2,
     Category = Qt::UserRole + 3,
     MimeType = Qt::UserRole + 4,
-    FileType = Qt::UserRole + 5
+    FileType = Qt::UserRole + 5,
+    Url = Qt::UserRole + 6
 };
 }
 

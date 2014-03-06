@@ -34,6 +34,7 @@
 namespace DFM
 {
 class ColumnsWidget;
+class ColumnsView;
 
 class ResizeCorner : public QWidget
 {
@@ -54,7 +55,7 @@ protected slots:
 private:
     bool m_hasPress, m_hasHover;
     int m_prevPos;
-    QWidget *m_managed;
+    ColumnsView *m_managed;
     QPixmap m_pix[2];
 };
 
@@ -62,8 +63,8 @@ class ColumnsView : public QListView, public ViewBase
 {
     Q_OBJECT
 public:
-    ColumnsView(QWidget *parent = 0, QAbstractItemModel *model = 0, const QModelIndex &rootIndex = QModelIndex());
-    ~ColumnsView(){}
+    ColumnsView(QWidget *parent = 0, FS::Model *model = 0, const QModelIndex &rootIndex = QModelIndex());
+    ~ColumnsView();
     void setModel(QAbstractItemModel *model);
     inline void setActiveFileName(const QString &fileName) { QFileInfo f(fileName); m_activeFile = f.exists()?f.fileName():fileName; update(); }
     inline QString activeFileName() { return m_activeFile; }
@@ -92,11 +93,13 @@ protected:
     void showEvent(QShowEvent *e);
 
 private:
-    ColumnsWidget *m_parent;
+    ColumnsWidget *m_columnsWidget;
     ResizeCorner *m_corner;
     FS::Model *m_model;
     QPoint m_pressPos;
     QString m_activeFile;
+    friend class ColumnsWidget;
+    friend class ResizeCorner;
 };
 
 }

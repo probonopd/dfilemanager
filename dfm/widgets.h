@@ -29,6 +29,7 @@
 #include <QWidget>
 #include <QIcon>
 #include <QMenu>
+#include <QTimer>
 
 namespace DFM
 {
@@ -38,8 +39,13 @@ class Button : public QWidget
     Q_OBJECT
 public:
     explicit Button(QWidget *parent = 0);
-    inline void setIcon(const QIcon &icon) { m_icon = icon; update(); }
+    void setIcon(const QIcon &icon);
     inline void setMenu(QMenu *menu) { m_menu = menu; m_hasMenu = true; }
+
+public slots:
+    void animate();
+    void stopAnimating();
+    void startAnimating();
 
 signals:
     void clicked();
@@ -48,11 +54,15 @@ protected:
     void mousePressEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
     void paintEvent(QPaintEvent *);
+    void paletteChange(const QPalette &);
 
 private:
-    bool m_hasPress, m_hasMenu;
-    QIcon m_icon;
+    bool m_hasPress, m_hasMenu, m_isAnimating;
+    int m_animStep, m_stepSize;
+    QIcon m_icon, m_animIcon;
     QMenu *m_menu;
+    QTimer *m_animTimer;
+    QTransform m_transform;
 };
 
 }

@@ -25,6 +25,8 @@
 
 using namespace DFM;
 
+QMap<QUrl, int> ColumnsWidget::m_widthMap;
+
 ColumnsWidget::ColumnsWidget(QWidget *parent)
     : QScrollArea(parent)
     , m_viewport(new QFrame(this))
@@ -117,13 +119,19 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
         {
             if (i+1<list.size())
                 m_map.value(index)->setActiveFileName(list.at(i+1).data().toString());
+            else
+                m_map.value(index)->setActiveFileName(QString());
             continue;
         }
         ColumnsView *view = new ColumnsView(this, m_model, index);
         view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-        view->setFixedWidth(Store::config.views.columnsView.colWidth);
+
+        int w = m_widthMap.value(index.data(FS::Url).toUrl(), Store::config.views.columnsView.colWidth);
+        view->setFixedWidth(w);
         if (i+1<list.size())
             view->setActiveFileName(list.at(i+1).data().toString());
+        else
+            view->setActiveFileName(QString());
         connectView(view);
         view->setSelectionModel(m_slctModel);
         m_map.insert(index, view);
@@ -132,7 +140,7 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
     m_currentView = m_map.value(index, 0);
 }
 
-void ColumnsWidget::showCurrent() { ensureWidgetVisible(currentView()); }
+void ColumnsWidget::showCurrent() { ensureWidgetVisible(currentView(), m_currentView?m_currentView->width():0); }
 
 void
 ColumnsWidget::setCurrentView(ColumnsView *view)

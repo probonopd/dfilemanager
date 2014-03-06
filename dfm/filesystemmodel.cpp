@@ -333,6 +333,8 @@ Model::data(const QModelIndex &index, int role) const
         return node->mimeType();
     if (role == FileType)
         return node->fileType();
+    if (role == Url)
+        return node->url();
 
     if (role == Qt::FontRole && !col)
     {

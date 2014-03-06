@@ -557,9 +557,8 @@ IconView::mouseReleaseEvent(QMouseEvent *e)
         if (index == m_pressedIndex)
             emit opened(index);
         m_pressedIndex = QModelIndex();
-        return;
     }
-    if (e->button() == Qt::MiddleButton)
+    else if (e->button() == Qt::MiddleButton)
     {
         if (e->pos() == m_startPos
              && !e->modifiers()
@@ -573,11 +572,10 @@ IconView::mouseReleaseEvent(QMouseEvent *e)
             m_slide = false;
             m_startSlide = false;
             setDragEnabled(true);
-            viewport()->update();
             m_startPos = QPoint();
-            return;
         }
     }
+    viewport()->update(); //needed for not painting errors after rubberband selection
 }
 
 void

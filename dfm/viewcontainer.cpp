@@ -51,15 +51,18 @@ ViewContainer::ViewContainer(QWidget *parent, const QUrl &url)
     , m_columnsWidget(new ColumnsWidget(this))
     , m_detailsView(new DetailsView(this))
     , m_flowView(new FlowView(this))
-    , m_breadCrumbs(new NavBar(this, m_model))
+    , m_navBar(new NavBar(this, m_model))
     , m_searchIndicator(new SearchIndicator(this))
 
 {
     m_searchIndicator->setVisible(false);
-    connect(m_model, SIGNAL(finishedWorking()), m_searchIndicator, SLOT(stop()));
-    connect(m_model, SIGNAL(startedWorking()), m_searchIndicator, SLOT(start()));
+//    connect(m_model, SIGNAL(finishedWorking()), m_searchIndicator, SLOT(stop()));
+//    connect(m_model, SIGNAL(startedWorking()), m_searchIndicator, SLOT(start()));
 
-    m_breadCrumbs->setVisible(Store::settings()->value("pathVisible", true).toBool());
+    connect(m_model, SIGNAL(finishedWorking()), m_navBar, SLOT(stopAnimating()));
+    connect(m_model, SIGNAL(startedWorking()), m_navBar, SLOT(startAnimating()));
+
+    m_navBar->setVisible(Store::settings()->value("pathVisible", true).toBool());
     m_myView = Icon;
     m_back = false;
 
@@ -94,7 +97,7 @@ ViewContainer::ViewContainer(QWidget *parent, const QUrl &url)
 
     QVBoxLayout *layout = new QVBoxLayout();
     layout->addWidget(m_viewStack, 1);
-    layout->addWidget(m_breadCrumbs);
+    layout->addWidget(m_navBar);
     layout->setContentsMargins(0,0,0,0);
     layout->setSpacing(0);
     setLayout(layout);
@@ -116,7 +119,7 @@ ViewContainer::modelSort(const int column, const int order)
 //    m_flowView->detailsView()->header()->blockSignals(false);
 }
 
-PathNavigator *ViewContainer::pathNav() { return m_breadCrumbs->pathNav(); }
+PathNavigator *ViewContainer::pathNav() { return m_navBar->pathNav(); }
 
 void ViewContainer::setModel(QAbstractItemModel *model) { VIEWS(setModel(model)); }
 
@@ -291,7 +294,7 @@ ViewContainer::goForward()
 bool
 ViewContainer::goUp()
 {
-    const QModelIndex &index = m_model->index(m_breadCrumbs->url());
+    const QModelIndex &index = m_model->index(m_navBar->url());
     if (!index.parent().isValid())
         return false;
 
@@ -446,15 +449,15 @@ ViewContainer::genNewTabRequest(const QModelIndex &index)
 
 QModelIndex ViewContainer::indexAt(const QPoint &p) const { return currentView()->indexAt(mapFromParent(p)); }
 
-bool ViewContainer::setPathVisible(bool visible) { m_breadCrumbs->setVisible(visible); }
-bool ViewContainer::pathVisible() { return m_breadCrumbs->isVisible(); }
+bool ViewContainer::setPathVisible(bool visible) { m_navBar->setVisible(visible); }
+bool ViewContainer::pathVisible() { return m_navBar->isVisible(); }
 
 bool ViewContainer::canGoBack() { return m_model->canGoBack(); }
 bool ViewContainer::canGoForward() { return m_model->canGoForward(); }
 
-NavBar *ViewContainer::breadCrumbs() { return m_breadCrumbs; }
+NavBar *ViewContainer::breadCrumbs() { return m_navBar; }
 
-void ViewContainer::setPathEditable(const bool editable) { m_breadCrumbs->setEditable(editable); }
+void ViewContainer::setPathEditable(const bool editable) { m_navBar->setEditable(editable); }
 
 void ViewContainer::animateIconSize(int start, int stop) { m_iconView->setNewSize(stop); }
 QSize ViewContainer::iconSize() { return m_iconView->iconSize(); }

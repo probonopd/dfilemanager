@@ -28,6 +28,7 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QStackedWidget>
+#include <QStackedLayout>
 #include <QComboBox>
 #include <QStyleOptionComboBox>
 #include <QEvent>
@@ -156,7 +157,7 @@ private:
 
 //-----------------------------------------------------------------------------
 
-class NavBar : public QStackedWidget
+class NavBar : public QFrame
 {
     Q_OBJECT
 public:
@@ -167,6 +168,7 @@ public:
     inline PathNavigator *pathNav() { return m_pathNav; }
     inline PathBox *pathBox() { return m_pathBox; }
     QSize sizeHint() const;
+    QWidget *currentWidget() const { return m_stack->currentWidget(); }
 
 protected:
     void resizeEvent(QResizeEvent *);
@@ -177,6 +179,8 @@ public slots:
     void setUrl(const QUrl &url);
     void paletteOps();
     void postConstructorJobs();
+    inline void startAnimating() { m_schemeButton->startAnimating(); }
+    inline void stopAnimating() { m_schemeButton->stopAnimating(); }
 
 signals:
     void newPath(const QString &path);
@@ -186,6 +190,8 @@ private:
     PathNavigator *m_pathNav;
     FS::Model *m_fsModel;
     Button *m_schemeButton;
+    QHBoxLayout *m_layout;
+    QStackedLayout *m_stack;
 };
 
 class PathCompleter : public QCompleter

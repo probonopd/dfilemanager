@@ -89,7 +89,7 @@ Menu::mousePressEvent(QMouseEvent *e)
     {
         e->accept();
         QAction *action = qobject_cast<QAction *>(actionAt(e->pos()));
-        const QString &path = action->data().toString();
+        const QUrl &path = action->property("url").toUrl();
         MainWindow::currentWindow()->addTab(path);
     }
     else
@@ -110,6 +110,7 @@ NavButton::NavButton(QWidget *parent, const QUrl &url, const QString &text)
     if (m_nav->url() != url)
         setMinimumWidth(23);
     setAcceptDrops(true);
+    setAttribute(Qt::WA_Hover);
 }
 
 QSize
@@ -190,6 +191,9 @@ NavButton::paintEvent(QPaintEvent *e)
     else
         p.setPen(emb);
 
+    QFont f = p.font();
+    f.setUnderline(underMouse()&&!f.bold());
+    p.setFont(f);
     p.drawText(textRect.translated(0, 1), Qt::AlignLeft|Qt::AlignVCenter, m_text);
 
     if (rect().width() < sizeHint().width()-m_margin)
@@ -367,18 +371,26 @@ PathNavigator::genNavFromUrl(const QUrl &url)
 //-----------------------------------------------------------------------------
 
 NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
-    : QStackedWidget(parent)
+    : QFrame(parent)
     , m_pathNav(new PathNavigator(this, fsModel))
     , m_pathBox(new PathBox(this))
     , m_fsModel(fsModel)
-//    , m_schemeButton(new Button(this))
+    , m_schemeButton(new Button(this))
+    , m_layout(new QHBoxLayout())
+    , m_stack(new QStackedLayout())
 {
-    addWidget(m_pathNav);
-    addWidget(m_pathBox);
+    m_layout->setContentsMargins(0, 0, 0, 0);
+    m_layout->setSpacing(0);
+    m_stack->addWidget(m_pathNav);
+    m_stack->addWidget(m_pathBox);
+    m_stack->setContentsMargins(0, 0, 0, 0);
+    m_stack->setSpacing(0);
 
     m_pathBox->setInsertPolicy(QComboBox::InsertAtBottom);
     m_pathBox->setEditable(true);
     m_pathBox->setDuplicatesEnabled(false);
+
+//    m_schemeButton->setVisible(false);
 
     PathCompleter *completer = new PathCompleter(m_fsModel, m_pathBox);
     completer->setMaxVisibleItems(20);
@@ -392,16 +404,21 @@ NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
     connect (m_pathBox, SIGNAL(activated(QString)), this, SLOT(urlFromEdit(QString)));
     connect (m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()));
     connect (m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()));
-    setCurrentWidget(m_pathNav);
+    connect (m_schemeButton, SIGNAL(clicked()), this, SLOT(toggleEditable()));
+    m_stack->setCurrentWidget(m_pathNav);
+    m_layout->addWidget(m_schemeButton);
+    m_layout->addLayout(m_stack);
+    setLayout(m_layout);
     QTimer::singleShot(0, this, SLOT(paletteOps()));
-//    QTimer::singleShot(0, this, SLOT(postConstructorJobs()));
+    QTimer::singleShot(0, this, SLOT(postConstructorJobs()));
 }
 
 void
 NavBar::postConstructorJobs()
 {
-    m_schemeButton->setIcon(IconProvider::icon(IconProvider::Configure, 16, palette().color(foregroundRole()), false));
-    m_schemeButton->setMenu(m_fsModel->schemes());
+    m_schemeButton->setIcon(IconProvider::icon(IconProvider::Circle, 16, palette().color(foregroundRole()), false));
+//    m_schemeButton->setMenu(m_fsModel->schemes());
+    m_schemeButton->setFixedSize(16, 16);
 }
 
 void
@@ -489,10 +506,16 @@ void
 NavBar::setEditable(const bool editable)
 {
     if (!editable && url().isLocalFile())
-        setCurrentWidget(m_pathNav);
+    {
+        m_stack->setCurrentWidget(m_pathNav);
+        m_schemeButton->setIcon(IconProvider::icon(IconProvider::Circle, 16, palette().color(foregroundRole()), false));
+    }
     else
-        setCurrentWidget(m_pathBox);
-    currentWidget()->setFocus();
+    {
+        m_stack->setCurrentWidget(m_pathBox);
+        m_schemeButton->setIcon(IconProvider::icon(IconProvider::OK, 16, palette().color(foregroundRole()), false));
+    }
+    currentWidget()->setFocus();     
 }
 
 void
@@ -504,7 +527,7 @@ NavBar::toggleEditable()
 void
 NavBar::resizeEvent(QResizeEvent *e)
 {
-    QStackedWidget::resizeEvent(e);
+    QFrame::resizeEvent(e);
 //    m_pathBox->resize(size()-QSize(32, 0));
 //    m_pathBox->move(32, 0);
 //    m_schemeButton->move(0, 0);

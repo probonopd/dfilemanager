@@ -44,7 +44,10 @@ enum Type { IconView = 0,
             Search,
             Clear,
             Sort,
-            Hidden
+            Hidden,
+            Animator,
+            OK,
+            Circle
           };
 
 const QIcon icon(Type type, int size, QColor color, bool themeIcon);

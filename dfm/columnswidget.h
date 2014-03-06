@@ -66,10 +66,13 @@ private:
     QFrame *m_viewport;
     QHBoxLayout *m_viewLay;
     QMap<QPersistentModelIndex, ColumnsView *> m_map;
+    static QMap<QUrl, int> m_widthMap;
     ViewContainer *m_container;
     ColumnsView *m_currentView;
     QPersistentModelIndex m_rootIndex;
     QList<QUrl> m_rootList;
+    friend class ColumnsView;
+    friend class ResizeCorner;
 };
 
 }

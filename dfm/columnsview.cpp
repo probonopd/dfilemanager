@@ -60,7 +60,7 @@ static QPixmap resizePix(int size, const QColor &color)
 
 ResizeCorner::ResizeCorner(QWidget *parent)
     : QWidget(parent)
-    , m_managed(parent)
+    , m_managed(static_cast<ColumnsView *>(parent))
     , m_hasPress(false)
     , m_hasHover(false)
     , m_prevPos(-1)
@@ -69,6 +69,10 @@ ResizeCorner::ResizeCorner(QWidget *parent)
     setAttribute(Qt::WA_Hover);
     setAttribute(Qt::WA_MouseTracking);
     m_managed->installEventFilter(this);
+    QStyleOptionSlider opt;
+    opt.initFrom(m_managed);
+    int sz = style()->pixelMetric(QStyle::PM_ScrollBarExtent, &opt, m_managed->verticalScrollBar());
+    setFixedSize(sz, sz);
     QTimer::singleShot(0, this, SLOT(postConstructor()));
 }
 
@@ -119,6 +123,7 @@ ResizeCorner::mouseMoveEvent(QMouseEvent *e)
         return;
     move(pos().x()+diff, pos().y());
     m_managed->setFixedWidth(newWidth);
+    m_managed->m_columnsWidget->m_widthMap.insert(m_managed->rootIndex().data(FS::Url).toUrl(), newWidth);
     m_prevPos = e->globalPos().x();
 }
 
@@ -151,6 +156,7 @@ ResizeCorner::eventFilter(QObject *o, QEvent *e)
             QCoreApplication::sendEvent(this, e);
             return true;
         }
+        break;
     case QEvent::MouseButtonRelease:
     case QEvent::MouseMove:
     {
@@ -159,6 +165,7 @@ ResizeCorner::eventFilter(QObject *o, QEvent *e)
             QCoreApplication::sendEvent(this, e);
             return true;
         }
+        break;
     }
     case QEvent::HoverEnter:
     case QEvent::HoverLeave:
@@ -167,14 +174,19 @@ ResizeCorner::eventFilter(QObject *o, QEvent *e)
         QHoverEvent *ev = static_cast<QHoverEvent *>(e);
         if (rect().contains(mapFrom(m_managed, ev->pos())))
         {
+            if (!QApplication::overrideCursor())
+                QApplication::setOverrideCursor(Qt::SplitHCursor);
             m_hasHover=true;
             update();
         }
         else
         {
+            if (QApplication::overrideCursor()&&!m_hasPress)
+                QApplication::restoreOverrideCursor();
             m_hasHover=false;
             update();
         }
+        break;
     }
     default: break;
     }
@@ -192,29 +204,32 @@ public:
     {
         if (!index.data().isValid()||!option.rect.isValid())
             return;
-        if (index.data().toString() == m_view->activeFileName())
+        if (index.data().toString() == m_view->activeFileName() && !(option.state & QStyle::State_MouseOver))
         {
-            QColor h = m_view->palette().color(QPalette::Highlight);
-            h.setAlpha(64);
-            painter->fillRect(option.rect, h);
+            painter->setOpacity(0.5f);
+            const_cast<QStyleOptionViewItem *>(&option)->state |= QStyle::State_MouseOver;
+            QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, painter, m_view);
+            const_cast<QStyleOptionViewItem *>(&option)->state &= ~QStyle::State_MouseOver;
+            painter->setOpacity(1.0f);
         }
         FileItemDelegate::paint(painter, option, index);
-        if (m_model->isDir(index) && m_model->url(index).scheme() == "file")
+        if (m_model->isDir(index))
         {
             painter->save();
             painter->setRenderHint(QPainter::Antialiasing);
             QRect r(0,0,7,7);
             r.moveCenter(m_view->expanderRect(index).center());
-            const int points[] = { r.left(),r.top(), r.left(),r.bottom(), r.right(),r.center().y(), r.left(),r.top() };
-            QPolygon p(4, points);
-            QPainterPath path;
             QColor arcol = (option.state & QStyle::State_Selected)?option.palette.color(QPalette::HighlightedText):option.palette.color(QPalette::Text);
-            if (index.data().toString() != m_view->activeFileName())
+            if (option.state & QStyle::State_MouseOver && !(option.state & QStyle::State_Selected))
+                arcol = option.palette.color(QPalette::Text);
+            else if (index.data().toString() != m_view->activeFileName())
                 arcol = Ops::colorMid(option.palette.color(QPalette::Base), arcol);
-            path.addPolygon(p);
-            painter->setPen(QPen(arcol, 2.0f, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+
+//            painter->setPen(QPen(arcol, 2.0f, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            painter->setPen(Qt::NoPen);
             painter->setBrush(arcol);
-            painter->drawPath(path);
+            const int points[] = { r.left(),r.top(), r.left(),r.bottom(), r.right(),r.center().y() };
+            painter->drawPolygon(QPolygon(3, points));
             painter->restore();
         }
     }
@@ -230,9 +245,9 @@ private:
     FS::Model *m_model;
 };
 
-ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QModelIndex &rootIndex)
+ColumnsView::ColumnsView(QWidget *parent, FS::Model *model, const QModelIndex &rootIndex)
     : QListView(parent)
-    , m_parent(static_cast<ColumnsWidget *>(parent))
+    , m_columnsWidget(static_cast<ColumnsWidget *>(parent))
     , m_corner(new ResizeCorner(this))
     , m_pressPos(QPoint())
     , m_activeFile(QString())
@@ -257,17 +272,16 @@ ColumnsView::ColumnsView(QWidget *parent, QAbstractItemModel *model, const QMode
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setFrameStyle(0);
     setSelectionBehavior(QAbstractItemView::SelectRows);
-    if (FS::Model *fsModel = qobject_cast<FS::Model *>(model))
-    {
-        setModel(fsModel);
-        setRootIndex(rootIndex);
-    }
+    setContentsMargins(0, 0, 16, 0);
+    setModel(model);
+    setRootIndex(rootIndex);
     QScrollBar *v = verticalScrollBar();
     v->installEventFilter(this);
-    QStyleOptionSlider opt;
-    opt.initFrom(v);
-    int sz = style()->pixelMetric(QStyle::PM_ScrollBarExtent, &opt, v);
-    m_corner->setFixedSize(sz, sz);
+}
+
+ColumnsView::~ColumnsView()
+{
+//    m_columnsWidget->m_widthMap.insert(rootIndex().data(FS::Url).toUrl(), width());
 }
 
 bool
@@ -280,7 +294,7 @@ ColumnsView::eventFilter(QObject *o, QEvent *e)
         QWheelEvent *we = static_cast<QWheelEvent *>(e);
         if (we->modifiers() == Qt::ControlModifier)
         {
-            QCoreApplication::sendEvent(m_parent, we);
+            QCoreApplication::sendEvent(m_columnsWidget, we);
             return true;
         }
     }

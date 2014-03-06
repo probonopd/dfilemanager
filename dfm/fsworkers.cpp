@@ -547,10 +547,11 @@ Node::isExec()
 {
     if (m_isExe == -1)
     {
-        if (moreData())
+        if (Data *d = moreData())
         {
-            const bool exeSuffix = bool(suffix().isEmpty() || suffix() == "sh" || suffix() == "exe");
-            if (isExecutable() && (exeSuffix || mimeType().contains("executable", Qt::CaseInsensitive)) && !isDir())
+            const bool exeSuffix = bool(suffix() == "exe");
+            const bool exeFileInfo = mimeType().contains("executable", Qt::CaseInsensitive)||d->fileType.contains("executable", Qt::CaseInsensitive);
+            if (isExecutable() && (exeSuffix || exeFileInfo && !isDir()))
                 m_isExe = 1;
             else
                 m_isExe = 0;
