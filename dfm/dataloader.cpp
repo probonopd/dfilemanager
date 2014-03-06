@@ -99,9 +99,9 @@ DataLoader::getData(const QString &path)
     Data *data = new Data();
     if (fi.isDir())
     {
-#if defined(Q_OS_UNIX)
         const QString &dirFile(fi.absoluteFilePath());
         const QDir dir(dirFile);
+#if defined(Q_OS_UNIX)
         const QString &settingsFile(dir.absoluteFilePath(".directory"));
         const QSettings settings(settingsFile, QSettings::IniFormat);
         const QString &iconName = settings.value("Desktop Entry/Icon").toString();

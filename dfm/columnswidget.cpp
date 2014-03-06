@@ -36,6 +36,7 @@ ColumnsWidget::ColumnsWidget(QWidget *parent)
     , m_rootIndex(QModelIndex())
     , m_model(0)
     , m_slctModel(0)
+    , m_isResizingColumns(false)
 {
     setWidget(m_viewport);
     m_viewLay->setContentsMargins(0, 0, 0, 0);
@@ -140,7 +141,12 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
     m_currentView = m_map.value(index, 0);
 }
 
-void ColumnsWidget::showCurrent() { ensureWidgetVisible(currentView(), m_currentView?m_currentView->width():0); }
+void
+ColumnsWidget::showCurrent()
+{
+    if (!m_isResizingColumns)
+        ensureWidgetVisible(currentView(), m_currentView?m_currentView->width():0);
+}
 
 void
 ColumnsWidget::setCurrentView(ColumnsView *view)

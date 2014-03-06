@@ -97,6 +97,7 @@ void
 ResizeCorner::mousePressEvent(QMouseEvent *e)
 {
     e->accept();
+    m_managed->m_columnsWidget->m_isResizingColumns=true;
     m_hasPress=true;
     update();
     m_prevPos=e->globalPos().x();
@@ -106,6 +107,7 @@ void
 ResizeCorner::mouseReleaseEvent(QMouseEvent *e)
 {
     e->accept();
+    m_managed->m_columnsWidget->m_isResizingColumns=false;
     m_hasPress=false;
     update();
 }

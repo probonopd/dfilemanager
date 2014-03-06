@@ -114,7 +114,7 @@ Button::setIcon(const QIcon &icon)
     m_icon = icon;
     update();
 }
-
+#if QT_VERSION < 0x050000
 void
 Button::paletteChange(const QPalette &p)
 {
@@ -122,3 +122,4 @@ Button::paletteChange(const QPalette &p)
     m_animIcon = IconProvider::icon(IconProvider::Animator, 16, palette().color(foregroundRole()), false);
     update();
 }
+#endif

@@ -54,7 +54,9 @@ protected:
     void mousePressEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
     void paintEvent(QPaintEvent *);
+#if QT_VERSION < 0x050000
     void paletteChange(const QPalette &);
+#endif
 
 private:
     bool m_hasPress, m_hasMenu, m_isAnimating;

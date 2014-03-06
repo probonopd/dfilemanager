@@ -71,6 +71,7 @@ private:
     ColumnsView *m_currentView;
     QPersistentModelIndex m_rootIndex;
     QList<QUrl> m_rootList;
+    bool m_isResizingColumns;
     friend class ColumnsView;
     friend class ResizeCorner;
 };
