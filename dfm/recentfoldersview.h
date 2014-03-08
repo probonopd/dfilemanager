@@ -28,6 +28,13 @@
 namespace DFM
 {
 
+class RecentFoldersModel : public QStandardItemModel
+{
+public:
+    inline explicit RecentFoldersModel(QObject *parent = 0):QStandardItemModel(parent){}
+    QVariant data(const QModelIndex &index, int role) const;
+};
+
 class RecentFoldersView : public QListView
 {
     Q_OBJECT
@@ -43,7 +50,8 @@ private slots:
     void itemActivated(const QModelIndex &index);
     void paletteOps();
 private:
-    QStandardItemModel *m_model;
+    RecentFoldersModel *m_model;
+    friend class RecentFoldersModel;
 };
 
 }

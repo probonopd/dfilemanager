@@ -194,6 +194,8 @@ Node::rowOf(Node *child) const
 QIcon
 Node::icon()
 {
+    if (m_filePath == "/")
+        return FileIconProvider::typeIcon(FileIconProvider::Drive);
     Data *d = moreData();
     if (!d)
         return FileIconProvider::fileIcon(*this);

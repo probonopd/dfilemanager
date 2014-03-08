@@ -41,6 +41,7 @@ InfoWidget::InfoWidget(QWidget *parent)
     , m_type(new QLabel(this))
     , m_mime(new QLabel(this))
     , m_size(new QLabel(this))
+    , m_viewport(new QWidget(this))
 {
 //    QPalette pal = palette();
 //    QColor midC = Operations::colorMid(pal.color(QPalette::Base), pal.color(QPalette::Highlight), 10, 1);
@@ -97,7 +98,13 @@ InfoWidget::InfoWidget(QWidget *parent)
     gdl->addWidget(m_lastMod[1], 0, 7);
     gdl->addWidget(m_perm[1], 1, 7);
     gdl->setVerticalSpacing(0);
-    setLayout(gdl);
+    m_viewport->setLayout(gdl);
+    QHBoxLayout *mainLay = new QHBoxLayout(this);
+    mainLay->addWidget(m_viewport);
+    mainLay->setContentsMargins(0, 0, 0, 0);
+    m_viewport->setContentsMargins(0, 0, 0, 0);
+    mainLay->setSpacing(0);
+    setLayout(mainLay);
 
     QTimer::singleShot(0, this, SLOT(paletteOps()));
 }
@@ -105,7 +112,7 @@ InfoWidget::InfoWidget(QWidget *parent)
 void
 InfoWidget::paletteOps()
 {
-    setAutoFillBackground(true);
+    m_viewport->setAutoFillBackground(true);
     QPalette::ColorRole bg = backgroundRole(), fg = foregroundRole();
     QPalette pal = palette();
     const QColor fgc = pal.color(fg), bgc = pal.color(bg);
@@ -127,7 +134,7 @@ InfoWidget::paletteOps()
         pal.setColor(bg, Ops::colorMid(wtext, pal.color(QPalette::Highlight), 10, 1));
         pal.setColor(fg, w);
     }
-    setPalette(pal);
+    m_viewport->setPalette(pal);
 }
 
 void
@@ -172,6 +179,5 @@ InfoWidget::hovered(const QModelIndex &index)
     m_lastMod[1]->setText(i.lastModified().toString());
     const QString &s(index.data(FS::FilePermissions).toString());
     m_perm[1]->setText(s);
-
-    m_sizeLbl->setText(i.isDir() ? "--" : Ops::prettySize(i.size()));
+    m_sizeLbl->setText(index.sibling(index.row(), 1).data().toString());
 }

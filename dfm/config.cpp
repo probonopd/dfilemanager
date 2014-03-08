@@ -72,13 +72,20 @@ Store::readConfiguration()
     config.views.activeThumbIfaces = settings()->value("activeThumbIfaces", QStringList()).toStringList();
     config.views.singleClick = settings()->value("views.singleClick", false).toBool();
     config.views.flowSize = settings()->value("flowSize", QByteArray()).toByteArray();
-    config.views.detailsView.rowPadding = settings()->value("detailsView.rowPadding", 0).toInt();
+
+    //IconView
     config.views.iconView.smoothScroll = settings()->value("smoothScroll", false).toBool();
     config.views.iconView.textWidth = settings()->value("textWidth", 16).toInt();
     config.views.iconView.iconSize = settings()->value("iconView.iconSize", 3).toInt();
     config.views.iconView.lineCount = settings()->value("iconView.lineCount", 3).toInt();
     config.views.iconView.categorized = settings()->value("iconView.categorized", false).toBool();
     config.views.iconView.categoryStyle = settings()->value("iconView.categoryStyle", 0).toInt();
+
+    //DetailsView
+    config.views.detailsView.rowPadding = settings()->value("detailsView.rowPadding", 0).toInt();
+    config.views.detailsView.altRows = settings()->value("detailsView.altRows", false).toBool();
+
+    //ColumnView
     config.views.columnsView.colWidth = settings()->value("columnsView.colWidth", 200).toInt();
 
     config.behaviour.gayWindow = settings()->value("behaviour.gayWindow", false).toBool();
@@ -142,7 +149,10 @@ Store::writeConfiguration()
     settings()->setValue("showThumbs", config.views.showThumbs);
     settings()->setValue("drawDevUsage", config.behaviour.devUsage);
     settings()->setValue("textWidth", config.views.iconView.textWidth);
+
     settings()->setValue("detailsView.rowPadding", config.views.detailsView.rowPadding);
+    settings()->setValue("detailsView.altRows", config.views.detailsView.altRows);
+
     settings()->setValue("start.view", config.behaviour.view);
     settings()->setValue("iconView.iconSize", config.views.iconView.iconSize);
     settings()->setValue("iconView.lineCount", config.views.iconView.lineCount);

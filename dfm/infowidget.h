@@ -94,6 +94,7 @@ public slots:
 
 private:
     ThumbWidget *m_tw;
+    QWidget *m_viewport;
     QLabel *m_ownerLbl, *m_owner, *m_typeLbl, *m_type, *m_mimeLbl, *m_mime, *m_sizeLbl, *m_size, *m_lastMod[2], *m_perm[2];
     TextLabel *m_fileName;
 };

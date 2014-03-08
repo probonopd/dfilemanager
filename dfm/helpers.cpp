@@ -25,20 +25,46 @@ MimeProvider::getMimeType(const QString &file) const
     QMutexLocker locker(&m_mutex);
 #if defined(Q_OS_UNIX)
     return magic_file(m_mime, file.toLocal8Bit().data());
-#else
-    return QString();
+#elif defined(Q_OS_WIN)
+    const QString &suffix = file.mid(file.lastIndexOf("."));
+    if (!suffix.startsWith("."))
+        return QString("Unknown");
+    const QString &regCommand = QString("HKCR\\%1").arg(suffix);
+    const QVariant &var = QSettings(regCommand, QSettings::NativeFormat).value("Content Type");
+    if (var.isValid())
+        return var.toString();
+    else
+        return QString("Unknown");
 #endif
+    return QString("Unknown");
 }
 
 QString
 MimeProvider::getFileType(const QString &file) const
 {
     QMutexLocker locker(&m_mutex);
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
     return magic_file(m_all, file.toLocal8Bit().data());
-#else
-    return QString();
+#elif defined(Q_OS_WIN)
+    const QString &suffix = file.mid(file.lastIndexOf("."));
+    if (!suffix.startsWith("."))
+        return QString("Unknown");
+    const QString &regCommand = QString("HKCR\\%1").arg(suffix);
+    const QVariant &var = QSettings(regCommand, QSettings::NativeFormat).value(".");
+    if (var.isValid())
+    {
+        QSettings s("HKCR", QSettings::NativeFormat);
+        s.beginGroup(var.toString());
+        const QString &type = s.value(".").toString();
+        if (!type.isEmpty())
+            return type;
+        else
+            return var.toString();
+    }
+    else
+        return QString("Unknown");
 #endif
+    return QString("Unknown");
 }
 
 //-----------------------------------------------------------------------------
@@ -49,6 +75,7 @@ DFM::ViewBase::keyPressEvent(QKeyEvent *ke)
     SearchBox *searchBox = DFM::MainWindow::currentWindow()->searchBox();
     if (!ke->text().isEmpty() && !ke->modifiers())
     {
+        searchBox->setMode(Filter);
         searchBox->setText(QString("%1%2").arg(searchBox->text(), ke->text()));
         searchBox->setFocus();
     }

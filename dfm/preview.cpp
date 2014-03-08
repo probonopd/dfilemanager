@@ -225,6 +225,7 @@ PreView::PreView(QWidget *parent)
     scrollBar->setPageStep(1);
     m_gfxProxy = m_scene->addWidget(scrollBar);
     m_scrollBar = static_cast<ScrollBar *>(m_gfxProxy->widget());
+    m_scrollBar->setAttribute(Qt::WA_NoSystemBackground);
     connect(m_scrollBar, SIGNAL(valueChanged(int)), this, SLOT(scrollBarMoved(int)));
     setFocusPolicy(Qt::NoFocus);
     setFrameStyle(QFrame::NoFrame);

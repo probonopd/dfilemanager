@@ -72,8 +72,12 @@ PathSeparator::mousePressEvent(QMouseEvent *event)
     for (int i = 0; i < m_fsModel->rowCount(parent); ++i)
     {
         const QModelIndex &child = parent.child(i, 0);
+        const QUrl &url = child.data(FS::Url).toUrl();
+        const QFileInfo fi(url.toLocalFile());
+        if (!fi.isDir())
+            continue;
         QAction *action = menu.addAction(child.data().toString(), m_fsModel, SLOT(setUrlFromDynamicPropertyUrl()));
-        action->setProperty("url", QVariant::fromValue(m_fsModel->url(child)));
+        action->setProperty("url", QVariant::fromValue(url));
     }
     menu.exec(event->globalPos());
 }
@@ -109,6 +113,8 @@ NavButton::NavButton(QWidget *parent, const QUrl &url, const QString &text)
     setMaximumHeight(16);
     if (m_nav->url() != url)
         setMinimumWidth(23);
+    if (text.isEmpty())
+        setFixedWidth(24);
     setAcceptDrops(true);
     setAttribute(Qt::WA_Hover);
 }
@@ -250,33 +256,6 @@ NavButton::mouseReleaseEvent(QMouseEvent *e)
 
 //-----------------------------------------------------------------------------
 
-PathBox::PathBox(QWidget *parent) : QComboBox(parent)
-{
-}
-
-void
-PathBox::paintEvent(QPaintEvent *)
-{
-    QPainter p(this);
-    p.setRenderHint(QPainter::Antialiasing);
-    p.setPen(Qt::NoPen);
-    p.setBrush(palette().color(foregroundRole()));
-    QStyleOptionComboBox opt;
-    opt.initFrom(this);
-    QRect r = QRect(0, 0, 9, 9);
-    r.moveCenter(style()->subControlRect(QStyle::CC_ComboBox, &opt, QStyle::SC_ComboBoxArrow, this).center());
-    QPolygon triangle(3);
-    int w = r.right(), x = r.x(), y = r.y(), h = r.bottom();
-    triangle.putPoints(0, 3,   x,y,   w,y,    r.center().x(),h);
-    QPainterPath path;
-    path.addPolygon(triangle);
-    path.closeSubpath();
-    p.drawPath(path);
-    p.end();
-}
-
-//-----------------------------------------------------------------------------
-
 PathNavigator::PathNavigator(QWidget *parent, FS::Model *model)
     : QWidget(parent)
     , m_fsModel(model)
@@ -285,15 +264,10 @@ PathNavigator::PathNavigator(QWidget *parent, FS::Model *model)
     , m_bc(static_cast<NavBar *>(parent))
 {
     connect(m_fsModel, SIGNAL(urlChanged(QUrl)), this, SLOT(genNavFromUrl(QUrl)));
+    setContentsMargins(0, 0, 0, 0);
     m_layout->setContentsMargins(0, 0, 0, 0);
     m_layout->setSpacing(0);
     setLayout(m_layout);
-}
-
-QSize
-PathNavigator::sizeHint() const
-{
-    return QSize(QWidget::sizeHint().width(), 16);
 }
 
 void
@@ -343,7 +317,7 @@ PathNavigator::genNavFromUrl(const QUrl &url)
     do {
         const QString &newPath = dir.path();
         const QFileInfo fi(newPath);
-        const QString buttonText(fi.fileName().isEmpty() ? fi.filePath() : fi.fileName());
+        const QString buttonText(newPath=="/" ? QString() : fi.fileName().isEmpty() ? fi.filePath() : fi.fileName());
         const QUrl &pathUrl = QUrl::fromLocalFile(newPath);
         NavButton *nb = new NavButton(this, pathUrl, buttonText);
 
@@ -370,27 +344,46 @@ PathNavigator::genNavFromUrl(const QUrl &url)
 
 //-----------------------------------------------------------------------------
 
+PathBox::PathBox(QWidget *parent) : QComboBox(parent)
+{
+    setContentsMargins(0, 0, 0, 0);
+}
+
+void
+PathBox::paintEvent(QPaintEvent *)
+{
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(Qt::NoPen);
+    p.setBrush(palette().color(foregroundRole()));
+    QStyleOptionComboBox opt;
+    opt.initFrom(this);
+    QRect r = QRect(0, 0, 9, 9);
+    r.moveCenter(style()->subControlRect(QStyle::CC_ComboBox, &opt, QStyle::SC_ComboBoxArrow, this).center());
+    QPolygon triangle(3);
+    int w = r.right(), x = r.x(), y = r.y(), h = r.bottom();
+    triangle.putPoints(0, 3,   x,y,   w,y,    r.center().x(),h);
+    QPainterPath path;
+    path.addPolygon(triangle);
+    path.closeSubpath();
+    p.drawPath(path);
+    p.end();
+}
+
+//-----------------------------------------------------------------------------
+
 NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
     : QFrame(parent)
     , m_pathNav(new PathNavigator(this, fsModel))
     , m_pathBox(new PathBox(this))
     , m_fsModel(fsModel)
     , m_schemeButton(new Button(this))
-    , m_layout(new QHBoxLayout())
     , m_stack(new QStackedLayout())
+    , m_viewport(new QWidget(this))
 {
-    m_layout->setContentsMargins(0, 0, 0, 0);
-    m_layout->setSpacing(0);
-    m_stack->addWidget(m_pathNav);
-    m_stack->addWidget(m_pathBox);
-    m_stack->setContentsMargins(0, 0, 0, 0);
-    m_stack->setSpacing(0);
-
     m_pathBox->setInsertPolicy(QComboBox::InsertAtBottom);
     m_pathBox->setEditable(true);
     m_pathBox->setDuplicatesEnabled(false);
-
-//    m_schemeButton->setVisible(false);
 
     PathCompleter *completer = new PathCompleter(m_fsModel, m_pathBox);
     completer->setMaxVisibleItems(20);
@@ -398,17 +391,33 @@ NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
     completer->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
     m_pathBox->setCompleter(completer);
 
-//    connect (m_fsModel, SIGNAL(finishedWorking()), completer, SLOT(complete()));
     connect (m_pathBox, SIGNAL(editTextChanged(QString)), completer, SLOT(textChanged(QString)));
-//    connect (m_pathBox, SIGNAL(textChanged(QString)), completer, SLOT(textChanged(QString)));
     connect (m_pathBox, SIGNAL(activated(QString)), this, SLOT(urlFromEdit(QString)));
     connect (m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()));
     connect (m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()));
     connect (m_schemeButton, SIGNAL(clicked()), this, SLOT(toggleEditable()));
+
+    m_stack->addWidget(m_pathNav);
+    m_stack->addWidget(m_pathBox);
+    m_stack->setContentsMargins(0, 0, 0, 0);
+    m_stack->setSpacing(0);
     m_stack->setCurrentWidget(m_pathNav);
-    m_layout->addWidget(m_schemeButton);
-    m_layout->addLayout(m_stack);
-    setLayout(m_layout);
+
+    QHBoxLayout *layout = new QHBoxLayout();
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+    layout->addWidget(m_schemeButton);
+    layout->addLayout(m_stack);
+
+    m_viewport->setLayout(layout);
+    m_viewport->setContentsMargins(4, 0, 0, 0);
+
+    QHBoxLayout *viewPortLay = new QHBoxLayout(this);
+    viewPortLay->addWidget(m_viewport);
+    viewPortLay->setContentsMargins(0, 0, 0, 0);
+    viewPortLay->setSpacing(0);
+    setLayout(viewPortLay);
+
     QTimer::singleShot(0, this, SLOT(paletteOps()));
     QTimer::singleShot(0, this, SLOT(postConstructorJobs()));
 }
@@ -426,7 +435,7 @@ NavBar::paletteOps()
 {
     const int style = Store::config.behaviour.pathBarStyle;
     if (style > 0)
-        setAutoFillBackground(true);
+        m_viewport->setAutoFillBackground(true);
     if (style != 0)
         setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
     else
@@ -461,12 +470,6 @@ NavBar::paletteOps()
     m_pathBox->setPalette(ppal);
 }
 
-QSize
-NavBar::sizeHint() const
-{
-    return QSize(QFrame::sizeHint().width(), 16);
-}
-
 void
 NavBar::urlFromEdit(const QString &urlString)
 {
@@ -480,7 +483,7 @@ NavBar::urlFromEdit(const QString &urlString)
     url = url.toEncoded(QUrl::StripTrailingSlash);
 
     m_fsModel->setUrl(url);
-    setEditable(!url.isLocalFile());
+    setEditable(!QFileInfo(url.toLocalFile()).exists());
 }
 
 void
@@ -522,15 +525,6 @@ void
 NavBar::toggleEditable()
 {
     setEditable(currentWidget() == m_pathNav);
-}
-
-void
-NavBar::resizeEvent(QResizeEvent *e)
-{
-    QFrame::resizeEvent(e);
-//    m_pathBox->resize(size()-QSize(32, 0));
-//    m_pathBox->move(32, 0);
-//    m_schemeButton->move(0, 0);
 }
 
 //-----------------------------------------------------------------------------

@@ -71,10 +71,18 @@ DetailsView::DetailsView(QWidget *parent)
     setDragEnabled(true);
     setVerticalScrollMode(ScrollPerPixel);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setAlternatingRowColors(Store::config.views.detailsView.altRows);
 
     connect(this, SIGNAL(sortIndicatorChanged(int,int)), container(), SIGNAL(sortingChanged(int,int)));
     connect(header(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
     connect(container(), SIGNAL(sortingChanged(int,int)), this, SLOT(sortingChanged(int,int)));
+    connect(MainWindow::window(this), SIGNAL(settingsChanged()), this, SLOT(readSettings()));
+}
+
+void
+DetailsView::readSettings()
+{
+    setAlternatingRowColors(Store::config.views.detailsView.altRows);
 }
 
 ViewContainer

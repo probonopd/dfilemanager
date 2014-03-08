@@ -64,6 +64,7 @@ signals:
 private slots:
     void sortingChanged(const int column, const int order);
     void sortingChanged(const int column, const Qt::SortOrder order) { emit sortIndicatorChanged(column, (int)order); }
+    void readSettings();
 
 private:
     FS::Model *m_model;

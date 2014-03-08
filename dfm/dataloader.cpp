@@ -113,8 +113,10 @@ DataLoader::getData(const QString &path)
         const QString &children = QString::number(c);
         if (c > 1)
             count = QString("%1%2").arg(children, " Entries");
-        else
+        else if (c == 1)
             count = QString("%1%2").arg(children, " Entry");
+        else
+            count = QString("Empty");
         data->count = count;
         data->mimeType = m_mimeProvider.getMimeType(path);
         data->fileType = m_mimeProvider.getFileType(path);

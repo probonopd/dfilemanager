@@ -132,7 +132,6 @@ public:
     inline FS::Model *model() { return m_fsModel; }
     inline QList<NavButton *> navButtons() { return QList<NavButton *>(findChildren<NavButton *>()); }
     inline int count() { return navButtons().count(); }
-    QSize sizeHint() const;
     
 signals:
     void edit();
@@ -167,11 +166,7 @@ public:
     inline bool isEditable() { return currentWidget() == static_cast<QWidget *>(m_pathBox); }
     inline PathNavigator *pathNav() { return m_pathNav; }
     inline PathBox *pathBox() { return m_pathBox; }
-    QSize sizeHint() const;
     QWidget *currentWidget() const { return m_stack->currentWidget(); }
-
-protected:
-    void resizeEvent(QResizeEvent *);
 
 public slots:
     void urlFromEdit(const QString &urlString);
@@ -190,8 +185,8 @@ private:
     PathNavigator *m_pathNav;
     FS::Model *m_fsModel;
     Button *m_schemeButton;
-    QHBoxLayout *m_layout;
     QStackedLayout *m_stack;
+    QWidget *m_viewport;
 };
 
 class PathCompleter : public QCompleter

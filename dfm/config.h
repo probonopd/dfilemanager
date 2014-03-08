@@ -75,6 +75,7 @@ typedef struct Config
         struct detailsView
         {
             int rowPadding;
+            bool altRows;
         } detailsView;
         struct columnsView
         {

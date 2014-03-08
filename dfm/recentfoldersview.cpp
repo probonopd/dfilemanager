@@ -21,13 +21,31 @@
 
 #include "recentfoldersview.h"
 #include "filesystemmodel.h"
-#include "viewcontainer.h"
-#include "mainwindow.h"
+#include "config.h"
+#include "dataloader.h"
 #include <QFileInfo>
+#include <QModelIndex>
 
 using namespace DFM;
 
-RecentFoldersView::RecentFoldersView(QWidget *parent) : QListView(parent), m_model(new QStandardItemModel(this))
+QVariant
+RecentFoldersModel::data(const QModelIndex &index, int role) const
+{
+    QStandardItem *item = itemFromIndex(index);
+    if (!item)
+        return QVariant();
+    if (role == Qt::DecorationRole)
+    {
+        const QString &file = item->data().toString();
+        Data *d = DataLoader::data(file);
+        if (d && QIcon::hasThemeIcon(d->iconName))
+            return QIcon::fromTheme(d->iconName);
+        return FS::FileIconProvider::fileIcon(QFileInfo(file));
+    }
+    return QStandardItemModel::data(index, role);
+}
+
+RecentFoldersView::RecentFoldersView(QWidget *parent) : QListView(parent), m_model(new RecentFoldersModel(this))
 {
     setModel(m_model);
     setIconSize(QSize(32, 32));
@@ -79,7 +97,7 @@ RecentFoldersView::paletteOps()
 void
 RecentFoldersView::folderEntered(const QUrl &url)
 {
-    const QString &folder = url.path();
+    const QString &folder = url.toLocalFile();
     if (!QFileInfo(folder).exists())
         return;
     const QString &folderName = QFileInfo(folder).fileName().isEmpty()?folder:QFileInfo(folder).fileName();
@@ -91,15 +109,7 @@ RecentFoldersView::folderEntered(const QUrl &url)
                 m_model->insertRow(0, m_model->takeRow(item->row()));
                 return;
             }
-
-    ViewContainer *vc = MainWindow::currentContainer();
-    FS::Model *fsModel = vc->model();
-    if (!fsModel)
-        return;
-    QIcon icon(fsModel->fileIcon(fsModel->index(url)));
-    if (icon.isNull())
-        icon = FS::FileIconProvider::typeIcon(QFileIconProvider::Folder);
-    QStandardItem *item = new QStandardItem(icon, folderName);
+    QStandardItem *item = new QStandardItem(folderName);
     item->setData(folder);
     item->setToolTip(folder);
     m_model->insertRow(0, item);

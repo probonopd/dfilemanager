@@ -220,6 +220,7 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
   , m_dirSettings(new QCheckBox(tr("Store view for each dir separately (unix only)"), this))
   , m_categorized(new QCheckBox(tr("Show categorized"), this))
   , m_colWidth(new QSpinBox(this))
+  , m_altRows(new QCheckBox(tr("Render rows with alternating colors"), this))
 {
     m_smoothScroll->setChecked(Store::config.views.iconView.smoothScroll);
     m_categorized->setChecked(Store::config.views.iconView.categorized);
@@ -290,9 +291,12 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     m_rowPadding->setMaximum(5);
     m_rowPadding->setValue(Store::config.views.detailsView.rowPadding);
 
+    m_altRows->setChecked(Store::config.views.detailsView.altRows);
+
     QGroupBox *detailsBox = new QGroupBox(tr("DetailsView"), this);
     QGridLayout *detailLay = new QGridLayout(detailsBox);
     row = -1;
+    detailLay->addWidget(m_altRows, ++row, 0, right);
     detailLay->addWidget(new QLabel(tr("Padding added to rowheight:"), detailsBox), ++row, 0, right);
     detailLay->addWidget(m_rowPadding, row, 1, right);
 
@@ -405,6 +409,7 @@ SettingsDialog::accept()
     Store::config.views.dirSettings = m_viewWidget->m_dirSettings->isChecked();
     Store::config.behaviour.invActBookmark = m_behWidget->m_invActBookm->isChecked();
     Store::config.views.iconView.categorized = m_viewWidget->m_categorized->isChecked();
+    Store::config.views.detailsView.altRows = m_viewWidget->m_altRows->isChecked();
 
     Store::settings()->setValue("behaviour.gayWindow", m_behWidget->m_tabsBox->isChecked());
     Store::settings()->setValue("behaviour.gayWindow.tabShape", m_behWidget->m_tabShape->currentIndex());

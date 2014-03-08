@@ -152,18 +152,26 @@ Model::setUrl(const QUrl &url)
     setFilter(QString());
     m_current = 0;
 
-    m_history[Back] << url;
+    QString file = url.toLocalFile();
+    if (file.endsWith(":"))
+        file.append("/");
+
+    const QFileInfo fi(file);
+    if (fi.isDir())
+        m_url = QUrl::fromLocalFile(file);
+    else
+        m_url = url;
+
+    m_history[Back] << m_url;
     if (!m_goingBack)
         m_history[Forward].clear();
-    m_url = url;
 
     DataLoader::clearQueue();
     if (!m_watcher->directories().isEmpty())
         m_watcher->removePaths(m_watcher->directories());
 
-    if (url.isLocalFile() && QFileInfo(url.toLocalFile()).exists())
+    if (fi.isDir())
     {
-        const QString &file = url.toLocalFile();
         m_watcher->addPath(file);
         Node *sNode = schemeNode(url.scheme());
         Node *node = sNode->localNode(file);

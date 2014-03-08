@@ -35,7 +35,6 @@ namespace DFM
 
 enum SearchMode { Filter = 0, Search = 1 };
 
-
 class SearchIndicator : public QWidget
 {
     Q_OBJECT

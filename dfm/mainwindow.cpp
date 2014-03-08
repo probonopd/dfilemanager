@@ -557,6 +557,8 @@ MainWindow::tabChanged(int currentIndex)
     m_filterBox->setText(m_model->currentSearchString());
     m_actions[ShowHidden]->setChecked(m_model->showHidden());
     setActions();
+    if (m_activeContainer)
+        m_activeContainer->setFocus();
 }
 
 void
@@ -641,13 +643,15 @@ MainWindow::setActions()
 void
 MainWindow::viewItemHovered(const QModelIndex &index)
 {
-    if (!m_model)
-        return;
-    if (m_model->isWorking() || !index.isValid() || index.row() > 100000 || index.column() > 3)
+    if (!m_model || m_model->isWorking() || !index.isValid() || index.row() > 100000 || index.column() > 3)
         return;
     const QFileInfo &file = m_model->fileInfo(index);
-    if (file.exists())
-        m_statusBar->showMessage(file.filePath());
+    if (!file.exists())
+        return;
+    QString message = file.filePath();
+    if (file.isSymLink())
+        message.append(QString(" -> %1").arg(file.symLinkTarget()));
+    m_statusBar->showMessage(message);
 }
 
 void
