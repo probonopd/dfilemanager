@@ -288,6 +288,20 @@ MainWindow::createActions()
         connect (a, SIGNAL(triggered()), this, SLOT(setSorting()));
     }
     m_sortActs->setExclusive(true);
+
+    m_actions[GetFileName] = new QAction(tr("Copy FileName(s) to ClipBoard"), this);
+    m_actions[GetFileName]->setShortcut(QKeySequence("Ctrl+Shift+N"));
+    m_actions[GetFileName]->setShortcutContext(Qt::ApplicationShortcut);
+    m_actions[GetFileName]->setObjectName("actionNewWindow");
+    addAction(m_actions[GetFileName]);
+    connect(m_actions[GetFileName], SIGNAL(triggered()), Ops::instance(), SLOT(getNameToClipBoard()));
+
+    m_actions[GetFilePath] = new QAction(tr("Copy FilePath(s) to ClipBoard"), this);
+    m_actions[GetFilePath]->setShortcut(QKeySequence("Ctrl+Shift+P"));
+    m_actions[GetFilePath]->setShortcutContext(Qt::ApplicationShortcut);
+    m_actions[GetFilePath]->setObjectName("actionNewWindow");
+    addAction(m_actions[GetFilePath]);
+    connect(m_actions[GetFilePath], SIGNAL(triggered()), Ops::instance(), SLOT(getPathToClipBoard()));
 }
 
 void
@@ -336,6 +350,11 @@ MainWindow::createMenus()
     m_goMenu->addSeparator();
     connect (m_goMenu, SIGNAL(aboutToShow()), this, SLOT(addBookmarks()));
     m_mainMenu->addMenu(m_goMenu);
+
+    QMenu *getMenu = menuBar()->addMenu(tr("&Get"));
+    getMenu->addAction(m_actions[GetFileName]);
+    getMenu->addAction(m_actions[GetFilePath]);
+    m_mainMenu->addMenu(getMenu);
 
     menuBar()->addSeparator();
 
@@ -410,6 +429,13 @@ MainWindow::createToolBars()
     gl->addWidget(m_filterBox, 0, 1);
 
     m_toolBar->addWidget(searchWidget);
+
+    m_menuButton = new QToolButton(this);
+    m_menuButton->setIcon(IconProvider::icon(IconProvider::Sort, 16, m_sortButton->palette().color(m_sortButton->foregroundRole()), false));
+    m_menuButton->setMenu(mainMenu());
+    m_menuButton->setPopupMode(QToolButton::InstantPopup);
+    m_menuAction = m_toolBar->addWidget(m_menuButton);
+    m_menuButton->setVisible(!Store::config.behaviour.gayWindow&&!menuBar()->isVisible());
 }
 
 void

@@ -186,9 +186,11 @@ class PlacesModel : public QStandardItemModel
 {
 public:
     inline explicit PlacesModel(QObject *parent = 0) : QStandardItemModel(parent), m_places(qobject_cast<PlacesView *>(parent)) {}
+
 protected:
     QVariant data(const QModelIndex &index, int role) const;
     QStringList mimeTypes() const { return QStringList() << "text/uri-list"; }
+
 private:
     PlacesView *m_places;
 };

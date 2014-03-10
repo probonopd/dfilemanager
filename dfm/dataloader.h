@@ -68,6 +68,7 @@ public slots:
     
 signals:
     void newData(const QString &file);
+    void noLongerExists(const QString &file);
 
 protected:
     explicit DataLoader(QObject *parent = 0);

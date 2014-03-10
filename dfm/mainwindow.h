@@ -86,7 +86,10 @@ public:
                    SortSize,
                    SortDate,
                    SortType,
-                   SortDescending
+                   SortDescending,
+                   GetFilePath,
+                   GetFileName,
+                   ActionCount
                  };
 
     MainWindow(const QStringList &arguments = QStringList(), bool autoTab = true);
@@ -202,12 +205,13 @@ private:
     TabBar *m_tabBar;
     QMainWindow *m_tabWin;
     QMenu *m_mainMenu;
-    QToolButton *m_sortButton;
+    QToolButton *m_sortButton, *m_menuButton;
+    QAction *m_menuAction;
 
     QMenu *m_fileMenu, *m_editMenu, *m_goMenu, *m_viewMenu, *m_helpMenu;
     QToolBar *m_toolBar;
 
-    QAction *m_actions[SortDescending+1];
+    QAction *m_actions[ActionCount];
 
     QActionGroup *m_sortActs;
 

@@ -41,6 +41,8 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     : QMainWindow()
     , m_sortButton(0)
     , m_activeContainer(0)
+    , m_menuButton(0)
+    , m_menuAction(0)
 { 
     addActions(Store::customActions());
     s_currentWindow = this;
@@ -458,7 +460,12 @@ void MainWindow::refreshView() { m_activeContainer->refresh(); }
 
 void MainWindow::customCommand() { m_activeContainer->customCommand(); }
 
-void MainWindow::toggleMenuVisible() { menuBar()->setVisible(m_actions[ShowMenuBar]->isChecked()); }
+void
+MainWindow::toggleMenuVisible()
+{
+    menuBar()->setVisible(m_actions[ShowMenuBar]->isChecked());
+    m_menuAction->setVisible(!m_actions[ShowMenuBar]->isChecked());
+}
 
 void MainWindow::toggleStatusVisible() { m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked()); }
 
@@ -842,6 +849,7 @@ MainWindow::updateIcons()
 
     m_sortButton->setMinimumWidth(32);
     m_sortButton->SETICON(IconProvider::Sort);
+    m_menuButton->SETICON(IconProvider::Configure);
 #undef SETICON
 
     m_toolBar->widgetForAction(m_actions[ShowHidden])->setMinimumWidth(32);

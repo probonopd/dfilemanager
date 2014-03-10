@@ -98,6 +98,7 @@ Model::Model(QObject *parent)
     connect (m_dataGatherer, SIGNAL(nodeGenerated(QString,Node*)), this, SLOT(nodeGenerated(QString,Node*)));
     connect(this, SIGNAL(fileRenamed(QString,QString,QString)), DataLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
     connect (m_timer, SIGNAL(timeout()), this, SLOT(refreshCurrent()));
+    connect(DataLoader::instance(), SIGNAL(noLongerExists(QString)), this, SLOT(fileDeleted(QString)));
 }
 
 Model::~Model()
@@ -226,12 +227,18 @@ Model::goBack()
 {
     if (m_history[Back].count()<2)
         return;
-    const QUrl &forwardUrl = m_history[Back].takeLast();
+    if (m_history[Back].last() == m_url)
+        m_history[Forward] << m_history[Back].takeLast(); //current location to forward
     const QUrl &backUrl = m_history[Back].takeLast();
+    if (backUrl.isLocalFile())
+        if (!QFileInfo(backUrl.toLocalFile()).exists())
+        {
+            goBack();
+            return;
+        }
     m_goingBack=true;
     setUrl(backUrl);
     m_goingBack=false;
-    m_history[Forward] << forwardUrl;
 }
 
 void
@@ -794,4 +801,15 @@ Node
     m_schemeMenu->addAction(scheme, this, SLOT(schemeFromSchemeMenu()));
     m_schemeNodes.insert(scheme, node);
     return node;
+}
+
+void
+Model::fileDeleted(const QString &path)
+{
+    Node *n = schemeNode("file")->localNode(path);
+    qDebug() << n << path;
+    if (!n)
+        return;
+    if (Node *p = n->parent())
+        m_dataGatherer->populateNode(p);
 }

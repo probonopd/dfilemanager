@@ -60,6 +60,8 @@ DataLoader::fileRenamed(const QString &path, const QString &oldName, const QStri
 void
 DataLoader::_removeData(const QString &file)
 {
+    if (!QFileInfo(file).exists())
+        emit noLongerExists(file);
     QMutexLocker locker(&m_mtx);
     if (m_data.contains(file))
         delete m_data.take(file);

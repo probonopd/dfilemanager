@@ -308,7 +308,7 @@ PathNavigator::genNavFromUrl(const QUrl &url)
     if (!url.isLocalFile()) //for now....
         return;
 
-    const QString &path = url.path();
+    const QString &path = url.toLocalFile();
 
     if (!QFileInfo(path).exists())
         return;

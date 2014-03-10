@@ -116,10 +116,12 @@ public:
     void setMode(QPair<Mode, QString> mode);
 
     static void copy(const QStringList &sourceFiles, const QString &destination, bool cut = false, bool ask = false);
-    static void copy(const QList<QUrl> &sourceFiles, const QString & destination, bool cut = false, bool ask = false);
+    static void copy(const QList<QUrl> &sourceFiles, const QString &destination, bool cut = false, bool ask = false);
     static void remove(const QStringList &files);
-    void queue(const IOJobData &ioJobData);
     inline QString errorString() const { return m_errorString; }
+
+    inline bool hasQueue() const { QMutexLocker locker(&m_queueMtx); return !m_queue.isEmpty(); }
+    inline void queue(const IOJobData &ioJob) { QMutexLocker locker(&m_queueMtx); m_queue << ioJob; start(); }
 
 public slots:
     inline void cancelCopy() { m_canceled = true; setPaused(false); qDebug() << "cancelling copy..."; }
@@ -152,19 +154,20 @@ protected:
     void getDirs(const QString &dir, quint64 &fileSize = (quint64 &)defaultInteger);
     bool getTotalSize(const QStringList &copyFiles, quint64 &fileSize = (quint64 &)defaultInteger);
     void error(const QString &error);
+    inline IOJobData deqeueue() { QMutexLocker locker(&m_queueMtx); return m_queue.dequeue(); }
     void run();
 
 private:
     QString m_destDir, m_inFile, m_newFile, m_outFile, m_errorString;
     bool m_cut, m_canceled, m_pause;
     quint64 m_total, m_allProgress, m_diffCheck;
-    QMutex m_mutex;
+    mutable QMutex m_pauseMtx, m_queueMtx;
     QWaitCondition m_pauseCond;
     Mode m_mode;
     int m_inProgress, m_fileProgress;
     QTimer *m_timer, *m_speedTimer;
     CopyDialog *m_copyDialog;
-    QList<IOJobData> m_queue;
+    QQueue<IOJobData> m_queue;
 };
 
 }

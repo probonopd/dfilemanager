@@ -151,7 +151,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     font.setBold(selected || isHeader(index));
     painter->setFont(font);
 
-    if (step)
+    if (step && !isHeader(index))
     {
         const_cast<QStyleOptionViewItem *>(&copy)->state |= QStyle::State_MouseOver; //grrrrr, must trick styles....
         painter->setOpacity((1.0f/8.0f)*step);

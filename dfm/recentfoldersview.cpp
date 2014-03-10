@@ -40,7 +40,11 @@ RecentFoldersModel::data(const QModelIndex &index, int role) const
         Data *d = DataLoader::data(file);
         if (d && QIcon::hasThemeIcon(d->iconName))
             return QIcon::fromTheme(d->iconName);
+#if defined(Q_OS_WIN)
         return FS::FileIconProvider::fileIcon(QFileInfo(file));
+#elif defined(Q_OS_UNIX)
+        return FS::FileIconProvider::typeIcon(FS::FileIconProvider::Folder);
+#endif
     }
     return QStandardItemModel::data(index, role);
 }

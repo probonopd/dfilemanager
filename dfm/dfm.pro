@@ -75,7 +75,7 @@ target.path += $$[QT_INSTALL_BINS]
 sources.files = $$SOURCES $$HEADERS #$$RESOURCES #$$FORMS
 INSTALLS += target
 
-QT += gui xml opengl
+QT += core gui xml opengl network
 CONFIG += qt thread debug staticlib
 
 #libmagic needed for mimetypes and fileinfo

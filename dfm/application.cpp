@@ -54,6 +54,14 @@ Application::Application(int &argc, char *argv[])
     const QString &dirPath(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
 #endif
 
+#define NAME "dfm_browser"
+    m_server = new QLocalServer(this);
+    m_socket = new QLocalSocket(this);
+    m_socket->connectToServer(NAME);
+    qDebug() << m_socket->state();
+    qDebug() << m_server->removeServer(NAME);
+    qDebug() << m_server->isListening() << m_server->listen(NAME);
+
     if (!QFileInfo(dirPath).exists())
         QDir::root().mkpath(dirPath);
 

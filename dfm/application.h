@@ -24,6 +24,8 @@
 
 #include <QApplication>
 #include <QSharedMemory>
+#include <QLocalServer>
+#include <QLocalSocket>
 #include <QFileSystemWatcher>
 #include <QFile>
 #include <QDir>
@@ -101,6 +103,8 @@ private:
     QMap<QString, ThumbInterface *> m_thumbIfaces;
     QList<ThumbInterface *> m_allThumbIfaces;
     DFM::IOJobData m_ioJobData;
+    QLocalSocket *m_socket;
+    QLocalServer *m_server;
 #if 0
     QList<DFM::Docks::DockWidget *> m_docks;
     QMainWindow *m_mainWindow;

@@ -478,15 +478,6 @@ Manager::getTotalSize(const QStringList &copyFiles, quint64 &fileSize)
 }
 
 void
-Manager::queue(const IOJobData &ioJobData)
-{
-    m_queue << ioJobData;
-//    qDebug() << "got new IO job to the queue:";
-//    qDebug() << Ops::taskToString(ioJobData.ioTask) << ioJobData.inList;
-    start();
-}
-
-void
 Manager::getMessage(const QStringList &message)
 {
     IOJobData ioJobData;
@@ -519,10 +510,10 @@ Manager::emitProgress()
 void
 Manager::run()
 {
-    while (!m_queue.isEmpty())
+    while (hasQueue())
     {
         m_canceled=false;
-        doJob(m_queue.takeFirst());
+        doJob(deqeueue());
     }
 }
 
@@ -530,9 +521,9 @@ void
 Manager::setPaused(bool pause)
 {
     emit pauseToggled(pause, m_cut);
-    m_mutex.lock();
+    m_pauseMtx.lock();
     m_pause = pause;
-    m_mutex.unlock();
+    m_pauseMtx.unlock();
     if (!m_pause)
         m_pauseCond.wakeAll();
 }
@@ -551,10 +542,10 @@ Manager::setMode(QPair<Mode, QString> mode)
 void
 Manager::pause()
 {
-    m_mutex.lock();
+    m_pauseMtx.lock();
     if (m_pause)
-        m_pauseCond.wait(&m_mutex);
-    m_mutex.unlock();
+        m_pauseCond.wait(&m_pauseMtx);
+    m_pauseMtx.unlock();
 }
 
 

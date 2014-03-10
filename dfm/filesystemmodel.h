@@ -160,6 +160,7 @@ private slots:
     void nodeGenerated(const QString &path, Node *node);
     void schemeFromSchemeMenu();
     void refreshCurrent();
+    void fileDeleted(const QString &path);
 
 signals:
     void flowDataChanged(const QModelIndex &start, const QModelIndex &end);

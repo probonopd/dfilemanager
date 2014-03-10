@@ -335,7 +335,7 @@ Node
 *Node::localNode(const QString &path, bool checkOnly)
 {
     QFileInfo fi(path);
-    if (!fi.exists() || !fi.isAbsolute())
+    if ((!fi.exists() || !fi.isAbsolute()) && !checkOnly)
         return 0;
     QStringList paths;
     QDir dir;

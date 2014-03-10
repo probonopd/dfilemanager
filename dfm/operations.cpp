@@ -29,6 +29,7 @@
 #include <QAction>
 #include <QItemSelectionModel>
 #include <QDesktopServices>
+#include <QClipboard>
 
 //#include <blkid/blkid.h> //dev block id info... maybe need later
 
@@ -419,4 +420,38 @@ Ops::getStatusBarMessage(const QUrl &url, FS::Model *model)
     else
         messaage.append(url.scheme());
     return messaage;
+}
+
+void
+Ops::getPathToClipBoard()
+{
+    ViewContainer *c = MainWindow::currentContainer();
+    FS::Model *m = c->model();
+    const QModelIndexList &selection = c->selectionModel()->selectedRows(0);
+    if (selection.isEmpty())
+        QApplication::clipboard()->setText(m->index(m->rootUrl()).data(FS::FilePathRole).toString());
+    else
+    {
+        QString files;
+        foreach (const QModelIndex &index, selection)
+            files.append(QString("%1\n").arg(index.data(FS::FilePathRole).toString()));
+        QApplication::clipboard()->setText(files);
+    }
+}
+
+void
+Ops::getNameToClipBoard()
+{
+    ViewContainer *c = MainWindow::currentContainer();
+    FS::Model *m = c->model();
+    const QModelIndexList &selection = c->selectionModel()->selectedRows(0);
+    if (selection.isEmpty())
+        QApplication::clipboard()->setText(m->index(m->rootUrl()).data(FS::FileNameRole).toString());
+    else
+    {
+        QString files;
+        foreach (const QModelIndex &index, selection)
+            files.append(QString("%1\n").arg(index.data(FS::FileNameRole).toString()));
+        QApplication::clipboard()->setText(files);
+    }
 }
