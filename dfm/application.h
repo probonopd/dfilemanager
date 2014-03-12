@@ -77,7 +77,8 @@ signals:
     void lastMessage(const QStringList &message);
 
 private slots:
-    void fileChanged(const QString &file);
+    void newMessage();
+    void newSocketConnection();
 
 #if 0
     inline void manageDock(DFM::Docks::DockWidget *dock) { m_docks << dock; }
@@ -96,10 +97,8 @@ protected:
 private:
     Type m_type;
     bool m_isRunning;
-    QSharedMemory *m_sharedMem;
     QFileSystemWatcher *m_fsWatcher;
-    QString m_key, m_filePath;
-    QFile m_file;
+    QString m_key, m_message;
     QMap<QString, ThumbInterface *> m_thumbIfaces;
     QList<ThumbInterface *> m_allThumbIfaces;
     DFM::IOJobData m_ioJobData;

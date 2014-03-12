@@ -41,58 +41,38 @@ static Atom netClientListStacking = 0;
 #endif
 #endif
 
+static QString name[] = { "dfm_browser", "dfm_iojob" };
+
 Application::Application(int &argc, char *argv[])
     : QApplication(argc, argv)
-    , m_sharedMem()
     , m_key()
     , m_fsWatcher(0)
     , m_type(Browser)
+    , m_server(new QLocalServer(this))
+    , m_socket(new QLocalSocket(this))
+    , m_message(QString("test"))
 {
-#if QT_VERSION < 0x050000
-    const QString &dirPath(QDesktopServices::storageLocation(QDesktopServices::TempLocation));
-#else
-    const QString &dirPath(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
-#endif
-
-#define NAME "dfm_browser"
-    m_server = new QLocalServer(this);
-    m_socket = new QLocalSocket(this);
-    m_socket->connectToServer(NAME);
-    qDebug() << m_socket->state();
-    qDebug() << m_server->removeServer(NAME);
-    qDebug() << m_server->isListening() << m_server->listen(NAME);
-
-    if (!QFileInfo(dirPath).exists())
-        QDir::root().mkpath(dirPath);
-
     if (arguments().contains("--iojob"))
         m_type = IOJob;
 
-    const QString &key = m_type == Browser ? "dfm_browser" : m_type == IOJob ? "dfm_iojob" : "dfm_key";
-    m_sharedMem = new QSharedMemory(key, this);
-    const QString &fileName = m_type == Browser ? "dfm_browser_file" : m_type == IOJob ? "dfm_iojob_file" : "dfm_file";
-    m_filePath = QDir(dirPath).absoluteFilePath(fileName);
-    m_file.setFileName(m_filePath);
-    if (m_sharedMem->attach())
-        m_isRunning = true;
-    else
+    connect(m_socket, SIGNAL(connected()), this, SLOT(newSocketConnection()));
+
+    const QString &key = name[m_type];
+    m_socket->connectToServer(key);
+
+    if (m_socket->error() == QLocalSocket::ConnectionRefusedError) //we are assuming a crash happened...
+        m_server->removeServer(key);
+
+    m_isRunning = m_socket->state() == QLocalSocket::ConnectedState && m_socket->error() != QLocalSocket::ConnectionRefusedError;
+    m_socket->disconnectFromServer();
+
+    qDebug() << "dfm is already running:" << m_isRunning;
+
+    if (!m_isRunning)
     {
+        m_server->listen(key);
+        connect(m_server, SIGNAL(newConnection()), this, SLOT(newMessage()));
         setOrganizationName("dfm");
-        m_isRunning = false;
-        if (!m_sharedMem->create(1))
-            qDebug() << "failed to create shared memory";
-        //        connect(m_localServer, SIGNAL(newConnection()), this, SLOT(receiveMessage()));
-        //        m_localServer->listen(key);
-
-        if (m_file.open(QFile::WriteOnly|QFile::Truncate))
-        {
-            m_file.write(QByteArray());
-            m_file.close();
-        }
-        m_fsWatcher = new QFileSystemWatcher(this);
-        m_fsWatcher->addPath(m_filePath);
-
-        connect(m_fsWatcher, SIGNAL(fileChanged(QString)), this, SLOT(fileChanged(QString)));
         if (m_type == Browser)
             DFM::Store::readConfig();
     }
@@ -104,40 +84,45 @@ Application::Application(int &argc, char *argv[])
 #endif
 }
 
-static QDateTime s_lastModified;
+void
+Application::newSocketConnection()
+{
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+//    out.setVersion(QDataStream::Qt_4_0);
+    out << m_message;
+    out.device()->seek(0);
+    m_socket->write(block);
+    m_socket->flush();
+}
 
 void
-Application::fileChanged(const QString &file)
+Application::newMessage()
 {
-    if (isRunning() || (s_lastModified.isValid()&&s_lastModified==QFileInfo(m_file).lastModified()))
+    QLocalSocket *clientConnection = m_server->nextPendingConnection();
+    clientConnection->waitForReadyRead();
+
+    QDataStream in(clientConnection);
+    if (!clientConnection->bytesAvailable())
         return;
 
-    s_lastModified = QFileInfo(m_file).lastModified();
+    QString message;
+    in >> message;
 
-    if (m_file.open(QFile::ReadOnly))
-    {
-        QTextStream out(&m_file);
-        QStringList message;
-        while (!out.atEnd())
-            message << out.readLine();
-        emit lastMessage(message);
-        m_file.close();
-    }
+    QStringList msg = message.split("_,_");
+//    qDebug() << msg;
+    emit lastMessage(msg);
 }
 
 bool
 Application::setMessage(const QStringList &message)
 {
-    if (!isRunning())
+    if (!m_isRunning)
         return false;
 
-    if (m_file.open(QFile::WriteOnly|QFile::Truncate))
-    {
-        QTextStream out(&m_file);
-        foreach (const QString &string, message)
-            out << QString("%1\n").arg(string);
-        m_file.close();
-    }
+    m_message = message.join("_,_");
+    m_socket->connectToServer(name[m_type]);
+    return true;
 }
 
 
