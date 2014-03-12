@@ -109,7 +109,6 @@ public slots:
     void customActionTriggered();
     void setRootPath();
     void getPathToClipBoard();
-    void getNameToClipBoard();
 
 protected:
     explicit Ops(QObject *parent = 0):QObject(parent){}

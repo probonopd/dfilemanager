@@ -207,9 +207,9 @@ private:
     QMenu *m_mainMenu;
     QToolButton *m_sortButton, *m_menuButton;
     QAction *m_menuAction;
-
-    QMenu *m_fileMenu, *m_editMenu, *m_goMenu, *m_viewMenu, *m_helpMenu;
     QToolBar *m_toolBar;
+
+    Menu *m_goMenu;
 
     QAction *m_actions[ActionCount];
 

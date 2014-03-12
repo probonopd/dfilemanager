@@ -425,33 +425,25 @@ Ops::getStatusBarMessage(const QUrl &url, FS::Model *model)
 void
 Ops::getPathToClipBoard()
 {
-    ViewContainer *c = MainWindow::currentContainer();
+    MainWindow *mw = MainWindow::currentWindow();
+    int role = FS::FilePathRole;
+    if (sender() == mw->action(MainWindow::GetFileName))
+        role = FS::FileNameRole;
+    ViewContainer *c = mw->activeContainer();
     FS::Model *m = c->model();
     const QModelIndexList &selection = c->selectionModel()->selectedRows(0);
     if (selection.isEmpty())
-        QApplication::clipboard()->setText(m->index(m->rootUrl()).data(FS::FilePathRole).toString());
+        QApplication::clipboard()->setText(m->index(m->rootUrl()).data(role).toString());
     else
     {
         QString files;
         foreach (const QModelIndex &index, selection)
-            files.append(QString("%1\n").arg(index.data(FS::FilePathRole).toString()));
+        {
+            if (!files.isEmpty())
+                files.append(QString("\n"));
+            files.append(index.data(role).toString());
+        }
         QApplication::clipboard()->setText(files);
     }
 }
 
-void
-Ops::getNameToClipBoard()
-{
-    ViewContainer *c = MainWindow::currentContainer();
-    FS::Model *m = c->model();
-    const QModelIndexList &selection = c->selectionModel()->selectedRows(0);
-    if (selection.isEmpty())
-        QApplication::clipboard()->setText(m->index(m->rootUrl()).data(FS::FileNameRole).toString());
-    else
-    {
-        QString files;
-        foreach (const QModelIndex &index, selection)
-            files.append(QString("%1\n").arg(index.data(FS::FileNameRole).toString()));
-        QApplication::clipboard()->setText(files);
-    }
-}

@@ -294,7 +294,7 @@ MainWindow::createActions()
     m_actions[GetFileName]->setShortcutContext(Qt::ApplicationShortcut);
     m_actions[GetFileName]->setObjectName("actionNewWindow");
     addAction(m_actions[GetFileName]);
-    connect(m_actions[GetFileName], SIGNAL(triggered()), Ops::instance(), SLOT(getNameToClipBoard()));
+    connect(m_actions[GetFileName], SIGNAL(triggered()), Ops::instance(), SLOT(getPathToClipBoard()));
 
     m_actions[GetFilePath] = new QAction(tr("Copy FilePath(s) to ClipBoard"), this);
     m_actions[GetFilePath]->setShortcut(QKeySequence("Ctrl+Shift+P"));
@@ -307,37 +307,37 @@ MainWindow::createActions()
 void
 MainWindow::createMenus()
 {
-    m_fileMenu = menuBar()->addMenu(tr("&File"));
-    m_fileMenu->addAction(m_actions[Properties]);
-    m_fileMenu->addAction(m_actions[Exit]);
+    QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
+    fileMenu->addAction(m_actions[Properties]);
+    fileMenu->addAction(m_actions[Exit]);
 
     m_mainMenu = new QMenu("Menu", this);
-    m_mainMenu->addMenu(m_fileMenu);
+    m_mainMenu->addMenu(fileMenu);
 
-    m_editMenu = menuBar()->addMenu(tr("&Edit"));
-    m_editMenu->addAction(m_actions[MkDir]);
-    m_editMenu->addAction(m_actions[DeleteSelection]);
-    m_editMenu->addSeparator();
-    m_editMenu->addAction(m_actions[Copy]);
-    m_editMenu->addAction(m_actions[Cut]);
-    m_editMenu->addAction(m_actions[Paste]);
-    m_editMenu->addAction(m_actions[Rename]);
-    m_editMenu->addSeparator();
-    m_editMenu->addAction(m_actions[ShowHidden]);
-    m_editMenu->addSeparator();
-    m_editMenu->addAction(m_actions[Refresh]);
-    m_editMenu->addAction(m_actions[AddTab]);
-    m_editMenu->addAction(m_actions[OpenInTab]);
-    m_editMenu->addSeparator();
-    m_editMenu->addAction(m_actions[Configure]);
-    m_mainMenu->addMenu(m_editMenu);
+    QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
+    editMenu->addAction(m_actions[MkDir]);
+    editMenu->addAction(m_actions[DeleteSelection]);
+    editMenu->addSeparator();
+    editMenu->addAction(m_actions[Copy]);
+    editMenu->addAction(m_actions[Cut]);
+    editMenu->addAction(m_actions[Paste]);
+    editMenu->addAction(m_actions[Rename]);
+    editMenu->addSeparator();
+    editMenu->addAction(m_actions[ShowHidden]);
+    editMenu->addSeparator();
+    editMenu->addAction(m_actions[Refresh]);
+    editMenu->addAction(m_actions[AddTab]);
+    editMenu->addAction(m_actions[OpenInTab]);
+    editMenu->addSeparator();
+    editMenu->addAction(m_actions[Configure]);
+    m_mainMenu->addMenu(editMenu);
 
-    m_viewMenu = menuBar()->addMenu(tr("&View"));
-    m_viewMenu->addAction(m_actions[ShowMenuBar]);
-    m_viewMenu->addAction(m_actions[ShowStatusBar]);
-    m_viewMenu->addAction(m_actions[EditPath]);
-    m_viewMenu->addAction(m_actions[ShowPathBar]);
-    m_mainMenu->addMenu(m_viewMenu);
+    QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
+    viewMenu->addAction(m_actions[ShowMenuBar]);
+    viewMenu->addAction(m_actions[ShowStatusBar]);
+    viewMenu->addAction(m_actions[EditPath]);
+    viewMenu->addAction(m_actions[ShowPathBar]);
+    m_mainMenu->addMenu(viewMenu);
 
     m_goMenu = new Menu(this);
     m_goMenu->setTitle(tr("&Go"));
@@ -358,11 +358,11 @@ MainWindow::createMenus()
 
     menuBar()->addSeparator();
 
-    m_helpMenu = menuBar()->addMenu(tr("&Help"));
-    m_helpMenu->addAction(m_actions[About]);
-    m_helpMenu->addAction(m_actions[AboutQt]);
+    QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
+    helpMenu->addAction(m_actions[About]);
+    helpMenu->addAction(m_actions[AboutQt]);
     addAction(m_actions[ShowMenuBar]);
-    m_mainMenu->addMenu(m_helpMenu);
+    m_mainMenu->addMenu(helpMenu);
 
     if (Store::config.behaviour.gayWindow)
         m_actions[ShowMenuBar]->setChecked(false);
