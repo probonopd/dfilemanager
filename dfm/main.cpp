@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 
     switch (app.appType())
     {
-    case Application::Browser :
+    case Application::Browser:
     {
         if (app.font().pointSize() < DFM::Store::config.behaviour.minFontSize)
         {
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
         QObject::connect(&app, SIGNAL(lastMessage(QStringList)), mainWin, SLOT(receiveMessage(QStringList)));
         mainWin->show();
     }
-    case Application::IOJob :
+    case Application::IOJob:
     {
         DFM::IO::Manager *manager = new DFM::IO::Manager();
         QObject::connect(&app, SIGNAL(lastMessage(QStringList)), manager, SLOT(getMessage(QStringList)));

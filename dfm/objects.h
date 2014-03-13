@@ -38,16 +38,19 @@ class Thread : public QThread
     Q_OBJECT
 public:
     explicit Thread(QObject *parent = 0);
-    void setPause(bool p);
-    bool isPaused();
+    bool isPaused() const;
     void pause();
 
+signals:
+    void pauseToggled(const bool isPaused);
+
 public slots:
+    void setPause(bool p);
     virtual void discontinue();
 
 protected:
-    QWaitCondition m_pauseCond;
-    QMutex m_mutex;
+    QWaitCondition m_pausingCondition;
+    mutable QMutex m_pausingMutex;
     bool m_pause;
     bool m_quit;
 };

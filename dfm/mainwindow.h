@@ -40,6 +40,7 @@
 #include <QMainWindow>
 #include <QFileSystemWatcher>
 #include <QProcess>
+#include <QProgressBar>
 
 namespace DFM
 {
@@ -127,7 +128,7 @@ protected:
     void createActions();
     void createToolBars();
     void writeSettings();
-    void createSlider();
+    void setupStatusBar();
     void connectContainer(ViewContainer *container);
     Actions viewAction(const ViewContainer::View view);
 
@@ -157,7 +158,7 @@ private slots:
     void flowView();
     void refreshView();
     void genPlace();
-    void mainSelectionChanged(QItemSelection selected,QItemSelection notselected);
+    void mainSelectionChanged();
     void togglePath();
     void urlChanged(const QUrl &url);
     void createDirectory();
@@ -188,7 +189,7 @@ signals:
     void settingsChanged();
 
 private:
-    QStatusBar *m_statusBar;
+    StatusBar *m_statusBar;
     QWidget *m_toolBarSpacer;
     SearchBox *m_filterBox;
     Docks::DockWidget *m_dockLeft, *m_dockRight, *m_dockBottom;
@@ -208,6 +209,7 @@ private:
     QToolButton *m_sortButton, *m_menuButton;
     QAction *m_menuAction;
     QToolBar *m_toolBar;
+    QProgressBar *m_ioProgress;
 
     Menu *m_goMenu;
 

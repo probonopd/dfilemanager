@@ -42,6 +42,7 @@
 #include <QKeyEvent>
 #include "operations.h"
 #include "globals.h"
+#include "objects.h"
 
 namespace DFM
 {
@@ -56,8 +57,8 @@ class FileExistsDialog : public QDialog
     Q_OBJECT
 public:
     FileExistsDialog(const QStringList &files, QWidget *parent = 0);
-    QPair<Mode, QString> getMode();
-    static QPair<Mode, QString> mode(const QStringList &files);
+    QString newName() const { return m_newFileName; }
+    Mode getMode();
 
 protected:
     bool event(QEvent *e);
@@ -87,16 +88,17 @@ signals:
 
 public slots:
     void setInfo(QString from, QString to, int completeProgress, int currentProgress);
+    inline void setMove(const bool move) { m_cut = move; }
     inline void setSpeed(const QString &speed) { m_speedLabel->setText(speed); }
     void finished();
-    inline void pauseToggled(const bool pause, const bool cut) { setWindowTitle(cut ? (pause ? "Moving... [paused]" : "Moving...") : (pause ? "Copying... [paused]" : "Copying... ")); }
+    void pauseToggled(const bool pause);
 
 private:
     QProgressBar *m_progress, *m_fileProgress;
     QPushButton *m_ok, *m_cancel, *m_pause;
     QLabel *m_from, *m_inFile, *m_to, *m_speedLabel;
     QCheckBox *m_cbHideFinished;
-    bool m_paused, m_hideFinished;
+    bool m_paused, m_hideFinished, m_cut;
 
 private slots:
     void pauseCLicked();
@@ -105,27 +107,25 @@ private slots:
 
 //-----------------------------------------------------------------------------------------------
 
-class Manager : public QThread
+class Manager : public Thread
 {
     Q_OBJECT
 public:
     explicit Manager(QObject *parent = 0);
+    ~Manager();
 
-    bool paused() const { return m_pause; }
-    void pause();
-    void setMode(QPair<Mode, QString> mode);
+    void setMode(Mode mode);
 
     static void copy(const QStringList &sourceFiles, const QString &destination, bool cut = false, bool ask = false);
     static void copy(const QList<QUrl> &sourceFiles, const QString &destination, bool cut = false, bool ask = false);
     static void remove(const QStringList &files);
     inline QString errorString() const { return m_errorString; }
 
-    inline bool hasQueue() const { QMutexLocker locker(&m_queueMtx); return !m_queue.isEmpty(); }
-    inline void queue(const IOJobData &ioJob) { QMutexLocker locker(&m_queueMtx); m_queue << ioJob; start(); }
+    bool hasQueue() const;
+    void queue(const IOJobData &ioJob);
 
 public slots:
-    inline void cancelCopy() { m_canceled = true; setPaused(false); qDebug() << "cancelling copy..."; }
-    void setPaused(bool pause);
+    inline void cancelCopy() { m_canceled = true; setPause(false); qDebug() << "cancelling copy..."; }
     void getMessage(const QStringList &message);
 
 signals:
@@ -133,15 +133,15 @@ signals:
     void copyOrMoveFinished();
     void copyProgress(const QString &inFile, const QString &outFile, const int progress, const int currentProgress);
     void fileExists(const QStringList &files);
-    void pauseToggled(const bool pause, const bool cut);
     void errorSignal();
     void speed(const QString &speed);
+    void isMove(const bool move);
 
 private slots:
-    void fileExistsSlot(const QStringList &files) { setMode(FileExistsDialog::mode(files)); }
+    void fileExistsSlot(const QStringList &files);
     void emitProgress();
     void errorSlot();
-    void finishedSlot() { emit copyProgress(QString(), QString(), 100, 100); emit speed(QString()); }
+    void finishedSlot();
     void checkSpeed();
 
 protected:
@@ -154,20 +154,20 @@ protected:
     void getDirs(const QString &dir, quint64 &fileSize = (quint64 &)defaultInteger);
     bool getTotalSize(const QStringList &copyFiles, quint64 &fileSize = (quint64 &)defaultInteger);
     void error(const QString &error);
-    inline IOJobData deqeueue() { QMutexLocker locker(&m_queueMtx); return m_queue.dequeue(); }
+    IOJobData deqeueue();
     void run();
 
 private:
     QString m_destDir, m_inFile, m_newFile, m_outFile, m_errorString;
-    bool m_cut, m_canceled, m_pause;
+    bool m_cut, m_canceled;
     quint64 m_total, m_allProgress, m_diffCheck;
-    mutable QMutex m_pauseMtx, m_queueMtx;
-    QWaitCondition m_pauseCond;
+    mutable QMutex m_queueMtx;
     Mode m_mode;
     int m_inProgress, m_fileProgress;
     QTimer *m_timer, *m_speedTimer;
     CopyDialog *m_copyDialog;
     QQueue<IOJobData> m_queue;
+    IOJobData m_currentJob;
 };
 
 }

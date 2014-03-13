@@ -21,6 +21,7 @@
 
 #include <QPainter>
 #include <QMouseEvent>
+#include <QDebug>
 #include "widgets.h"
 #include "iconprovider.h"
 
@@ -123,3 +124,46 @@ Button::paletteChange(const QPalette &p)
     update();
 }
 #endif
+
+//-------------------------------------------------------------------------------------------
+
+StatusBar::StatusBar(QWidget *parent)
+    : QStatusBar(parent)
+    , m_messageLbl(new QLabel())
+    , m_viewport(new QWidget(this))
+{
+    for (int i = 0; i < Count; ++i)
+    {
+        m_layout[i] = new QHBoxLayout();
+        m_layout[i]->setSpacing(0);
+        m_layout[i]->setContentsMargins(0, 0, 0, 0);
+    }
+    connect(this, SIGNAL(messageChanged(QString)), m_messageLbl, SLOT(setText(QString)));
+
+    m_layout[Main]->addLayout(m_layout[Left]);
+    m_layout[Main]->addStretch();
+    m_layout[Main]->addWidget(m_messageLbl);
+    m_layout[Main]->addStretch();
+    m_layout[Main]->addLayout(m_layout[Right]);
+
+    m_viewport->setContentsMargins(0, 0, 0, 0);
+    m_viewport->setLayout(m_layout[Main]);
+}
+
+void
+StatusBar::addLeftWidget(QWidget *widget)
+{
+    m_layout[Left]->addWidget(widget);
+}
+
+void
+StatusBar::addRightWidget(QWidget *widget)
+{
+    m_layout[Right]->addWidget(widget);
+}
+
+void
+StatusBar::resizeEvent(QResizeEvent *e)
+{
+    m_viewport->resize(e->size());
+}

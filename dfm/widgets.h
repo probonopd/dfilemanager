@@ -27,9 +27,12 @@
 #define WIDGETS_H
 
 #include <QWidget>
+#include <QStatusBar>
+#include <QHBoxLayout>
 #include <QIcon>
 #include <QMenu>
 #include <QTimer>
+#include <QLabel>
 
 namespace DFM
 {
@@ -65,6 +68,25 @@ private:
     QMenu *m_menu;
     QTimer *m_animTimer;
     QTransform m_transform;
+};
+
+class StatusBar : public QStatusBar
+{
+    Q_OBJECT
+public:
+    explicit StatusBar(QWidget *parent = 0);
+    void addLeftWidget(QWidget *widget);
+    void addRightWidget(QWidget *widget);
+
+protected:
+    void paintEvent(QPaintEvent *){}
+    void resizeEvent(QResizeEvent *);
+
+private:
+    enum Layouts { Main = 0, Left, Right, Count };
+    QHBoxLayout *m_layout[Count];
+    QLabel *m_messageLbl;
+    QWidget *m_viewport;
 };
 
 }

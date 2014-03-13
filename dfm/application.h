@@ -57,7 +57,7 @@ public:
     enum Type { Browser = 0, IOJob = 1 };
     explicit Application(int &argc, char *argv[]); /*: QApplication(argc, argv) {}*/
     inline bool isRunning() { return m_isRunning; }
-    bool setMessage(const QStringList &message);
+    void setMessage(const QStringList &message, const QString &serverName = QString());
     QList<ThumbInterface *> thumbIfaces() { return m_allThumbIfaces; }
     QList<ThumbInterface *> activeThumbIfaces() { return m_thumbIfaces.values(); }
     inline bool hasThumbIfaces() { return !m_allThumbIfaces.isEmpty(); }
@@ -77,8 +77,8 @@ signals:
     void lastMessage(const QStringList &message);
 
 private slots:
-    void newMessage();
-    void newSocketConnection();
+    void newServerConnection();
+    void socketConnected();
 
 #if 0
     inline void manageDock(DFM::Docks::DockWidget *dock) { m_docks << dock; }

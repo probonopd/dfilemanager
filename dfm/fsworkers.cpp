@@ -666,9 +666,9 @@ Gatherer::Gatherer(QObject *parent)
 void
 Gatherer::setCancelled(bool cancel)
 {
-    m_mutex.lock();
+    m_pausingMutex.lock();
     m_isCancelled=cancel;
-    m_mutex.unlock();
+    m_pausingMutex.unlock();
 }
 
 void

@@ -21,11 +21,12 @@
 
 #include <QDirIterator>
 #include <QMessageBox>
+#include <QLocalSocket>
 
 #include "iojob.h"
 #include "operations.h"
-
 #include "mainwindow.h"
+#include "application.h"
 
 using namespace DFM;
 using namespace IO;
@@ -84,8 +85,6 @@ FileExistsDialog::FileExistsDialog(const QStringList &files, QWidget *parent)
     setWindowModality(Qt::WindowModal);
 }
 
-QPair<Mode, QString> FileExistsDialog::mode(const QStringList &files) { return FileExistsDialog(files, MainWindow::currentWindow()).getMode(); }
-
 void
 FileExistsDialog::accept()
 {
@@ -102,12 +101,12 @@ FileExistsDialog::accept()
     QDialog::accept();
 }
 
-QPair<Mode, QString>
+Mode
 FileExistsDialog::getMode()
 {
     m_mode = Cancel;
     exec();
-    return QPair<Mode, QString>(m_mode, m_newFileName);
+    return m_mode;
 }
 
 void
@@ -145,6 +144,7 @@ CopyDialog::CopyDialog(QWidget *parent)
     , m_to(new QLabel(this))
     , m_cbHideFinished(new QCheckBox(this))
     , m_speedLabel(new QLabel(this))
+    , m_cut(false)
 {
     m_hideFinished = Store::settings()->value("hideCPDWhenFinished", 0).toBool();
     m_cbHideFinished->setChecked(m_hideFinished);
@@ -228,7 +228,10 @@ CopyDialog::setInfo(QString from, QString to, int completeProgress, int currentP
     m_inFile->setText(elidedText(QFileInfo(from).fileName()));
     m_from->setText(elidedText(from));
     m_to->setText(elidedText(to));
-    m_ok->setEnabled(m_progress->value() == 100);
+    const bool isFinished = m_progress->value() == 100;
+    m_ok->setEnabled(isFinished);
+    m_pause->setEnabled(!isFinished);
+    m_cancel->setEnabled(!isFinished);
     if (m_progress->value() == 100)
     {
         m_cancel->setEnabled(false);
@@ -269,6 +272,13 @@ CopyDialog::finishedToggled(bool enabled)
     m_hideFinished = enabled;
     Store::settings()->setValue("hideCPDWhenFinished", m_hideFinished);
 }
+
+void
+CopyDialog::pauseToggled(const bool pause)
+{
+    setWindowTitle(m_cut ? (pause ? "Moving... [paused]" : "Moving...") : (pause ? "Copying... [paused]" : "Copying... "));
+}
+
 
 //--------------------------------------------------------------------------------------------------------------
 
@@ -323,9 +333,8 @@ Manager::copy(const QList<QUrl> &sourceFiles, const QString &destination, bool c
 }
 
 Manager::Manager(QObject *parent)
-    : QThread(parent)
+    : Thread(parent)
     , m_canceled(false)
-    , m_pause(false)
     , m_cut(false)
     , m_total(0) //size in bytes of all files we are going to copy/move
     , m_allProgress(0) //overall progress
@@ -344,17 +353,17 @@ Manager::Manager(QObject *parent)
     m_timer->setInterval(100);
     m_speedTimer->setInterval(1000);
 
-    connect(m_copyDialog, SIGNAL(pauseRequest(bool)), this, SLOT(setPaused(bool)));
+    connect(m_copyDialog, SIGNAL(pauseRequest(bool)), this, SLOT(setPause(bool)));
     connect(m_copyDialog, SIGNAL(rejected()), this, SLOT(cancelCopy()));
 
     connect(this, SIGNAL(copyProgress(QString, QString, int, int)), m_copyDialog, SLOT(setInfo(QString, QString, int, int)));
     connect(this, SIGNAL(finished()), m_copyDialog, SLOT(finished()));
-    connect(this, SIGNAL(pauseToggled(bool,bool)), m_copyDialog, SLOT(pauseToggled(bool, bool)));
+    connect(this, SIGNAL(pauseToggled(bool)), m_copyDialog, SLOT(pauseToggled(bool)));
     connect(this, SIGNAL(speed(QString)), m_copyDialog, SLOT(setSpeed(QString)));
     connect(this, SIGNAL(copyOrMoveStarted()), m_copyDialog, SLOT(show()));
+    connect(this, SIGNAL(isMove(bool)), m_copyDialog, SLOT(setMove(bool)));
 
     connect(this, SIGNAL(finished()), this, SLOT(finishedSlot()));
-    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
     connect(this, SIGNAL(fileExists(QStringList)), this, SLOT(fileExistsSlot(QStringList)));
     connect(this, SIGNAL(errorSignal()), this, SLOT(errorSlot()));
 
@@ -370,15 +379,32 @@ Manager::Manager(QObject *parent)
     connect(this, SIGNAL(copyOrMoveFinished()), m_speedTimer, SLOT(stop()));
 }
 
+Manager::~Manager()
+{
+    APP->setMessage(QStringList() << "--status" << "destroying IO manager", "dfm_browser");
+    delete m_copyDialog;
+}
+
+void
+Manager::finishedSlot()
+{
+    emit copyProgress(QString(), QString(), 100, 100); emit speed(QString());
+    APP->setMessage(QStringList() << "--ioProgress" << "100", "dfm_browser");
+    if (Store::settings()->value("hideCPDWhenFinished").toBool())
+        m_copyDialog->hide();
+}
+
 void
 Manager::doJob(const IOJobData &ioJobData)
 {
     reset();
+    m_currentJob = ioJobData;
 //    qDebug() << "doing job:";
 //    qDebug() << Ops::taskToString(ioJobData.ioTask) << ioJobData.inList;
     if (ioJobData.ioTask < RemoveTask)
     {
         m_cut = bool(ioJobData.ioTask==MoveTask);
+        emit isMove(m_cut);
         m_destDir = ioJobData.outPath;
         m_total = 0;
         const QStringList copyFiles = ioJobData.inList;
@@ -423,7 +449,6 @@ void
 Manager::reset()
 {
     m_canceled = false;
-    m_pause = false;
     m_cut = false;
     m_total = 0; //size in bytes of all files we are going to copy/move
     m_allProgress = 0; //overall progress
@@ -442,7 +467,7 @@ Manager::error(const QString &error)
 {
     m_errorString = error;
     emit errorSignal();
-    setPaused(true);
+    setPause(true);
     pause();
 }
 
@@ -505,6 +530,7 @@ void
 Manager::emitProgress()
 {
     emit copyProgress(m_inFile, m_outFile, currentProgress(), m_fileProgress);
+    APP->setMessage(QStringList() << "--ioProgress" << QString::number(currentProgress()), "dfm_browser");
 }
 
 void
@@ -518,36 +544,49 @@ Manager::run()
 }
 
 void
-Manager::setPaused(bool pause)
+Manager::queue(const IOJobData &ioJob)
 {
-    emit pauseToggled(pause, m_cut);
-    m_pauseMtx.lock();
-    m_pause = pause;
-    m_pauseMtx.unlock();
-    if (!m_pause)
-        m_pauseCond.wakeAll();
+//    qDebug() << "got new iojob" << ioJob.ioTask << ioJob.inList;
+    m_queueMtx.lock();
+    m_queue << ioJob;
+    m_queueMtx.unlock();
+    start();
+}
+
+IOJobData
+Manager::deqeueue()
+{
+    QMutexLocker locker(&m_queueMtx);
+    return m_queue.dequeue();
+}
+
+bool
+Manager::hasQueue() const
+{
+    QMutexLocker locker(&m_queueMtx);
+    return !m_queue.isEmpty();
 }
 
 void
-Manager::setMode(QPair<Mode, QString> mode)
+Manager::fileExistsSlot(const QStringList &files)
 {
-    m_mode = mode.first;
-    m_newFile = m_mode == NewName ? mode.second : QString();
+    FileExistsDialog d(files);
+    Mode m = d.getMode();
+    if (m == NewName)
+        m_newFile = d.newName();
+
+    setMode(m);
+}
+
+void
+Manager::setMode(Mode mode)
+{
+    m_mode = mode;
     if (m_mode == Cancel)
         cancelCopy();
     else
-        setPaused(false);
+        setPause(false);
 }
-
-void
-Manager::pause()
-{
-    m_pauseMtx.lock();
-    if (m_pause)
-        m_pauseCond.wait(&m_pauseMtx);
-    m_pauseMtx.unlock();
-}
-
 
 bool
 Manager::copyRecursive(const QString &inFile, const QString &outFile, bool cut, bool sameDisk)
@@ -555,7 +594,7 @@ Manager::copyRecursive(const QString &inFile, const QString &outFile, bool cut, 
     if (m_canceled)
         return true;
 
-    QFileInfo outFileInfo(outFile);
+    const QFileInfo outFileInfo(outFile);
 
     if (m_mode != OverwriteAll)
     {
@@ -564,7 +603,7 @@ Manager::copyRecursive(const QString &inFile, const QString &outFile, bool cut, 
             if (m_mode == SkipAll)
                 return true;
             emit fileExists(QStringList() << inFile << outFile);
-            setPaused(true);
+            setPause(true);
         }
     }
 

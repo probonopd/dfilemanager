@@ -163,7 +163,7 @@ public:
     void search(const QString &name, const QString &filePath, Node *node);
     void populateApplications(const QString &appsPath, Node *node);
     void setCancelled(bool cancel);
-    bool isCancelled() { QMutexLocker locker(&m_mutex); return m_isCancelled; }
+    bool isCancelled() { QMutexLocker locker(&m_pausingMutex); return m_isCancelled; }
 
 protected:
     void run();

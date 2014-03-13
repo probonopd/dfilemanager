@@ -34,35 +34,36 @@ Thread::Thread(QObject *parent) : QThread(parent)
 void
 Thread::setPause(bool p)
 {
-    m_mutex.lock();
+    emit pauseToggled(p);
+    m_pausingMutex.lock();
     m_pause=p;
-    m_mutex.unlock();
+    m_pausingMutex.unlock();
     if (!p)
-        m_pauseCond.wakeAll();
+        m_pausingCondition.wakeAll();
 }
 
 bool
-Thread::isPaused()
+Thread::isPaused() const
 {
-    QMutexLocker locker(&m_mutex);
+    QMutexLocker locker(&m_pausingMutex);
     return m_pause;
 }
 
 void
 Thread::pause()
 {
-    m_mutex.lock();
+    m_pausingMutex.lock();
     if (m_pause)
-        m_pauseCond.wait(&m_mutex);
-    m_mutex.unlock();
+        m_pausingCondition.wait(&m_pausingMutex);
+    m_pausingMutex.unlock();
 }
 
 void
 Thread::discontinue()
 {
-    m_mutex.lock();
+    m_pausingMutex.lock();
     m_quit=true;
-    m_mutex.unlock();
+    m_pausingMutex.unlock();
     setPause(false);
 }
 

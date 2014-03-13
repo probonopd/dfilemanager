@@ -50,32 +50,31 @@ Application::Application(int &argc, char *argv[])
     , m_type(Browser)
     , m_server(new QLocalServer(this))
     , m_socket(new QLocalSocket(this))
-    , m_message(QString("test"))
+    , m_message(QString("--"))
 {
     if (arguments().contains("--iojob"))
         m_type = IOJob;
 
-    connect(m_socket, SIGNAL(connected()), this, SLOT(newSocketConnection()));
-
     const QString &key = name[m_type];
     m_socket->connectToServer(key);
-
     if (m_socket->error() == QLocalSocket::ConnectionRefusedError) //we are assuming a crash happened...
         m_server->removeServer(key);
-
     m_isRunning = m_socket->state() == QLocalSocket::ConnectedState && m_socket->error() != QLocalSocket::ConnectionRefusedError;
-    m_socket->disconnectFromServer();
+//    m_socket->disconnectFromServer();
 
-    qDebug() << "dfm is already running:" << m_isRunning;
+    connect(m_socket, SIGNAL(connected()), this, SLOT(socketConnected()));
+    connect(m_server, SIGNAL(newConnection()), this, SLOT(newServerConnection()));
 
     if (!m_isRunning)
     {
-        m_server->listen(key);
-        connect(m_server, SIGNAL(newConnection()), this, SLOT(newMessage()));
+        if (!m_server->listen(name[m_type]))
+            qDebug() << "Wasnt able to start the localServer... IPC will not work right";
         setOrganizationName("dfm");
         if (m_type == Browser)
             DFM::Store::readConfig();
     }
+    else
+        qDebug() << "dfm is already running";
 #ifdef Q_WS_X11
 #if 0
     netWmDesktop = XInternAtom(DPY, "_NET_WM_DESKTOP", False);
@@ -84,45 +83,47 @@ Application::Application(int &argc, char *argv[])
 #endif
 }
 
+//QLocalSocket::connected() [SIGNAL]
 void
-Application::newSocketConnection()
+Application::socketConnected()
 {
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
-//    out.setVersion(QDataStream::Qt_4_0);
     out << m_message;
     out.device()->seek(0);
     m_socket->write(block);
     m_socket->flush();
 }
 
+//QLocalServer::newConnection() [SIGNAL]
 void
-Application::newMessage()
+Application::newServerConnection()
 {
-    QLocalSocket *clientConnection = m_server->nextPendingConnection();
-    clientConnection->waitForReadyRead();
+    QLocalSocket *ls = m_server->nextPendingConnection();
+    ls->waitForReadyRead();
 
-    QDataStream in(clientConnection);
-    if (!clientConnection->bytesAvailable())
+    QDataStream in(ls);
+    if (!ls->bytesAvailable())
         return;
 
     QString message;
     in >> message;
 
-    QStringList msg = message.split("_,_");
-//    qDebug() << msg;
-    emit lastMessage(msg);
+    connect(ls, SIGNAL(disconnected()), ls, SLOT(deleteLater()));
+    ls->disconnectFromServer();
+
+    emit lastMessage(message.split("_,_"));
 }
 
-bool
-Application::setMessage(const QStringList &message)
+void
+Application::setMessage(const QStringList &message, const QString &serverName)
 {
-    if (!m_isRunning)
-        return false;
-
+//    if (!m_isRunning && serverName.isEmpty())
+//        return;
+    m_socket->abort();
+    const QString &server = serverName.isEmpty() ? name[m_type] : serverName;
     m_message = message.join("_,_");
-    m_socket->connectToServer(name[m_type]);
-    return true;
+    m_socket->connectToServer(server);
 }
 
 
@@ -152,7 +153,7 @@ Application::loadPlugins()
 void
 Application::loadPluginsFromDir(const QDir dir)
 {
-    foreach (QString fileName, dir.entryList(QDir::AllEntries|QDir::NoDotAndDotDot))
+    foreach (const QString &fileName, dir.entryList(QDir::AllEntries|QDir::NoDotAndDotDot))
     {
         QPluginLoader loader(dir.absoluteFilePath(fileName));
         QObject *plugin = loader.instance();

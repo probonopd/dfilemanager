@@ -51,7 +51,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     center->setFrameStyle(0/*QFrame::StyledPanel|QFrame::Sunken*/);
     m_tabWin = new QMainWindow(this);
     m_toolBar = new QToolBar(tr("Show ToolBar"), this);
-    m_statusBar = statusBar();
+    m_statusBar = new StatusBar(this);
     m_filterBox = new SearchBox(m_toolBar);
     m_toolBarSpacer = new QWidget(m_toolBar);
     m_dockLeft = new Docks::DockWidget(m_tabWin, tr("Bookmarks"), Qt::SubWindow, Docks::Left);
@@ -112,7 +112,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     readSettings();
     createMenus();
     createToolBars();
-    createSlider();
+    setupStatusBar();
 
     if (Store::config.behaviour.gayWindow)
         menuBar()->hide();
@@ -171,12 +171,30 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
 void
 MainWindow::receiveMessage(const QStringList &message)
 {
-    setWindowState(windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
-    bool isSearchPar = false;
+    bool isSearchPar = false, isStatus = false, isIoProgress = false;
+    QString statusMsg;
     foreach (const QString &msg, message)
         if (isSearchPar)
         {
             m_model->search(msg);
+        }
+        else if (isStatus)
+        {
+            if (!statusMsg.isEmpty())
+                statusMsg.append(" ");
+            statusMsg.append(msg);
+
+        }
+        else if (isIoProgress)
+        {
+            bool ok;
+            int ioProgress = msg.toInt(&ok);
+            if (ok)
+            {
+                m_ioProgress->setVisible(ioProgress < 100);
+                m_ioProgress->setValue(ioProgress);
+            }
+            return;
         }
         else if (QFileInfo(msg).isDir())
         {
@@ -189,7 +207,18 @@ MainWindow::receiveMessage(const QStringList &message)
                 QMessageBox::warning(this, "Getting places from kde Failed!", "was unable to load kde places... sry.");
         }
         else if (msg == "--search")
+        {
             isSearchPar = true;
+        }
+        else if (msg == "--status")
+        {
+            isStatus = true;
+        }
+        else if (msg == "--ioProgress")
+        {
+            isIoProgress = true;
+        }
+    setWindowState(windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
 }
 
 void
@@ -200,38 +229,49 @@ MainWindow::filterCurrentDir(const QString &filter)
 }
 
 void
-MainWindow::createSlider()
+MainWindow::setupStatusBar()
 {
     m_iconSizeSlider->setFixedWidth(80);
     m_iconSizeSlider->setOrientation(Qt::Horizontal);
     m_iconSizeSlider->setRange(1,16);
     m_iconSizeSlider->setSingleStep(1);
     m_iconSizeSlider->setPageStep(1);
-    QHBoxLayout *l = qobject_cast<QHBoxLayout*>(m_statusBar->layout());
-    l->insertWidget(l->count()-1, m_iconSizeSlider);
+    m_statusBar->addRightWidget(m_iconSizeSlider);
     Docks::FloatButton *fl = new Docks::FloatButton(m_statusBar);
     fl->setFixedSize(16, 16);
-    l->insertWidget(0, fl);
+    m_statusBar->addLeftWidget(fl);
     fl->setFloating(m_dockLeft->isVisible());
     Docks::FloatButton *fb = new Docks::FloatButton(m_statusBar, Docks::Bottom);
     fb->setFixedSize(16, 16);
-    l->insertWidget(1, fb);
+    m_statusBar->addLeftWidget(fb);
     fb->setFloating(m_dockBottom->isVisible());
     Docks::FloatButton *fr = new Docks::FloatButton(m_statusBar, Docks::Right);
     fr->setFixedSize(16, 16);
-    l->insertWidget(2, fr);
+    m_statusBar->addLeftWidget(fr);
     fr->setFloating(m_dockRight->isVisible());
+
     connect (fl, SIGNAL(clicked()), m_dockLeft, SLOT(toggleVisibility()));
     connect (fr, SIGNAL(clicked()), m_dockRight, SLOT(toggleVisibility()));
     connect (fb, SIGNAL(clicked()), m_dockBottom, SLOT(toggleVisibility()));
+
     connect (fl, SIGNAL(rightClicked()), m_dockLeft, SLOT(toggleLock()));
     connect (fr, SIGNAL(rightClicked()), m_dockRight, SLOT(toggleLock()));
     connect (fb, SIGNAL(rightClicked()), m_dockBottom, SLOT(toggleLock()));
+
     connect (m_dockLeft, SIGNAL(visibilityChanged(bool)), fl, SLOT(setFloating(bool)));
     connect (m_dockRight, SIGNAL(visibilityChanged(bool)), fr, SLOT(setFloating(bool)));
     connect (m_dockBottom, SIGNAL(visibilityChanged(bool)), fb, SLOT(setFloating(bool)));
+
     connect (m_iconSizeSlider, SIGNAL(sliderMoved(int)),this,SLOT(setViewIconSize(int)));
     connect (m_iconSizeSlider, SIGNAL(valueChanged(int)),this,SLOT(setViewIconSize(int)));
+
+    m_ioProgress = new QProgressBar(m_statusBar);
+    m_ioProgress->setMinimum(0);
+    m_ioProgress->setMaximum(100);
+    m_ioProgress->setFixedWidth(64);
+    m_statusBar->addRightWidget(m_ioProgress);
+    m_ioProgress->setTextVisible(true);
+    m_ioProgress->setVisible(false);
 }
 
 void
@@ -243,38 +283,26 @@ MainWindow::setSliderPos(int size)
 void
 MainWindow::setViewIconSize(int size)
 {
-    m_activeContainer->animateIconSize(m_activeContainer->iconSize().width(),size*16);
-    m_iconSizeSlider->setToolTip("Size: " + QString::number(size*16) + " px");
+    m_activeContainer->animateIconSize(m_activeContainer->iconSize().width(), size*16);
+    m_iconSizeSlider->setToolTip(QString("Size: %1 px").arg(QString::number(size*16)));
     QToolTip *tip;
     QPoint pt;
     pt.setX(mapToGlobal(m_iconSizeSlider->pos()).x());
     pt.setY(mapToGlobal(m_statusBar->pos()).y());
-    if(m_statusBar->isVisible())
-        tip->showText(pt,m_iconSizeSlider->toolTip());
+    if (m_statusBar->isVisible())
+        tip->showText(pt, m_iconSizeSlider->toolTip());
 }
 
 void
-MainWindow::mainSelectionChanged(QItemSelection selected,QItemSelection notselected)
+MainWindow::mainSelectionChanged()
 {
-    QModelIndexList selectedItems;
-    if(m_activeContainer->selectionModel()->selectedRows(0).count())
-        selectedItems = m_activeContainer->selectionModel()->selectedRows(0);
-    else
-        selectedItems = m_activeContainer->selectionModel()->selectedIndexes();
+    const QModelIndexList &selected = m_activeContainer->selectionModel()->selectedRows(0);
+    if (selected.count() == 1)
+        m_slctnMessage = QString(" :: \'%1\' Selected").arg(selected.first().data().toString());
+    else if (selected.count() > 1)
+        m_slctnMessage = QString(" :: %1 Items Selected").arg(QString::number(selected.count()));
 
-    QString selectedItem;
-    if(selectedItems.count())
-        selectedItem = m_model->fileName(selectedItems.at(0));
-
-    if(selectedItems.count() == 1)
-    {
-        m_slctnMessage = " ::  " + QString::fromLatin1("\'") + selectedItem + QString::fromLatin1("\'") + " Selected";
-
-    }
-    else if(selectedItems.count() > 1)
-        m_slctnMessage =  " ::  " + QString::number(selectedItems.count()) + " Items Selected";
-
-    QString newMessage = m_activeContainer->selectionModel()->selection().isEmpty() ? m_statusMessage : m_statusMessage + m_slctnMessage;
+    const QString &newMessage = selected.isEmpty() ? m_statusMessage : m_statusMessage + m_slctnMessage;
     m_statusBar->showMessage(newMessage);
 }
 
@@ -387,13 +415,13 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
     if (obj == m_placesView && (event->type() == QEvent::Resize || event->type() == QEvent::Show) && !m_dockLeft->isFloating())
         updateToolbarSpacer();
 
-    if (obj == m_statusBar && event->type() == QEvent::Paint)
-    {
-        QPainter p(m_statusBar);
-        p.setPen(m_statusBar->palette().color(m_statusBar->foregroundRole()));
-        p.drawText(m_statusBar->rect(), Qt::AlignCenter, m_statusBar->currentMessage());
-        return true;
-    }
+//    if (obj == m_statusBar && event->type() == QEvent::Paint)
+//    {
+//        QPainter p(m_statusBar);
+//        p.setPen(m_statusBar->palette().color(m_statusBar->foregroundRole()));
+//        p.drawText(m_statusBar->rect(), Qt::AlignCenter, m_statusBar->currentMessage());
+//        return true;
+//    }
     return QMainWindow::eventFilter(obj, event);
 }
 
@@ -477,7 +505,7 @@ MainWindow::connectContainer(ViewContainer *container)
     connect(container->model(), SIGNAL(urlLoaded(QUrl)), this, SLOT(updateStatusBar(QUrl)));
     connect(container->model(), SIGNAL(urlChanged(QUrl)), m_recentFoldersView, SLOT(folderEntered(QUrl)));
     connect(container, SIGNAL(viewChanged()), this, SLOT(checkViewAct()));
-    connect(container->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(mainSelectionChanged(QItemSelection,QItemSelection)));
+    connect(container->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(mainSelectionChanged()));
     connect(container, SIGNAL(iconSizeChanged(int)), this, SLOT(setSliderPos(int)));
     connect(container, SIGNAL(viewportEntered()), this, SLOT(viewClearHover()));
     connect(container, SIGNAL(leftView()), this, SLOT(viewClearHover()));
