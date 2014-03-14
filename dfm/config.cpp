@@ -66,7 +66,8 @@ Store::readConfiguration()
     config.behaviour.view = settings()->value("start.view", 0).toInt();
     config.behaviour.pathBarStyle = settings()->value("pathBarStyle", 1).toInt();
     config.behaviour.sideBarStyle = settings()->value("sideBarStyle", 1).toInt();
-
+    config.behaviour.pathBarPlace = settings()->value("behaviour.pathBarPlace", 0).toInt();
+    config.behaviour.useIOQueue = settings()->value("behaviour.useIOQueue", true).toBool();
 
     config.views.showThumbs = settings()->value("showThumbs", false).toBool();
     config.views.activeThumbIfaces = settings()->value("activeThumbIfaces", QStringList()).toStringList();
@@ -149,6 +150,9 @@ Store::writeConfiguration()
     settings()->setValue("showThumbs", config.views.showThumbs);
     settings()->setValue("drawDevUsage", config.behaviour.devUsage);
     settings()->setValue("textWidth", config.views.iconView.textWidth);
+
+    settings()->setValue("behaviour.pathBarPlace", config.behaviour.pathBarPlace);
+    settings()->setValue("behaviour.useIOQueue", config.behaviour.useIOQueue);
 
     settings()->setValue("detailsView.rowPadding", config.views.detailsView.rowPadding);
     settings()->setValue("detailsView.altRows", config.views.detailsView.altRows);

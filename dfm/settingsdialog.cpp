@@ -45,12 +45,15 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     , m_capsConts(new QCheckBox(tr("Use CAPITAL LETTERS on containers in bookmarks")))
     , m_startUpWidget(new StartupWidget(this))
     , m_invActBookm(new QCheckBox(tr("Icon on active bookmark follows textrole"), this))
+    , m_pathBarPlace(new QComboBox(this))
+    , m_useIOQueue(new QCheckBox(tr("Queue IO operations (copy/move/delete)"), this))
 {
     m_hideTabBar->setChecked(Store::config.behaviour.hideTabBarWhenOnlyOneTab);
     m_useCustomIcons->setChecked(Store::config.behaviour.systemIcons);
     m_drawDevUsage->setChecked(Store::config.behaviour.devUsage);
     m_capsConts->setChecked(Store::config.behaviour.capsContainers);
     m_invActBookm->setChecked(Store::config.behaviour.invActBookmark);
+    m_useIOQueue->setChecked(Store::config.behaviour.useIOQueue);
     m_startUpWidget->setStartupPath(Store::settings()->value("startPath").toString());
 
     m_tabsBox->setCheckable(true);
@@ -111,16 +114,23 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
 
 #undef LABEL
 
-    QVBoxLayout *vl = new QVBoxLayout(this);
-    vl->addWidget(m_startUpWidget);
-    vl->addWidget(m_hideTabBar);
-    vl->addWidget(m_useCustomIcons);
-    vl->addWidget(m_drawDevUsage);
-    vl->addWidget(m_invActBookm);
-    vl->addWidget(m_capsConts);
-    vl->addWidget(m_tabsBox);
-    vl->addStretch();
-    setLayout(vl);
+    m_pathBarPlace->addItems(QStringList() << "Above views" << "Below views");
+    m_pathBarPlace->setCurrentIndex(Store::config.behaviour.pathBarPlace);
+
+    QGridLayout *gl = new QGridLayout(this);
+    row = -1;
+    gl->addWidget(m_startUpWidget, ++row, 0, 1, 2);
+    gl->addWidget(m_hideTabBar, ++row, 0, 1, 2);
+    gl->addWidget(m_useCustomIcons, ++row, 0, 1, 2);
+    gl->addWidget(m_drawDevUsage, ++row, 0, 1, 2);
+    gl->addWidget(m_invActBookm, ++row, 0, 1, 2);
+    gl->addWidget(m_capsConts, ++row, 0, 1, 2);
+    gl->addWidget(m_useIOQueue, ++row, 0, 1, 2);
+    gl->addWidget(new QLabel(tr("PathBar position:")), ++row, 0, 1, 1);
+    gl->addWidget(m_pathBarPlace, row, 1, 1, 1);
+    gl->addWidget(m_tabsBox, ++row, 0, 1, 2);
+    gl->addItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Expanding), ++row, 0);
+    setLayout(gl);
 }
 
 
@@ -410,7 +420,10 @@ SettingsDialog::accept()
     Store::config.behaviour.invActBookmark = m_behWidget->m_invActBookm->isChecked();
     Store::config.views.iconView.categorized = m_viewWidget->m_categorized->isChecked();
     Store::config.views.detailsView.altRows = m_viewWidget->m_altRows->isChecked();
+    Store::config.behaviour.pathBarPlace = m_behWidget->m_pathBarPlace->currentIndex();
+    Store::config.behaviour.useIOQueue = m_behWidget->m_useIOQueue->isChecked();
 
+    Store::settings()->setValue("behaviour.useIOQueue", Store::config.behaviour.useIOQueue);
     Store::settings()->setValue("behaviour.gayWindow", m_behWidget->m_tabsBox->isChecked());
     Store::settings()->setValue("behaviour.gayWindow.tabShape", m_behWidget->m_tabShape->currentIndex());
     Store::settings()->setValue("behaviour.gayWindow.tabRoundness", m_behWidget->m_tabRndns->value());

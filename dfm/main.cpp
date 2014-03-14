@@ -65,7 +65,8 @@ int main(int argc, char *argv[])
     case Application::IOJob:
     {
         DFM::IO::Manager *manager = new DFM::IO::Manager();
-        QObject::connect(&app, SIGNAL(lastMessage(QStringList)), manager, SLOT(getMessage(QStringList)));
+        if (DFM::Store::config.behaviour.useIOQueue)
+            QObject::connect(&app, SIGNAL(lastMessage(QStringList)), manager, SLOT(getMessage(QStringList)));
         DFM::IOJobData ioJobData;
         if (DFM::Ops::extractIoData(app.arguments(), ioJobData))
             manager->queue(ioJobData);

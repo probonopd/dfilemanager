@@ -60,6 +60,9 @@ Application::Application(int &argc, char *argv[])
     if (m_socket->error() == QLocalSocket::ConnectionRefusedError) //we are assuming a crash happened...
         m_server->removeServer(key);
     m_isRunning = m_socket->state() == QLocalSocket::ConnectedState && m_socket->error() != QLocalSocket::ConnectionRefusedError;
+    DFM::Store::readConfig();
+    if (m_type == IOJob && !DFM::Store::config.behaviour.useIOQueue)
+        return;
 //    m_socket->disconnectFromServer();
 
     connect(m_socket, SIGNAL(connected()), this, SLOT(socketConnected()));
@@ -69,9 +72,7 @@ Application::Application(int &argc, char *argv[])
     {
         if (!m_server->listen(name[m_type]))
             qDebug() << "Wasnt able to start the localServer... IPC will not work right";
-        setOrganizationName("dfm");
-        if (m_type == Browser)
-            DFM::Store::readConfig();
+        setOrganizationName("dfm");        
     }
     else
         qDebug() << "dfm is already running";
@@ -87,11 +88,8 @@ Application::Application(int &argc, char *argv[])
 void
 Application::socketConnected()
 {
-    QByteArray block;
-    QDataStream out(&block, QIODevice::WriteOnly);
-    out << m_message;
-    out.device()->seek(0);
-    m_socket->write(block);
+    const char *data = m_message.toLocal8Bit().data();
+    m_socket->write(data, qstrlen(data));
     m_socket->flush();
 }
 
@@ -101,17 +99,9 @@ Application::newServerConnection()
 {
     QLocalSocket *ls = m_server->nextPendingConnection();
     ls->waitForReadyRead();
-
-    QDataStream in(ls);
-    if (!ls->bytesAvailable())
-        return;
-
-    QString message;
-    in >> message;
-
+    const QString &message = ls->readAll();
     connect(ls, SIGNAL(disconnected()), ls, SLOT(deleteLater()));
     ls->disconnectFromServer();
-
     emit lastMessage(message.split("_,_"));
 }
 

@@ -191,10 +191,27 @@ MainWindow::receiveMessage(const QStringList &message)
             int ioProgress = msg.toInt(&ok);
             if (ok)
             {
-                m_ioProgress->setVisible(ioProgress < 100);
-                m_ioProgress->setValue(ioProgress);
+                if (ioProgress == -1) //busy...
+                {
+                    m_ioProgress->setVisible(true);
+                    m_ioProgress->setRange(-1, -1);
+                }
+                else
+                {
+                    m_ioProgress->setRange(0, 100);
+                    m_ioProgress->setVisible(ioProgress < 100);
+                    m_ioProgress->setValue(ioProgress);
+                }
             }
-            return;
+            else
+            {
+                QString format;
+                if (m_ioProgress->value() != -1)
+                    format = QString("%1 %p%").arg(msg);
+                else
+                    format = msg;
+                m_ioProgress->setFormat(format);
+            }
         }
         else if (QFileInfo(msg).isDir())
         {
@@ -218,7 +235,10 @@ MainWindow::receiveMessage(const QStringList &message)
         {
             isIoProgress = true;
         }
-    setWindowState(windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
+        else
+        {
+            setWindowState(windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
+        }
 }
 
 void
@@ -266,9 +286,8 @@ MainWindow::setupStatusBar()
     connect (m_iconSizeSlider, SIGNAL(valueChanged(int)),this,SLOT(setViewIconSize(int)));
 
     m_ioProgress = new QProgressBar(m_statusBar);
-    m_ioProgress->setMinimum(0);
-    m_ioProgress->setMaximum(100);
-    m_ioProgress->setFixedWidth(64);
+    m_ioProgress->setRange(0, 100);
+    m_ioProgress->setFixedWidth(92);
     m_statusBar->addRightWidget(m_ioProgress);
     m_ioProgress->setTextVisible(true);
     m_ioProgress->setVisible(false);

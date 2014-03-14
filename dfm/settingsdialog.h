@@ -79,9 +79,9 @@ public:
 private:
     friend class SettingsDialog;
     QGroupBox *m_tabsBox;
-    QComboBox *m_tabShape, *m_layOrder;
+    QComboBox *m_tabShape, *m_layOrder, *m_pathBarPlace;
     QSpinBox *m_tabRndns, *m_tabHeight, *m_tabWidth, *m_overlap;
-    QCheckBox *m_hideTabBar, *m_useCustomIcons, *m_drawDevUsage, *m_newTabButton, *m_capsConts, *m_invActBookm;
+    QCheckBox *m_hideTabBar, *m_useCustomIcons, *m_drawDevUsage, *m_newTabButton, *m_capsConts, *m_invActBookm, *m_useIOQueue;
     StartupWidget *m_startUpWidget;
 };
 

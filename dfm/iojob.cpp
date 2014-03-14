@@ -377,11 +377,13 @@ Manager::Manager(QObject *parent)
 
     connect(this, SIGNAL(copyOrMoveFinished()), m_timer, SLOT(stop()));
     connect(this, SIGNAL(copyOrMoveFinished()), m_speedTimer, SLOT(stop()));
+
+    connect(this, SIGNAL(ioIsBusy(bool)), this, SLOT(ioBusy(bool)));
 }
 
 Manager::~Manager()
 {
-    APP->setMessage(QStringList() << "--status" << "destroying IO manager", "dfm_browser");
+//    APP->setMessage(QStringList() << "--status" << "destroying IO manager", "dfm_browser");
     delete m_copyDialog;
 }
 
@@ -389,7 +391,8 @@ void
 Manager::finishedSlot()
 {
     emit copyProgress(QString(), QString(), 100, 100); emit speed(QString());
-    APP->setMessage(QStringList() << "--ioProgress" << "100", "dfm_browser");
+    if (DFM::Store::config.behaviour.useIOQueue)
+        APP->setMessage(QStringList() << "--ioProgress" << "100", "dfm_browser");
     if (Store::settings()->value("hideCPDWhenFinished").toBool())
         m_copyDialog->hide();
 }
@@ -440,9 +443,23 @@ Manager::doJob(const IOJobData &ioJobData)
     }
     else if (ioJobData.ioTask == RemoveTask)
     {
+        emit ioIsBusy(true);
         foreach (const QString &file, ioJobData.inList)
             remove(file);
+        emit ioIsBusy(false);
     }
+}
+
+void
+Manager::ioBusy(const bool busy)
+{
+    if (!DFM::Store::config.behaviour.useIOQueue)
+        return;
+    QString i = busy?"-1":"100";
+    QStringList message = QStringList() << "--ioProgress" << i;
+    if (busy)
+        message << "Deleting...";
+    APP->setMessage(message, "dfm_browser");
 }
 
 void
@@ -529,8 +546,13 @@ Manager::checkSpeed()
 void
 Manager::emitProgress()
 {
-    emit copyProgress(m_inFile, m_outFile, currentProgress(), m_fileProgress);
-    APP->setMessage(QStringList() << "--ioProgress" << QString::number(currentProgress()), "dfm_browser");
+    const int progress = currentProgress();
+    emit copyProgress(m_inFile, m_outFile, progress, m_fileProgress);
+    if (!DFM::Store::config.behaviour.useIOQueue)
+        return;
+    QString task = m_cut?"Moving...":"Copying...";
+//    task.append(QString("\n%1 %2 %3").arg("queue: ", QString::number(queueCount()), " items"));
+    APP->setMessage(QStringList() << "--ioProgress" << QString::number(progress) << task, "dfm_browser");
 }
 
 void
@@ -565,6 +587,13 @@ Manager::hasQueue() const
 {
     QMutexLocker locker(&m_queueMtx);
     return !m_queue.isEmpty();
+}
+
+int
+Manager::queueCount() const
+{
+    QMutexLocker locker(&m_queueMtx);
+    return m_queue.count();
 }
 
 void

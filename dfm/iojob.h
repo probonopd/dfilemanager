@@ -122,6 +122,7 @@ public:
     inline QString errorString() const { return m_errorString; }
 
     bool hasQueue() const;
+    int queueCount() const;
     void queue(const IOJobData &ioJob);
 
 public slots:
@@ -136,6 +137,7 @@ signals:
     void errorSignal();
     void speed(const QString &speed);
     void isMove(const bool move);
+    void ioIsBusy(const bool isBusy);
 
 private slots:
     void fileExistsSlot(const QStringList &files);
@@ -143,6 +145,7 @@ private slots:
     void errorSlot();
     void finishedSlot();
     void checkSpeed();
+    void ioBusy(const bool busy);
 
 protected:
     bool copyRecursive(const QString &inFile, const QString &outFile, bool cut, bool sameDisk);

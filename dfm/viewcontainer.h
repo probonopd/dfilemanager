@@ -117,6 +117,7 @@ private slots:
     void scriptTriggered();
     void urlLoaded(const QUrl &url);
     void modelSort(const int column, const int order);
+    void settingsChanged();
 
 private:
     bool m_back;
@@ -131,6 +132,7 @@ private:
     QItemSelectionModel *m_selectModel;
     NavBar *m_navBar;
     SearchIndicator *m_searchIndicator;
+    QVBoxLayout *m_layout;
 };
 
 }

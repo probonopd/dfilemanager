@@ -46,7 +46,8 @@ typedef struct Config
         windowsStyle,
         invertedColors,
         capsContainers,
-        invActBookmark;
+        invActBookmark,
+        useIOQueue;
 
         int tabShape,
         tabRoundness,
@@ -57,7 +58,8 @@ typedef struct Config
         pathBarStyle,
         sideBarStyle,
         view,
-        minFontSize;
+        minFontSize,
+        pathBarPlace;
 
         Qt::SortOrder sortingOrd;
     } behaviour;

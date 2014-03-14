@@ -53,6 +53,7 @@ ViewContainer::ViewContainer(QWidget *parent, const QUrl &url)
     , m_flowView(new FlowView(this))
     , m_navBar(new NavBar(this, m_model))
     , m_searchIndicator(new SearchIndicator(this))
+    , m_layout(new QVBoxLayout())
 
 {
     m_searchIndicator->setVisible(false);
@@ -81,6 +82,7 @@ ViewContainer::ViewContainer(QWidget *parent, const QUrl &url)
     connect(m_flowView->detailsView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
     connect(m_model, SIGNAL(sortingChanged(int,int)), this, SIGNAL(sortingChanged(int,int)));
     connect(m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(modelSort(int,int)));
+    connect(MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(settingsChanged()));
 
     foreach (QAbstractItemView *v, QList<QAbstractItemView *>() << m_iconView << m_detailsView /*<< m_columnsView*/ << m_flowView->detailsView())
     {
@@ -95,17 +97,25 @@ ViewContainer::ViewContainer(QWidget *parent, const QUrl &url)
     m_viewStack->addWidget(m_columnsWidget);
     m_viewStack->addWidget(m_flowView);
 
-    QVBoxLayout *layout = new QVBoxLayout();
-    layout->addWidget(m_viewStack, 1);
-    layout->addWidget(m_navBar);
-    layout->setContentsMargins(0,0,0,0);
-    layout->setSpacing(0);
-    setLayout(layout);
+    m_layout->addWidget(m_viewStack, 1);
+    m_layout->addWidget(m_navBar);
+    m_layout->setContentsMargins(0,0,0,0);
+    m_layout->setSpacing(0);
+    setLayout(m_layout);
 
     setView((View)Store::config.behaviour.view, false);
     m_model->setUrl(url);
-
+    settingsChanged();
     emit iconSizeChanged(Store::config.views.iconView.iconSize*16);
+}
+
+void
+ViewContainer::settingsChanged()
+{
+    QLayoutItem *m = m_layout->takeAt(m_layout->indexOf(m_navBar));
+    QWidget *w = m->widget();
+    delete m;
+    m_layout->insertWidget(Store::config.behaviour.pathBarPlace, w);
 }
 
 void
