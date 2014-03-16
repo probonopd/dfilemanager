@@ -43,6 +43,7 @@ class IconView : public QAbstractItemView, public ViewBase
     Q_OBJECT
 public:
     explicit IconView(QWidget *parent = 0);
+    ~IconView();
     void setNewSize(const int size);
     void setModel(QAbstractItemModel *model);
     inline QSize gridSize() const { return m_gridSize; }

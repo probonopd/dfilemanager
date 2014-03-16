@@ -84,6 +84,9 @@ Node::Node(Model *model, const QUrl &url, Node *parent, const QString &filePath)
     else
         m_name = fileName();
 
+    if (m_parent && m_parent->m_parent == m_model->m_rootNode)
+        m_name = m_filePath;
+
     if (m_name.isEmpty())
         m_name = url.toEncoded(QUrl::RemoveScheme);
 
@@ -93,11 +96,14 @@ Node::Node(Model *model, const QUrl &url, Node *parent, const QString &filePath)
 
 Node::~Node()
 {
-    if (m_parent)
-        m_parent->removeChild(this);
-    if (m_model->m_nodes.contains(m_url))
-        m_model->m_nodes.remove(m_url);
-    for (int i = 0; i<ChildrenTypeCount; ++i)
+    if (!m_model->m_isDestroyed)
+    {
+        if (m_parent)
+            m_parent->removeChild(this);
+        if (m_model->m_nodes.contains(m_url))
+            m_model->m_nodes.remove(m_url);
+    }
+    for (int i = 0; i < ChildrenTypeCount; ++i)
         qDeleteAll(m_children[i]);
 }
 
@@ -163,6 +169,17 @@ Node
     QMutexLocker locker(&m_mutex);
     if (c > -1 && c < m_children[fromChildren].size())
         return m_children[fromChildren].at(c);
+    return 0;
+}
+
+Node
+*Node::child(const QString &name, const bool nameIsPath)
+{
+    QMutexLocker locker(&m_mutex);
+    for (int i = 0; i < ChildrenTypeCount; ++i)
+        for (Nodes::const_iterator b = m_children[i].constBegin(), e = m_children[i].constEnd(); b!=e; ++b)
+            if ((nameIsPath?(*b)->filePath():(*b)->name()) == name)
+                return *b;
     return 0;
 }
 
@@ -344,20 +361,30 @@ Node
     QFileInfo fi(path);
     if ((!fi.exists() || !fi.isAbsolute()) && !checkOnly)
         return 0;
+
     QStringList paths;
     QDir dir;
+
     if (fi.isDir())
         dir = QDir(path);
     else
     {
         dir = fi.dir();
-        paths << dir.absolutePath();
+        paths << fi.absoluteFilePath();
     }
-    paths << path;
-    while (dir.cdUp())
-        paths.prepend(dir.absolutePath());
 
     Node *n = this;
+    do {
+        const QString &p = dir.absolutePath();
+        if (hasChild(p, true))
+        {
+            n = child(p, true);
+            break;
+        }
+        else
+            paths.prepend(p);
+    } while (dir.cdUp());
+
     while (!paths.isEmpty() && n)
         n = n->nodeFromLocalPath(paths.takeFirst(), checkOnly);
     return n;

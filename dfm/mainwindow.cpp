@@ -183,7 +183,6 @@ MainWindow::receiveMessage(const QStringList &message)
             if (!statusMsg.isEmpty())
                 statusMsg.append(" ");
             statusMsg.append(msg);
-
         }
         else if (isIoProgress)
         {
@@ -194,10 +193,13 @@ MainWindow::receiveMessage(const QStringList &message)
                 if (ioProgress == -1) //busy...
                 {
                     m_ioProgress->setVisible(true);
-                    m_ioProgress->setRange(-1, -1);
+                    m_ioProgress->setValue(0);
+                    m_ioProgress->setRange(0, 0);
                 }
                 else
                 {
+                    if (ioProgress == 0)
+                        m_ioProgress->reset();
                     m_ioProgress->setRange(0, 100);
                     m_ioProgress->setVisible(ioProgress < 100);
                     m_ioProgress->setValue(ioProgress);
@@ -206,7 +208,7 @@ MainWindow::receiveMessage(const QStringList &message)
             else
             {
                 QString format;
-                if (m_ioProgress->value() != -1)
+                if (m_ioProgress->maximum())
                     format = QString("%1 %p%").arg(msg);
                 else
                     format = msg;

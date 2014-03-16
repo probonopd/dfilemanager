@@ -111,8 +111,8 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
         list.prepend(idx);
         idx=idx.parent();
     }
-    if (list.size() > 1)
-        list.removeFirst();
+//    if (list.size() > 1)
+//        list.removeFirst();
     clearFrom(list);
 
     for (int i=0; i<list.size(); ++i)
@@ -121,14 +121,20 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
         if (m_map.contains(index))
         {
             if (i+1<list.size())
-                m_map.value(index)->setActiveFileName(list.at(i+1).data().toString());
+            {
+                const QString &activeName = list.at(i+1).data().toString();
+                m_map.value(index)->setActiveFileName(activeName);
+            }
             else
                 m_map.value(index)->setActiveFileName(QString());
             continue;
         }
         ColumnsView *view = new ColumnsView(this, m_model, index);
         if (i+1<list.size())
-            view->setActiveFileName(list.at(i+1).data().toString());
+        {
+            const QString &activeName = list.at(i+1).data().toString();
+            view->setActiveFileName(activeName);
+        }
         else
             view->setActiveFileName(QString());
         connectView(view);

@@ -89,6 +89,7 @@ Model::Model(QObject *parent)
     , m_schemeMenu(new QMenu())
     , m_current(0)
     , m_timer(new QTimer(this))
+    , m_isDestroyed(false)
 {
     if (ViewContainer *vc = qobject_cast<ViewContainer *>(parent))
         m_container = vc;
@@ -103,8 +104,9 @@ Model::Model(QObject *parent)
 
 Model::~Model()
 {
+    m_isDestroyed = true;
     delete m_rootNode;
-    m_schemeMenu->deleteLater();
+    delete m_schemeMenu;
 }
 
 void

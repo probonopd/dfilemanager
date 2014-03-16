@@ -347,6 +347,11 @@ IconView::IconView(QWidget *parent)
 //        m_homePix.load(storage.absoluteFilePath("home.png"));
 }
 
+IconView::~IconView()
+{
+
+}
+
 void
 IconView::sliderSlided(int value)
 {

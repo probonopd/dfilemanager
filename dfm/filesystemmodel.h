@@ -183,7 +183,7 @@ private:
     QCache<Node *, QVariant> m_cache;
     mutable QMap<QString, Node *> m_schemeNodes;
     QHash<QUrl, Node *> m_nodes;
-    bool m_showHidden, m_goingBack;
+    bool m_showHidden, m_goingBack, m_isDestroyed;
     Qt::SortOrder m_sortOrder;
     int m_sortColumn;
     QFileSystemWatcher *m_watcher;

@@ -53,7 +53,7 @@ class ViewContainer : public QFrame
 public:
     enum View { Icon = 0, Details = 1, Columns = 2, Flow = 3 };
     ViewContainer(QWidget *parent = 0, const QUrl &url = QUrl());
-    ~ViewContainer(){}
+    ~ViewContainer();
     static QList<QAction *> rightClickActions();
     FS::Model *model();
     void setView(const View view, bool store = true);

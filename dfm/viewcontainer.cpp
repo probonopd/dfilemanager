@@ -109,6 +109,11 @@ ViewContainer::ViewContainer(QWidget *parent, const QUrl &url)
     emit iconSizeChanged(Store::config.views.iconView.iconSize*16);
 }
 
+ViewContainer::~ViewContainer()
+{
+
+}
+
 void
 ViewContainer::settingsChanged()
 {

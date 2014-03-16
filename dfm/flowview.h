@@ -45,6 +45,7 @@ class FlowView : public QWidget
     Q_OBJECT
 public:
     explicit FlowView(QWidget *parent = 0);
+    ~FlowView();
     void setModel(QAbstractItemModel *model);
     QModelIndex rootIndex();
     QModelIndex currentIndex();

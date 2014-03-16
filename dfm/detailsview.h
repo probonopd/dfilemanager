@@ -40,7 +40,7 @@ class DetailsView : public QTreeView, public ViewBase
     Q_OBJECT
 public:
     explicit DetailsView(QWidget *parent = 0);
-    ~DetailsView(){}
+    ~DetailsView();
     void setModel(QAbstractItemModel *model);
     ViewContainer *container();
 

@@ -55,6 +55,8 @@ FlowView::FlowView(QWidget *parent)
     m_splitter->setHandleWidth(style()->pixelMetric(QStyle::PM_SplitterWidth));
 }
 
+FlowView::~FlowView(){}
+
 void
 FlowView::saveSplitter()
 {

@@ -79,6 +79,11 @@ DetailsView::DetailsView(QWidget *parent)
     connect(MainWindow::window(this), SIGNAL(settingsChanged()), this, SLOT(readSettings()));
 }
 
+DetailsView::~DetailsView()
+{
+
+}
+
 void
 DetailsView::readSettings()
 {
@@ -241,7 +246,7 @@ DetailsView::resizeEvent(QResizeEvent *event)
 bool
 DetailsView::edit(const QModelIndex &index, EditTrigger trigger, QEvent *event)
 {
-    if (!index.isValid())
+    if (!index.isValid() || m_model->isWorking())
         return false;
     QModelIndex idx = index;
     if (idx.column())

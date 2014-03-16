@@ -66,7 +66,7 @@ public:
     ColumnsView(QWidget *parent = 0, FS::Model *model = 0, const QModelIndex &rootIndex = QModelIndex());
     ~ColumnsView();
     void setModel(QAbstractItemModel *model);
-    inline void setActiveFileName(const QString &fileName) { QFileInfo f(fileName); m_activeFile = f.exists()?f.fileName():fileName; update(); }
+    inline void setActiveFileName(const QString &fileName) { m_activeFile = fileName; update(); }
     inline QString activeFileName() { return m_activeFile; }
     QRect expanderRect(const QModelIndex &index);
     
