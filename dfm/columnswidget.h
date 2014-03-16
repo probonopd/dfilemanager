@@ -42,7 +42,7 @@ public:
     QModelIndex currentIndex();
     ColumnsView *currentView();
     inline ViewContainer *container() { return m_container; }
-    void clear(const QModelIndexList &list = QModelIndexList());
+    void clearFrom(const QModelIndexList &list = QModelIndexList());
     void scrollTo(const QModelIndex &index);
     
 signals:

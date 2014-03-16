@@ -87,7 +87,7 @@ ColumnsWidget::reconnectViews()
 }
 
 void
-ColumnsWidget::clear(const QModelIndexList &list)
+ColumnsWidget::clearFrom(const QModelIndexList &list)
 {
     m_currentView=0;
     foreach (const QModelIndex &index, m_map.keys())
@@ -106,12 +106,14 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
     m_rootIndex = index;
     QModelIndexList list;
     QModelIndex idx = index;
-    while (idx.parent().isValid())
+    while (idx.isValid())
     {
         list.prepend(idx);
         idx=idx.parent();
     }
-    clear(list);
+    if (list.size() > 1)
+        list.removeFirst();
+    clearFrom(list);
 
     for (int i=0; i<list.size(); ++i)
     {
@@ -125,10 +127,6 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
             continue;
         }
         ColumnsView *view = new ColumnsView(this, m_model, index);
-        view->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-
-        int w = m_widthMap.value(index.data(FS::Url).toUrl(), Store::config.views.columnsView.colWidth);
-        view->setFixedWidth(w);
         if (i+1<list.size())
             view->setActiveFileName(list.at(i+1).data().toString());
         else

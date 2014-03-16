@@ -28,13 +28,14 @@
 
 using namespace DFM;
 
-FlowView::FlowView(QWidget *parent) : QWidget(parent)
+FlowView::FlowView(QWidget *parent)
+    : QWidget(parent)
+    , m_splitter(new QSplitter(this))
+    , m_dView(new DetailsView(this))
+    , m_flow(new Flow(this))
 {
-    m_splitter = new QSplitter(this);
-    m_dView = new DetailsView(m_splitter);
-    m_preView = new PreView(m_splitter);
     m_splitter->setOrientation(Qt::Vertical);
-    m_splitter->addWidget(m_preView);
+    m_splitter->addWidget(m_flow);
     m_splitter->addWidget(m_dView);
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setSpacing(0);
@@ -47,8 +48,8 @@ FlowView::FlowView(QWidget *parent) : QWidget(parent)
 
     m_splitter->restoreState(Store::config.views.flowSize);
 
-    connect(m_preView, SIGNAL(centerIndexChanged(QModelIndex)), this, SLOT(flowCurrentIndexChanged(QModelIndex)));
-    connect(m_preView, SIGNAL(centerIndexChanged(QModelIndex)), Ops::absWinFor<MainWindow *>(this)->infoWidget(), SLOT(hovered(QModelIndex)));
+    connect(m_flow, SIGNAL(centerIndexChanged(QModelIndex)), this, SLOT(flowCurrentIndexChanged(QModelIndex)));
+    connect(m_flow, SIGNAL(centerIndexChanged(QModelIndex)), Ops::absWinFor<MainWindow *>(this)->infoWidget(), SLOT(hovered(QModelIndex)));
     connect(m_splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(saveSplitter()));
 
     m_splitter->setHandleWidth(style()->pixelMetric(QStyle::PM_SplitterWidth));
@@ -70,14 +71,14 @@ void
 FlowView::setModel(QAbstractItemModel *model)
 {
     m_dView->setModel(model);
-    m_preView->setModel(model);
+    m_flow->setModel(model);
 }
 
 void
 FlowView::setRootIndex(const QModelIndex &rootIndex)
 {
     m_dView->setRootIndex(rootIndex);
-    m_preView->setRootIndex(rootIndex);
+    m_flow->setRootIndex(rootIndex);
 }
 
 void
@@ -86,7 +87,7 @@ FlowView::treeCurrentIndexChanged(QItemSelection,QItemSelection)
     const QModelIndex &index = m_dView->selectionModel()->currentIndex();
     if (index.isValid())
     {
-        m_preView->animateCenterIndex(index);
+        m_flow->animateCenterIndex(index);
         m_dView->scrollTo(index, QAbstractItemView::EnsureVisible);
     }
 }
@@ -95,7 +96,7 @@ void
 FlowView::setSelectionModel(QItemSelectionModel *selectionModel)
 {
     m_dView->setSelectionModel(selectionModel);
-    m_preView->setSelectionModel(selectionModel);
+    m_flow->setSelectionModel(selectionModel);
     connect(m_dView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),this,SLOT(treeCurrentIndexChanged(QItemSelection,QItemSelection)));
 }
 

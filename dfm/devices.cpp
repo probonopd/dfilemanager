@@ -24,7 +24,7 @@
 
 using namespace DFM;
 
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
 Device::Device(Solid::Device solid):m_solid(solid)
 {
     connect (m_solid.as<Solid::StorageAccess>(), SIGNAL(accessibilityChanged(bool, const QString &)), this, SIGNAL(accessibilityChanged(bool, const QString &)));
@@ -36,7 +36,7 @@ Device::Device(const QFileInfo &dev):m_fileInfo(dev){}
 bool
 Device::isMounted() const
 {
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
     return m_solid.isValid() && m_solid.as<Solid::StorageAccess>()->isAccessible();
 #else
     return true;
@@ -46,7 +46,7 @@ Device::isMounted() const
 void
 Device::setMounted(const bool mount)
 {
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
     if (!m_solid.isValid())
         return;
 
@@ -60,7 +60,7 @@ Device::setMounted(const bool mount)
 QString
 Device::mountPath() const
 {
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
     return m_solid.isValid() ? m_solid.as<Solid::StorageAccess>()->filePath() : QString();
 #else
     return m_fileInfo.filePath();
@@ -70,7 +70,7 @@ Device::mountPath() const
 QString
 Device::devPath() const
 {
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
     return m_solid.isValid() ? m_solid.as<Solid::Block>()->device() : QString();
 #else
     return m_fileInfo.filePath();
@@ -80,7 +80,7 @@ Device::devPath() const
 QString
 Device::product() const
 {
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
     return m_solid.isValid() ? m_solid.product() : QString();
 #else
     return QString();
@@ -90,7 +90,7 @@ Device::product() const
 quint64
 Device::usedBytes() const
 {
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
     return Ops::getDriveInfo<Ops::Used>(mountPath());
 #else
     return 0;
@@ -100,7 +100,7 @@ Device::usedBytes() const
 quint64
 Device::freeBytes() const
 {
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
     return Ops::getDriveInfo<Ops::Free>(mountPath());
 #else
     return 0;
@@ -110,7 +110,7 @@ Device::freeBytes() const
 quint64
 Device::totalBytes() const
 {
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
     return Ops::getDriveInfo<Ops::Total>(mountPath());
 #else
     return 0;
@@ -120,7 +120,7 @@ Device::totalBytes() const
 int
 Device::used() const
 {
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
     return usedBytes() ? (int)(((float)usedBytes()/(float)totalBytes())*100) : 0;
 #else
     return 0;
@@ -130,7 +130,7 @@ Device::used() const
 QString
 Device::description() const
 {
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
     return m_solid.description();
 #else
     return QString();
@@ -139,11 +139,21 @@ Device::description() const
 
 //-------------------------------------------------------------------------
 
+Devices *Devices::m_instance = 0;
+
+Devices
+*Devices::instance()
+{
+    if (!m_instance)
+        m_instance = new Devices(qApp);
+    return m_instance;
+}
+
 Devices::Devices(QObject *parent)
     : QObject(parent)
     , m_timer(new QTimer(this))
 {
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
     connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceAdded(QString)), this, SLOT(deviceAdded(QString)));
     connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceRemoved(QString)), this, SLOT(deviceRemoved(QString)));
 #else // Q_OS_WIN
@@ -153,7 +163,20 @@ Devices::Devices(QObject *parent)
     populate();
 }
 
-#ifdef Q_OS_UNIX
+QStringList
+Devices::mounts() const
+{
+    return m_mounts;
+}
+
+void
+Devices::removeMount(const QString &mount)
+{
+    if (m_mounts.contains(mount))
+        m_mounts.removeOne(mount);
+}
+
+#if defined(Q_OS_UNIX)
 void
 Devices::deviceAdded(const QString &dev)
 {
@@ -163,6 +186,8 @@ Devices::deviceAdded(const QString &dev)
         Device *d = new Device(device);
         m_devices.insert(dev, d);
         emit deviceAdded(d);
+        if (d->isMounted() && !m_mounts.contains(d->mountPath()))
+            m_mounts << d->mountPath();
     }
 }
 
@@ -173,6 +198,9 @@ Devices::deviceRemoved(const QString &dev)
     {
         Device *d = m_devices.take(dev);
         emit deviceRemoved(d);
+        if (d->isMounted() && m_mounts.contains(d->mountPath()))
+            m_mounts.removeOne(d->mountPath());
+        delete d;
     }
 }
 #endif
@@ -180,11 +208,13 @@ Devices::deviceRemoved(const QString &dev)
 void
 Devices::populate()
 {
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
     foreach (Solid::Device dev, Solid::Device::listFromType(Solid::DeviceInterface::StorageAccess))
     {
         Device *d = new Device(dev);
         m_devices.insert(dev.udi(), d);
+        if (d->isMounted() && !m_mounts.contains(d->mountPath()))
+            m_mounts << d->mountPath();
     }
 #else
     QFileInfoList drives = QDir::drives();

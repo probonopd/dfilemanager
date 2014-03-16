@@ -595,6 +595,7 @@ MainWindow::tabChanged(int currentIndex)
     if (currentIndex < 0 || !m_stackedWidget->count())
         return;
 
+    DataLoader::clearQueue();
     m_stackedWidget->setCurrentIndex(currentIndex);
     m_activeContainer = static_cast<ViewContainer *>(m_stackedWidget->currentWidget());
     emit viewChanged(m_activeContainer->currentView());

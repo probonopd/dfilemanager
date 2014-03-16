@@ -19,8 +19,8 @@
 ***************************************************************************/
 
 
-#ifndef PREVIEW_H
-#define PREVIEW_H
+#ifndef FLOW_H
+#define FLOW_H
 
 #include <QGraphicsView>
 #include <QGraphicsScene>
@@ -46,7 +46,7 @@ namespace DFM
 
 #define SIZE 258.0f
 #define RECT QRectF(0.0f, 0.0f, SIZE, SIZE)
-class PreView;
+class Flow;
 class FlowDataLoader;
 
 class ScrollBar : public QScrollBar
@@ -62,14 +62,14 @@ class GraphicsScene : public QGraphicsScene
 {
     Q_OBJECT
 public:
-    inline explicit GraphicsScene(const QRectF &rect = QRectF(), QWidget *parent = 0) : QGraphicsScene(rect, parent), m_preview(qobject_cast<PreView *>(parent)) {}
-    inline PreView *preView() { return m_preview; }
+    inline explicit GraphicsScene(const QRectF &rect = QRectF(), QWidget *parent = 0) : QGraphicsScene(rect, parent), m_preview(qobject_cast<Flow *>(parent)) {}
+    inline Flow *preView() { return m_preview; }
     inline void setForegroundBrush(const QBrush &brush) { m_fgBrush = brush; }
 
 protected:
     void drawBackground(QPainter *painter, const QRectF &rect);
     void drawForeground(QPainter *painter, const QRectF &rect);
-    PreView *m_preview;
+    Flow *m_preview;
     QBrush m_fgBrush;
 };
 
@@ -103,12 +103,12 @@ protected:
 private:
     QPixmap m_pix[2];
     GraphicsScene *m_scene;
-    PreView *m_preView;
+    Flow *m_preView;
     float m_rotate, m_savedX;
     bool m_isDirty;
     QPainterPath m_shape;
     mutable QMutex m_mutex;
-    friend class PreView;
+    friend class Flow;
     friend class FlowDataLoader;
 };
 
@@ -116,13 +116,13 @@ private:
  * VIEW
  */
 
-class PreView : public QGraphicsView
+class Flow : public QGraphicsView
 {
     Q_OBJECT
 public:
     enum Pos { Prev = 0, New = 1 };
-    explicit PreView(QWidget *parent = 0);
-    ~PreView();
+    explicit Flow(QWidget *parent = 0);
+    ~Flow();
     void setModel(QAbstractItemModel *model);
     inline void setSelectionModel(QItemSelectionModel *model) { m_selectionModel = model; }
     void setCenterIndex(const QModelIndex &index);
@@ -221,12 +221,12 @@ protected slots:
 
 private:
     QQueue<QPair<PixmapItem *, QImage> > m_queue;
-    PreView *m_preView;
+    Flow *m_preView;
     mutable QMutex m_mtx;
     friend class PixmapItem;
-    friend class PreView;
+    friend class Flow;
 };
 
 }
 
-#endif // PREVIEW_H
+#endif // FLOW_H

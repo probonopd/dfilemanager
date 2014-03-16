@@ -78,11 +78,15 @@ public:
     explicit Model(QObject *parent = 0);
     ~Model();
 
-    static bool hasThumb(const QString &file);
+    bool hasThumb(const QString &file);
     bool hasThumb(const QModelIndex &index);
 
     Qt::ItemFlags flags(const QModelIndex &index) const;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    template <typename T> inline T tData(const QModelIndex &index, int role = Qt::DisplayRole) const
+    {
+        return data(index, role).value<T>();
+    }
     bool setData(const QModelIndex &index, const QVariant &value, int role);
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     int rowCount(const QModelIndex &parent = QModelIndex()) const;

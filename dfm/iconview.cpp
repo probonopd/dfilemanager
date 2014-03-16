@@ -71,7 +71,6 @@ class IconDelegate : public FileItemDelegate
 {
 public:
     enum ShadowPart { TopLeft = 0, Top, TopRight, Left, Center, Right, BottomLeft, Bottom, BottomRight };
-    enum Role { Text = 0, TextRect, Shape, Size };
     inline explicit IconDelegate(IconView *parent)
         : FileItemDelegate(parent)
         , m_size(4)
@@ -173,10 +172,7 @@ public:
     }
     bool isHitted(const QModelIndex &index, const QPoint &p)
     {
-        if (m_hitRects.contains(index.internalPointer()))
-            if (m_hitRects.value(index.internalPointer()).contains(p))
-                return true;
-        return false;
+        return m_hitRects.value(index.internalPointer(), QRect()).contains(p);
     }
 protected:
     QPixmap pix(const QStyleOptionViewItem &option, const QModelIndex &index) const
@@ -188,7 +184,6 @@ protected:
             return m_pixData.value(index.internalPointer());
 
         const QIcon &icon = m_model->fileIcon(index);
-
         const bool isThumb = m_model->hasThumb(index);
 
         int newSize = icon.actualSize(DECOSIZE).height();
@@ -446,10 +441,9 @@ IconView::keyPressEvent(QKeyEvent *event)
          && event->modifiers() == Qt::NoModifier
          && state() == NoState)
     {
-        if (selectionModel()->selectedIndexes().count())
-            foreach (const QModelIndex &index, selectionModel()->selectedIndexes())
-                if (!index.column())
-                    emit opened(index);
+        const QModelIndexList &selection = selectionModel()->selectedRows();
+        for (int i = 0; i < selection.count(); ++i)
+            emit opened(selection.at(i));
         event->accept();
         return;
     }
@@ -612,28 +606,34 @@ IconView::renderCategory(const QString &category, const QRect &catRect, QPainter
     QColor bg(palette().color(QPalette::Text));
     bg.setAlpha(bool(index&1)?32:16);
     QColor mid(Ops::colorMid(palette().color(QPalette::Base), palette().color(QPalette::Text)));
-    if (Store::config.views.iconView.categoryStyle == 0)
+    switch (Store::config.views.iconView.categoryStyle)
+    {
+    case 0:
     {
         p->fillRect(catRect, bg);
         p->setPen(QColor(255,255,255,64));
         p->drawLine(catRect.topLeft(), catRect.topRight());
         p->setPen(QColor(0,0,0,64));
         p->drawLine(catRect.bottomLeft(), catRect.bottomRight());
+        break;
     }
-    else if (Store::config.views.iconView.categoryStyle == 1)
+    case 1:
     {
         p->setRenderHint(QPainter::Antialiasing);
         p->setBrush(bg);
         p->setPen(Qt::NoPen);
         p->drawRoundedRect(catRect.adjusted(0, 1, -1, 0), 4, 4);
+        break;
     }
-    else if (Store::config.views.iconView.categoryStyle == 2)
+    case 2:
     {
         QRectF rf(catRect.adjusted(0, 2, -1, 0));
         p->setRenderHint(QPainter::Antialiasing);
         p->setBrush(bg);
         p->setPen(mid);
         p->drawRoundedRect(rf.translated(0.5, 0.5), 4, 4);
+        break;
+    }
     }
     p->setPen(mid);
     p->setFont(f);
@@ -690,8 +690,7 @@ IconView::paintEvent(QPaintEvent *e)
     }
     if (m_slide)
     {
-        QString sizeString = QString::number(iconSize().width()) + " px";
-        QPainter p(viewport());
+        const QString &sizeString = QString::number(iconSize().width()).append(" px");
         QFont font = p.font();
         font.setBold(true);
         font.setPointSize(32);
@@ -740,7 +739,8 @@ IconView::updateLayout()
 
     int contentsWidth = viewport()->width();
     int horItemCount = m_horItems = contentsWidth/(iconSize().width() + Store::config.views.iconView.textWidth*2);
-    if (m_model->rowCount(rootIndex()) < horItemCount && m_model->rowCount(rootIndex()) > 1 && !isCategorized())
+    const int rowCount = m_model->rowCount(rootIndex());
+    if (rowCount < horItemCount && rowCount > 1 && !isCategorized())
         horItemCount = model()->rowCount(rootIndex());
     if (contentsWidth && horItemCount)
         setGridSize(QSize(contentsWidth/horItemCount, m_gridHeight));
@@ -819,9 +819,7 @@ IconView::visualRect(const QModelIndex &index) const
 QRect
 IconView::visualRect(const QString &cat) const
 {
-    if (m_catRects.contains(cat))
-        return m_catRects.value(cat, QRect()).translated(0, -verticalOffset());
-    return QRect();
+    return m_catRects.value(cat, QRect()).translated(0, -verticalOffset());
 }
 
 QModelIndex
@@ -900,7 +898,7 @@ IconView::scrollAnimation()
 }
 
 bool
-IconView::isCategorized() const
+IconView::isCategorized()
 {
     return Store::config.views.iconView.categorized;
 }

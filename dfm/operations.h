@@ -47,6 +47,7 @@ namespace DFM
 {
 
 static IOJobData defaultIoJobData;
+namespace FS{class Model;}
 
 class Ops : public QObject
 {
@@ -67,7 +68,68 @@ public:
     static QStringList fromIoJobData(const IOJobData &data);
     static bool sameDisk(const QString &file1, const QString &file2);
     static QString getStatusBarMessage(const QUrl &url, FS::Model *model);
-
+    template<typename T> static inline bool writeDesktopValue(const QDir &dir, const QString &key, T v, const QString &custom = QString())
+    {
+        if (dir.isAbsolute() && QFileInfo(dir.path()).isWritable())
+        {
+            QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
+            settings.beginGroup("DFM");
+            settings.setValue(key, v);
+            settings.endGroup();
+            return true;
+        }
+        QString newKey;
+        if (dir.isAbsolute() && dir.exists())
+            newKey = dir.path();
+        else if (!custom.isEmpty())
+            newKey = custom;
+        else
+            return false;
+        newKey.replace("/", "_");
+        QSettings settings("dfm", "desktopFile");
+        settings.beginGroup(newKey);
+        settings.setValue(key, v);
+        settings.endGroup();
+        return true;
+    }
+    template<typename T> static inline T getDesktopValue(const QDir &dir, const QString &key, bool *ok = 0, const QString &custom = QString())
+    {
+        if (ok)
+            *ok = false;
+        if (!dir.isAbsolute() && custom.isEmpty())
+            return T();
+        const QFileInfo fi(dir.absoluteFilePath(".directory"));
+        QVariant var;
+        if (fi.isReadable())
+        {
+            QSettings settings(fi.filePath(), QSettings::IniFormat);
+            settings.beginGroup("DFM");
+            var = settings.value(key);
+            settings.endGroup();
+        }
+        else
+        {          
+            QString newKey;
+            if (dir.isAbsolute() && dir.exists())
+                newKey = dir.path();
+            else if (!custom.isEmpty())
+                newKey = custom;
+            else
+                return T();
+            newKey.replace("/", "_");
+            QSettings settings("dfm", "desktopFile");
+            settings.beginGroup(newKey);
+            var = settings.value(key);
+            settings.endGroup();
+        }
+        if (var.isValid())
+        {
+            if (ok)
+                *ok = true;
+            return var.value<T>();
+        }
+        return T();
+    }
     template<typename T> static inline T absWinFor(QWidget *w)
     {
         QWidget *widget = w;

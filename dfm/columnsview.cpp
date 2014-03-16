@@ -247,6 +247,8 @@ private:
     FS::Model *m_model;
 };
 
+#define KEY "colWidth"
+
 ColumnsView::ColumnsView(QWidget *parent, FS::Model *model, const QModelIndex &rootIndex)
     : QListView(parent)
     , m_columnsWidget(static_cast<ColumnsWidget *>(parent))
@@ -254,6 +256,8 @@ ColumnsView::ColumnsView(QWidget *parent, FS::Model *model, const QModelIndex &r
     , m_pressPos(QPoint())
     , m_activeFile(QString())
     , m_model(0)
+    , m_blockDesktopDir(false)
+    , m_isDir(false)
 {
     setViewMode(QListView::ListMode);
     setResizeMode(QListView::Adjust);
@@ -279,6 +283,23 @@ ColumnsView::ColumnsView(QWidget *parent, FS::Model *model, const QModelIndex &r
     setRootIndex(rootIndex);
     QScrollBar *v = verticalScrollBar();
     v->installEventFilter(this);
+    int w = Store::config.views.columnsView.colWidth;
+    const QUrl url = rootIndex.data(FS::Url).toUrl();
+    if (m_columnsWidget->m_widthMap.contains(url))
+    {
+        w = m_columnsWidget->m_widthMap.value(url);
+    }
+    else if (Store::config.views.dirSettings)
+    {
+        bool ok;
+        const int width = Ops::getDesktopValue<int>(QDir(rootIndex.data(FS::FilePathRole).toString()), KEY, &ok, rootIndex.data(FS::Url).toUrl().toString());
+        if (ok)
+            w = width;
+    }
+    m_isDir = QFileInfo(url.toLocalFile()).exists();
+    m_blockDesktopDir=true;
+    setFixedWidth(w);
+    m_blockDesktopDir=false;
 }
 
 ColumnsView::~ColumnsView()
@@ -424,6 +445,9 @@ ColumnsView::resizeEvent(QResizeEvent *e)
     QListView::resizeEvent(e);
     QScrollBar *v = verticalScrollBar();
     v->resize(v->width(), height()-m_corner->height());
+
+    if (!m_blockDesktopDir && Store::config.views.dirSettings && e->size().width() != e->oldSize().width())
+        Ops::writeDesktopValue<int>(QDir(rootIndex().data(FS::FilePathRole).toString()), KEY, size().width(), rootIndex().data(FS::Url).toUrl().toString());
 }
 
 void

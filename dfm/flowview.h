@@ -34,11 +34,11 @@
 
 #include "filesystemmodel.h"
 #include "detailsview.h"
-#include "preview.h"
+#include "flow.h"
 
 namespace DFM
 {
-class PreView;
+class Flow;
 class DetailsView;
 class FlowView : public QWidget
 {
@@ -65,7 +65,7 @@ private slots:
 private:
     DetailsView *m_dView;
     QSplitter *m_splitter;
-    PreView *m_preView;
+    Flow *m_flow;
 };
 }
 

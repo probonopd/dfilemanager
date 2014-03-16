@@ -159,7 +159,7 @@ private:
     QList<QAction *> m_actions;
 };
 
-class DeviceManager : public Devices, public Container
+class DeviceManager : public QObject, public Container
 {
     Q_OBJECT
 public:

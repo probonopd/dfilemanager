@@ -74,8 +74,10 @@ class Devices : public QObject
 {
     Q_OBJECT
 public:
-    Devices(QObject *parent = 0);
+    static Devices *instance();
     QList<Device *> devices() { return m_devices.values(); }
+    QStringList mounts() const;
+    void removeMount(const QString &mount);
 
 signals:
     void deviceAdded(Device *dev);
@@ -88,9 +90,15 @@ private slots:
     void deviceRemoved(const QString &dev);
 #endif
 
+protected:
+    Devices(QObject *parent = 0);
+
 private:
+    static Devices *m_instance;
     QMap<QString, Device *> m_devices;
     QTimer *m_timer;
+    QStringList m_mounts;
+    friend class Device;
 };
 
 }

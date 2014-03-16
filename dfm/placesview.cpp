@@ -364,8 +364,8 @@ DeviceItem::changeState()
 }
 
 DeviceManager::DeviceManager(const QStringList &texts, QObject *parent)
-    : Container(QString("Devices"))
-    , Devices(parent)
+    : QObject(parent)
+    , Container(QString("Devices"))
     , m_view(static_cast<PlacesView *>(parent))
 {
     setDragEnabled(false);
@@ -374,8 +374,8 @@ DeviceManager::DeviceManager(const QStringList &texts, QObject *parent)
     QAction *as = new QAction(tr("show hidden devices"), this);
     as->setCheckable(true);
     connect(as, SIGNAL(triggered()), this, SLOT(showHiddenDevices()));
-    connect(this, SIGNAL(deviceAdded(Device*)), this, SLOT(devAdded(Device*)));
-    connect(this, SIGNAL(deviceRemoved(Device*)), this, SLOT(devRemoved(Device*)));
+    connect(Devices::instance(), SIGNAL(deviceAdded(Device*)), this, SLOT(devAdded(Device*)));
+    connect(Devices::instance(), SIGNAL(deviceRemoved(Device*)), this, SLOT(devRemoved(Device*)));
     m_actions << as;
     addDevs();
 }
@@ -411,7 +411,7 @@ DeviceManager::devRemoved(Device *dev)
 void
 DeviceManager::addDevs()
 {
-    foreach (Device *dev, devices())
+    foreach (Device *dev, Devices::instance()->devices())
     {
         DeviceItem *d = new DeviceItem(this, m_view, dev);
         appendRow(d);

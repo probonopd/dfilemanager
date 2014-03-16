@@ -474,15 +474,18 @@ void
 NavBar::urlFromEdit(const QString &urlString)
 {
     const QString &checked = Ops::sanityChecked(urlString);
-    QUrl url;
-    if (QFileInfo(checked).isDir())
-        url = QUrl::fromLocalFile(checked);
-    else
-        url = QUrl(checked);
-
+    QUrl url = QUrl::fromUserInput(checked);
     url = url.toEncoded(QUrl::StripTrailingSlash);
-
+    if (url.isLocalFile())
+    {
+        QString path = url.toLocalFile();
+        if (path.endsWith(":"))
+            path.append("/");
+        if (QFileInfo(path).exists())
+            url = QUrl::fromLocalFile(path);
+    }
     m_fsModel->setUrl(url);
+    m_pathBox->setEditText(url.toString());
     setEditable(!QFileInfo(url.toLocalFile()).exists());
 }
 

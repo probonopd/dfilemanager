@@ -26,6 +26,7 @@
 #include "fsworkers.h"
 #include "helpers.h"
 #include "config.h"
+#include "devices.h"
 
 using namespace DFM;
 using namespace FS;
@@ -72,6 +73,7 @@ Node::Node(Model *model, const QUrl &url, Node *parent, const QString &filePath)
     , m_parent(parent)
     , m_url(url)
     , m_isExe(-1)
+    , m_hasRequestedMoreData(false)
 {
     if (url.path().isEmpty() && !url.scheme().isEmpty())
         m_name = url.scheme();
@@ -194,12 +196,11 @@ Node::rowOf(Node *child) const
 QIcon
 Node::icon()
 {
-    if (m_filePath == "/")
+    if (Devices::instance()->mounts().contains(m_filePath))
         return FileIconProvider::typeIcon(FileIconProvider::Drive);
     Data *d = moreData();
     if (!d)
         return FileIconProvider::fileIcon(*this);
-
     if (!d->thumb.isNull())
         return QIcon(QPixmap::fromImage(d->thumb));
     return QIcon::fromTheme(d->iconName, FileIconProvider::fileIcon(*this));
@@ -237,6 +238,8 @@ Node::fileType()
         return QString("directory");
     else if (isExec())
         return QString("exec");
+
+    if (!m_model->isWorking())
     if (Data *d = moreData())
         return d->fileType;
     return suffix();
@@ -245,9 +248,13 @@ Node::fileType()
 struct Data
 *Node::moreData()
 {
-    if (m_model->isWorking())
-        return 0;
-    return DataLoader::data(m_filePath);
+    const bool parentPopulated = m_parent && m_parent->isPopulated();
+    if (parentPopulated && !m_model->isWorking())
+    {
+        m_hasRequestedMoreData=true;
+        return DataLoader::data(m_filePath);
+    }
+    return 0;
 }
 
 QString
@@ -393,21 +400,21 @@ Node
 void
 Node::removeDeleted()
 {
-    Nodes deleted;
-    m_mutex.lock();
     for (int i = 0; i < ChildrenTypeCount; ++i)
     {
+        m_mutex.lock();
         int c = m_children[i].size();
+        m_mutex.unlock();
         while (--c > -1)
         {
+            m_mutex.lock();
             Node *node = m_children[i].at(c);
+            m_mutex.unlock();
             node->refresh();
             if (!node->exists())
-                deleted << node;
+                delete node;
         }
     }
-    m_mutex.unlock();
-    qDeleteAll(deleted);
 }
 
 void
@@ -522,11 +529,15 @@ Node::rePopulate()
                 new Node(m_model, QUrl::fromLocalFile(file), this, file);
         }
     }
-    else if (scheme() == "file")
+    else if (this == m_model->schemeNode("file"))
     {
-        foreach (const QFileInfo &f, QDir::drives())
-            if (!hasChild(f.filePath()))
-                new Node(m_model, QUrl::fromLocalFile(f.filePath()), this, f.filePath());
+        QList<Device *> devices = Devices::instance()->devices();
+        for (int i = 0; i < devices.count(); ++i)
+        {
+            Device *device = devices.at(i);
+            if (device->isMounted())
+                new Node(m_model, QUrl::fromLocalFile(device->mountPath()), this, device->mountPath());
+        }
     }
 
     m_mutex.lock();
@@ -549,6 +560,7 @@ Node::isExec()
 {
     if (m_isExe == -1)
     {
+        if (m_hasRequestedMoreData)
         if (Data *d = moreData())
         {
             const bool exeSuffix = bool(suffix() == "exe");
@@ -558,8 +570,7 @@ Node::isExec()
             else
                 m_isExe = 0;
         }
-        else
-            return false;
+        return false;
     }
     return m_isExe;
 }

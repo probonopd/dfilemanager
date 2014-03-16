@@ -304,9 +304,9 @@ static QStringList replace = QStringList() << QDir::homePath() << QDir::homePath
 QString
 Ops::sanityChecked(const QString &file)
 {
-    if (QFileInfo(file).exists())
+    QFileInfo fi(file);
+    if (fi.exists())
         return file;
-
     QString newFile = QDir::fromNativeSeparators(file);
     for (int i=0; i<check.count(); ++i)
         if (newFile.contains(check.at(i), Qt::CaseInsensitive))
@@ -318,7 +318,8 @@ Ops::sanityChecked(const QString &file)
     return newFile;
 }
 
-IOTask Ops::taskFromString(const QString &task)
+IOTask
+Ops::taskFromString(const QString &task)
 {
     if (task.toLower() == "--cp")
         return DFM::CopyTask;
@@ -329,7 +330,8 @@ IOTask Ops::taskFromString(const QString &task)
     return DFM::CopyTask;
 }
 
-QString Ops::taskToString(const IOTask &task)
+QString
+Ops::taskToString(const IOTask &task)
 {
     switch (task)
     {
@@ -340,7 +342,8 @@ QString Ops::taskToString(const IOTask &task)
     return QString();
 }
 
-bool Ops::extractIoData(const QStringList &args, IOJobData &ioJobData)
+bool
+Ops::extractIoData(const QStringList &args, IOJobData &ioJobData)
 {
     /* the syntax for copying files w/ dfm should
      * look something like this:

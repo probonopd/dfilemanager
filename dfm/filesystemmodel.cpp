@@ -141,7 +141,7 @@ Model::nodeGenerated(const QString &path, Node *node)
 void
 Model::setUrl(const QUrl &url)
 {
-    if (m_url == url)
+    if (m_url == url || url.scheme().isEmpty())
         return;
 
     if (isWorking())
@@ -154,7 +154,7 @@ Model::setUrl(const QUrl &url)
     m_current = 0;
 
     QString file = url.toLocalFile();
-    if (file.endsWith(":"))
+    if (file.endsWith(":")) //windows drive...
         file.append("/");
 
     const QFileInfo fi(file);
@@ -203,6 +203,12 @@ Model::setUrl(const QUrl &url)
         emit urlChanged(url);
         m_dataGatherer->populateApplications("/usr/share/applications", m_current);
     }
+    else if (url.scheme() == "devices")
+    {
+        m_current = schemeNode("file");
+        emit urlChanged(url);
+        emit urlLoaded(url);
+    }
 #endif
     else
     {
@@ -230,7 +236,7 @@ Model::goBack()
     if (m_history[Back].last() == m_url)
         m_history[Forward] << m_history[Back].takeLast(); //current location to forward
     const QUrl &backUrl = m_history[Back].takeLast();
-    if (backUrl.isLocalFile())
+    if (backUrl.isLocalFile() && !backUrl.path().isEmpty())
         if (!QFileInfo(backUrl.toLocalFile()).exists())
         {
             goBack();
@@ -309,8 +315,12 @@ Model::newData(const QString &file)
 bool
 Model::hasThumb(const QString &file)
 {
+    if (isWorking())
+        return false;
+
     if (Data *d = DataLoader::data(file))
         return !d->thumb.isNull();
+
     return false;
 }
 
@@ -331,6 +341,7 @@ Model::data(const QModelIndex &index, int role) const
 
     Node *node = nodeFromIndex(index);
     const int col = index.column();
+
     if (node == m_rootNode || (role == FileIconRole && col > 0))
         return QVariant();
 
@@ -807,7 +818,6 @@ void
 Model::fileDeleted(const QString &path)
 {
     Node *n = schemeNode("file")->localNode(path);
-    qDebug() << n << path;
     if (!n)
         return;
     if (Node *p = n->parent())

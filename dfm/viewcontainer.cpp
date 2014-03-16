@@ -166,13 +166,7 @@ ViewContainer::setView(const View view, bool store)
 
 #ifdef Q_WS_X11
     if (Store::config.views.dirSettings && store && m_model->rootUrl().isLocalFile())
-    {
-        QDir dir(m_model->rootUrl().toLocalFile());
-        QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
-        settings.beginGroup("DFM");
-        settings.setValue("view", (int)view);
-        settings.endGroup();
-    }
+        Ops::writeDesktopValue<int>(QDir(m_model->rootUrl().toLocalFile()), "view", (int)view);
 #endif
 }
 
@@ -253,17 +247,10 @@ ViewContainer::setUrl(const QUrl &url)
     {
         if (Store::config.views.dirSettings)
         {
-
-            const QDir dir(file.filePath());
-            QSettings settings(dir.absoluteFilePath(".directory"), QSettings::IniFormat);
-            settings.beginGroup("DFM");
-            QVariant var = settings.value("view");
-            if (var.isValid())
-            {
-                View view = (View)var.value<int>();
+            bool ok;
+            View view = (View)Ops::getDesktopValue<int>(QDir(file.filePath()), "view", &ok);
+            if (ok)
                 setView(view, false);
-            }
-            settings.endGroup();
         }
         m_detailsView->setItemsExpandable(false);
         for (int i = 0; i < views().count(); ++i)

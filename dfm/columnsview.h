@@ -98,6 +98,7 @@ private:
     FS::Model *m_model;
     QPoint m_pressPos;
     QString m_activeFile;
+    bool m_blockDesktopDir, m_isDir;
     friend class ColumnsWidget;
     friend class ResizeCorner;
 };

@@ -70,7 +70,7 @@ protected:
     void dragMoveEvent(QDragMoveEvent *event) {m_pressPos=QPoint(); QAbstractItemView::dragMoveEvent(event);}
     void setIconWidth(const int width);
     inline int iconWidth() const { return iconSize().width(); }
-    bool isCategorized() const;
+    static bool isCategorized();
     void renderCategory(const QString &category, const QRect &catRect, QPainter *p = 0, const int index = 0);
     QStyleOptionViewItem viewOptions() const;
 

@@ -27,6 +27,7 @@
 #include "objects.h"
 #include "filesystemmodel.h"
 #include "dataloader.h"
+#include "devices.h"
 
 namespace DFM
 {
@@ -101,7 +102,7 @@ public:
     Node *parent() { return m_parent; }
 
 private:
-    bool m_isPopulated;
+    bool m_isPopulated, m_hasRequestedMoreData;
     int m_isExe;
     Nodes m_children[ChildrenTypeCount];
     Node *m_parent;
