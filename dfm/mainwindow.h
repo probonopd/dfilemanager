@@ -192,7 +192,7 @@ private:
     StatusBar *m_statusBar;
     QWidget *m_toolBarSpacer;
     SearchBox *m_filterBox;
-    Docks::DockWidget *m_dockLeft, *m_dockRight, *m_dockBottom;
+    Docks::DockWidget *m_placesDock, *m_recentDock, *m_infoDock;
     QString m_statusMessage, m_slctnMessage;
     QItemSelection *currentSelection;
     QSlider *m_iconSizeSlider;

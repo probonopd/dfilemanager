@@ -391,6 +391,7 @@ NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
     completer->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
     m_pathBox->setCompleter(completer);
 
+    connect(completer, SIGNAL(highlighted(QString)), m_pathBox, SLOT(setEditText(QString)));
     connect (m_pathBox, SIGNAL(editTextChanged(QString)), completer, SLOT(textChanged(QString)));
     connect (m_pathBox, SIGNAL(activated(QString)), this, SLOT(urlFromEdit(QString)));
     connect (m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()));

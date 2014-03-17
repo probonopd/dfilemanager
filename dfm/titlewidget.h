@@ -68,9 +68,9 @@ inline static QPixmap statusPix(bool visible, int size, QColor color)
     QPainter p(&pixmap);
     p.setRenderHint(QPainter::Antialiasing);
     QPen pen(color, size/16);
-    const int m = size/4;
-    QRect r(pixmap.rect().adjusted(size/16, m, -size/16, -m));
-    if(pen.width() & 0x1)
+    const int m = size/8;
+    QRect r(pixmap.rect().adjusted(m, m, -m, -m));
+    if (pen.width() & 0x1)
     {
         p.translate(0.5, 0.5);
         r.adjust(0, 0, -1, -1);
@@ -138,13 +138,13 @@ private slots:
                     m_pixmap[i][h] = statusPix(i, 16, c[h]);
                 else
                     m_pixmap[i][h] = titlePix(i, 16, c[h]);
-                if (m_myPos == Right)
+                if (m_myPos == Bottom)
                 {
                     QTransform t;
                     t.rotate(180);
                     m_pixmap[i][h] = m_pixmap[i][h].transformed(t);
                 }
-                if (m_myPos == Bottom)
+                if (m_myPos == Right)
                 {
                     QTransform t;
                     t.rotate(270);

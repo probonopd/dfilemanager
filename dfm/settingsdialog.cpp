@@ -139,29 +139,10 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
 
 StartupWidget::StartupWidget(QWidget *parent)
     : QGroupBox(parent)
-    , m_lock(Store::config.docks.lock)
     , m_sheetEdit(new QLineEdit(Store::config.styleSheet, this))
     , m_startPath(new QLineEdit(this))
 {
     setTitle(tr("Startup"));
-    QGroupBox *gb = new QGroupBox("Lock Docks", this);
-    QVBoxLayout *docks = new QVBoxLayout(gb);
-    m_left = new QCheckBox(tr("Left"));
-    m_left->setChecked(bool(m_lock & Docks::Left));
-    m_left->setProperty("dock", (int)Docks::Left);
-    connect(m_left, SIGNAL(toggled(bool)), this, SLOT(lockChanged()));
-    docks->addWidget(m_left);
-    m_right = new QCheckBox(tr("Right"));
-    m_right->setChecked(bool(m_lock & Docks::Right));
-    m_right->setProperty("dock", (int)Docks::Right);
-    connect(m_right, SIGNAL(toggled(bool)), this, SLOT(lockChanged()));
-    docks->addWidget(m_right);
-    m_bottom = new QCheckBox(tr("Bottom"));
-    m_bottom->setChecked(bool(m_lock & Docks::Bottom));
-    m_bottom->setProperty("dock", (int)Docks::Bottom);
-    connect(m_bottom, SIGNAL(toggled(bool)), this, SLOT(lockChanged()));
-    docks->addWidget(m_bottom);
-    gb->setLayout(docks);
 
     QHBoxLayout *hLayout = new QHBoxLayout();
     hLayout->addWidget(new QLabel(tr("Path to load at startup:"), this));
@@ -189,7 +170,6 @@ StartupWidget::StartupWidget(QWidget *parent)
     vl->addLayout(hLayout);
     vl->addLayout(sheetLo);
 //    vl->addLayout(defView);
-    vl->addWidget(gb);
     vl->addStretch();
     setLayout(vl);
 }
@@ -404,7 +384,6 @@ SettingsDialog::accept()
 
     Store::config.behaviour.hideTabBarWhenOnlyOneTab = m_behWidget->m_hideTabBar->isChecked();
     Store::config.behaviour.systemIcons = m_behWidget->m_useCustomIcons->isChecked();
-    Store::config.docks.lock = m_behWidget->m_startUpWidget->locked();
     Store::config.views.iconView.smoothScroll = m_viewWidget->m_smoothScroll->isChecked();
     Store::config.views.showThumbs = m_viewWidget->m_showThumbs->isChecked();
     Store::config.behaviour.devUsage = m_behWidget->m_drawDevUsage->isChecked();

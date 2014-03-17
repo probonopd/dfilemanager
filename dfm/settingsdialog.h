@@ -48,26 +48,14 @@ public:
     explicit StartupWidget(QWidget *parent = 0);
     inline QString startupPath() { return m_startPath->text(); }
     inline void setStartupPath(QString path) { m_startPath->setText(path); }
-    inline int locked() { return m_lock; }
     QLineEdit *m_sheetEdit;
 private slots:
-    inline void lockChanged()
-    {
-        QCheckBox *box = static_cast<QCheckBox *>(sender());
-        int i = box->property("dock").toInt();
-        if (box->isChecked())
-            m_lock += i;
-        else
-            m_lock -= i;
-    }
     void getShitPath();
     void getStartPath();
 
 private:
     friend class SettingsDialog;
-    int m_lock;
     QLineEdit *m_startPath;
-    QCheckBox *m_left, *m_right, *m_bottom;
 };
 
 class BehaviourWidget : public QWidget

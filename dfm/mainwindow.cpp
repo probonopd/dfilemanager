@@ -54,12 +54,12 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     m_statusBar = new StatusBar(this);
     m_filterBox = new SearchBox(m_toolBar);
     m_toolBarSpacer = new QWidget(m_toolBar);
-    m_dockLeft = new Docks::DockWidget(m_tabWin, tr("Bookmarks"), Qt::SubWindow, Docks::Left);
-    m_dockRight = new Docks::DockWidget(m_tabWin, tr("Recent Folders"), Qt::SubWindow, Docks::Right);
-    m_dockBottom = new Docks::DockWidget(m_tabWin, tr("Information"), Qt::SubWindow, Docks::Bottom);
-    m_placesView = new PlacesView(m_dockLeft);
-    m_infoWidget = new InfoWidget(m_dockBottom);
-    m_recentFoldersView = new RecentFoldersView(m_dockRight);
+    m_placesDock = new Docks::DockWidget(m_tabWin, tr("Bookmarks"), Qt::SubWindow, Docks::Left);
+    m_recentDock = new Docks::DockWidget(m_tabWin, tr("Recent Folders"), Qt::SubWindow, Docks::Right);
+    m_infoDock = new Docks::DockWidget(m_tabWin, tr("Information"), Qt::SubWindow, Docks::Bottom);
+    m_placesView = new PlacesView(m_placesDock);
+    m_infoWidget = new InfoWidget(m_infoDock);
+    m_recentFoldersView = new RecentFoldersView(m_recentDock);
     m_iconSizeSlider = new QSlider(m_statusBar);
 
     if (Store::config.behaviour.gayWindow)
@@ -80,14 +80,14 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     int is = 16;
     QSize tbs(QSize(is, is));
     m_toolBar->setIconSize(tbs);
-    m_dockBottom->setWidget(m_infoWidget);
+    m_infoDock->setWidget(m_infoWidget);
 
     m_tabWin->setWindowFlags(0);
-    m_dockLeft->setWidget(m_placesView);
-    m_dockLeft->setObjectName(tr("Bookmarks"));
-    m_dockRight->setWidget(m_recentFoldersView);
-    m_dockRight->setObjectName(tr("Recent Folders"));
-    m_dockBottom->setObjectName(tr("Information"));
+    m_placesDock->setWidget(m_placesView);
+    m_placesDock->setObjectName(tr("Bookmarks"));
+    m_recentDock->setWidget(m_recentFoldersView);
+    m_recentDock->setObjectName(tr("Recent Folders"));
+    m_infoDock->setObjectName(tr("Information"));
 
     m_cut = false;
 
@@ -259,30 +259,30 @@ MainWindow::setupStatusBar()
     m_iconSizeSlider->setSingleStep(1);
     m_iconSizeSlider->setPageStep(1);
     m_statusBar->addRightWidget(m_iconSizeSlider);
-    Docks::FloatButton *fl = new Docks::FloatButton(m_statusBar);
+    Docks::FloatButton *fl = new Docks::FloatButton(m_statusBar, Docks::Left);
     fl->setFixedSize(16, 16);
     m_statusBar->addLeftWidget(fl);
-    fl->setFloating(m_dockLeft->isVisible());
-    Docks::FloatButton *fb = new Docks::FloatButton(m_statusBar, Docks::Bottom);
+    fl->setFloating(m_placesDock->isVisible());
+    Docks::FloatButton *fb = new Docks::FloatButton(m_statusBar, Docks::Right);
     fb->setFixedSize(16, 16);
     m_statusBar->addLeftWidget(fb);
-    fb->setFloating(m_dockBottom->isVisible());
-    Docks::FloatButton *fr = new Docks::FloatButton(m_statusBar, Docks::Right);
+    fb->setFloating(m_infoDock->isVisible());
+    Docks::FloatButton *fr = new Docks::FloatButton(m_statusBar, Docks::Bottom);
     fr->setFixedSize(16, 16);
     m_statusBar->addLeftWidget(fr);
-    fr->setFloating(m_dockRight->isVisible());
+    fr->setFloating(m_recentDock->isVisible());
 
-    connect (fl, SIGNAL(clicked()), m_dockLeft, SLOT(toggleVisibility()));
-    connect (fr, SIGNAL(clicked()), m_dockRight, SLOT(toggleVisibility()));
-    connect (fb, SIGNAL(clicked()), m_dockBottom, SLOT(toggleVisibility()));
+    connect (fl, SIGNAL(clicked()), m_placesDock, SLOT(toggleVisibility()));
+    connect (fr, SIGNAL(clicked()), m_recentDock, SLOT(toggleVisibility()));
+    connect (fb, SIGNAL(clicked()), m_infoDock, SLOT(toggleVisibility()));
 
-    connect (fl, SIGNAL(rightClicked()), m_dockLeft, SLOT(toggleLock()));
-    connect (fr, SIGNAL(rightClicked()), m_dockRight, SLOT(toggleLock()));
-    connect (fb, SIGNAL(rightClicked()), m_dockBottom, SLOT(toggleLock()));
+    connect (fl, SIGNAL(rightClicked()), m_placesDock, SLOT(toggleLock()));
+    connect (fr, SIGNAL(rightClicked()), m_recentDock, SLOT(toggleLock()));
+    connect (fb, SIGNAL(rightClicked()), m_infoDock, SLOT(toggleLock()));
 
-    connect (m_dockLeft, SIGNAL(visibilityChanged(bool)), fl, SLOT(setFloating(bool)));
-    connect (m_dockRight, SIGNAL(visibilityChanged(bool)), fr, SLOT(setFloating(bool)));
-    connect (m_dockBottom, SIGNAL(visibilityChanged(bool)), fb, SLOT(setFloating(bool)));
+    connect (m_placesDock, SIGNAL(visibilityChanged(bool)), fl, SLOT(setFloating(bool)));
+    connect (m_recentDock, SIGNAL(visibilityChanged(bool)), fr, SLOT(setFloating(bool)));
+    connect (m_infoDock, SIGNAL(visibilityChanged(bool)), fb, SLOT(setFloating(bool)));
 
     connect (m_iconSizeSlider, SIGNAL(sliderMoved(int)),this,SLOT(setViewIconSize(int)));
     connect (m_iconSizeSlider, SIGNAL(valueChanged(int)),this,SLOT(setViewIconSize(int)));
@@ -433,7 +433,7 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
         return false;
     }
 
-    if (obj == m_placesView && (event->type() == QEvent::Resize || event->type() == QEvent::Show) && !m_dockLeft->isFloating())
+    if (obj == m_placesView && (event->type() == QEvent::Resize || event->type() == QEvent::Show) && !m_placesDock->isFloating())
         updateToolbarSpacer();
 
 //    if (obj == m_statusBar && event->type() == QEvent::Paint)
@@ -833,9 +833,13 @@ MainWindow::readSettings()
     resize(Store::settings()->value("size", QSize(800, 300)).toSize());
     move(Store::settings()->value("pos", QPoint(200, 200)).toPoint());
 
-    m_tabWin->addDockWidget(Qt::LeftDockWidgetArea, m_dockLeft);
-    m_tabWin->addDockWidget(Qt::RightDockWidgetArea, m_dockRight);
-    m_tabWin->addDockWidget((Qt::DockWidgetArea)Store::config.docks.infoArea, m_dockBottom);
+    m_tabWin->addDockWidget((Qt::DockWidgetArea)Store::config.docks.placesArea, m_placesDock);
+    m_tabWin->addDockWidget((Qt::DockWidgetArea)Store::config.docks.recentArea, m_recentDock);
+    m_tabWin->addDockWidget((Qt::DockWidgetArea)Store::config.docks.infoArea, m_infoDock);
+
+    m_placesDock->setLocked(Store::settings()->value("lockPlaces", false).toBool());
+    m_recentDock->setLocked(Store::settings()->value("lockRecent", false).toBool());
+    m_infoDock->setLocked(Store::settings()->value("lockInfo", false).toBool());
 
     m_actions[ShowStatusBar]->setChecked(Store::settings()->value("statusVisible", true).toBool());
     m_actions[ShowPathBar]->setChecked(Store::settings()->value("pathVisible", true).toBool());
@@ -906,9 +910,9 @@ MainWindow::updateIcons()
     m_toolBar->widgetForAction(m_actions[GoHome])->setMinimumWidth(32);
     m_toolBar->widgetForAction(m_actions[Configure])->setMinimumWidth(32);
 
-    m_dockLeft->setContentsMargins(0, 0, 0, 0);
-    m_dockRight->setContentsMargins(0, 0, 0, 0);
-    m_dockBottom->setContentsMargins(0, 0, 0, 0);
+    m_placesDock->setContentsMargins(0, 0, 0, 0);
+    m_recentDock->setContentsMargins(0, 0, 0, 0);
+    m_infoDock->setContentsMargins(0, 0, 0, 0);
 
     QTimer::singleShot(0, this, SLOT(updateToolbarSpacer()));
 }
@@ -943,6 +947,9 @@ MainWindow::writeSettings()
     Store::settings()->setValue("pathVisible", m_actions[ShowPathBar]->isChecked());
     Store::settings()->setValue("pathEditable", m_actions[EditPath]->isChecked());
     Store::settings()->setValue("menuVisible", m_actions[ShowMenuBar]->isChecked());
+    Store::settings()->setValue("lockPlaces", m_placesDock->isLocked());
+    Store::settings()->setValue("lockRecent", m_recentDock->isLocked());
+    Store::settings()->setValue("lockInfo", m_infoDock->isLocked());
     Store::config.behaviour.sortingCol = m_model->sortColumn();
     Store::config.behaviour.sortingOrd = m_model->sortOrder();
     Store::writeConfig();

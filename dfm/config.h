@@ -87,7 +87,7 @@ typedef struct Config
 
     struct docks
     {
-        int lock, infoArea;
+        int infoArea, placesArea, recentArea;
     } docks;
 } Config;
 

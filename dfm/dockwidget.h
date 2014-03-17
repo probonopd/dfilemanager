@@ -36,6 +36,7 @@ class DockWidget : public QDockWidget
     Q_OBJECT
 public:
     DockWidget(QWidget *parent = 0, const QString &title = QString(), const Qt::WindowFlags &flags = 0, const Pos &pos = Left);
+    inline bool isLocked() const { return m_isLocked; }
 
 protected:
     virtual bool eventFilter(QObject *, QEvent *);
@@ -73,7 +74,6 @@ public slots:
 
 private slots:
     void animate();
-    void locationChanged(const Qt::DockWidgetArea &area);
 
 private:
     QWidget *m_mainWindow;
