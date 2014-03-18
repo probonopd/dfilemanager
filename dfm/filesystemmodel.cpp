@@ -26,7 +26,6 @@
 #include "iojob.h"
 #include "dataloader.h"
 #include "mainwindow.h"
-#include "viewcontainer.h"
 
 using namespace DFM;
 using namespace FS;
@@ -83,7 +82,6 @@ Model::Model(QObject *parent)
     , m_sortOrder(Qt::AscendingOrder)
     , m_sortColumn(0)
     , m_watcher(new QFileSystemWatcher(this))
-    , m_container(0)
     , m_dataGatherer(new Worker::Gatherer(this))
     , m_goingBack(false)
     , m_schemeMenu(new QMenu())
@@ -91,15 +89,15 @@ Model::Model(QObject *parent)
     , m_timer(new QTimer(this))
     , m_isDestroyed(false)
 {
-    if (ViewContainer *vc = qobject_cast<ViewContainer *>(parent))
-        m_container = vc;
-
     connect (DataLoader::instance(), SIGNAL(newData(QString)), this, SLOT(newData(QString)));
     connect (m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)));
     connect (m_dataGatherer, SIGNAL(nodeGenerated(QString,Node*)), this, SLOT(nodeGenerated(QString,Node*)));
     connect(this, SIGNAL(fileRenamed(QString,QString,QString)), DataLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
     connect (m_timer, SIGNAL(timeout()), this, SLOT(refreshCurrent()));
     connect(DataLoader::instance(), SIGNAL(noLongerExists(QString)), this, SLOT(fileDeleted(QString)));
+    connect(Devices::instance(), SIGNAL(deviceAdded(Device*)), this, SLOT(updateFileNode()));
+    connect(Devices::instance(), SIGNAL(deviceRemoved(Device*)), this, SLOT(updateFileNode()));
+    schemeNode("file")->rePopulate();
 }
 
 Model::~Model()
@@ -175,9 +173,9 @@ Model::setUrl(const QUrl &url)
 
     if (fi.isDir())
     {
-        m_watcher->addPath(file);
         Node *sNode = schemeNode(url.scheme());
         Node *node = sNode->localNode(file);
+        m_watcher->addPath(file);
         if (!node)
             dataGatherer()->generateNode(file, sNode);
         else
@@ -263,6 +261,19 @@ Model::refresh()
         return;
     Node *node = schemeNode("file")->localNode(m_url.toLocalFile());
     dataGatherer()->populateNode(node);
+}
+
+void
+Model::refresh(const QString &path)
+{
+    Node *node = schemeNode("file")->localNode(path);
+    dataGatherer()->populateNode(node);
+}
+
+void
+Model::updateFileNode()
+{
+    schemeNode("file")->rePopulate();
 }
 
 void

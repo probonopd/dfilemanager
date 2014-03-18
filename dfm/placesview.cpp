@@ -282,6 +282,12 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev)
     QTimer::singleShot(0, this, SLOT(updateIcon()));
 }
 
+DeviceItem::~DeviceItem()
+{
+//    delete m_button;
+//    delete m_device; ????
+}
+
 void
 DeviceItem::updateTb()
 {
@@ -380,6 +386,11 @@ DeviceManager::DeviceManager(const QStringList &texts, QObject *parent)
     addDevs();
 }
 
+DeviceManager::~DeviceManager()
+{
+
+}
+
 void
 DeviceManager::showHiddenDevices()
 {
@@ -465,6 +476,11 @@ PlacesModel::data(const QModelIndex &index, int role) const
     return QStandardItemModel::data(index, role);
 }
 
+PlacesModel::~PlacesModel()
+{
+    m_places = 0;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 PlacesView::PlacesView(QWidget *parent)
@@ -502,6 +518,11 @@ PlacesView::PlacesView(QWidget *parent)
     connect (m_timer, SIGNAL(timeout()), this, SLOT(updateAllWindows()));
     connect (MainWindow::currentWindow(), SIGNAL(settingsChanged()), viewport(), SLOT(update()));
     QTimer::singleShot(0, this, SLOT(paletteOps()));
+}
+
+PlacesView::~PlacesView()
+{
+    m_lastClicked = 0;
 }
 
 void

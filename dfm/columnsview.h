@@ -74,7 +74,6 @@ signals:
     void newTabRequest(const QModelIndex &index);
     void focusRequest(ColumnsView *view);
     void showed(ColumnsView *view);
-    void pathDeleted(ColumnsView *view);
     void dirActivated(const QModelIndex &dir);
     void expandRequest(const QModelIndex &index);
     void opened(const QModelIndex &index);
@@ -98,6 +97,7 @@ private:
     FS::Model *m_model;
     QPoint m_pressPos;
     QString m_activeFile;
+    QFileSystemWatcher *m_watcher;
     bool m_blockDesktopDir, m_isDir;
     friend class ColumnsWidget;
     friend class ResizeCorner;

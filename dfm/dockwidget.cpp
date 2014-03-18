@@ -49,6 +49,41 @@ DockWidget::DockWidget(QWidget *parent, const QString &title, const Qt::WindowFl
 //    connect (this, SIGNAL(topLevelChanged(bool)), this, SLOT(floatationChanged(bool)));
 //    connect (this, SIGNAL(topLevelChanged(bool)), m_titleWidget,   SLOT(setIsFloating(bool)));
 //    m_mainWindow->installEventFilter(this);
+    QTimer::singleShot(0, this, SLOT(postConstructorJobs()));
+}
+
+void
+DockWidget::postConstructorJobs()
+{
+    int l, t, r, b;
+    getContentsMargins(&l, &t, &r, &b);
+    m_margins = QMargins(l, t, r, b);
+    setLocked(bool(Store::config.docks.lock & m_position));
+}
+
+void
+DockWidget::setLocked(const bool locked)
+{
+    if (isFloating())
+        return;
+    if (locked)
+    {
+        Store::config.docks.lock |= m_position;
+        QLabel *w = new QLabel(this);
+        w->setContentsMargins(0, -w->fontMetrics().height(), 0, -w->fontMetrics().height());
+        setTitleBarWidget(w);
+        m_isLocked = true;
+        setContentsMargins(0, 0, 0, 0);
+    }
+    else
+    {
+        Store::config.docks.lock &= ~m_position;
+        if (QWidget *w = titleBarWidget())
+            delete w;
+        setTitleBarWidget(0);
+        m_isLocked = false;
+        setContentsMargins(m_margins);
+    }
 }
 
 void

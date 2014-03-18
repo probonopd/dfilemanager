@@ -386,17 +386,14 @@ NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
     m_pathBox->setDuplicatesEnabled(false);
 
     PathCompleter *completer = new PathCompleter(m_fsModel, m_pathBox);
-    completer->setMaxVisibleItems(20);
-    completer->setCaseSensitivity(Qt::CaseInsensitive);
-    completer->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
     m_pathBox->setCompleter(completer);
 
     connect(completer, SIGNAL(highlighted(QString)), m_pathBox, SLOT(setEditText(QString)));
-    connect (m_pathBox, SIGNAL(editTextChanged(QString)), completer, SLOT(textChanged(QString)));
-    connect (m_pathBox, SIGNAL(activated(QString)), this, SLOT(urlFromEdit(QString)));
-    connect (m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()));
-    connect (m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()));
-    connect (m_schemeButton, SIGNAL(clicked()), this, SLOT(toggleEditable()));
+    connect(m_pathBox, SIGNAL(editTextChanged(QString)), completer, SLOT(textChanged(QString)));
+    connect(m_pathBox, SIGNAL(activated(QString)), this, SLOT(urlFromEdit(QString)));
+    connect(m_pathBox, SIGNAL(cancelEdit()), this, SLOT(toggleEditable()));
+    connect(m_pathNav, SIGNAL(edit()), this, SLOT(toggleEditable()));
+    connect(m_schemeButton, SIGNAL(clicked()), this, SLOT(toggleEditable()));
 
     m_stack->addWidget(m_pathNav);
     m_stack->addWidget(m_pathBox);
@@ -534,8 +531,11 @@ NavBar::toggleEditable()
 //-----------------------------------------------------------------------------
 
 PathCompleter::PathCompleter(QAbstractItemModel *model, QWidget *parent)
-    :QCompleter(model, parent)
+    : QCompleter(model, parent)
 {
+    setMaxVisibleItems(20);
+    setCaseSensitivity(Qt::CaseInsensitive);
+    setCompletionMode(QCompleter::UnfilteredPopupCompletion);
 }
 
 QString
@@ -556,7 +556,7 @@ PathCompleter::splitPath(const QString &path) const
         return QStringList();
     QStringList list;
     list << url.scheme();
-    QStringList plist = QStringList() << url.path().split("/", QString::SkipEmptyParts);
+    QStringList plist = QStringList() << url.toLocalFile().split("/", QString::SkipEmptyParts);
 #if defined(Q_OS_UNIX)
     list << "/";
     list << plist;

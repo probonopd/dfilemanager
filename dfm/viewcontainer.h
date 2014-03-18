@@ -90,7 +90,7 @@ public:
 protected:
     void leaveEvent(QEvent *) { emit leftView(); }
     void resizeEvent(QResizeEvent *);
-    void setModel(QAbstractItemModel *model);
+    void setModel(FS::Model *model);
     void setSelectionModel(QItemSelectionModel *selectionModel);
     void scrollToSelection();
     

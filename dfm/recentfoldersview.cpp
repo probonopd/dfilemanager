@@ -18,13 +18,14 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QFileInfo>
+#include <QModelIndex>
 
 #include "recentfoldersview.h"
 #include "filesystemmodel.h"
 #include "config.h"
 #include "dataloader.h"
-#include <QFileInfo>
-#include <QModelIndex>
+#include "application.h"
 
 using namespace DFM;
 

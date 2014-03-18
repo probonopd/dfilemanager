@@ -42,8 +42,9 @@ class Button : public QWidget
     Q_OBJECT
 public:
     explicit Button(QWidget *parent = 0);
+    ~Button();
     void setIcon(const QIcon &icon);
-    inline void setMenu(QMenu *menu) { m_menu = menu; m_hasMenu = true; }
+    void setMenu(QMenu *menu);
 
 public slots:
     void animate();
@@ -62,7 +63,7 @@ protected:
 #endif
 
 private:
-    bool m_hasPress, m_hasMenu, m_isAnimating;
+    bool m_hasPress, m_isAnimating;
     int m_animStep, m_stepSize;
     QIcon m_icon, m_animIcon;
     QMenu *m_menu;

@@ -217,16 +217,16 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     m_showThumbs->setChecked(Store::config.views.showThumbs);
     m_singleClick->setChecked(Store::config.views.singleClick);
     m_dirSettings->setChecked(Store::config.views.dirSettings);
-    m_showThumbs->setEnabled(APP->hasThumbIfaces());
+    m_showThumbs->setEnabled(dApp->hasThumbIfaces());
     m_showThumbs->setCheckable(true);
 
     QVBoxLayout *tL = new QVBoxLayout(m_showThumbs);
-    if (APP->hasThumbIfaces())
+    if (dApp->hasThumbIfaces())
     {
-        foreach (ThumbInterface *plugin, APP->thumbIfaces())
+        foreach (ThumbInterface *plugin, dApp->thumbIfaces())
         {
             QCheckBox *box = new QCheckBox(plugin->name(), m_showThumbs);
-            box->setChecked(APP->isActive(plugin));
+            box->setChecked(dApp->isActive(plugin));
             box->setToolTip(plugin->description());
             tL->addWidget(box);
         }
@@ -377,9 +377,9 @@ SettingsDialog::accept()
     foreach (QCheckBox *box, m_viewWidget->m_showThumbs->findChildren<QCheckBox *>())
     {
         if (box->isChecked())
-            APP->activateThumbInterface(box->text());
+            dApp->activateThumbInterface(box->text());
         else
-            APP->deActivateThumbInterface(box->text());
+            dApp->deActivateThumbInterface(box->text());
     }
 
     Store::config.behaviour.hideTabBarWhenOnlyOneTab = m_behWidget->m_hideTabBar->isChecked();

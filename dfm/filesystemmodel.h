@@ -37,10 +37,8 @@
 #include <QMap>
 #include <QWaitCondition>
 #include <QAbstractItemModel>
-#include <QCache>
 
 #include "dataloader.h"
-#include "viewcontainer.h"
 #include "fsworkers.h"
 #include "helpers.h"
 
@@ -48,8 +46,6 @@ namespace DFM
 {
 
 class DataLoader;
-class FlowDataLoader;
-class ViewContainer;
 
 namespace FS
 {
@@ -155,6 +151,7 @@ public slots:
     void setUrl(const QUrl &url);
     void setUrlFromDynamicPropertyUrl();
     void refresh();
+    void refresh(const QString &path);
     void endSearch();
     void cancelSearch();
 
@@ -165,6 +162,7 @@ private slots:
     void schemeFromSchemeMenu();
     void refreshCurrent();
     void fileDeleted(const QString &path);
+    void updateFileNode();
 
 signals:
     void flowDataChanged(const QModelIndex &start, const QModelIndex &end);
@@ -179,20 +177,16 @@ signals:
 
 private:
     Node *m_rootNode, *m_current;
-    QList<Node *> m_deleted;
-    QCache<Node *, QVariant> m_cache;
     mutable QMap<QString, Node *> m_schemeNodes;
     QHash<QUrl, Node *> m_nodes;
     bool m_showHidden, m_goingBack, m_isDestroyed;
     Qt::SortOrder m_sortOrder;
     int m_sortColumn;
     QFileSystemWatcher *m_watcher;
-    ViewContainer *m_container;
     Worker::Gatherer *m_dataGatherer;
     QMenu *m_schemeMenu;
     QUrl m_url;
     QList<QUrl> m_history[Forward+1];
-    MimeProvider m_mimes;
     QTimer *m_timer;
     friend class FlowDataLoader;
     friend class Node;

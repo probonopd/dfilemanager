@@ -19,10 +19,12 @@
 ***************************************************************************/
 
 #include <QTextEdit>
+#include <QMessageBox>
+
 #include "filesystemmodel.h"
 #include "fsworkers.h"
 #include "objects.h"
-
+#include "application.h"
 
 using namespace DFM;
 

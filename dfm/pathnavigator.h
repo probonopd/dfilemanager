@@ -34,6 +34,7 @@
 #include <QEvent>
 #include <QBoxLayout>
 #include <QCompleter>
+#include <QListView>
 
 #include "filesystemmodel.h"
 #include "operations.h"

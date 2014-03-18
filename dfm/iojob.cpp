@@ -392,7 +392,7 @@ Manager::finishedSlot()
 {
     emit copyProgress(QString(), QString(), 100, 100); emit speed(QString());
     if (DFM::Store::config.behaviour.useIOQueue)
-        APP->setMessage(QStringList() << "--ioProgress" << "100", "dfm_browser");
+        dApp->setMessage(QStringList() << "--ioProgress" << "100", "dfm_browser");
     if (Store::settings()->value("hideCPDWhenFinished").toBool())
         m_copyDialog->hide();
 }
@@ -459,7 +459,7 @@ Manager::ioBusy(const bool busy)
     QStringList message = QStringList() << "--ioProgress" << i;
     if (busy)
         message << "Deleting...";
-    APP->setMessage(message, "dfm_browser");
+    dApp->setMessage(message, "dfm_browser");
 }
 
 void
@@ -552,7 +552,7 @@ Manager::emitProgress()
         return;
     QString task = m_cut?"Moving...":"Copying...";
 //    task.append(QString("\n%1 %2 %3").arg("queue: ", QString::number(queueCount()), " items"));
-    APP->setMessage(QStringList() << "--ioProgress" << QString::number(progress) << task, "dfm_browser");
+    dApp->setMessage(QStringList() << "--ioProgress" << QString::number(progress) << task, "dfm_browser");
 }
 
 void

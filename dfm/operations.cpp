@@ -35,14 +35,14 @@
 
 using namespace DFM;
 
-static Ops *s_instance = 0;
+Ops *Ops::m_instance = 0;
 
 Ops
 *Ops::instance()
 {
-    if (!s_instance)
-        s_instance = new Ops(qApp);
-    return s_instance;
+    if (!m_instance)
+        m_instance = new Ops();
+    return m_instance;
 }
 
 QColor

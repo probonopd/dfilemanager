@@ -38,7 +38,7 @@ DataLoader::DataLoader(QObject *parent) :
     Thread(parent),
     m_extent(256)
 {
-    connect(APP,SIGNAL(aboutToQuit()),this,SLOT(discontinue()));
+    connect(dApp,SIGNAL(aboutToQuit()),this,SLOT(discontinue()));
     start();
 }
 
@@ -46,7 +46,7 @@ DataLoader
 *DataLoader::instance()
 {
     if (!m_instance)
-        m_instance = new DataLoader(APP);
+        m_instance = new DataLoader(dApp);
     return m_instance;
 }
 
@@ -130,9 +130,9 @@ DataLoader::getData(const QString &path)
         return;
     }
     QImage image;
-    if (!APP->activeThumbIfaces().isEmpty() && Store::config.views.showThumbs)
-        for (int i = 0; i<APP->activeThumbIfaces().count(); ++i)
-            if (APP->activeThumbIfaces().at(i)->thumb(path, m_extent, image))
+    if (!dApp->activeThumbIfaces().isEmpty() && Store::config.views.showThumbs)
+        for (int i = 0; i<dApp->activeThumbIfaces().count(); ++i)
+            if (dApp->activeThumbIfaces().at(i)->thumb(path, m_extent, image))
             {
                 data->thumb = image;
                 break;
@@ -183,7 +183,7 @@ DataLoader::dequeue()
 void
 DataLoader::run()
 {
-    foreach (ThumbInterface *ti, APP->thumbIfaces())
+    foreach (ThumbInterface *ti, dApp->thumbIfaces())
         ti->init();
 
     while (!m_quit)

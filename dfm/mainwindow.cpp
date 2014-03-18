@@ -165,7 +165,16 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked());
 //    foreach (QAction *a, m_toolBar->actions())
 //        connect(a, SIGNAL(changed()), this, SLOT(updateIcons()));
+    setAttribute(Qt::WA_DeleteOnClose);
+    connect(qApp, SIGNAL(lastWindowClosed()), qApp, SLOT(quit()));
     QTimer::singleShot(0, this, SLOT(updateIcons()));
+}
+
+MainWindow::~MainWindow()
+{
+    s_openWindows.removeOne(this);
+    if (s_currentWindow == this && !s_openWindows.isEmpty())
+        s_currentWindow = 0;
 }
 
 void
@@ -384,7 +393,7 @@ MainWindow::urlChanged(const QUrl &url)
     if (url.isLocalFile())
         m_placesView->activateAppropriatePlace(url.toLocalFile());
     m_tabBar->setTabText(m_tabBar->currentIndex(), title);
-    if (Store::config.behaviour.gayWindow)
+//    if (Store::config.behaviour.gayWindow)
         m_tabBar->setTabIcon(m_tabBar->currentIndex(), m_model->fileIcon(m_model->index(url)));
     setActions();
 }
@@ -399,8 +408,8 @@ MainWindow::updateStatusBar(const QUrl &url)
 void
 MainWindow::closeEvent(QCloseEvent *event)
 {
-    writeSettings();
-    s_openWindows.removeOne(this);
+    if (s_openWindows.count() == 1)  //this is last...
+        writeSettings();
     event->accept();
 }
 
@@ -555,10 +564,10 @@ MainWindow::addTab(const QUrl &url)
 
     const QString &title = container->model()->title(url);
 
-    if (Store::config.behaviour.gayWindow)
+//    if (Store::config.behaviour.gayWindow)
         m_tabBar->addTab(m_model->fileIcon(m_model->index(url)), title);
-    else
-        m_tabBar->addTab(title);
+//    else
+//        m_tabBar->addTab(title);
 
     if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
         m_tabBar->setVisible(m_tabBar->count() > 1);
@@ -576,16 +585,15 @@ MainWindow::addTab(ViewContainer *container, int index)
     if (!m_activeContainer)
         m_activeContainer = container;
 
-
     FS::Model *model = container->model();
     const QUrl &url = model->rootUrl();
     const QString &title = model->title(url);
     const QModelIndex &idx = model->index(url);
 
-    if (Store::config.behaviour.gayWindow)
+//    if (Store::config.behaviour.gayWindow)
         m_tabBar->insertTab(index, model->fileIcon(idx), title);
-    else
-        m_tabBar->insertTab(index, title);
+//    else
+//        m_tabBar->insertTab(index, title);
 
     if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
         m_tabBar->setVisible(m_tabBar->count() > 1);
@@ -679,12 +687,8 @@ ViewContainer
     container->setParent(0);
     foreach (QAction *a, container->actions())
         container->removeAction(a);
-
     if (!m_stackedWidget->count())
-    {
-        hide();
-        QTimer::singleShot(250, this, SLOT(deleteLater()));
-    }
+        close();
     return container;
 }
 
@@ -807,7 +811,7 @@ void
 MainWindow::windowActivationChange(bool wasActive)
 {
     if (s_currentWindow)
-        disconnect(APP, SIGNAL(lastMessage(QStringList)), s_currentWindow, SLOT(receiveMessage(QStringList)));
+        disconnect(dApp, SIGNAL(lastMessage(QStringList)), s_currentWindow, SLOT(receiveMessage(QStringList)));
     if (!wasActive)
     {
         s_currentWindow = this;
@@ -815,7 +819,7 @@ MainWindow::windowActivationChange(bool wasActive)
             emit viewChanged(m_activeContainer->currentView());
     }
     if (s_currentWindow)
-        connect(APP, SIGNAL(lastMessage(QStringList)), s_currentWindow, SLOT(receiveMessage(QStringList)));
+        connect(dApp, SIGNAL(lastMessage(QStringList)), s_currentWindow, SLOT(receiveMessage(QStringList)));
     if (Store::config.behaviour.gayWindow)
         foreach (WinButton *btn, findChildren<WinButton *>())
         {
@@ -833,13 +837,9 @@ MainWindow::readSettings()
     resize(Store::settings()->value("size", QSize(800, 300)).toSize());
     move(Store::settings()->value("pos", QPoint(200, 200)).toPoint());
 
-    m_tabWin->addDockWidget((Qt::DockWidgetArea)Store::config.docks.placesArea, m_placesDock);
-    m_tabWin->addDockWidget((Qt::DockWidgetArea)Store::config.docks.recentArea, m_recentDock);
-    m_tabWin->addDockWidget((Qt::DockWidgetArea)Store::config.docks.infoArea, m_infoDock);
-
-    m_placesDock->setLocked(Store::settings()->value("lockPlaces", false).toBool());
-    m_recentDock->setLocked(Store::settings()->value("lockRecent", false).toBool());
-    m_infoDock->setLocked(Store::settings()->value("lockInfo", false).toBool());
+    m_tabWin->addDockWidget(Qt::LeftDockWidgetArea, m_placesDock);
+    m_tabWin->addDockWidget(Qt::RightDockWidgetArea, m_recentDock);
+    m_tabWin->addDockWidget(Qt::BottomDockWidgetArea, m_infoDock);
 
     m_actions[ShowStatusBar]->setChecked(Store::settings()->value("statusVisible", true).toBool());
     m_actions[ShowPathBar]->setChecked(Store::settings()->value("pathVisible", true).toBool());
@@ -909,11 +909,6 @@ MainWindow::updateIcons()
     m_toolBar->widgetForAction(m_actions[ShowHidden])->setMinimumWidth(32);
     m_toolBar->widgetForAction(m_actions[GoHome])->setMinimumWidth(32);
     m_toolBar->widgetForAction(m_actions[Configure])->setMinimumWidth(32);
-
-    m_placesDock->setContentsMargins(0, 0, 0, 0);
-    m_recentDock->setContentsMargins(0, 0, 0, 0);
-    m_infoDock->setContentsMargins(0, 0, 0, 0);
-
     QTimer::singleShot(0, this, SLOT(updateToolbarSpacer()));
 }
 
@@ -947,11 +942,11 @@ MainWindow::writeSettings()
     Store::settings()->setValue("pathVisible", m_actions[ShowPathBar]->isChecked());
     Store::settings()->setValue("pathEditable", m_actions[EditPath]->isChecked());
     Store::settings()->setValue("menuVisible", m_actions[ShowMenuBar]->isChecked());
-    Store::settings()->setValue("lockPlaces", m_placesDock->isLocked());
-    Store::settings()->setValue("lockRecent", m_recentDock->isLocked());
-    Store::settings()->setValue("lockInfo", m_infoDock->isLocked());
-    Store::config.behaviour.sortingCol = m_model->sortColumn();
-    Store::config.behaviour.sortingOrd = m_model->sortOrder();
+    if (m_model)
+    {
+        Store::config.behaviour.sortingCol = m_model->sortColumn();
+        Store::config.behaviour.sortingOrd = m_model->sortOrder();
+    }
     Store::writeConfig();
     m_placesView->store();
 }

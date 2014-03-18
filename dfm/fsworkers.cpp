@@ -183,17 +183,6 @@ Node
     return 0;
 }
 
-bool
-Node::hasChild(const QString &name, const bool nameIsPath)
-{
-    QMutexLocker locker(&m_mutex);
-    for (int i = 0; i < ChildrenTypeCount; ++i)
-        for (Nodes::const_iterator b = m_children[i].constBegin(), e = m_children[i].constEnd(); b!=e; ++b)
-            if ((nameIsPath?(*b)->filePath():(*b)->name()) == name)
-                return true;
-    return false;
-}
-
 int
 Node::row()
 {
@@ -376,14 +365,17 @@ Node
     Node *n = this;
     do {
         const QString &p = dir.absolutePath();
-        if (hasChild(p, true))
+        if (Node *node = child(p, true))
         {
-            n = child(p, true);
+            n = node;
             break;
         }
         else
             paths.prepend(p);
     } while (dir.cdUp());
+
+    if (path == n->filePath())
+        return n;
 
     while (!paths.isEmpty() && n)
         n = n->nodeFromLocalPath(paths.takeFirst(), checkOnly);
@@ -422,26 +414,6 @@ Node
         }
     }
     return 0;
-}
-
-void
-Node::removeDeleted()
-{
-    for (int i = 0; i < ChildrenTypeCount; ++i)
-    {
-        m_mutex.lock();
-        int c = m_children[i].size();
-        m_mutex.unlock();
-        while (--c > -1)
-        {
-            m_mutex.lock();
-            Node *node = m_children[i].at(c);
-            m_mutex.unlock();
-            node->refresh();
-            if (!node->exists())
-                delete node;
-        }
-    }
 }
 
 void
@@ -535,6 +507,22 @@ Node::setFilter(const QString &filter)
 }
 
 void
+Node::removeDeleted()
+{
+    for (int i = 0; i < ChildrenTypeCount; ++i)
+    {
+        int c = childCount(Children(i));
+        while (--c > -1)
+        {
+            Node *node = child(c, Children(i));
+            node->refresh();
+            if (!node->exists())
+                delete node;
+        }
+    }
+}
+
+void
 Node::rePopulate()
 {
     if (gatherer()->isCancelled())
@@ -552,7 +540,7 @@ Node::rePopulate()
         while (it.hasNext() && !gatherer()->isCancelled())
         {
             const QString &file = it.next();
-            if (!hasChild(file))
+            if (!child(file))
                 new Node(m_model, QUrl::fromLocalFile(file), this, file);
         }
     }
@@ -562,7 +550,7 @@ Node::rePopulate()
         for (int i = 0; i < devices.count(); ++i)
         {
             Device *device = devices.at(i);
-            if (device->isMounted())
+            if (device->isMounted() && !child(device->mountPath()))
                 new Node(m_model, QUrl::fromLocalFile(device->mountPath()), this, device->mountPath());
         }
     }

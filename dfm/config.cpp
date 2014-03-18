@@ -28,7 +28,7 @@
 
 using namespace DFM;
 
-static Store *s_instance = 0;
+Store *Store::m_instance = 0;
 Config Store::config;
 
 Store::Store(QObject *parent) : QObject(parent)
@@ -39,24 +39,27 @@ Store::Store(QObject *parent) : QObject(parent)
     m_settings = new QSettings(QSettings::IniFormat, QSettings::UserScope, "dfm", "dfm");
 #endif
     m_customActionsMenu.setTitle(tr("Custom Actions"));
-    connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(deleteLater()));
+}
+
+Store::~Store()
+{
+    delete m_settings;
+    m_instance = 0;
 }
 
 Store
 *Store::instance()
 {
-    if (!s_instance)
-        s_instance = new Store(qApp);
-    return s_instance;
+    if (!m_instance)
+        m_instance = new Store();
+    return m_instance;
 }
 
 void
 Store::readConfiguration()
 {
     config.pluginPath = settings()->value("pluginPath", QString()).toString();
-    config.docks.infoArea = settings()->value("docks.infoArea", 8).toInt();
-    config.docks.recentArea = settings()->value("docks.recentArea", 2).toInt();
-    config.docks.placesArea = settings()->value("docks.placesArea", 1).toInt();
+    config.docks.lock = settings()->value("docks.lock", 0).toInt();
     config.startPath = settings()->value("startPath", QDir::homePath()).toString();
     config.styleSheet = settings()->value("styleSheet", QString()).toString();
 
@@ -124,7 +127,7 @@ Store::readConfiguration()
     }
     settings()->endGroup();
 
-    APP->loadPlugins();
+    dApp->loadPlugins();
 
 //    Configuration::settings()->beginGroup("Scripts");
 //    foreach (const QString &string, Configuration::settings()->childKeys())
@@ -144,9 +147,7 @@ void
 Store::writeConfiguration()
 {
     settings()->setValue("startPath", config.startPath);
-    settings()->setValue("docks.infoArea", config.docks.infoArea);
-    settings()->setValue("docks.placesArea", config.docks.placesArea);
-    settings()->setValue("docks.recentArea", config.docks.recentArea);
+    settings()->setValue("docks.lock", config.docks.lock);
     settings()->setValue("smoothScroll", config.views.iconView.smoothScroll);
     settings()->setValue("showThumbs", config.views.showThumbs);
     settings()->setValue("drawDevUsage", config.behaviour.devUsage);

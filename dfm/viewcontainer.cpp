@@ -136,7 +136,7 @@ ViewContainer::modelSort(const int column, const int order)
 
 PathNavigator *ViewContainer::pathNav() { return m_navBar->pathNav(); }
 
-void ViewContainer::setModel(QAbstractItemModel *model) { VIEWS(setModel(model)); }
+void ViewContainer::setModel(FS::Model *model) { VIEWS(setModel(model)); }
 
 QList<QAbstractItemView *>
 ViewContainer::views()

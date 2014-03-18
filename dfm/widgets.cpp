@@ -29,10 +29,11 @@ using namespace DFM;
 
 #define STEPS 24
 #define INTERVAL 40
+#define ARROW 7
+#define ARROWMARGIN 2
 
 Button::Button(QWidget *parent)
     : QWidget(parent)
-    , m_hasMenu(false)
     , m_hasPress(false)
     , m_isAnimating(false)
     , m_menu(0)
@@ -42,6 +43,23 @@ Button::Button(QWidget *parent)
     m_stepSize = 360/STEPS;
     connect(m_animTimer, SIGNAL(timeout()), this, SLOT(animate()));
     m_animIcon = IconProvider::icon(IconProvider::Animator, 16, palette().color(foregroundRole()), false);
+}
+
+Button::~Button()
+{
+    if (m_menu)
+        delete m_menu;
+}
+
+void
+Button::setMenu(QMenu *menu)
+{
+    bool hadMenu = m_menu;
+    m_menu = menu;
+    if (menu && !hadMenu)
+        setFixedWidth(width()+ARROW+ARROWMARGIN);
+    else if (!menu && hadMenu)
+        setFixedWidth(width()-(ARROW+ARROWMARGIN));
 }
 
 void
@@ -57,7 +75,7 @@ Button::mouseReleaseEvent(QMouseEvent *e)
     QWidget::mouseReleaseEvent(e);
     if (m_hasPress && rect().contains(e->pos()))
     {
-        if (m_hasMenu)
+        if (m_menu)
             m_menu->popup(mapToGlobal(e->pos()));
         else
             emit clicked();
@@ -70,14 +88,30 @@ Button::paintEvent(QPaintEvent *e)
 {
     QWidget::paintEvent(e);
     QPainter p(this);
+    QRect iconRect = rect();
+    if (m_menu)
+        iconRect.setRight(iconRect.right()-(ARROW+ARROWMARGIN));
     if (m_isAnimating)
     {
         p.setRenderHint(QPainter::SmoothPixmapTransform);
         p.setTransform(m_transform);
-        m_animIcon.paint(&p, rect(), Qt::AlignCenter, isEnabled()?QIcon::Normal:QIcon::Disabled);
+        m_animIcon.paint(&p, iconRect, Qt::AlignCenter, isEnabled()?QIcon::Normal:QIcon::Disabled);
     }
     else if (!m_icon.isNull())
-        m_icon.paint(&p, rect(), Qt::AlignCenter, isEnabled()?QIcon::Normal:QIcon::Disabled);
+        m_icon.paint(&p, iconRect, Qt::AlignCenter, isEnabled()?QIcon::Normal:QIcon::Disabled);
+
+    if (m_menu)
+    {
+        QRect r(width()-ARROW, (height()/2)-(ARROW/2), ARROW, ARROW);
+        static const int points[] = { r.left(),r.top(), r.right(),r.top(), r.center().x(),r.bottom() };
+        QPolygon pol(3, points);
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setBrush(palette().color(foregroundRole()));
+        p.setPen(Qt::NoPen);
+        if (!underMouse())
+            p.setOpacity(0.5f);
+        p.drawPolygon(pol);
+    }
     p.end();
 }
 

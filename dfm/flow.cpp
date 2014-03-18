@@ -18,9 +18,6 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-
-#include "flow.h"
-#include "operations.h"
 #include <QImageReader>
 #include <QWheelEvent>
 #include <QFileInfo>
@@ -29,10 +26,12 @@
 #include <QBitmap>
 #include <QElapsedTimer>
 #include <QApplication>
-#include "operations.h"
 #include <qmath.h>
 #include <QTransform>
 #include <QRegion>
+
+#include "operations.h"
+#include "flow.h"
 
 using namespace DFM;
 
@@ -263,15 +262,6 @@ Flow::Flow(QWidget *parent)
         m_defaultPix[d][0] = QPixmap::fromImage(Ops::flowImg(img[d]));
         m_defaultPix[d][1] = QPixmap::fromImage(Ops::reflection(img[d]));
     }
-
-    QWidget *w = this;
-    while (w->parentWidget())
-    {
-        if (m_container = qobject_cast<ViewContainer *>(w))
-            break;
-        else
-            w = w->parentWidget();
-    }
 }
 
 Flow::~Flow()
@@ -414,9 +404,9 @@ Flow::enterEvent(QEvent *e)
 }
 
 void
-Flow::setModel(QAbstractItemModel *model)
+Flow::setModel(FS::Model *model)
 {
-    m_model = static_cast<FS::Model *>(model);
+    m_model = model;
     connect(m_model, SIGNAL(dataChanged(const QModelIndex & , const QModelIndex &)), this, SLOT(dataChanged(const QModelIndex & , const QModelIndex &)));
     connect(m_model, SIGNAL(layoutAboutToBeChanged()),this, SLOT(clear()));
     connect(m_model, SIGNAL(layoutChanged()),this, SLOT(reset()));
@@ -433,7 +423,7 @@ Flow::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
     if (!topLeft.isValid() || !bottomRight.isValid())
         return;
 
-    const bool isFlowing = (m_container->currentViewType() == ViewContainer::Flow);
+    const bool isFlowing = isVisible();
     const int start = topLeft.row(), end = bottomRight.row();
 
     if (m_items.count() > end)

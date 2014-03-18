@@ -46,8 +46,8 @@
 
 //#include <GL/glut.h>
 
-#define APP static_cast<Application*>(QApplication::instance())
-#define MAINWINDOW static_cast<DFM::MainWindow*>(APP->mainWindow())
+#define dApp static_cast<Application*>(QApplication::instance())
+#define MAINWINDOW static_cast<DFM::MainWindow*>(dApp->mainWindow())
 #define DPY QX11Info::display()
 
 class Application : public QApplication

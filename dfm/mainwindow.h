@@ -94,6 +94,7 @@ public:
                  };
 
     MainWindow(const QStringList &arguments = QStringList(), bool autoTab = true);
+    ~MainWindow();
     inline ViewContainer *activeContainer() { return m_activeContainer; }
     inline PlacesView *placesView() { return m_placesView; }
     inline QToolBar *toolBar() { return m_toolBar; }

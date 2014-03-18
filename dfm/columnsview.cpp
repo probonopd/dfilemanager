@@ -258,6 +258,7 @@ ColumnsView::ColumnsView(QWidget *parent, FS::Model *model, const QModelIndex &r
     , m_model(0)
     , m_blockDesktopDir(false)
     , m_isDir(false)
+    , m_watcher(new QFileSystemWatcher(this))
 {
     setViewMode(QListView::ListMode);
     setResizeMode(QListView::Adjust);
@@ -285,6 +286,15 @@ ColumnsView::ColumnsView(QWidget *parent, FS::Model *model, const QModelIndex &r
     v->installEventFilter(this);
     int w = Store::config.views.columnsView.colWidth;
     const QUrl url = rootIndex.data(FS::Url).toUrl();
+    if (url.isLocalFile() && url != m_model->rootUrl())
+    {
+        const QString &file = url.toLocalFile();
+        if (QFileInfo(file).isDir())
+        {
+            m_watcher->addPath(file);
+            connect(m_watcher, SIGNAL(directoryChanged(QString)), m_model, SLOT(refresh(QString)));
+        }
+    }
     if (m_columnsWidget->m_widthMap.contains(url))
     {
         w = m_columnsWidget->m_widthMap.value(url);

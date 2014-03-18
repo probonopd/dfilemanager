@@ -145,7 +145,7 @@ Devices
 *Devices::instance()
 {
     if (!m_instance)
-        m_instance = new Devices(qApp);
+        m_instance = new Devices();
     return m_instance;
 }
 

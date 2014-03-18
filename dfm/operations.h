@@ -174,6 +174,9 @@ public slots:
 
 protected:
     explicit Ops(QObject *parent = 0):QObject(parent){}
+
+private:
+    static Ops *m_instance;
 };
 
 }

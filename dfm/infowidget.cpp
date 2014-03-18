@@ -18,14 +18,15 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QLayout>
 
 #include "infowidget.h"
-#include <QLayout>
 #include "operations.h"
 #include "filesystemmodel.h"
 #include "dataloader.h"
 #include "config.h"
 #include "helpers.h"
+#include "application.h"
 
 using namespace DFM;
 

@@ -87,7 +87,7 @@ typedef struct Config
 
     struct docks
     {
-        int infoArea, placesArea, recentArea;
+        int lock;
     } docks;
 } Config;
 
@@ -95,7 +95,7 @@ typedef struct Config
 class Store : public QObject
 {
 public:
-//    ~Store(){}
+    ~Store();
     static Store *instance();
     static inline void readConfig() { instance()->readConfiguration(); }
     static inline void writeConfig() { instance()->writeConfiguration(); }
@@ -117,6 +117,7 @@ private:
     QSettings *m_settings;
     QList<QAction *> m_customActions;
     QMenu m_customActionsMenu;
+    static Store *m_instance;
 };
 
 }

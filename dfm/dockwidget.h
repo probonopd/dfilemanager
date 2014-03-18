@@ -52,28 +52,11 @@ public slots:
     inline void setFloat() { /*m_mainWindow->raise(); m_timer->start(10);*/ if (isFloating()) m_dirIn = true; else setFloating(true); }
     inline void toggleVisibility() { setVisible(!isVisible()); }
     inline void toggleLock() { if (m_isLocked) setLocked(false); else setLocked(true); }
-    inline void setLocked(const bool locked = false)
-    {
-        if (isFloating())
-            return;
-        if (locked)
-        {
-            QLabel *w = new QLabel(this);
-            w->setContentsMargins(0, -w->fontMetrics().height(),0,-w->fontMetrics().height());
-            setTitleBarWidget(w);
-            m_isLocked = true;
-        }
-        else
-        {
-            if (QWidget *w = titleBarWidget())
-                delete w;
-            setTitleBarWidget(0);
-            m_isLocked = false;
-        }
-    }
+    void setLocked(const bool locked = false);
 
 private slots:
     void animate();
+    void postConstructorJobs();
 
 private:
     QWidget *m_mainWindow;
@@ -83,6 +66,7 @@ private:
     QTimer *m_timer;
     int m_animStep;
     bool m_dirIn, m_isLocked;
+    QMargins m_margins;
 };
 
 }

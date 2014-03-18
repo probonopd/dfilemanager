@@ -54,6 +54,7 @@ public:
     }
     inline Place(const QStringList &texts = QStringList(), const QIcon &icon = QIcon()) : m_values(texts) { while (m_values.count() < 3) m_values << QString(); m_icon = icon; }
     inline Place(Place *p) { m_values << p->name() << p->path() << p->iconName(); m_icon = p->fileIcon(); }
+    ~Place(){}
     virtual QStringList values() { return m_values; }
     virtual QString name() const { return m_values[Name]; }
     virtual QString path() const { return m_values[Path]; }
@@ -80,6 +81,7 @@ public:
             appendRow(new Place(p));
         setSelectable(false);
     }
+    ~Container(){}
     inline Place *place(const int i) { return static_cast<Place *>(child(i)); }
     inline Places places()
     {
@@ -118,7 +120,7 @@ class DeviceItem : public QObject, public Place //have to inherit QObject for si
     Q_OBJECT
 public:
     DeviceItem(DeviceManager *parentItem = 0, PlacesView *view = 0, Device *dev = 0);
-    ~DeviceItem() { m_button->deleteLater(); delete m_device; }
+    ~DeviceItem();
     void setMounted(const bool mount) { m_device->setMounted(mount); }
     inline bool isMounted() const { return m_device->isMounted(); }
     inline QString mountPath() const { return m_device->mountPath(); }
@@ -164,7 +166,7 @@ class DeviceManager : public QObject, public Container
     Q_OBJECT
 public:
     DeviceManager(const QStringList &texts, QObject *parent = 0);
-    ~DeviceManager(){}
+    ~DeviceManager();
     inline QMap<Device *, DeviceItem *> deviceItems() { return m_items; }
     DeviceItem *deviceItemForFile(const QString &file);
     inline bool isDevice(const QStandardItem *item) { return (bool)(item->parent() == this); }
@@ -186,6 +188,7 @@ class PlacesModel : public QStandardItemModel
 {
 public:
     inline explicit PlacesModel(QObject *parent = 0) : QStandardItemModel(parent), m_places(qobject_cast<PlacesView *>(parent)) {}
+    ~PlacesModel();
 
 protected:
     QVariant data(const QModelIndex &index, int role) const;
@@ -201,6 +204,7 @@ class PlacesView : public QTreeView
 public:
     typedef QList<Container *> Containers;
     PlacesView(QWidget *parent);
+    ~PlacesView();
     QMenu *containerAsMenu(const int cont);
     bool getKdePlaces();
     inline QStringList hiddenDevices() const { return m_hiddenDevices; }

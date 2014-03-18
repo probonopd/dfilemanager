@@ -37,6 +37,7 @@
 #include <QScrollBar>
 #include <QList>
 #include <QTimeLine>
+
 #include "filesystemmodel.h"
 #include "dataloader.h"
 #include "objects.h"
@@ -123,7 +124,7 @@ public:
     enum Pos { Prev = 0, New = 1 };
     explicit Flow(QWidget *parent = 0);
     ~Flow();
-    void setModel(QAbstractItemModel *model);
+    void setModel(FS::Model *model);
     inline void setSelectionModel(QItemSelectionModel *model) { m_selectionModel = model; }
     void setCenterIndex(const QModelIndex &index);
     void showCenterIndex(const QModelIndex &index);
@@ -189,7 +190,6 @@ private:
     QUrl m_rootUrl, m_centerUrl;
     FlowDataLoader *m_dataLoader;
     QPixmap m_defaultPix[2][2];
-    ViewContainer *m_container;
     friend class PixmapItem;
     friend class FlowDataLoader;
 };

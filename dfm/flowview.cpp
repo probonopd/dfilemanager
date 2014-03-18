@@ -70,7 +70,7 @@ FS::Model
 }
 
 void
-FlowView::setModel(QAbstractItemModel *model)
+FlowView::setModel(FS::Model *model)
 {
     m_dView->setModel(model);
     m_flow->setModel(model);
