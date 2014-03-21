@@ -197,6 +197,4 @@ private:
 
 }
 
-Q_DECLARE_METATYPE(QPainterPath)
-
 #endif // FILESYSTEMMODEL_H

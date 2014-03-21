@@ -27,8 +27,10 @@
 #include <QWidget>
 #include <QMouseEvent>
 #include <QDrag>
+#include <QStackedWidget>
 
 #include "mainwindow.h"
+#include "viewcontainer.h"
 
 namespace DFM
 {
@@ -171,6 +173,35 @@ private:
     DropIndicator *m_dropIndicator;
     QString m_lastDraggedFile;
 };
+
+class TabManager : public QStackedWidget
+{
+    Q_OBJECT
+public:
+    explicit TabManager(MainWindow *mainWin = 0, QWidget *parent = 0);
+    ~TabManager(){}
+
+    inline TabBar *tabBar() { return m_tabBar; }
+    void setTabBar(TabBar *tabBar);
+    int addTab(ViewContainer *c,const QIcon& icon = QIcon(), const QString &text = QString()) { return insertTab(-1, c, icon, text); }
+    int insertTab(int index, ViewContainer *c, const QIcon& icon = QIcon(), const QString &text = QString());
+    ViewContainer *forTab(const int tab);
+    ViewContainer *takeTab(const int tab);
+    void deleteTab(const int tab);
+
+signals:
+    void currentTabChanged(int tab);
+    void newTabRequest();
+    void tabCloseRequested(int tab);
+
+private slots:
+    void tabMoved(int from, int to);
+
+private:
+    TabBar *m_tabBar;
+    MainWindow *m_mainWin;
+};
+
 
 }
 

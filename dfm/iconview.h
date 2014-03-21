@@ -66,7 +66,6 @@ protected:
     QRect visualRect(const QModelIndex &index) const;
     QRect visualRect(const QString &cat) const;
     QModelIndex indexAt(const QPoint &p) const;
-    void rowsInserted(const QModelIndex &parent, int start, int end);
     void focusOutEvent(QFocusEvent *event) {m_pressPos=QPoint(); QAbstractItemView::focusOutEvent(event);}
     void dragMoveEvent(QDragMoveEvent *event) {m_pressPos=QPoint(); QAbstractItemView::dragMoveEvent(event);}
     void setIconWidth(const int width);

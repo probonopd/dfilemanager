@@ -660,7 +660,7 @@ TabBar::dropEvent(QDropEvent *e)
             if (e->mimeData()->urls().count() == 1 || QMessageBox::question(w, tr("Are you sure?"), QString(tr("You are about to open %1 tabs").arg(e->mimeData()->urls().count())), QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes)
                 foreach (const QUrl &file, e->mimeData()->urls())
                     if (QFileInfo(file.toLocalFile()).isDir())
-                        w->addTab(file.toLocalFile());
+                        w->addTab(file);
         }
     }
     e->accept();
@@ -679,7 +679,7 @@ TabBar::mouseDoubleClickEvent(QMouseEvent *event)
 {
     m_hasPress = false;
     QTabBar::mouseDoubleClickEvent(event);
-    if (rect().contains(event->pos()))
+    if (rect().contains(event->pos()) && event->button() == Qt::LeftButton)
     {
         emit newTabRequest();
         event->accept();
@@ -939,3 +939,75 @@ TabBar::tabRemoved(int index)
     if (Store::config.behaviour.gayWindow)
         correctAddButtonPos();
 }
+
+//-------------------------------------------------------------------------------------------
+
+TabManager::TabManager(MainWindow *mainWin, QWidget *parent)
+    : QStackedWidget(parent)
+    , m_mainWin(mainWin)
+    , m_tabBar(0)
+{
+
+}
+
+void
+TabManager::deleteTab(const int tab)
+{
+    if (ViewContainer *c = takeTab(tab))
+        c->deleteLater();
+}
+
+ViewContainer
+*TabManager::takeTab(const int tab)
+{
+    if (ViewContainer *c = static_cast<ViewContainer *>(widget(tab)))
+    {
+        blockSignals(true);
+        removeWidget(c);
+        blockSignals(false);
+        m_tabBar->blockSignals(true);
+        m_tabBar->removeTab(tab);
+        m_tabBar->blockSignals(false);
+        return c;
+    }
+    return 0;
+}
+
+ViewContainer
+*TabManager::forTab(const int tab)
+{
+    if (ViewContainer *c = static_cast<ViewContainer *>(widget(tab)))
+        return c;
+    return 0;
+}
+
+void
+TabManager::setTabBar(TabBar *tabBar)
+{
+    m_tabBar = tabBar;
+    connect(m_tabBar, SIGNAL(tabMoved(int,int)), this, SLOT(tabMoved(int, int)));
+    connect(m_tabBar, SIGNAL(currentChanged(int)), this, SLOT(setCurrentIndex(int)));
+    connect(m_tabBar, SIGNAL(currentChanged(int)), this, SIGNAL(currentTabChanged(int)));
+    connect(m_tabBar, SIGNAL(newTabRequest()), this, SIGNAL(newTabRequest()));
+    connect(m_tabBar, SIGNAL(tabCloseRequested(int)), this, SIGNAL(tabCloseRequested(int)));
+}
+
+void
+TabManager::tabMoved(int from, int to)
+{
+    blockSignals(true);
+    QWidget *w = widget(from);
+    removeWidget(w);
+    insertWidget(to, w);
+    blockSignals(false);
+}
+
+int
+TabManager::insertTab(int index, ViewContainer *c, const QIcon &icon, const QString &text)
+{
+    if (!c)
+        return -1;
+    index = insertWidget(index, c);
+    m_tabBar->insertTab(index, icon, text);
+}
+

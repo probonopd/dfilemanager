@@ -18,13 +18,13 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QImageReader>
 
 #include "flowview.h"
 #include "mainwindow.h"
 #include "config.h"
 #include "infowidget.h"
 #include "operations.h"
-#include <QImageReader>
 
 using namespace DFM;
 
@@ -49,7 +49,6 @@ FlowView::FlowView(QWidget *parent)
     m_splitter->restoreState(Store::config.views.flowSize);
 
     connect(m_flow, SIGNAL(centerIndexChanged(QModelIndex)), this, SLOT(flowCurrentIndexChanged(QModelIndex)));
-    connect(m_flow, SIGNAL(centerIndexChanged(QModelIndex)), Ops::absWinFor<MainWindow *>(this)->infoWidget(), SLOT(hovered(QModelIndex)));
     connect(m_splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(saveSplitter()));
 
     m_splitter->setHandleWidth(style()->pixelMetric(QStyle::PM_SplitterWidth));

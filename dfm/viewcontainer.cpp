@@ -43,7 +43,7 @@ using namespace DFM;
 //    m_iconView->RUN;\
 //    m_columnsWidget->RUN;
 
-ViewContainer::ViewContainer(QWidget *parent, const QUrl &url)
+ViewContainer::ViewContainer(QWidget *parent)
     : QFrame(parent)
     , m_model(new FS::Model(this))
     , m_viewStack(new QStackedWidget(this))
@@ -52,14 +52,8 @@ ViewContainer::ViewContainer(QWidget *parent, const QUrl &url)
     , m_detailsView(new DetailsView(this))
     , m_flowView(new FlowView(this))
     , m_navBar(new NavBar(this, m_model))
-    , m_searchIndicator(new SearchIndicator(this))
     , m_layout(new QVBoxLayout())
-
 {
-    m_searchIndicator->setVisible(false);
-//    connect(m_model, SIGNAL(finishedWorking()), m_searchIndicator, SLOT(stop()));
-//    connect(m_model, SIGNAL(startedWorking()), m_searchIndicator, SLOT(start()));
-
     connect(m_model, SIGNAL(finishedWorking()), m_navBar, SLOT(stopAnimating()));
     connect(m_model, SIGNAL(startedWorking()), m_navBar, SLOT(startAnimating()));
 
@@ -74,15 +68,18 @@ ViewContainer::ViewContainer(QWidget *parent, const QUrl &url)
     setModel(m_model);
     setSelectionModel(new QItemSelectionModel(m_model));
 
+    connect(m_model, SIGNAL(urlChanged(QUrl)), this, SIGNAL(urlChanged(QUrl)));
+    connect(m_model, SIGNAL(urlLoaded(QUrl)), this, SIGNAL(urlLoaded(QUrl)));
+    connect(selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SIGNAL(selectionChanged()));
+    connect(m_model, SIGNAL(hiddenVisibilityChanged(bool)), this, SIGNAL(hiddenVisibilityChanged(bool)));
     connect(m_model, SIGNAL(urlChanged(QUrl)), this, SLOT(setUrl(QUrl)));
-    connect(m_model, SIGNAL(urlLoaded(QUrl)), this, SLOT(urlLoaded(QUrl)));
+    connect(m_model, SIGNAL(urlLoaded(QUrl)), this, SLOT(loadedUrl(QUrl)));
     connect(m_iconView, SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)));
     connect(m_iconView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
     connect(m_detailsView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
     connect(m_flowView->detailsView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+    connect(m_flowView->flow(), SIGNAL(centerIndexChanged(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
     connect(m_model, SIGNAL(sortingChanged(int,int)), this, SIGNAL(sortingChanged(int,int)));
-    connect(m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(modelSort(int,int)));
-    connect(MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(settingsChanged()));
 
     foreach (QAbstractItemView *v, QList<QAbstractItemView *>() << m_iconView << m_detailsView /*<< m_columnsView*/ << m_flowView->detailsView())
     {
@@ -104,34 +101,23 @@ ViewContainer::ViewContainer(QWidget *parent, const QUrl &url)
     setLayout(m_layout);
 
     setView((View)Store::config.behaviour.view, false);
-    m_model->setUrl(url);
-    settingsChanged();
+    loadSettings();
     emit iconSizeChanged(Store::config.views.iconView.iconSize*16);
 }
 
 ViewContainer::~ViewContainer()
 {
-
+//    qDebug() << "deleting container" << m_model->rootUrl() << this;
 }
 
 void
-ViewContainer::settingsChanged()
+ViewContainer::loadSettings()
 {
     QLayoutItem *m = m_layout->takeAt(m_layout->indexOf(m_navBar));
     QWidget *w = m->widget();
     delete m;
     m_layout->insertWidget(Store::config.behaviour.pathBarPlace, w);
-}
-
-void
-ViewContainer::modelSort(const int column, const int order)
-{
-//    m_detailsView->header()->blockSignals(true);
-//    m_detailsView->header()->setSortIndicator(column, (Qt::SortOrder)order);
-//    m_detailsView->header()->blockSignals(false);
-//    m_flowView->detailsView()->header()->blockSignals(true);
-//    m_flowView->detailsView()->header()->setSortIndicator(column, (Qt::SortOrder)order);
-//    m_flowView->detailsView()->header()->blockSignals(false);
+    emit settingsChanged();
 }
 
 PathNavigator *ViewContainer::pathNav() { return m_navBar->pathNav(); }
@@ -269,7 +255,7 @@ ViewContainer::setUrl(const QUrl &url)
 }
 
 void
-ViewContainer::urlLoaded(const QUrl &url)
+ViewContainer::loadedUrl(const QUrl &url)
 {
     for (int i = 0; i < views().count(); ++i)
         if (views().at(i))
@@ -277,7 +263,6 @@ ViewContainer::urlLoaded(const QUrl &url)
             views().at(i)->setAttribute(Qt::WA_Hover, true);
             views().at(i)->setMouseTracking(true);
         }
-
     m_detailsView->setItemsExpandable(true);
 }
 
@@ -428,12 +413,12 @@ QAbstractItemView
     return static_cast<QAbstractItemView *>(m_flowView->detailsView());
 }
 
-void
-ViewContainer::resizeEvent(QResizeEvent *e)
-{
-    QWidget::resizeEvent(e);
-    m_searchIndicator->move(width()-256, height()-256);
-}
+//void
+//ViewContainer::resizeEvent(QResizeEvent *e)
+//{
+//    QWidget::resizeEvent(e);
+//    m_searchIndicator->move(width()-256, height()-256);
+//}
 
 void
 ViewContainer::setRootIndex(const QModelIndex &index)

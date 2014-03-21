@@ -18,14 +18,13 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QDebug>
+#include <QCompleter>
 
 #include "pathnavigator.h"
 #include "mainwindow.h"
 #include "iojob.h"
 #include "iconprovider.h"
-#include <QDebug>
-#include <QCompleter>
-#include <QDirModel>
 
 using namespace DFM;
 
@@ -172,8 +171,11 @@ NavButton::dragLeaveEvent(QDragLeaveEvent *e)
 void
 NavButton::paintEvent(QPaintEvent *e)
 {
-//    QToolButton::paintEvent(e);
-    const QPixmap &pix = m_nav->model()->fileIcon(m_nav->model()->index(m_url)).pixmap(16);
+    const QModelIndex &index = m_nav->model()->index(m_url);
+    QIcon icon = index.data(FS::FileIconRole).value<QIcon>();
+    if (icon.isNull())
+        icon = FS::FileIconProvider::fileIcon(QFileInfo(m_url.toLocalFile()));
+    const QPixmap &pix = icon.pixmap(16);
     QPainter p(this);
     p.drawTiledPixmap(m_margin, 0, 16, 16, pix);
 
@@ -229,12 +231,16 @@ void
 NavButton::mouseReleaseEvent(QMouseEvent *e)
 {
     if (!m_hasPress)
-        return QWidget::mouseReleaseEvent(e);
+    {
+        QWidget::mouseReleaseEvent(e);
+        return;
+    }
 
     if (m_hasPress && !rect().contains(e->pos()))
     {
         m_hasPress = false;
-        return QWidget::mouseReleaseEvent(e);
+        QWidget::mouseReleaseEvent(e);
+        return;
     }
 
     if (e->button() == Qt::LeftButton)
@@ -502,8 +508,7 @@ NavBar::setUrl(const QUrl &url)
         m_pathBox->addItem(url.toString());
 
     m_pathBox->setEditText(url.toString());
-//    if (!url.isLocalFile())
-        setEditable(!url.isLocalFile());
+    setEditable(!url.isLocalFile());
 }
 
 void
@@ -522,11 +527,9 @@ NavBar::setEditable(const bool editable)
     currentWidget()->setFocus();     
 }
 
-void
-NavBar::toggleEditable()
-{
-    setEditable(currentWidget() == m_pathNav);
-}
+void NavBar::toggleEditable() { setEditable(currentWidget() == m_pathNav); }
+void NavBar::stopAnimating() { m_schemeButton->stopAnimating(); }
+void NavBar::startAnimating() { m_schemeButton->startAnimating(); }
 
 //-----------------------------------------------------------------------------
 

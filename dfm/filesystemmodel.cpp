@@ -89,11 +89,11 @@ Model::Model(QObject *parent)
     , m_timer(new QTimer(this))
     , m_isDestroyed(false)
 {
-    connect (DataLoader::instance(), SIGNAL(newData(QString)), this, SLOT(newData(QString)));
-    connect (m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)));
-    connect (m_dataGatherer, SIGNAL(nodeGenerated(QString,Node*)), this, SLOT(nodeGenerated(QString,Node*)));
+    connect(DataLoader::instance(), SIGNAL(newData(QString)), this, SLOT(newData(QString)));
+    connect(m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)));
+    connect(m_dataGatherer, SIGNAL(nodeGenerated(QString,Node*)), this, SLOT(nodeGenerated(QString,Node*)));
     connect(this, SIGNAL(fileRenamed(QString,QString,QString)), DataLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
-    connect (m_timer, SIGNAL(timeout()), this, SLOT(refreshCurrent()));
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(refreshCurrent()));
     connect(DataLoader::instance(), SIGNAL(noLongerExists(QString)), this, SLOT(fileDeleted(QString)));
     connect(Devices::instance(), SIGNAL(deviceAdded(Device*)), this, SLOT(updateFileNode()));
     connect(Devices::instance(), SIGNAL(deviceRemoved(Device*)), this, SLOT(updateFileNode()));
@@ -103,6 +103,8 @@ Model::Model(QObject *parent)
 Model::~Model()
 {
     m_isDestroyed = true;
+    m_dataGatherer->setCancelled(true);
+    m_dataGatherer->wait();
     delete m_rootNode;
     delete m_schemeMenu;
 }
@@ -475,7 +477,7 @@ Model::index(const QUrl &url)
     if (url.scheme().isEmpty())
         return QModelIndex();
 
-    if (url == m_url && m_current)
+    if (m_current && url == m_url)
         return createIndex(m_current->row(), 0, m_current);
 
     Node *sNode = schemeNode(url.scheme());

@@ -115,6 +115,7 @@ private:
 };
 
 class DeviceManager;
+class Button;
 class DeviceItem : public QObject, public Place //have to inherit QObject for signals/slots/eventHandling
 {
     Q_OBJECT

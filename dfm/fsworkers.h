@@ -48,7 +48,7 @@ class Node : public QFileInfo
 public:
     enum Children { Visible = 0, Hidden = 1, Filtered = 2, ChildrenTypeCount = 3 };
     Node(FS::Model *model = 0, const QUrl &url = QUrl(), Node *parent = 0, const QString &filePath = QString());
-    ~Node();
+    virtual ~Node();
 
     inline Model *model() { return m_model; }
     Worker::Gatherer *gatherer();

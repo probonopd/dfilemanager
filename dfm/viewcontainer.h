@@ -35,7 +35,6 @@
 #include "flowview.h"
 #include "filesystemmodel.h"
 #include "pathnavigator.h"
-#include "searchbox.h"
 
 namespace DFM
 {
@@ -52,7 +51,7 @@ class ViewContainer : public QFrame
     Q_OBJECT
 public:
     enum View { Icon = 0, Details = 1, Columns = 2, Flow = 3 };
-    ViewContainer(QWidget *parent = 0, const QUrl &url = QUrl());
+    explicit ViewContainer(QWidget *parent = 0);
     ~ViewContainer();
     static QList<QAction *> rightClickActions();
     FS::Model *model();
@@ -81,7 +80,6 @@ public:
     void rename();
     void goHome();
     void animateIconSize(int start, int stop);
-    SearchIndicator *searchIndicator() { return m_searchIndicator; }
     NavBar *breadCrumbs();
     QString currentFilter();
     void sort(const int column = 0, const Qt::SortOrder order = Qt::AscendingOrder);
@@ -89,7 +87,6 @@ public:
 
 protected:
     void leaveEvent(QEvent *) { emit leftView(); }
-    void resizeEvent(QResizeEvent *);
     void setModel(FS::Model *model);
     void setSelectionModel(QItemSelectionModel *selectionModel);
     void scrollToSelection();
@@ -105,6 +102,11 @@ signals:
     void leftView();
     void filterChanged();
     void sortingChanged(const int column, const int order);
+    void settingsChanged();
+    void selectionChanged();
+    void urlChanged(const QUrl &url);
+    void urlLoaded(const QUrl &url);
+    void hiddenVisibilityChanged(const bool visible);
     
 public slots:
     void activate(const QModelIndex &index);
@@ -115,9 +117,8 @@ private slots:
     void genNewTabRequest(const QModelIndex &index);
     void customActionTriggered();
     void scriptTriggered();
-    void urlLoaded(const QUrl &url);
-    void modelSort(const int column, const int order);
-    void settingsChanged();
+    void loadedUrl(const QUrl &url);
+    void loadSettings();
 
 private:
     bool m_back;
@@ -131,7 +132,6 @@ private:
     QStackedWidget *m_viewStack;
     QItemSelectionModel *m_selectModel;
     NavBar *m_navBar;
-    SearchIndicator *m_searchIndicator;
     QVBoxLayout *m_layout;
 };
 

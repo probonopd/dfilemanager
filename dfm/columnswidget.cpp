@@ -50,16 +50,16 @@ ColumnsWidget::ColumnsWidget(QWidget *parent)
     m_viewport->setAutoFillBackground(true);
     m_viewport->setBackgroundRole(QPalette::Base);
     m_viewport->setFrameStyle(0);
-    connect(MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(reconnectViews()));
+    connect(m_container, SIGNAL(settingsChanged()), this, SLOT(reconnectViews()));
     connect(horizontalScrollBar(), SIGNAL(rangeChanged(int,int)), this, SLOT(showCurrent()));
     setCursor(Qt::ArrowCursor);
 }
 
 void
-ColumnsWidget::setModel(QAbstractItemModel *model)
+ColumnsWidget::setModel(FS::Model *model)
 {
 //    qDebug() << model << static_cast<FileProxyModel *>(model)->fsModel();
-    m_model = static_cast<FS::Model *>(model);
+    m_model = model;
 }
 
 QModelIndex ColumnsWidget::currentIndex() { return m_currentView->currentIndex(); }

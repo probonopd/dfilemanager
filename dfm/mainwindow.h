@@ -45,6 +45,7 @@
 namespace DFM
 {
 class TabBar;
+class TabManager;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -95,7 +96,8 @@ public:
 
     MainWindow(const QStringList &arguments = QStringList(), bool autoTab = true);
     ~MainWindow();
-    inline ViewContainer *activeContainer() { return m_activeContainer; }
+    ViewContainer *activeContainer();
+    inline FS::Model *model() { return activeContainer()->model(); }
     inline PlacesView *placesView() { return m_placesView; }
     inline QToolBar *toolBar() { return m_toolBar; }
     static ViewContainer *currentContainer();
@@ -103,7 +105,7 @@ public:
     static MainWindow *window(QWidget *w) { QWidget *p = w; while (p->parentWidget()) p = p->parentWidget(); return qobject_cast<MainWindow *>(p); }
     static PlacesView *places();
     static QList<MainWindow *> openWindows();
-    inline ViewContainer *containerForTab(int tab) { return static_cast<ViewContainer *>(m_stackedWidget->widget(tab)); }
+    ViewContainer *containerForTab(int tab);
     inline InfoWidget *infoWidget() { return m_infoWidget; }
     inline QMenu *mainMenu() { return m_mainMenu; }
     inline QSlider *iconSizeSlider() { return m_iconSizeSlider; }
@@ -117,7 +119,7 @@ public slots:
     void addTab(const QUrl &url = QUrl());
     void addTab(ViewContainer *container, int index = -1);
     void receiveMessage(const QStringList &message);
-    inline void setRootPath(const QString &path) { m_model->setUrl(QUrl::fromLocalFile(path)); }
+    inline void setRootPath(const QString &path) { model()->setUrl(QUrl::fromLocalFile(path)); }
 
 protected:
     void closeEvent(QCloseEvent *event);
@@ -165,7 +167,7 @@ private slots:
     void createDirectory();
     void setViewIconSize(int);
     void setSliderPos(int size);
-    void tabChanged(int currentIndex);
+    void currentTabChanged(int tab);
     void setActions();
     void openTab();
     void newTab();
@@ -174,9 +176,7 @@ private slots:
     void showSettings();
     void fileProperties();
     void hidePath();
-    void tabClosed(int);
-    void tabMoved(int,int);
-    void stackChanged(int);
+    void tabCloseRequest(int);
     void newWindow();
     void readSettings();
     void activateUrl(const QUrl &url);
@@ -200,10 +200,8 @@ private:
     QLayout *m_statusLayout;
     InfoWidget *m_infoWidget;
     RecentFoldersView *m_recentFoldersView;
-    FS::Model *m_model;
-    ViewContainer *m_activeContainer;
     PlacesView *m_placesView;
-    QStackedWidget *m_stackedWidget;
+    TabManager *m_tabManager;
     TabBar *m_tabBar;
     QMainWindow *m_tabWin;
     QMenu *m_mainMenu;
@@ -213,9 +211,7 @@ private:
     QProgressBar *m_ioProgress;
 
     Menu *m_goMenu;
-
     QAction *m_actions[ActionCount];
-
     QActionGroup *m_sortActs;
 
     bool m_cut;

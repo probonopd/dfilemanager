@@ -27,6 +27,7 @@
 #include <QDragMoveEvent>
 #include <QDebug>
 #include <QHeaderView>
+
 #include "filesystemmodel.h"
 #include "viewcontainer.h"
 #include "helpers.h"

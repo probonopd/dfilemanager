@@ -23,6 +23,7 @@
 
 #include <QScrollArea>
 #include <QHBoxLayout>
+
 #include "filesystemmodel.h"
 #include "columnsview.h"
 #include "viewcontainer.h"
@@ -37,7 +38,7 @@ class ColumnsWidget : public QScrollArea
 public:
     explicit ColumnsWidget(QWidget *parent = 0);
     ~ColumnsWidget(){}
-    void setModel(QAbstractItemModel *model);
+    void setModel(FS::Model *model);
     inline void setSelectionModel(QItemSelectionModel *model) { m_slctModel = model; }
     QModelIndex currentIndex();
     ColumnsView *currentView();

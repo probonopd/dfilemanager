@@ -18,12 +18,6 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-
-#include "iconview.h"
-#include "viewcontainer.h"
-#include "mainwindow.h"
-#include "operations.h"
-#include "viewanimator.h"
 #include <QAction>
 #include <QMenu>
 #include <QProcess>
@@ -37,13 +31,17 @@
 #include <QTextFormat>
 #include <QDesktopServices>
 
+#include "iconview.h"
+#include "viewcontainer.h"
+#include "mainwindow.h"
+#include "operations.h"
+#include "viewanimator.h"
+
 #define TEXT index.data().toString()
 #define RECT option.rect
 #define FM option.fontMetrics
 #define PAL option.palette
 #define DECOSIZE option.decorationSize
-
-//Q_DECLARE_METATYPE(QPainterPath)
 
 using namespace DFM;
 
@@ -280,8 +278,8 @@ protected:
         m_textData.insert(index.internalPointer(), theText);
         return theText;
     }
-
     static inline int textFlags() { return Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap; }
+
 private:
     QPixmap m_shadowData[9];
     int m_size;
@@ -329,7 +327,7 @@ IconView::IconView(QWidget *parent)
     connect(verticalScrollBar(), SIGNAL(valueChanged(int)), viewport(), SLOT(update()));
     connect(m_wheelTimer, SIGNAL(timeout()), this, SLOT(scrollEvent()));
     connect(this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)));
-    connect(MainWindow::currentWindow(), SIGNAL(settingsChanged()), this, SLOT(correctLayout()));
+    connect(m_container, SIGNAL(settingsChanged()), this, SLOT(correctLayout()));
     connect(m_sizeTimer, SIGNAL(timeout()), this, SLOT(updateIconSize()));
     connect(m_layTimer, SIGNAL(timeout()), this, SLOT(calculateRects()));
     connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollAnimation()));
@@ -391,8 +389,9 @@ IconView::wheelEvent(QWheelEvent * event)
 
         if (event->modifiers() & Qt::CTRL)
         {
-            QSlider *s = MainWindow::window(this)->iconSizeSlider();
-            s->setValue(s->value()+(numDegrees>0?1:-1));
+            MainWindow *mw = MainWindow::window(this);
+            if (QSlider *s = mw->iconSizeSlider())
+                s->setValue(s->value()+(numDegrees>0?1:-1));
         }
         else
         {
@@ -906,14 +905,6 @@ bool
 IconView::isCategorized()
 {
     return Store::config.views.iconView.categorized;
-}
-
-void
-IconView::rowsInserted(const QModelIndex &parent, int start, int end)
-{
-//    QAbstractItemView::rowsInserted(parent, start, end);
-//    if (!m_layTimer->isActive())
-//        m_layTimer->start(20);
 }
 
 void

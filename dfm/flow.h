@@ -63,7 +63,8 @@ class GraphicsScene : public QGraphicsScene
 {
     Q_OBJECT
 public:
-    inline explicit GraphicsScene(const QRectF &rect = QRectF(), QWidget *parent = 0) : QGraphicsScene(rect, parent), m_preview(qobject_cast<Flow *>(parent)) {}
+    inline explicit GraphicsScene(const QRectF &rect = QRectF(), QWidget *parent = 0) : QGraphicsScene(rect, parent), m_preview(qobject_cast<Flow *>(parent)){}
+    ~GraphicsScene(){}
     inline Flow *preView() { return m_preview; }
     inline void setForegroundBrush(const QBrush &brush) { m_fgBrush = brush; }
 
@@ -78,6 +79,7 @@ class RootItem : public QGraphicsPixmapItem
 {
 public:
     inline explicit RootItem(QGraphicsScene *scene = 0) : QGraphicsPixmapItem() { scene->addItem(this); }
+    ~RootItem(){}
     QRectF boundingRect() { return scene()->sceneRect(); }
 };
 

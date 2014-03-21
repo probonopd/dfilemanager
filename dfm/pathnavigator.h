@@ -45,6 +45,7 @@ namespace DFM
 class PathNavigator;
 class NavBar;
 class PathBox;
+class Button;
 class NavButton : public QWidget
 {
     Q_OBJECT
@@ -175,8 +176,8 @@ public slots:
     void setUrl(const QUrl &url);
     void paletteOps();
     void postConstructorJobs();
-    inline void startAnimating() { m_schemeButton->startAnimating(); }
-    inline void stopAnimating() { m_schemeButton->stopAnimating(); }
+    void startAnimating();
+    void stopAnimating();
 
 signals:
     void newPath(const QString &path);

@@ -268,6 +268,8 @@ Flow::~Flow()
 {
     m_dataLoader->discontinue();
     m_dataLoader->wait();
+    qDeleteAll(m_items);
+    m_items.clear();
 }
 
 QModelIndex

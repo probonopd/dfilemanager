@@ -76,7 +76,7 @@ DetailsView::DetailsView(QWidget *parent)
     connect(this, SIGNAL(sortIndicatorChanged(int,int)), container(), SIGNAL(sortingChanged(int,int)));
     connect(header(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));
     connect(container(), SIGNAL(sortingChanged(int,int)), this, SLOT(sortingChanged(int,int)));
-    connect(MainWindow::window(this), SIGNAL(settingsChanged()), this, SLOT(readSettings()));
+    connect(container(), SIGNAL(settingsChanged()), this, SLOT(readSettings()));
 }
 
 DetailsView::~DetailsView()

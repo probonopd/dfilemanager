@@ -202,6 +202,8 @@ Node::rowOf(Node *child) const
 QIcon
 Node::icon()
 {
+    if (this == m_model->m_rootNode)
+        return QIcon();
     if (Devices::instance()->mounts().contains(m_filePath))
         return FileIconProvider::typeIcon(FileIconProvider::Drive);
     Data *d = moreData();

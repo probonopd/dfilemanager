@@ -96,6 +96,7 @@ class SearchBox : public QLineEdit
     Q_OBJECT
 public:
     explicit SearchBox(QWidget *parent = 0);
+    ~SearchBox(){}
     inline SearchMode mode() { return m_mode; }
 
 public slots:
