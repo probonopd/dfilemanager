@@ -1105,6 +1105,7 @@ TabManager::tabMoved(int from, int to)
     QWidget *w = widget(from);
     removeWidget(w);
     insertWidget(to, w);
+    setCurrentIndex(m_tabBar->currentIndex());
     blockSignals(false);
 }
 

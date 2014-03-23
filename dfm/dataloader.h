@@ -60,6 +60,8 @@ public:
     static inline void clearQueue() { instance()->_clearQueue(); }
     static inline void removeData(const QString &file) { instance()->_removeData(file); }
     static inline struct Data *data(const QString &file) { return instance()->_data(file); }
+    bool hasData(const QString &file) const;
+    struct Data *fetchData(const QString &file);
 
 public slots:
     void discontinue() { m_mtx.lock(); m_queue.clear(); m_mtx.unlock(); Thread::discontinue(); }

@@ -67,17 +67,26 @@ DataLoader::_removeData(const QString &file)
         delete m_data.take(file);
 }
 
+bool
+DataLoader::hasData(const QString &file) const
+{
+    QMutexLocker locker(&m_mtx);
+    return m_data.contains(file);
+}
+
+Data
+*DataLoader::fetchData(const QString &file)
+{
+    QMutexLocker locker(&m_mtx);
+    return m_data.value(file, 0);
+}
+
 Data
 *DataLoader::_data(const QString &file)
 {
-    m_mtx.lock();
-    const bool hasData = m_data.contains(file);
-    m_mtx.unlock();
-    if (hasData)
+    if (hasData(file))
     {
-        m_mtx.lock();
-        Data *data = m_data.value(file);
-        m_mtx.unlock();
+        Data *data = fetchData(file);
         const bool isChecked = data->lastModified == QFileInfo(file).lastModified().toString();
         if (isChecked)
             return data;
