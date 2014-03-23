@@ -40,6 +40,8 @@ class WindowFrame : public QWidget
 {
 public:
     inline explicit WindowFrame(QWidget *parent = 0) : QWidget(parent) {setAttribute(Qt::WA_TransparentForMouseEvents);}
+    ~WindowFrame(){}
+
 protected:
     void paintEvent(QPaintEvent *);
 
@@ -51,6 +53,7 @@ class WinButton : public QFrame
 public:
     enum Type { Close = 0, Min, Max, Other };
     WinButton(Type t = Other, QWidget *parent = 0);
+    ~WinButton(){}
 
 signals:
     void clicked();
@@ -78,6 +81,8 @@ class FooBar : public QWidget
 public:
     enum TabShape { Standard = 0, Chrome };
     explicit FooBar(QWidget *parent = 0);
+    ~FooBar(){}
+
     void setTabBar(TabBar *tabBar);
     static int headHeight(MainWindow *win);
     static QLinearGradient headGrad(MainWindow *win);
@@ -110,6 +115,8 @@ class TabCloser : public WinButton
 {
 public:
     inline explicit TabCloser(QWidget *parent = 0) : WinButton(WinButton::Other, parent) {}
+    ~TabCloser(){}
+
 protected:
     void paintEvent(QPaintEvent *);
 };
@@ -118,6 +125,7 @@ class TabButton : public WinButton
 {
 public:
     explicit TabButton(QWidget *parent = 0);
+    ~TabButton(){}
 
 protected:
     void paintEvent(QPaintEvent *e);
@@ -130,7 +138,8 @@ private:
 class DropIndicator : public QWidget
 {
 public:
-    inline explicit DropIndicator(QWidget *parent = 0) : QWidget(parent){}
+    inline explicit DropIndicator(QWidget *parent = 0):QWidget(parent){}
+    ~DropIndicator(){}
 protected:
     void paintEvent(QPaintEvent *);
 };
@@ -140,7 +149,9 @@ class TabBar : public QTabBar
     Q_OBJECT
 public:
     explicit TabBar(QWidget *parent = 0);
+    ~TabBar(){}
     void setAddTabButton(TabButton *addButton);
+    void setTabCloseButton(QToolButton *closeButton);
     
 signals:
     void newTabRequest();
@@ -167,12 +178,16 @@ protected:
 private slots:
     void tabCloseRequest();
     void newWindowTab(int tab);
+    void closeCurrent();
+    void postConstructorOps();
 
 private:
     friend class FooBar;
     int m_hoveredTab;
     bool m_hasPress, m_dragCancelled, m_filteringEvents;
+    QHBoxLayout *m_layout;
     TabButton *m_addButton;
+    QToolButton *m_closeButton;
     DropIndicator *m_dropIndicator;
     QString m_lastDraggedFile;
 };

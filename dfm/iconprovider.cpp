@@ -57,6 +57,7 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
         case Clear : iconString = "list-remove"; break;
         case Sort : iconString = "view-sort-ascending"; break;
         case Hidden : iconString = "inode-directory"; break;
+        case CloseTab : iconString = "tab-close"; break;
         default : iconString = "";
         }
 
@@ -191,6 +192,7 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
         break;
     }
     case Clear :
+    case CloseTab :
     {
         p.setRenderHint(QPainter::Antialiasing);
         p.setPen(Qt::NoPen);

@@ -47,7 +47,8 @@ enum Type { IconView = 0,
             Hidden,
             Animator,
             OK,
-            Circle
+            Circle,
+            CloseTab
           };
 
 const QIcon icon(Type type, int size, QColor color, bool themeIcon);

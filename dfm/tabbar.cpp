@@ -595,6 +595,8 @@ TabBar::TabBar(QWidget *parent)
     , m_hasPress(false)
     , m_dropIndicator(new DropIndicator(this))
     , m_filteringEvents(false)
+    , m_closeButton(0)
+    , m_layout(new QHBoxLayout())
 {
     setSelectionBehaviorOnRemove(QTabBar::SelectPreviousTab);
     setDocumentMode(true);
@@ -609,8 +611,44 @@ TabBar::TabBar(QWidget *parent)
     setAcceptDrops(true);
     m_dropIndicator->setFixedWidth(8);
     m_dropIndicator->setVisible(false);
+
+    m_layout->setContentsMargins(0, 0, 0, 0);
+    m_layout->setSpacing(0);
+    m_layout->addStretch();
+
     if (!Store::config.behaviour.gayWindow)
+    {
+        setTabCloseButton(new QToolButton());
         setAddTabButton(new TabButton(this));
+        QTimer::singleShot(0, this, SLOT(postConstructorOps()));
+    }
+
+    setLayout(m_layout);
+}
+
+void
+TabBar::postConstructorOps()
+{
+//    m_closeButton->setAutoRaise(true);
+//    m_closeButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    m_closeButton->setShortcut(QKeySequence(QString("Ctrl+W")));
+    const QIcon &icon = IconProvider::icon(IconProvider::CloseTab, 16, palette().color(foregroundRole()), Store::config.behaviour.systemIcons);
+    m_closeButton->setIcon(icon);
+}
+
+void
+TabBar::setTabCloseButton(QToolButton *closeButton)
+{
+    QWidget *w(new QWidget());
+    w->setContentsMargins(0, 0, 0, 0);
+    QVBoxLayout *l(new QVBoxLayout());
+    l->setContentsMargins(0, 0, 0, 0);
+    l->setSpacing(0);
+    m_closeButton = closeButton;
+    l->addWidget(m_closeButton);
+    connect(closeButton, SIGNAL(clicked()), this, SLOT(closeCurrent()));
+    w->setLayout(l);
+    m_layout->addWidget(w);
 }
 
 void
@@ -620,7 +658,6 @@ TabBar::setAddTabButton(TabButton *addButton)
     connect(addButton, SIGNAL(clicked()), this, SIGNAL(newTabRequest()));
     addButton->show();
 }
-
 void
 TabBar::correctAddButtonPos()
 {
@@ -629,6 +666,15 @@ TabBar::correctAddButtonPos()
     int x = tabRect(count()-1).right()+Store::config.behaviour.tabOverlap/2;
     int y = qFloor((float)rect().height()/2.0f-(float)m_addButton->height()/2.0f);
     m_addButton->move(x, y);
+}
+
+void
+TabBar::closeCurrent()
+{
+    if (count() < 2)
+        return;
+
+    emit tabCloseRequested(currentIndex());
 }
 
 void
@@ -725,6 +771,7 @@ TabBar::resizeEvent(QResizeEvent *e)
     QTabBar::resizeEvent(e);
     if (!Store::config.behaviour.gayWindow && m_addButton)
         m_addButton->setFixedSize(28, height());
+
     correctAddButtonPos();
 }
 
@@ -971,7 +1018,11 @@ TabBar::tabSizeHint(int index) const
         return QSize(qMin(Store::config.behaviour.tabWidth,(width()/count())-(m_addButton?qCeil(((float)m_addButton->width()/(float)count())+2):0)), Store::config.behaviour.tabHeight/*QTabBar::tabSizeHint(index).height()+3*/);
     else
     {
-        int w = width()-m_addButton->width();
+        int w = width();
+        if (m_addButton)
+            w -= m_addButton->width();
+        if (m_closeButton)
+            w -= m_closeButton->width();
         return QSize(qMin(150, w/count()), QTabBar::tabSizeHint(index).height());
     }
 }
