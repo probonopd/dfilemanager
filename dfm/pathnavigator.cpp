@@ -488,9 +488,11 @@ NavBar::urlFromEdit(const QString &urlString)
         if (QFileInfo(path).exists())
             url = QUrl::fromLocalFile(path);
     }
-    m_fsModel->setUrl(url);
-    m_pathBox->setEditText(url.toString());
-    setEditable(!QFileInfo(url.toLocalFile()).exists());
+    if (m_fsModel->setUrl(url))
+        m_pathBox->setEditText(url.toString());
+    else
+        m_pathBox->setEditText(m_fsModel->rootUrl().toString());
+    setEditable(!QFileInfo(m_fsModel->rootUrl().toLocalFile()).exists());
 }
 
 void

@@ -24,6 +24,7 @@
 
 #include <QString>
 #include <QDir>
+#include <QUrl>
 
 namespace DFM
 {
@@ -38,6 +39,8 @@ struct IOJobData
 };
 
 static int defaultInteger = 0;
+static bool defaultBool = false;
+static QUrl defaultUrl = QUrl();
 static QDir::Filters allEntries = QDir::AllEntries|QDir::NoDotAndDotDot|QDir::Hidden|QDir::System;
 
 namespace FS
@@ -53,6 +56,36 @@ enum Roles
     FileType = Qt::UserRole + 5,
     Url = Qt::UserRole + 6
 };
+}
+
+template<typename T, typename Class>
+static inline T call(Class *object, T (Class::*function)())
+{
+    return (object->*function)();
+}
+
+template<typename T, typename Class, typename FirstType>
+static inline T call(Class *object, T (Class::*function)(FirstType), FirstType arg1)
+{
+    return (object->*function)(arg1);
+}
+
+template<typename T, typename Class, typename FirstType, typename SecondType>
+static inline T call(Class *object, T (Class::*function)(FirstType, SecondType), FirstType arg1, SecondType arg2)
+{
+    return (object->*function)(arg1, arg2);
+}
+
+template<typename T, typename Class, typename FirstType, typename SecondType, typename ThirdType>
+static inline T call(Class *object, T (Class::*function)(FirstType, SecondType, ThirdType), FirstType arg1, SecondType arg2, ThirdType arg3)
+{
+    return (object->*function)(arg1, arg2, arg3);
+}
+
+template<typename T, typename Class, typename FirstType, typename SecondType, typename ThirdType, typename FourthType>
+static inline T call(Class *object, T (Class::*function)(FirstType, SecondType, ThirdType, FourthType), FirstType arg1, SecondType arg2, ThirdType arg3, FourthType arg4)
+{
+    return (object->*function)(arg1, arg2, arg3, arg4);
 }
 
 }

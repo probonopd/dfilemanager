@@ -42,6 +42,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     , m_sortButton(0)
     , m_menuButton(0)
     , m_menuAction(0)
+    , m_tabBar(0)
     , m_tabWin(new QMainWindow(this))
     , m_toolBar(new QToolBar(tr("Show ToolBar"), this))
     , m_statusBar(new StatusBar(this))
@@ -49,7 +50,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     addActions(Store::customActions());
     s_openWindows << this;
     s_currentWindow = this;
-    QFrame *center = new QFrame(this);
+    QFrame *center(new QFrame(this));
     center->setFrameStyle(0/*QFrame::StyledPanel|QFrame::Sunken*/);
     m_filterBox = new SearchBox(m_toolBar);
     m_toolBarSpacer = new QWidget(m_toolBar);
@@ -63,7 +64,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
 
     if (Store::config.behaviour.gayWindow)
     {
-        FooBar *fooBar = new FooBar(this);
+        FooBar *fooBar(new FooBar(this));
         fooBar->setVisible(true);
         m_tabBar = new TabBar(fooBar);
         fooBar->setTabBar(m_tabBar);
@@ -115,7 +116,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     m_tabBar->setDocumentMode(true);
     m_tabWin->setCentralWidget(m_tabManager);
 
-    bool needTab = true;
+    bool needTab(true);
     if (autoTab)
     {
         for (int i = 0; i<arguments.count(); ++i)
@@ -133,13 +134,13 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     if (autoTab && needTab)
     {
         addTab(QUrl::fromLocalFile(Store::config.startPath));
-        int sort = 0;
-        Qt::SortOrder asc = Qt::AscendingOrder;
+        int sort(0);
+        Qt::SortOrder asc(Qt::AscendingOrder);
         Ops::getSorting(Store::config.startPath, sort, asc);
         sortingChanged(sort, (int)asc);
     }
 
-    QVBoxLayout *vBox = new QVBoxLayout();
+    QVBoxLayout *vBox(new QVBoxLayout());
     vBox->setMargin(0);
     vBox->setSpacing(0);
     if (!Store::config.behaviour.gayWindow)
@@ -383,8 +384,8 @@ MainWindow::urlChanged(const QUrl &url)
 {
     if (!sender())
         return;
-    ViewContainer *c = static_cast<ViewContainer *>(sender());
-    const int tab = m_tabManager->indexOf(c);
+    ViewContainer *c(static_cast<ViewContainer *>(sender()));
+    const int tab(m_tabManager->indexOf(c));
     const QString &title = c->model()->title(url);
     if (c == activeContainer())
     {
@@ -515,7 +516,7 @@ void
 MainWindow::toggleMenuVisible()
 {
     menuBar()->setVisible(m_actions[ShowMenuBar]->isChecked());
-    m_menuAction->setVisible(!m_actions[ShowMenuBar]->isChecked());
+    m_menuAction->setVisible(!m_actions[ShowMenuBar]->isChecked()&&!Store::config.behaviour.gayWindow);
 }
 
 void MainWindow::toggleStatusVisible() { m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked()); }

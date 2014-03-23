@@ -33,6 +33,7 @@
 #include <QMenu>
 #include <QTimer>
 #include <QLabel>
+#include <QToolBar>
 
 namespace DFM
 {

@@ -18,17 +18,18 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QTextLayout>
+#include <qmath.h>
+#include <QMessageBox>
+#include <QDrag>
+
 
 #include "tabbar.h"
 #include "config.h"
 #include "operations.h"
 #include "iconprovider.h"
 #include "iojob.h"
-
-#include <QTextLayout>
-#include <qmath.h>
-#include <QMessageBox>
-#include <QDrag>
+#include "globals.h"
 
 using namespace DFM;
 
@@ -159,7 +160,7 @@ FooBar::FooBar(QWidget *parent)
     , m_flags(Qt::Widget)
 {
     m_mainWin->installEventFilter(this);
-    if (Store::config.behaviour.frame)
+//    if (Store::config.behaviour.frame)
         m_frame = new WindowFrame(m_mainWin);
     m_toolBar->installEventFilter(this);
     m_toolBar->setAttribute(Qt::WA_NoSystemBackground);
@@ -231,10 +232,10 @@ FooBar::correctTabBarHeight()
     p.drawPixmap(confPix.rect(), realPix);
     p.end();
 
-    QToolButton *menu = new QToolButton(this);
+    Button *menu = new Button(this);
+    menu->setFixedSize(16, 16);
     menu->setIcon(confPix);
     menu->setMenu(m_mainWin->mainMenu());
-    menu->setPopupMode(QToolButton::InstantPopup);
 
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -265,6 +266,7 @@ FooBar::correctTabBarHeight()
         layout->addWidget(new WinButton(WinButton::Max, this));
         layout->addLayout(tl);
         layout->addWidget(menu);
+        layout->addSpacing(4);
     }
 
     QFont font = m_tabBar->font();
@@ -273,16 +275,12 @@ FooBar::correctTabBarHeight()
     m_tabBar->setAttribute(Qt::WA_Hover);
     m_tabBar->setMouseTracking(true);
     if (Store::config.behaviour.newTabButton)
-    {
-        TabButton *tb = new TabButton(m_tabBar);
-        connect(tb, SIGNAL(clicked()), m_tabBar, SIGNAL(newTabRequest()));
-        m_tabBar->setAddTabButton(tb);
-    }
+        m_tabBar->setAddTabButton(new TabButton(m_tabBar));
 
     setLayout(layout);
     setContentsMargins(0, 0, 0, 0);
     setFixedHeight(m_tabBar->height()+m_topMargin);
-    m_mainWin->setContentsMargins(0, height()+(int)Store::config.behaviour.frame, 0, 0);
+    m_mainWin->setContentsMargins(0, height()+1/*(int)Store::config.behaviour.frame*/, 0, 0);
 }
 
 QPainterPath
@@ -381,14 +379,14 @@ FooBar::eventFilter(QObject *o, QEvent *e)
          && e->type() == QEvent::Resize)
     {
         resize(m_mainWin->width(), height());
-        if (Store::config.behaviour.frame)
-        {
+//        if (Store::config.behaviour.frame)
+//        {
             m_frame->resize(m_mainWin->size());
             QRegion mask = m_frame->rect();
             mask -= m_frame->rect().adjusted(1, 4, -1, -4);
             m_frame->setMask(mask);
             move(0, 1);
-        }
+//        }
         m_mainWin->setMask(shape());
         return false;
     }
@@ -467,63 +465,115 @@ TabCloser::paintEvent(QPaintEvent *)
     pt.end();
 }
 
+TabButton::TabButton(QWidget *parent)
+    : WinButton(WinButton::Other, parent)
+{
+    if (Store::config.behaviour.gayWindow)
+        setFixedSize(28, 18);
+}
+
 void
 TabButton::paintEvent(QPaintEvent *e)
 {
     QPainter p(this);
-    p.translate(0.5f, 0.5f);
-    p.setRenderHint(QPainter::Antialiasing);
-
-    int y = bg.value()>fg.value()?1:-1;
-    QColor emb(Ops::colorMid(bg, /*y==1 ? */Qt::white /*: Qt::black*/, 2, 1));
-
-    if (Store::config.behaviour.tabShape == FooBar::Chrome)
+    if (Store::config.behaviour.gayWindow)
     {
-        QRect pr(rect().adjusted(1, 1, -1, -1));
-        int px = pr.x(), py = pr.y(), pw = pr.width()-1, ph = pr.height()-1;
-        QPainterPath path(QPoint(px+pw*0.05f, py));
-        path.lineTo(px+pw*0.75f, py);
-        path.quadTo(px+pw*0.85f, py, px+pw, py+ph*0.95f);
-        path.quadTo(px+pw, py+ph, px+pw*0.95f, py+ph);
-        path.lineTo(px+pw*0.25f, py+ph);
-        path.quadTo(px+pw*0.15f, py+ph, px, py+ph*0.05f);
-        path.quadTo(px, py, px+pw*0.05f, py);
-        path.closeSubpath();
+        p.translate(0.5f, 0.5f);
+        p.setRenderHint(QPainter::Antialiasing);
+        int y = bg.value()>fg.value()?1:-1;
+        QColor emb(Ops::colorMid(bg, /*y==1 ? */Qt::white /*: Qt::black*/, 2, 1));
 
+        if (Store::config.behaviour.tabShape == FooBar::Chrome)
+        {
+            QRect pr(rect().adjusted(1, 1, -1, -1));
+            int px = pr.x(), py = pr.y(), pw = pr.width()-1, ph = pr.height()-1;
+            QPainterPath path(QPoint(px+pw*0.05f, py));
+            path.lineTo(px+pw*0.75f, py);
+            path.quadTo(px+pw*0.85f, py, px+pw, py+ph*0.95f);
+            path.quadTo(px+pw, py+ph, px+pw*0.95f, py+ph);
+            path.lineTo(px+pw*0.25f, py+ph);
+            path.quadTo(px+pw*0.15f, py+ph, px, py+ph*0.05f);
+            path.quadTo(px, py, px+pw*0.05f, py);
+            path.closeSubpath();
+
+            p.setPen(emb);
+            p.drawPath(path.translated(0,1));
+
+            QLinearGradient it(pr.topLeft(), pr.bottomLeft());
+            it.setColorAt(0.0f, QColor(255,255,255,underMouse()?127:63));
+            it.setColorAt(1.0f, Qt::transparent);
+
+            p.setBrush(it);
+            p.setPen(low);
+            p.drawPath(path);
+        }
+
+        QRect vert(QPoint(0,0), QSize(2, 8));
+        vert.moveCenter(rect().center());
+        QRect hor(QPoint(0,0), QSize(8, 2));
+        hor.moveCenter(rect().center());
+        if (y == 1)
+        {
+            vert.translate(0, -1);
+            hor.translate(0, -1);
+        }
+
+        emb = y==1?high:low;
+        p.setBrush(emb);
         p.setPen(emb);
-        p.drawPath(path.translated(0,1));
+        p.drawRect(vert.translated(0, y));
+        p.drawRect(hor.translated(0, y));
 
-        QLinearGradient it(pr.topLeft(), pr.bottomLeft());
-        it.setColorAt(0.0f, QColor(255,255,255,underMouse()?127:63));
-        it.setColorAt(1.0f, Qt::transparent);
-
-        p.setBrush(it);
-        p.setPen(low);
-        p.drawPath(path);
+        p.setPen(underMouse()?hl:fg);
+        p.setBrush(underMouse()?hl:fg);
+        p.drawRect(vert);
+        p.drawRect(hor);
     }
-
-    QRect vert(QPoint(0,0), QSize(2, 8));
-    vert.moveCenter(rect().center());
-    QRect hor(QPoint(0,0), QSize(8, 2));
-    hor.moveCenter(rect().center());
-    if (y == 1)
+    else
     {
-        vert.translate(0, -1);
-        hor.translate(0, -1);
+        p.drawTiledPixmap(rect(), m_pix[underMouse()]);
     }
-
-    emb = y==1?high:low;
-    p.setBrush(emb);
-    p.setPen(emb);
-    p.drawRect(vert.translated(0, y));
-    p.drawRect(hor.translated(0, y));
-
-    p.setPen(underMouse()?hl:fg);
-    p.setBrush(underMouse()?hl:fg);
-    p.drawRect(vert);
-    p.drawRect(hor);
-
     p.end();
+}
+
+#define PLUS 6
+
+void
+TabButton::resizeEvent(QResizeEvent *e)
+{
+    WinButton::resizeEvent(e);
+    if (!Store::config.behaviour.gayWindow && e->size().height() != e->oldSize().height())
+    {
+        QStyleOptionTab tab;
+        tab.state = QStyle::State_Enabled;
+        tab.rect = rect();
+        tab.position = QStyleOptionTab::OnlyOneTab;
+
+        for (int i = 0; i < 2; ++i)
+        {
+            m_pix[i] = QPixmap(rect().size());
+            m_pix[i].fill(Qt::transparent);
+        }
+        QPainter p(&m_pix[0]);
+        style()->drawControl(QStyle::CE_TabBarTab, &tab, &p, parentWidget());
+        QRect plus(0, 0, PLUS, PLUS);
+        plus.moveCenter(rect().center());
+        p.setPen(QPen(Ops::colorMid(palette().color(foregroundRole()), palette().color(backgroundRole()), 4, 1), 2.0f));
+        p.setBrush(Qt::NoBrush);
+        p.translate(plus.topLeft());
+        p.drawLine(PLUS/2, 0, PLUS/2, PLUS);
+        p.drawLine(0, PLUS/2, PLUS, PLUS/2);
+        p.end();
+        p.begin(&m_pix[1]);
+        tab.state |= QStyle::State_MouseOver;
+        style()->drawControl(QStyle::CE_TabBarTab, &tab, &p, parentWidget());
+        p.setPen(QPen(palette().color(QPalette::Highlight), 2.0f));
+        p.setBrush(Qt::NoBrush);
+        p.translate(plus.topLeft());
+        p.drawLine(PLUS/2, 0, PLUS/2, PLUS);
+        p.drawLine(0, PLUS/2, PLUS, PLUS/2);
+        p.end();
+    }
 }
 
 void
@@ -559,12 +609,15 @@ TabBar::TabBar(QWidget *parent)
     setAcceptDrops(true);
     m_dropIndicator->setFixedWidth(8);
     m_dropIndicator->setVisible(false);
+    if (!Store::config.behaviour.gayWindow)
+        setAddTabButton(new TabButton(this));
 }
 
 void
-TabBar::setAddTabButton(QWidget *addButton)
+TabBar::setAddTabButton(TabButton *addButton)
 {
     m_addButton = addButton;
+    connect(addButton, SIGNAL(clicked()), this, SIGNAL(newTabRequest()));
     addButton->show();
 }
 
@@ -670,8 +723,9 @@ void
 TabBar::resizeEvent(QResizeEvent *e)
 {
     QTabBar::resizeEvent(e);
-    if (Store::config.behaviour.gayWindow && m_addButton)
-        correctAddButtonPos();
+    if (!Store::config.behaviour.gayWindow && m_addButton)
+        m_addButton->setFixedSize(28, height());
+    correctAddButtonPos();
 }
 
 void
@@ -702,7 +756,7 @@ TabBar::mousePressEvent(QMouseEvent *e)
 void
 TabBar::newWindowTab(int tab)
 {
-    ViewContainer *container = MainWindow::window(this)->takeContainer(tab);
+    ViewContainer *container(MainWindow::window(this)->takeContainer(tab));
     if (!container)
         return;
     MainWindow *win = new MainWindow(QStringList(), false);
@@ -916,7 +970,10 @@ TabBar::tabSizeHint(int index) const
     if (Store::config.behaviour.gayWindow)
         return QSize(qMin(Store::config.behaviour.tabWidth,(width()/count())-(m_addButton?qCeil(((float)m_addButton->width()/(float)count())+2):0)), Store::config.behaviour.tabHeight/*QTabBar::tabSizeHint(index).height()+3*/);
     else
-        return QSize(qMin(150,width()/count()), QTabBar::tabSizeHint(index).height());
+    {
+        int w = width()-m_addButton->width();
+        return QSize(qMin(150, w/count()), QTabBar::tabSizeHint(index).height());
+    }
 }
 
 void
@@ -928,15 +985,15 @@ TabBar::tabInserted(int index)
         TabCloser *tc = new TabCloser();
         connect(tc, SIGNAL(clicked()), this, SLOT(tabCloseRequest()));
         setTabButton(index, RightSide, tc);
-        correctAddButtonPos();
     }
+    correctAddButtonPos();
 }
 
 void
 TabBar::tabRemoved(int index)
 {
     QTabBar::tabRemoved(index);
-    if (Store::config.behaviour.gayWindow)
+//    if (Store::config.behaviour.gayWindow)
         correctAddButtonPos();
 }
 
@@ -1008,6 +1065,12 @@ TabManager::insertTab(int index, ViewContainer *c, const QIcon &icon, const QStr
     if (!c)
         return -1;
     index = insertWidget(index, c);
-    m_tabBar->insertTab(index, icon, text);
+    return m_tabBar->insertTab(index, icon, text);
+}
+
+int
+TabManager::addTab(ViewContainer *c, const QIcon &icon, const QString &text)
+{
+    return insertTab(-1, c, icon, text);
 }
 

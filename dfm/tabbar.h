@@ -117,9 +117,14 @@ protected:
 class TabButton : public WinButton
 {
 public:
-    inline explicit TabButton(QWidget *parent = 0) : WinButton(WinButton::Other, parent) {setFixedSize(28, 18);}
+    explicit TabButton(QWidget *parent = 0);
+
 protected:
     void paintEvent(QPaintEvent *e);
+    void resizeEvent(QResizeEvent *);
+
+private:
+    QPixmap m_pix[2];
 };
 
 class DropIndicator : public QWidget
@@ -135,7 +140,7 @@ class TabBar : public QTabBar
     Q_OBJECT
 public:
     explicit TabBar(QWidget *parent = 0);
-    inline void setAddTabButton(QWidget *addButton);
+    void setAddTabButton(TabButton *addButton);
     
 signals:
     void newTabRequest();
@@ -163,13 +168,11 @@ private slots:
     void tabCloseRequest();
     void newWindowTab(int tab);
 
-
 private:
-    void genNewTabButton();
     friend class FooBar;
     int m_hoveredTab;
     bool m_hasPress, m_dragCancelled, m_filteringEvents;
-    QWidget *m_addButton;
+    TabButton *m_addButton;
     DropIndicator *m_dropIndicator;
     QString m_lastDraggedFile;
 };
@@ -183,7 +186,7 @@ public:
 
     inline TabBar *tabBar() { return m_tabBar; }
     void setTabBar(TabBar *tabBar);
-    int addTab(ViewContainer *c,const QIcon& icon = QIcon(), const QString &text = QString()) { return insertTab(-1, c, icon, text); }
+    int addTab(ViewContainer *c,const QIcon& icon = QIcon(), const QString &text = QString());
     int insertTab(int index, ViewContainer *c, const QIcon& icon = QIcon(), const QString &text = QString());
     ViewContainer *forTab(const int tab);
     ViewContainer *takeTab(const int tab);

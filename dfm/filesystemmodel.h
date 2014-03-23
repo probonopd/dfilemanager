@@ -41,6 +41,7 @@
 #include "dataloader.h"
 #include "fsworkers.h"
 #include "helpers.h"
+#include "globals.h"
 
 namespace DFM
 {
@@ -147,8 +148,14 @@ public:
 
     QString title(const QUrl &url = QUrl());
 
+protected:
+    bool handleFileUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
+    bool handleSearchUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
+    bool handleApplicationsUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
+    bool handleDevicesUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
+
 public slots:
-    void setUrl(const QUrl &url);
+    bool setUrl(QUrl url);
     void setUrlFromDynamicPropertyUrl();
     void refresh();
     void refresh(const QString &path);
@@ -179,7 +186,7 @@ private:
     Node *m_rootNode, *m_current;
     mutable QMap<QString, Node *> m_schemeNodes;
     QHash<QUrl, Node *> m_nodes;
-    bool m_showHidden, m_goingBack, m_isDestroyed;
+    bool m_showHidden, m_lockHistory, m_isDestroyed;
     Qt::SortOrder m_sortOrder;
     int m_sortColumn;
     QFileSystemWatcher *m_watcher;

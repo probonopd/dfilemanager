@@ -83,7 +83,7 @@ Model::Model(QObject *parent)
     , m_sortColumn(0)
     , m_watcher(new QFileSystemWatcher(this))
     , m_dataGatherer(new Worker::Gatherer(this))
-    , m_goingBack(false)
+    , m_lockHistory(false)
     , m_schemeMenu(new QMenu())
     , m_current(0)
     , m_timer(new QTimer(this))
@@ -140,83 +140,120 @@ Model::nodeGenerated(const QString &path, Node *node)
     m_dataGatherer->populateNode(node);
 }
 
-void
-Model::setUrl(const QUrl &url)
+bool
+Model::handleFileUrl(QUrl &url, int &hasUrlReady)
 {
-    if (m_url == url || url.scheme().isEmpty())
-        return;
-
-    if (isWorking())
-    {
-        m_dataGatherer->setCancelled(true);
-        m_dataGatherer->wait();
-    }
-
-    setFilter(QString());
-    m_current = 0;
-
     QString file = url.toLocalFile();
     if (file.endsWith(":")) //windows drive...
         file.append("/");
 
     const QFileInfo fi(file);
     if (fi.isDir())
-        m_url = QUrl::fromLocalFile(file);
-    else
-        m_url = url;
+        url = QUrl::fromLocalFile(file);
 
-    m_history[Back] << m_url;
-    if (!m_goingBack)
-        m_history[Forward].clear();
+    Node *sNode = schemeNode(url.scheme());
+    Node *node = sNode->localNode(file);
 
-    DataLoader::clearQueue();
-    if (!m_watcher->directories().isEmpty())
-        m_watcher->removePaths(m_watcher->directories());
-
-    if (fi.isDir())
+    if (!fi.isDir() && fi.exists() && node)
     {
-        Node *sNode = schemeNode(url.scheme());
-        Node *node = sNode->localNode(file);
-        m_watcher->addPath(file);
-        if (!node)
-            dataGatherer()->generateNode(file, sNode);
-        else
-            nodeGenerated(file, node);
+        node->exec();
+        return false;
     }
-    else if (url.scheme() == "search")
-    {
-        QString searchPath = url.path();
+
+    m_watcher->addPath(file);
+    if (!node)
+        dataGatherer()->generateNode(file, sNode);
+    else
+        nodeGenerated(file, node);
+    hasUrlReady = 0;
+    return true;
+}
+
+bool
+Model::handleSearchUrl(QUrl &url, int &hasUrlReady)
+{
+    QString searchPath = url.path();
 #if !defined(Q_OS_UNIX)
-        if (!searchPath.isEmpty())
-            while (searchPath.startsWith("/"))
-                searchPath.remove(0, 1);
+    if (!searchPath.isEmpty())
+        while (searchPath.startsWith("/"))
+            searchPath.remove(0, 1);
 #endif
 #if QT_VERSION < 0x050000
-        const QString &searchName = url.encodedQuery();
+    const QString &searchName = url.encodedQuery();
 #else
-        const QString &searchName = url.query();
+    const QString &searchName = url.query();
 #endif
-        search(searchName, searchPath);
-    }
+    search(searchName, searchPath);
+    hasUrlReady = 0;
+    return true;
+}
+
+bool
+Model::handleApplicationsUrl(QUrl &url, int &hasUrlReady)
+{
 #if defined(Q_OS_UNIX)
-    else if (url.scheme() == "applications")
-    {
-        m_current = schemeNode(url.scheme());
-        emit urlChanged(url);
-        m_dataGatherer->populateApplications("/usr/share/applications", m_current);
-    }
-    else if (url.scheme() == "devices")
-    {
-        m_current = schemeNode("file");
-        emit urlChanged(url);
-        emit urlLoaded(url);
-    }
+    m_current = schemeNode(url.scheme());
+    hasUrlReady = 1;
+    m_dataGatherer->populateApplications("/usr/share/applications", m_current);
+    return true;
 #endif
+    return false;
+}
+
+bool
+Model::handleDevicesUrl(QUrl &url, int &hasUrlReady)
+{
+#if defined(Q_OS_UNIX)
+    m_current = schemeNode("file");
+    hasUrlReady = 2;
+    return true;
+#endif
+    return false;
+}
+
+bool
+Model::setUrl(QUrl url)
+{
+    if (m_url == url)
+        return false;
+
+    if (url.scheme().isEmpty())
+        url = QUrl::fromLocalFile(url.toString());
+
+    bool (Model::*urlHandler)(QUrl &, int &)(0);
+
+    if (url.scheme() == "file")
+        urlHandler = &Model::handleFileUrl;
+    else if (url.scheme() == "search")
+        urlHandler = &Model::handleSearchUrl;
+    else if (url.scheme() == "applications")
+        urlHandler = &Model::handleApplicationsUrl;
+    else if (url.scheme() == "devices")
+        urlHandler = &Model::handleDevicesUrl;
     else
+        qDebug() << "not sure what do w/ url" << url;
+
+    if (!urlHandler)
+        return false;
+
+    int isReady(0);
+    if (call<bool, Model, QUrl &, int &>(this, urlHandler, url, isReady))
     {
-        emit urlChanged(url);
-        emit urlLoaded(url);
+        DataLoader::clearQueue();
+        if (!m_watcher->directories().isEmpty())
+            m_watcher->removePaths(m_watcher->directories());
+
+        m_url = url;
+        m_history[Back] << m_url;
+        if (!m_lockHistory)
+            m_history[Forward].clear();
+        if (isReady>0)
+            emit urlChanged(m_url);
+        if (isReady>1)
+            emit urlLoaded(m_url);
+        return true;
     }
+    return false;
 }
 
 void
@@ -244,16 +281,20 @@ Model::goBack()
             goBack();
             return;
         }
-    m_goingBack=true;
+    m_lockHistory=true;
     setUrl(backUrl);
-    m_goingBack=false;
+    m_lockHistory=false;
 }
 
 void
 Model::goForward()
 {
     if (!m_history[Forward].isEmpty())
+    {
+        m_lockHistory=true;
         setUrl(m_history[Forward].takeLast());
+        m_lockHistory=false;
+    }
 }
 
 void
