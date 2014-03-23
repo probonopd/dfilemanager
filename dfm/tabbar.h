@@ -123,6 +123,7 @@ protected:
 
 class TabButton : public WinButton
 {
+    Q_OBJECT
 public:
     explicit TabButton(QWidget *parent = 0);
     ~TabButton(){}
@@ -130,6 +131,9 @@ public:
 protected:
     void paintEvent(QPaintEvent *e);
     void resizeEvent(QResizeEvent *);
+
+private slots:
+    void regenPixmaps();
 
 private:
     QPixmap m_pix[2];

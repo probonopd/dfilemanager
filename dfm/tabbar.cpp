@@ -470,6 +470,7 @@ TabButton::TabButton(QWidget *parent)
 {
     if (Store::config.behaviour.gayWindow)
         setFixedSize(28, 18);
+    connect(MainWindow::window(this), SIGNAL(settingsChanged()), this, SLOT(regenPixmaps()));
 }
 
 void
@@ -536,44 +537,40 @@ TabButton::paintEvent(QPaintEvent *e)
     p.end();
 }
 
-#define PLUS 6
-
 void
 TabButton::resizeEvent(QResizeEvent *e)
 {
     WinButton::resizeEvent(e);
     if (!Store::config.behaviour.gayWindow && e->size().height() != e->oldSize().height())
-    {
-        QStyleOptionTab tab;
-        tab.state = QStyle::State_Enabled;
-        tab.rect = rect();
-        tab.position = QStyleOptionTab::OnlyOneTab;
+        regenPixmaps();
+}
 
-        for (int i = 0; i < 2; ++i)
-        {
-            m_pix[i] = QPixmap(rect().size());
-            m_pix[i].fill(Qt::transparent);
-        }
-        QPainter p(&m_pix[0]);
-        style()->drawControl(QStyle::CE_TabBarTab, &tab, &p, parentWidget());
-        QRect plus(0, 0, PLUS, PLUS);
-        plus.moveCenter(rect().center());
-        p.setPen(QPen(Ops::colorMid(palette().color(foregroundRole()), palette().color(backgroundRole()), 4, 1), 2.0f));
-        p.setBrush(Qt::NoBrush);
-        p.translate(plus.topLeft());
-        p.drawLine(PLUS/2, 0, PLUS/2, PLUS);
-        p.drawLine(0, PLUS/2, PLUS, PLUS/2);
-        p.end();
-        p.begin(&m_pix[1]);
-        tab.state |= QStyle::State_MouseOver;
-        style()->drawControl(QStyle::CE_TabBarTab, &tab, &p, parentWidget());
-        p.setPen(QPen(palette().color(QPalette::Highlight), 2.0f));
-        p.setBrush(Qt::NoBrush);
-        p.translate(plus.topLeft());
-        p.drawLine(PLUS/2, 0, PLUS/2, PLUS);
-        p.drawLine(0, PLUS/2, PLUS, PLUS/2);
-        p.end();
+void
+TabButton::regenPixmaps()
+{
+    QStyleOptionTab tab;
+    tab.state = QStyle::State_Enabled;
+    tab.rect = rect();
+    tab.position = QStyleOptionTab::OnlyOneTab;
+
+    for (int i = 0; i < 2; ++i)
+    {
+        m_pix[i] = QPixmap(rect().size());
+        m_pix[i].fill(Qt::transparent);
     }
+    QPainter p(&m_pix[0]);
+    style()->drawControl(QStyle::CE_TabBarTab, &tab, &p, parentWidget());
+    QRect iconRect(0, 0, 16, 16);
+    iconRect.moveCenter(rect().center());
+    const QIcon &icon = IconProvider::icon(IconProvider::NewTab, 16, Ops::colorMid(palette().color(foregroundRole()), palette().color(backgroundRole()), 4, 1), Store::config.behaviour.systemIcons);
+    icon.paint(&p, iconRect, Qt::AlignCenter, QIcon::Normal);
+    p.end();
+    p.begin(&m_pix[1]);
+    tab.state |= QStyle::State_MouseOver;
+    style()->drawControl(QStyle::CE_TabBarTab, &tab, &p, parentWidget());
+    const QIcon &activeIcon = IconProvider::icon(IconProvider::NewTab, 16, palette().color(QPalette::Highlight), Store::config.behaviour.systemIcons);
+    activeIcon.paint(&p, iconRect, Qt::AlignCenter, QIcon::Selected, QIcon::On);
+    p.end();
 }
 
 void
@@ -622,6 +619,7 @@ TabBar::TabBar(QWidget *parent)
         setAddTabButton(new TabButton(this));
         QTimer::singleShot(0, this, SLOT(postConstructorOps()));
     }
+    connect(MainWindow::window(this), SIGNAL(settingsChanged()), this, SLOT(postConstructorOps()));
 
     setLayout(m_layout);
 }
@@ -631,7 +629,6 @@ TabBar::postConstructorOps()
 {
 //    m_closeButton->setAutoRaise(true);
 //    m_closeButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    m_closeButton->setShortcut(QKeySequence(QString("Ctrl+W")));
     const QIcon &icon = IconProvider::icon(IconProvider::CloseTab, 16, palette().color(foregroundRole()), Store::config.behaviour.systemIcons);
     m_closeButton->setIcon(icon);
 }
@@ -645,6 +642,7 @@ TabBar::setTabCloseButton(QToolButton *closeButton)
     l->setContentsMargins(0, 0, 0, 0);
     l->setSpacing(0);
     m_closeButton = closeButton;
+    m_closeButton->setShortcut(QKeySequence(QString("Ctrl+W")));
     l->addWidget(m_closeButton);
     connect(closeButton, SIGNAL(clicked()), this, SLOT(closeCurrent()));
     w->setLayout(l);

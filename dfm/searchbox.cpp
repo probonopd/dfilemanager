@@ -100,6 +100,7 @@ SearchTypeSelector::SearchTypeSelector(SearchBox *parent) : Button(parent), m_se
     connect(close, SIGNAL(triggered()), this, SLOT(closeSearch()));
     setMenu(m);
     QTimer::singleShot(0, this, SLOT(updateIcon()));
+    connect(MainWindow::window(this), SIGNAL(settingsChanged()), this, SLOT(updateIcon()));
 }
 
 void
@@ -138,6 +139,7 @@ ClearSearch::ClearSearch(QWidget *parent) : Button(parent)
     setCursor(Qt::PointingHandCursor);
     setAttribute(Qt::WA_Hover);
     QTimer::singleShot(0, this, SLOT(updateIcon()));
+    connect(MainWindow::window(this), SIGNAL(settingsChanged()), this, SLOT(updateIcon()));
 }
 
 void

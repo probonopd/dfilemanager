@@ -58,6 +58,7 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
         case Sort : iconString = "view-sort-ascending"; break;
         case Hidden : iconString = "inode-directory"; break;
         case CloseTab : iconString = "tab-close"; break;
+        case NewTab : iconString = "tab-new"; break;
         default : iconString = "";
         }
 
@@ -284,6 +285,20 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
         p.setBrush(color);
         int third = size/3;
         p.drawEllipse(third, third, third, third);
+        break;
+    }
+    case NewTab:
+    {
+#define PLUS 6
+        QRect plus(0, 0, PLUS, PLUS);
+        plus.moveCenter(rect.center());
+        p.setPen(QPen(color, 2.0f));
+        p.setBrush(Qt::NoBrush);
+        p.translate(plus.topLeft());
+        p.drawLine(PLUS/2, 0, PLUS/2, PLUS);
+        p.drawLine(0, PLUS/2, PLUS, PLUS/2);
+        break;
+#undef PLUS
     }
         default: break;
     }
