@@ -377,23 +377,8 @@ ColumnsView::keyPressEvent(QKeyEvent *event)
 void
 ColumnsView::contextMenuEvent(QContextMenuEvent *event)
 {
-    QMenu popupMenu;
-    if (Store::customActions().count())
-        popupMenu.addMenu(Store::customActionsMenu());
-    popupMenu.addActions(ViewContainer::rightClickActions());
-    const QFileInfo &file = m_model->fileInfo(indexAt(event->pos()));
-    QMenu openWith(tr("Open With"), this);
-    if (file.exists())
-        openWith.addActions(Store::openWithActions(file.filePath()));
-    foreach (QAction *action, actions())
-    {
-        popupMenu.addAction(action);
-        if (action->objectName() == "actionDelete")
-            popupMenu.insertSeparator(action);
-        if (action->objectName() == "actionCustomCmd")
-            popupMenu.insertMenu(action, &openWith);
-    }
-    popupMenu.exec(event->globalPos());
+    const QString &file = indexAt(event->pos()).data(FS::FilePathRole).toString();
+    MainWindow::currentWindow()->rightClick(file, event->globalPos());
 }
 
 QRect

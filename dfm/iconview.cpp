@@ -754,23 +754,8 @@ IconView::updateLayout()
 void
 IconView::contextMenuEvent(QContextMenuEvent *event)
 {
-    QMenu popupMenu;
-    if (Store::customActions().count())
-        popupMenu.addMenu(Store::customActionsMenu());
-    popupMenu.addActions(actions());
-    QMenu openWith(tr("Open With"), this);
-    const QFileInfo &file = static_cast<FS::Model *>(model())->fileInfo(indexAt(event->pos()));
-    if (file.exists())
-        openWith.addActions(Store::openWithActions(file.filePath()));
-    foreach(QAction *action, actions())
-    {
-        popupMenu.addAction(action);
-        if (action->objectName() == "actionDelete")
-            popupMenu.insertSeparator(action);
-        if (action->objectName() == "actionCustomCmd")
-            popupMenu.insertMenu(action, &openWith);
-    }
-    popupMenu.exec(event->globalPos());
+    const QString &file = indexAt(event->pos()).data(FS::FilePathRole).toString();
+    MainWindow::currentWindow()->rightClick(file, event->globalPos());
 }
 
 

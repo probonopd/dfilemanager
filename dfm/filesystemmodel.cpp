@@ -77,6 +77,7 @@ FileIconProvider::icon(const QFileInfo &i) const
 
 Model::Model(QObject *parent)
     : QAbstractItemModel(parent)
+    , m_parent(parent)
     , m_rootNode(new Node(this))
     , m_showHidden(false)
     , m_sortOrder(Qt::AscendingOrder)
@@ -710,7 +711,13 @@ Model::mkdir(const QModelIndex &parent, const QString &name)
     {
         Node *node = nodeFromIndex(parent);
         QDir dir(node->filePath());
-        dir.mkdir(name);
+        if (!dir.isAbsolute())
+            return QModelIndex();
+        m_watcher->blockSignals(true);
+        if (!dir.mkdir(name))
+            QMessageBox::warning(static_cast<QWidget *>(m_parent), "There was an error", QString("Could not create folder in %2").arg(dir.path()));
+        node->rePopulate();
+        m_watcher->blockSignals(false);
         return index(QUrl::fromLocalFile(dir.absoluteFilePath(name)));
     }
     return QModelIndex();

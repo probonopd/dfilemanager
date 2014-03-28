@@ -182,44 +182,6 @@ ViewContainer::addActions(QList<QAction *> actions)
 }
 
 void
-ViewContainer::customActionTriggered()
-{
-    QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
-    const QString &app = action.takeFirst();
-
-    if (selectionModel()->hasSelection())
-    {
-        foreach (const QModelIndex &index, selectionModel()->selectedIndexes())
-        {
-            if (index.column())
-                continue;
-            const QFileInfo &fi = m_model->fileInfo(index);
-            if (fi.exists())
-            {
-                qDebug() << "trying to launch" << app << "in" << fi.filePath();
-                QProcess::startDetached(app, QStringList() << action << fi.filePath());
-            }
-        }
-    }
-    else if (m_model->rootUrl().isLocalFile())
-    {
-        qDebug() << "trying to launch" << app << "in" << m_model->rootUrl().toLocalFile();
-        QProcess::startDetached(app, QStringList() << action << m_model->rootUrl().toLocalFile());
-    }
-}
-
-void
-ViewContainer::scriptTriggered()
-{
-    QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
-    const QString &app = action.takeFirst();
-    if (!m_model->rootUrl().isLocalFile())
-        return;
-    qDebug() << "trying to launch" << app << "in" << m_model->rootUrl().toLocalFile();
-    QProcess::startDetached(app, QStringList() << m_model->rootUrl().toLocalFile());
-}
-
-void
 ViewContainer::activate(const QModelIndex &index)
 {
     m_model->exec(index);
@@ -394,9 +356,12 @@ ViewContainer::sort(const int column, const Qt::SortOrder order)
 void
 ViewContainer::createDirectory()
 {
-    const QModelIndex &newFolder = m_model->mkdir(m_model->index(m_model->rootUrl()), "new_directory");
-    currentView()->scrollTo(newFolder);
-    currentView()->edit(newFolder);
+    if (QAbstractItemView *cv = currentView())
+    {
+        const QModelIndex &newFolder = m_model->mkdir(cv->rootIndex(), "new_directory");
+        cv->scrollTo(newFolder);
+        cv->edit(newFolder);
+    }
 }
 
 QAbstractItemView

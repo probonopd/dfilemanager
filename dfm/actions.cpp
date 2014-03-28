@@ -205,7 +205,7 @@ MainWindow::createActions()
     connect(m_actions[SetPlaceIcon], SIGNAL(triggered()), m_placesView, SLOT(setPlaceIcon()));
     addAction(m_actions[SetPlaceIcon]);
 
-    m_actions[CustomCommand] = new QAction(tr("&Open With Cmd"), this);
+    m_actions[CustomCommand] = new QAction(tr("&Custom Command..."), this);
     m_actions[CustomCommand]->setObjectName("actionCustomCmd");
     connect(m_actions[CustomCommand], SIGNAL(triggered()), this, SLOT(customCommand()));
     addAction(m_actions[CustomCommand]);
@@ -366,6 +366,51 @@ MainWindow::createMenus()
 
     if (Store::config.behaviour.gayWindow)
         m_actions[ShowMenuBar]->setChecked(false);
+}
+
+static QAction *genSeparator()
+{
+    QAction *a = new QAction(qApp);
+    a->setSeparator(true);
+    return a;
+}
+
+QMenu
+*MainWindow::rightClick(const QString &file, const QPoint &pos) const
+{
+    QList<QAction *> firstGroup;
+    firstGroup << m_actions[OpenInTab]
+            << m_actions[MkDir]
+            << m_actions[Paste]
+            << m_actions[Copy]
+            << m_actions[Cut]
+            << m_actions[DeleteSelection]
+            << m_actions[Rename];
+    QList<QAction *> secondGroup;
+    secondGroup << m_actions[GoUp]
+            << m_actions[GoBack]
+            << m_actions[GoForward]
+            << genSeparator()
+            << m_actions[Properties];
+
+    QMenu openWith;
+    openWith.setTitle("Open With");
+    QList<QAction *> owa = QList<QAction *>() << Store::openWithActions(file) << m_actions[CustomCommand];
+    openWith.addActions(owa);
+
+    QMenu menu;
+    if (!Store::customActions().isEmpty())
+    {
+        menu.addMenu(Store::customActionsMenu());
+        menu.addSeparator();
+    }
+    menu.addActions(firstGroup);
+    menu.addSeparator();
+    menu.addMenu(&openWith);
+    menu.addSeparator();
+    menu.addActions(secondGroup);
+    menu.exec(pos);
+    return &menu;
 }
 
 void

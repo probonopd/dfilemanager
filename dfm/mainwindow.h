@@ -114,6 +114,7 @@ public:
     SearchBox *searchBox() { return m_filterBox; }
     void updateConfig();
     void createMenus();
+    QMenu *rightClick(const QString &file, const QPoint &pos) const;
 
 public slots:
     void addTab(const QUrl &url = QUrl());

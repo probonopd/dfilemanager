@@ -106,9 +106,9 @@ Ops::customActionTriggered()
 {
     QStringList action(static_cast<QAction *>(sender())->data().toString().split(" "));
     const QString &app = action.takeFirst();
-
-    FS::Model *fsModel = MainWindow::currentContainer()->model();
-    QItemSelectionModel *isModel = MainWindow::currentContainer()->selectionModel();
+    ViewContainer *container = MainWindow::currentContainer();
+    FS::Model *fsModel = container->model();
+    QItemSelectionModel *isModel = container->selectionModel();
 
     if (isModel->hasSelection())
     {
@@ -127,7 +127,10 @@ Ops::customActionTriggered()
     }
     else
     {
-        const QFileInfo &fi = fsModel->rootUrl().toLocalFile();
+        const QAbstractItemView *view = container->currentView();
+        QFileInfo fi(fsModel->rootUrl().toLocalFile());
+        if (view || !fi.exists())
+            fi = QFileInfo(view->rootIndex().data(FS::FilePathRole).toString());
         if (fi.exists())
         {
             qDebug() << "trying to launch" << app << "in" << fi.filePath();

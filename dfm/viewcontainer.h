@@ -115,8 +115,6 @@ public slots:
 private slots:
     void setUrl(const QUrl &url);
     void genNewTabRequest(const QModelIndex &index);
-    void customActionTriggered();
-    void scriptTriggered();
     void loadedUrl(const QUrl &url);
     void loadSettings();
 

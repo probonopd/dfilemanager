@@ -108,7 +108,7 @@ public:
     QModelIndexList category(const QString &cat);
     QModelIndexList category(const QModelIndex &fromCat);
 
-    QUrl rootUrl() { return m_url; }
+    QUrl rootUrl() const { return m_url; }
     Node *rootNode();
 
     QIcon fileIcon(const QModelIndex &index) const;
@@ -197,6 +197,7 @@ private:
     QUrl m_url;
     QList<QUrl> m_history[Forward+1];
     QTimer *m_timer;
+    QObject *m_parent;
     friend class FlowDataLoader;
     friend class Node;
     friend class Worker::Gatherer;

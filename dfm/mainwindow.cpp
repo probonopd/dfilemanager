@@ -370,7 +370,7 @@ void
 MainWindow::pasteSelection()
 {
     const QMimeData *mimeData = QApplication::clipboard()->mimeData();
-    const QString &filePath = model()->url(activeContainer()->currentView()->rootIndex()).toLocalFile();
+    const QString &filePath = activeContainer()->currentView()->rootIndex().data(FS::FilePathRole).toString();
 
     if (QFileInfo(filePath).exists() && mimeData->hasUrls())
         IO::Manager::copy(mimeData->urls(), filePath, m_cut, m_cut);
@@ -428,8 +428,6 @@ MainWindow::keyPressEvent(QKeyEvent *ke)
         m_filterBox->clearFocus();
         filterCurrentDir("");
     }
-//    if(ke->key() == Qt::Key_Return)
-//        activeContainer()->doubleClick(activeContainer()->selectionModel()->selectedIndexes().first());
     QMainWindow::keyPressEvent(ke);
 }
 
@@ -438,7 +436,7 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
     if (obj == activeContainer() && event->type() == QEvent::HoverLeave)
     {
-        QString newMessage = (activeContainer()->selectionModel()->selection().isEmpty() ||
+        const QString &newMessage = (activeContainer()->selectionModel()->selection().isEmpty() ||
                                activeContainer()->selectionModel()->currentIndex().parent() !=
                 model()->index(model()->rootUrl())) ? m_statusMessage : m_statusMessage + m_slctnMessage;
         if(m_statusBar->currentMessage() != newMessage)
@@ -540,13 +538,6 @@ MainWindow::connectContainer(ViewContainer *container)
     connect(container, SIGNAL(sortingChanged(int,int)), this, SLOT(sortingChanged(int,int)));
     connect(container, SIGNAL(hiddenVisibilityChanged(bool)), m_actions[ShowHidden], SLOT(setChecked(bool)));
     connect(this, SIGNAL(settingsChanged()), container, SLOT(loadSettings()));
-
-    QList<QAction *> actList;
-    actList << m_actions[OpenInTab] << m_actions[MkDir] << m_actions[Paste] << m_actions[Copy] << m_actions[Cut]
-            << m_actions[DeleteSelection] << m_actions[Rename] << m_actions[CustomCommand] << m_actions[GoUp]
-            << m_actions[GoBack] << m_actions[GoForward] << m_actions[Properties];
-
-    container->addActions(actList);
 }
 
 void
