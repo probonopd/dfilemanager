@@ -39,10 +39,6 @@ using namespace DFM;
     m_columnsWidget->RUN;\
     m_flowView->RUN
 
-//#define VIEWS(RUN)\
-//    m_iconView->RUN;\
-//    m_columnsWidget->RUN;
-
 ViewContainer::ViewContainer(QWidget *parent)
     : QFrame(parent)
     , m_model(new FS::Model(this))

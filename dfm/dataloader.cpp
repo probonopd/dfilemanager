@@ -102,7 +102,7 @@ void
 DataLoader::getData(const QString &path)
 {
     const QFileInfo fi(path);
-    if (!fi.isReadable())
+    if (!fi.isReadable() || !fi.exists())
     {
         _removeData(path);
         return;

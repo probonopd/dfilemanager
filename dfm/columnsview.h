@@ -72,7 +72,6 @@ public:
     
 signals:
     void newTabRequest(const QModelIndex &index);
-    void focusRequest(ColumnsView *view);
     void showed(ColumnsView *view);
     void dirActivated(const QModelIndex &dir);
     void expandRequest(const QModelIndex &index);
@@ -82,7 +81,7 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event);
     void mouseReleaseEvent(QMouseEvent *e);
     void keyPressEvent(QKeyEvent *);
-    void mousePressEvent(QMouseEvent *event) { QListView::mousePressEvent(event); m_pressPos = event->pos(); emit focusRequest(this); }
+    void mousePressEvent(QMouseEvent *event) { QListView::mousePressEvent(event); m_pressPos = event->pos(); }
     void mouseDoubleClickEvent(QMouseEvent *event);
 //    void focusInEvent(QFocusEvent *event) { QListView::focusInEvent(event); emit focusRequest(this); /*viewport()->update();*/ }
 //    void focusOutEvent(QFocusEvent *event) { QListView::focusOutEvent(event); viewport()->update(); }
@@ -91,13 +90,16 @@ protected:
     void resizeEvent(QResizeEvent *e);
     void showEvent(QShowEvent *e);
 
+private slots:
+    void modelUrlChanged();
+    void directoryRemoved(const QString &path);
+
 private:
     ColumnsWidget *m_columnsWidget;
     ResizeCorner *m_corner;
     FS::Model *m_model;
     QPoint m_pressPos;
     QString m_activeFile;
-    QFileSystemWatcher *m_watcher;
     bool m_blockDesktopDir, m_isDir;
     friend class ColumnsWidget;
     friend class ResizeCorner;

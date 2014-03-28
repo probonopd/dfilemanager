@@ -93,7 +93,7 @@ Model::Model(QObject *parent)
     connect(m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)));
     connect(m_dataGatherer, SIGNAL(nodeGenerated(QString,Node*)), this, SLOT(nodeGenerated(QString,Node*)));
     connect(this, SIGNAL(fileRenamed(QString,QString,QString)), DataLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
-    connect(m_timer, SIGNAL(timeout()), this, SLOT(refreshCurrent()));
+//    connect(m_timer, SIGNAL(timeout()), this, SLOT(refreshCurrent()));
     connect(DataLoader::instance(), SIGNAL(noLongerExists(QString)), this, SLOT(fileDeleted(QString)));
     connect(Devices::instance(), SIGNAL(deviceAdded(Device*)), this, SLOT(updateFileNode()));
     connect(Devices::instance(), SIGNAL(deviceRemoved(Device*)), this, SLOT(updateFileNode()));
@@ -150,17 +150,20 @@ Model::handleFileUrl(QUrl &url, int &hasUrlReady)
     const QFileInfo fi(file);
     if (fi.isDir())
         url = QUrl::fromLocalFile(file);
+    if (!fi.exists())
+        return false;
 
     Node *sNode = schemeNode(url.scheme());
     Node *node = sNode->localNode(file);
 
-    if (!fi.isDir() && fi.exists() && node)
+    if (!fi.isDir() && node)
     {
         node->exec();
         return false;
     }
-
-    m_watcher->addPath(file);
+    if (!m_watcher->directories().isEmpty())
+        m_watcher->removePaths(m_watcher->directories());
+    watchDir(file);
     if (!node)
         dataGatherer()->generateNode(file, sNode);
     else
@@ -178,13 +181,25 @@ Model::handleSearchUrl(QUrl &url, int &hasUrlReady)
         while (searchPath.startsWith("/"))
             searchPath.remove(0, 1);
 #endif
+
 #if QT_VERSION < 0x050000
     const QString &searchName = url.encodedQuery();
 #else
     const QString &searchName = url.query();
 #endif
-    search(searchName, searchPath);
-    hasUrlReady = 0;
+
+    Node *sNode = schemeNode("search");
+    if (searchName.isEmpty())
+        return false;
+
+    sNode->clearVisible();
+    const QFileInfo fi(searchPath);
+    if (!fi.exists())
+        return false;
+
+    m_current = new Node(this, url, sNode);
+    m_dataGatherer->search(searchName, fi.filePath(), m_current);
+    hasUrlReady = 1;
     return true;
 }
 
@@ -240,9 +255,6 @@ Model::setUrl(QUrl url)
     if (call<bool, Model, QUrl &, int &>(this, urlHandler, url, isReady))
     {
         DataLoader::clearQueue();
-        if (!m_watcher->directories().isEmpty())
-            m_watcher->removePaths(m_watcher->directories());
-
         m_url = url;
         m_history[Back] << m_url;
         if (!m_lockHistory)
@@ -322,10 +334,19 @@ Model::updateFileNode()
 void
 Model::dirChanged(const QString &path)
 {
-    if (m_current->filePath() != path || !m_current->url().isLocalFile())
+    if (QFileInfo(path).exists())
+    {
+        refresh(path);
         return;
-
-    m_timer->start(50);
+    }
+    emit directoryRemoved(path);
+    if (Node *n = schemeNode("file")->localNode(path))
+    {
+        if (n == m_current)
+            m_current = 0;
+        if (Node *p = n->parent())
+            dataGatherer()->populateNode(p);
+    }
 }
 
 void
@@ -335,6 +356,20 @@ Model::refreshCurrent()
     if (!m_current || !m_current->url().isLocalFile())
         return;
     dataGatherer()->populateNode(m_current);
+}
+
+void
+Model::watchDir(const QString &path)
+{
+    if (!m_watcher->directories().contains(path))
+        m_watcher->addPath(path);
+}
+
+void
+Model::unWatchDir(const QString &path)
+{
+    if (m_watcher->directories().contains(path))
+        m_watcher->removePath(path);
 }
 
 Qt::ItemFlags
@@ -351,12 +386,7 @@ Model::flags(const QModelIndex &index) const
 void
 Model::newData(const QString &file)
 {
-    QModelIndex idx;
-    if (m_url.isLocalFile())
-        idx = indexForLocalFile(file);
-    else
-        idx = index(QUrl(QString("%1%2").arg(m_url.toString(), file)));
-
+    const QModelIndex &idx = index(QUrl::fromLocalFile(file));
     if (idx.isValid())
     {
         emit dataChanged(idx, idx);
@@ -518,8 +548,13 @@ Model::index(const QUrl &url)
     if (url.scheme().isEmpty())
         return QModelIndex();
 
-    if (m_current && url == m_url)
-        return createIndex(m_current->row(), 0, m_current);
+    if (m_current)
+    {
+        if (url == m_url)
+            return createIndex(m_current->row(), 0, m_current);
+        if (Node *n = m_current->childFromUrl(url))
+            return createIndex(n->row(), 0, n);
+    }
 
     Node *sNode = schemeNode(url.scheme());
 
@@ -762,19 +797,6 @@ Model::search(const QString &fileName)
     url.setQuery(fileName);
 #endif
     setUrl(url);
-}
-
-void
-Model::search(const QString &fileName, const QString &filePath)
-{
-    Node *sNode = schemeNode("search");
-    if (fileName.isEmpty())
-        return;
-
-    sNode->clearVisible();
-    m_current = new Node(this, m_url, sNode);
-    emit urlChanged(m_url);
-    dataGatherer()->search(fileName, filePath, m_current);
 }
 
 void

@@ -63,6 +63,7 @@ public:
     void addChild(Node *node);
     Node *child(const int c, Children fromChildren = Visible);
     Node *child(const QString &name, const bool nameIsPath = true);
+    Node *childFromUrl(const QUrl &url);
     inline bool hasChildren() const { return !m_children[Visible].isEmpty(); }
     void insertChild(Node *n, const int i);
 

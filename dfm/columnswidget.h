@@ -46,13 +46,9 @@ public:
     void clearFrom(const QModelIndexList &list = QModelIndexList());
     void scrollTo(const QModelIndex &index);
     
-signals:
-    void currentViewChagned(ColumnsView *view);
-    
 public slots:
     void edit(const QModelIndex &index);
     void setRootIndex(const QModelIndex &index);
-    void setCurrentView(ColumnsView *view);
     void reconnectViews();
     void showCurrent();
 
@@ -69,7 +65,6 @@ private:
     QMap<QPersistentModelIndex, ColumnsView *> m_map;
     static QMap<QUrl, int> m_widthMap;
     ViewContainer *m_container;
-    ColumnsView *m_currentView;
     QPersistentModelIndex m_rootIndex;
     QList<QUrl> m_rootList;
     bool m_isResizingColumns;

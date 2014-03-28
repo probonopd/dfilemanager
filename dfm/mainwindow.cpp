@@ -758,8 +758,10 @@ MainWindow::showEvent(QShowEvent *e)
 {
     QMainWindow::showEvent(e);
     int w = m_placesView->viewport()->width();
-    w -= m_toolBar->widgetForAction(m_actions[GoBack])->width();
-    w -= m_toolBar->widgetForAction(m_actions[GoForward])->width();
+    if (QWidget *b = m_toolBar->widgetForAction(m_actions[GoBack]))
+        w -= b->width();
+    if (QWidget *b = m_toolBar->widgetForAction(m_actions[GoForward]))
+        w -= b->width();
     w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
     if (m_toolBarSpacer->width() != w)
     {
@@ -814,8 +816,10 @@ void
 MainWindow::updateToolbarSpacer()
 {
     int w = m_placesView->viewport()->width();
-    w -= m_toolBar->widgetForAction(m_actions[GoBack])->width();
-    w -= m_toolBar->widgetForAction(m_actions[GoForward])->width();
+    if (QWidget *b = m_toolBar->widgetForAction(m_actions[GoBack]))
+        w -= b->width();
+    if (QWidget *b = m_toolBar->widgetForAction(m_actions[GoForward]))
+        w -= b->width();
     w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
     if (m_toolBarSpacer->width() != w)
     {
@@ -831,23 +835,26 @@ MainWindow::updateIcons()
     if (!m_sortButton)
         return;
 
-    QWidget *firstTB = m_toolBar->widgetForAction(m_actions[GoBack]);
-    QPixmap pix(firstTB->size());
-    pix.fill(Qt::transparent);
-    firstTB->render(&pix);
-    QImage img = pix.toImage();
-    QRgb *rgbPx = reinterpret_cast<QRgb *>(img.bits());
-    const int size = img.width()*img.height();
-    unsigned int value = 0;
-    for (int i=0; i<size; ++i)
-        value += QColor(rgbPx[i]).value();
-
     QColor fg = m_toolBar->palette().color(m_toolBar->foregroundRole());
-    if (qAbs((value/size)-fg.value()) < 127) //not enough contrast...
+    if (QWidget *firstTB = m_toolBar->widgetForAction(m_actions[GoBack]))
     {
-        qDebug() << "not enough contrast... calculating new icons color for toolbuttons";
-//        fg.setHsv(fg.hue(), fg.saturation(), 255-fg.value());
-        fg = m_toolBar->palette().color(m_toolBar->backgroundRole());
+        QPixmap pix(firstTB->size());
+        pix.fill(Qt::transparent);
+        firstTB->render(&pix);
+        QImage img = pix.toImage();
+        QRgb *rgbPx = reinterpret_cast<QRgb *>(img.bits());
+        const int size = img.width()*img.height();
+        unsigned int value = 0;
+        for (int i=0; i<size; ++i)
+            value += QColor(rgbPx[i]).value();
+
+
+        if (qAbs((value/size)-fg.value()) < 127) //not enough contrast...
+        {
+            qDebug() << "not enough contrast... calculating new icons color for toolbuttons";
+            //fg.setHsv(fg.hue(), fg.saturation(), 255-fg.value());
+            fg = m_toolBar->palette().color(m_toolBar->backgroundRole());
+        }
     }
 
 

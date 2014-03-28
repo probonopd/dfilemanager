@@ -32,7 +32,6 @@ ColumnsWidget::ColumnsWidget(QWidget *parent)
     , m_viewport(new QFrame(this))
     , m_viewLay(new QHBoxLayout(m_viewport))
     , m_container(static_cast<ViewContainer *>(parent))
-    , m_currentView(0)
     , m_rootIndex(QModelIndex())
     , m_model(0)
     , m_slctModel(0)
@@ -62,10 +61,33 @@ ColumnsWidget::setModel(FS::Model *model)
     m_model = model;
 }
 
-QModelIndex ColumnsWidget::currentIndex() { return m_currentView->currentIndex(); }
-ColumnsView *ColumnsWidget::currentView() { return m_currentView; }
-void ColumnsWidget::scrollTo(const QModelIndex &index) { if (m_currentView) m_currentView->scrollTo(index); }
-void ColumnsWidget::edit(const QModelIndex &index) { if (m_currentView) m_currentView->edit(index); }
+QModelIndex
+ColumnsWidget::currentIndex()
+{
+    if (ColumnsView *view = currentView())
+        return view->currentIndex();
+    return QModelIndex();
+}
+ColumnsView
+*ColumnsWidget::currentView()
+{
+    ColumnsView *view = qobject_cast<ColumnsView *>(focusWidget());
+    if (view && m_map.values().contains(view))
+        return view;
+    return 0;
+}
+void
+ColumnsWidget::scrollTo(const QModelIndex &index)
+{
+    if (ColumnsView *view = currentView())
+        view->scrollTo(index);
+}
+void
+ColumnsWidget::edit(const QModelIndex &index)
+{
+    if (ColumnsView *view = currentView())
+        view->edit(index);
+}
 
 void
 ColumnsWidget::connectView(ColumnsView *view)
@@ -76,7 +98,6 @@ ColumnsWidget::connectView(ColumnsView *view)
     connect(view, SIGNAL(entered(QModelIndex)), m_container, SIGNAL(entered(QModelIndex)));
     connect(view, SIGNAL(newTabRequest(QModelIndex)), m_container, SLOT(genNewTabRequest(QModelIndex)));
     connect(view, SIGNAL(viewportEntered()), m_container, SIGNAL(viewportEntered()));
-    connect(view, SIGNAL(focusRequest(ColumnsView*)), this, SLOT(setCurrentView(ColumnsView*)));
 }
 
 void
@@ -89,15 +110,22 @@ ColumnsWidget::reconnectViews()
 void
 ColumnsWidget::clearFrom(const QModelIndexList &list)
 {
-    m_currentView=0;
-    foreach (const QModelIndex &index, m_map.keys())
-        if (!list.contains(index))
+    QMapIterator<QPersistentModelIndex, ColumnsView *> i(m_map);
+    while (i.hasNext())
+    {
+        i.next();
+        if (!list.contains(i.key()) || !i.key().isValid())
         {
-            int at = m_viewLay->indexOf(m_map.take(index));
+            int at = m_viewLay->indexOf(i.value());
             QLayoutItem *item = m_viewLay->takeAt(at);
-            item->widget()->deleteLater();
-            delete item;
+            if (item)
+            {
+                if (item->widget())
+                    item->widget()->deleteLater();
+                delete item;
+            }
         }
+    }
 }
 
 void
@@ -142,23 +170,13 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
         m_map.insert(index, view);
         m_viewLay->insertWidget(m_viewLay->count()-1, view);
     }
-    m_currentView = m_map.value(index, 0);
 }
 
 void
 ColumnsWidget::showCurrent()
 {
     if (!m_isResizingColumns)
-        ensureWidgetVisible(currentView(), m_currentView?m_currentView->width():0);
-}
-
-void
-ColumnsWidget::setCurrentView(ColumnsView *view)
-{
-    if (!m_map.values().contains(view))
-        return;
-    m_currentView = view;
-    emit currentViewChagned(view);
+        ensureWidgetVisible(currentView(), currentView()?currentView()->width():0);
 }
 
 void

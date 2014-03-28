@@ -100,7 +100,7 @@ public:
             return T();
         const QFileInfo fi(dir.absoluteFilePath(".directory"));
         QVariant var;
-        if (fi.isReadable())
+        if (dir.isAbsolute() && fi.isReadable() && fi.isAbsolute())
         {
             QSettings settings(fi.filePath(), QSettings::IniFormat);
             settings.beginGroup("DFM");

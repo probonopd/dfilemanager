@@ -18,15 +18,15 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QPainter>
+#include <QTextEdit>
+#include <QMessageBox>
 
 #include "columnsview.h"
 #include "viewcontainer.h"
 #include "mainwindow.h"
 #include "filesystemmodel.h"
 #include "operations.h"
-#include <QPainter>
-#include <QTextEdit>
-#include <QMessageBox>
 
 using namespace DFM;
 
@@ -258,7 +258,6 @@ ColumnsView::ColumnsView(QWidget *parent, FS::Model *model, const QModelIndex &r
     , m_model(0)
     , m_blockDesktopDir(false)
     , m_isDir(false)
-    , m_watcher(new QFileSystemWatcher(this))
 {
     setViewMode(QListView::ListMode);
     setResizeMode(QListView::Adjust);
@@ -282,18 +281,17 @@ ColumnsView::ColumnsView(QWidget *parent, FS::Model *model, const QModelIndex &r
     setContentsMargins(0, 0, 16, 0);
     setModel(model);
     setRootIndex(rootIndex);
-    QScrollBar *v = verticalScrollBar();
-    v->installEventFilter(this);
+    verticalScrollBar()->installEventFilter(this);
+    connect(m_model, SIGNAL(urlChanged(QUrl)), this, SLOT(modelUrlChanged()));
+    connect(m_model, SIGNAL(directoryRemoved(QString)), this, SLOT(directoryRemoved(QString)));
     int w = Store::config.views.columnsView.colWidth;
     const QUrl url = rootIndex.data(FS::Url).toUrl();
-    if (url.isLocalFile() && url != m_model->rootUrl())
+    if (url.isLocalFile())
     {
         const QString &file = url.toLocalFile();
-        if (QFileInfo(file).isDir())
-        {
-            m_watcher->addPath(file);
-            connect(m_watcher, SIGNAL(directoryChanged(QString)), m_model, SLOT(refresh(QString)));
-        }
+        const QFileInfo fi(file);
+        if (fi.exists() && fi.isDir())
+            m_model->watchDir(file);
     }
     if (m_columnsWidget->m_widthMap.contains(url))
     {
@@ -315,6 +313,27 @@ ColumnsView::ColumnsView(QWidget *parent, FS::Model *model, const QModelIndex &r
 ColumnsView::~ColumnsView()
 {
 //    m_columnsWidget->m_widthMap.insert(rootIndex().data(FS::Url).toUrl(), width());
+    if (m_columnsWidget->m_map.values().contains(this))
+    {
+        const QPersistentModelIndex &index = m_columnsWidget->m_map.key(this);
+        m_columnsWidget->m_map.take(index);
+    }
+    m_model->unWatchDir(rootIndex().data(FS::FilePathRole).toString());
+}
+
+void
+ColumnsView::modelUrlChanged()
+{
+    const QString &file = rootIndex().data(FS::FilePathRole).toString();
+    if (QFileInfo(file).exists())
+        m_model->watchDir(file);
+}
+
+void
+ColumnsView::directoryRemoved(const QString &path)
+{
+    if (path == rootIndex().data(FS::FilePathRole).toString())
+        deleteLater();
 }
 
 bool

@@ -96,15 +96,15 @@ Node::Node(Model *model, const QUrl &url, Node *parent, const QString &filePath)
 
 Node::~Node()
 {
-    if (!m_model->m_isDestroyed)
-    {
-        if (m_parent)
-            m_parent->removeChild(this);
-        if (m_model->m_nodes.contains(m_url))
-            m_model->m_nodes.remove(m_url);
-    }
+    if (m_parent)
+        m_parent->removeChild(this);
+    if (m_model->m_nodes.contains(m_url))
+        m_model->m_nodes.remove(m_url);
     for (int i = 0; i < ChildrenTypeCount; ++i)
+    {
         qDeleteAll(m_children[i]);
+        m_children[i].clear();
+    }
 }
 
 void
@@ -182,6 +182,18 @@ Node
                 return *b;
     return 0;
 }
+
+Node
+*Node::childFromUrl(const QUrl &url)
+{
+    QMutexLocker locker(&m_mutex);
+    for (int i = 0; i < ChildrenTypeCount; ++i)
+        for (Nodes::const_iterator b = m_children[i].constBegin(); b!=m_children[i].constEnd(); ++b)
+            if ((*b)->url() == url)
+                return *b;
+    return 0;
+}
+
 
 int
 Node::row()
@@ -778,7 +790,6 @@ Gatherer::populateApplications(const QString &appsPath, Node *node)
 void
 Gatherer::populateNode(Node *node)
 {
-    QMutexLocker locker(&m_taskMutex);
     if (m_task == Populate && node == m_node) //already populating the node....
         return;
 
@@ -786,6 +797,7 @@ Gatherer::populateNode(Node *node)
     wait();
     setCancelled(false);
 
+    QMutexLocker locker(&m_taskMutex);
     m_task = Populate;
     m_node = node;
     start();
@@ -829,10 +841,7 @@ Gatherer::searchResultsForNode(const QString &name, const QString &filePath, Nod
     {
         const QFileInfo &file(it.next());
         if (file.fileName().contains(name, Qt::CaseInsensitive))
-        {
-            const QUrl &url = QUrl(QString("%1%2").arg(m_model->m_url.toString(), file.filePath()));
-            new Node(m_model, url, node, file.filePath());
-        }
+            new Node(m_model, QUrl::fromLocalFile(file.filePath()), node, file.filePath());
     }
     emit m_model->urlLoaded(m_model->m_url);
 }

@@ -138,7 +138,6 @@ public:
     inline bool canGoBack() const { return m_history[Back].count()>1; }
     inline bool canGoForward() const { return !m_history[Forward].isEmpty(); }
 
-    void search(const QString &fileName, const QString &filePath);
     void search(const QString &fileName);
     void setFilter(const QString &setFilter);
     QString currentSearchString();
@@ -147,6 +146,8 @@ public:
     Node *schemeNode(const QString &scheme);
 
     QString title(const QUrl &url = QUrl());
+    void watchDir(const QString &path);
+    void unWatchDir(const QString &path);
 
 protected:
     bool handleFileUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
@@ -174,6 +175,7 @@ private slots:
 signals:
     void flowDataChanged(const QModelIndex &start, const QModelIndex &end);
     void directoryLoaded(const QString &path);
+    void directoryRemoved(const QString &path);
     void urlChanged(const QUrl &url);
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
     void hiddenVisibilityChanged(bool visible);

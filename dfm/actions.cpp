@@ -382,8 +382,29 @@ void
 MainWindow::createToolBars()
 {
     m_toolBar->setMovable(false);
-    m_toolBar->addAction(m_actions[GoBack]);
-    m_toolBar->addAction(m_actions[GoForward]);
+//    if (style()->objectName() == "oxygen")
+//    {
+//        QWidget *history(new QWidget());
+//        history->setContentsMargins(0, 0, 0, 0);
+//        QHBoxLayout *hb(new QHBoxLayout());
+//        hb->setContentsMargins(0, 0, 0, 0);
+//        hb->setSpacing(0);
+//        QToolButton *goBack(new QToolButton());
+//        goBack->setDefaultAction(m_actions[GoBack]);
+//        goBack->setCheckable(true);
+//        QToolButton *goForward(new QToolButton());
+//        goForward->setDefaultAction(m_actions[GoForward]);
+//        goForward->setCheckable(true);
+//        hb->addWidget(goBack);
+//        hb->addWidget(goForward);
+//        history->setLayout(hb);
+//        m_toolBar->addWidget(history);
+//    }
+//    else
+//    {
+        m_toolBar->addAction(m_actions[GoBack]);
+        m_toolBar->addAction(m_actions[GoForward]);
+//    }
 //    m_toolBar->addSeparator();
     m_toolBar->addWidget(m_toolBarSpacer);
     m_toolBar->addAction(m_actions[IconView]);

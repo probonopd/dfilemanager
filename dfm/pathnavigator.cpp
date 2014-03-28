@@ -546,6 +546,8 @@ PathCompleter::PathCompleter(QAbstractItemModel *model, QWidget *parent)
 QString
 PathCompleter::pathFromIndex(const QModelIndex &index) const
 {
+//    QString path = index.data(FS::Url).toString();
+//    if (index.data(FS::FileType).toString() == "directory")
     const FS::Model *fsModel = static_cast<const FS::Model *>(index.model());
     QString path = fsModel->url(index).toString();
     if (fsModel->fileInfo(index).isDir())
@@ -556,7 +558,7 @@ PathCompleter::pathFromIndex(const QModelIndex &index) const
 QStringList
 PathCompleter::splitPath(const QString &path) const
 {
-    QUrl url(path);
+    const QUrl url(path);
     if (!url.isLocalFile())
         return QStringList();
     QStringList list;
@@ -575,7 +577,6 @@ PathCompleter::splitPath(const QString &path) const
 #endif
     if (path.endsWith("/"))
         list << "*";
-
     return list;
 }
 
