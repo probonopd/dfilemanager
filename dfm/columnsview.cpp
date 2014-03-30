@@ -204,7 +204,7 @@ public:
         , m_model(static_cast<FS::Model *>(m_view->model())){}
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        if (!index.data().isValid()||!option.rect.isValid())
+        if (!index.isValid()||!option.rect.isValid())
             return;
         if (index.data().toString() == m_view->activeFileName() && !(option.state & QStyle::State_MouseOver))
         {
@@ -312,13 +312,16 @@ ColumnsView::ColumnsView(QWidget *parent, FS::Model *model, const QModelIndex &r
 
 ColumnsView::~ColumnsView()
 {
-//    m_columnsWidget->m_widthMap.insert(rootIndex().data(FS::Url).toUrl(), width());
-    if (m_columnsWidget->m_map.values().contains(this))
+    QMapIterator<QPersistentModelIndex, ColumnsView *> i(m_columnsWidget->m_map);
+    while (i.hasNext())
     {
-        const QPersistentModelIndex &index = m_columnsWidget->m_map.key(this);
-        m_columnsWidget->m_map.take(index);
+        i.next();
+        if (i.value() == this)
+        {
+            m_columnsWidget->m_map.remove(i.key());
+            break;
+        }
     }
-    m_model->unWatchDir(rootIndex().data(FS::FilePathRole).toString());
 }
 
 void
@@ -470,4 +473,35 @@ ColumnsView::showEvent(QShowEvent *e)
     QListView::showEvent(e);
     QScrollBar *v = verticalScrollBar();
     v->resize(v->width(), height()-m_corner->height());
+}
+
+QRect
+ColumnsView::visualRect(const QModelIndex &index) const
+{
+    int y = index.row()*16;
+    int x = viewport()->rect().left();
+    int w = viewport()->width();
+    int h = 16;
+    return QRect(x, y, w, h).translated(0, -verticalOffset());
+}
+
+void
+ColumnsView::paintEvent(QPaintEvent *e)
+{
+    QPainter painter(viewport());
+    for (int i = 0; i < model()->rowCount(rootIndex()); ++i)
+    {
+        const QModelIndex &index = model()->index(i, 0, rootIndex());
+        const QRect vr(visualRect(index));
+        if (!vr.intersects(viewport()->rect()))
+            continue;
+        QStyleOptionViewItemV4 option(viewOptions());
+        if (selectionModel()->isSelected(index))
+            option.state |= QStyle::State_Selected;
+        if (vr.contains(mapFromGlobal(QCursor::pos())))
+            option.state |= QStyle::State_MouseOver;
+        option.rect=vr;
+        itemDelegate()->paint(&painter, option, index);
+    }
+    painter.end();
 }

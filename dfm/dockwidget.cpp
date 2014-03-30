@@ -73,7 +73,8 @@ DockWidget::setLocked(const bool locked)
         w->setContentsMargins(0, -w->fontMetrics().height(), 0, -w->fontMetrics().height());
         setTitleBarWidget(w);
         m_isLocked = true;
-        setContentsMargins(0, 0, 0, 0);
+        if (style()->objectName() != "oxygen")
+            setContentsMargins(0, 0, 0, 0);
     }
     else
     {
@@ -82,7 +83,8 @@ DockWidget::setLocked(const bool locked)
             delete w;
         setTitleBarWidget(0);
         m_isLocked = false;
-        setContentsMargins(m_margins);
+        if (style()->objectName() != "oxygen")
+            setContentsMargins(m_margins);
     }
 }
 

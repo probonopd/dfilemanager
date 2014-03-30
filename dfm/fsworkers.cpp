@@ -164,7 +164,7 @@ Node::childCount(Children children) const
 }
 
 Node
-*Node::child(const int c, Children fromChildren)
+*Node::child(const int c, Children fromChildren) const
 {
     QMutexLocker locker(&m_mutex);
     if (c > -1 && c < m_children[fromChildren].size())
@@ -173,7 +173,7 @@ Node
 }
 
 Node
-*Node::child(const QString &name, const bool nameIsPath)
+*Node::child(const QString &name, const bool nameIsPath) const
 {
     QMutexLocker locker(&m_mutex);
     for (int i = 0; i < ChildrenTypeCount; ++i)
@@ -184,7 +184,7 @@ Node
 }
 
 Node
-*Node::childFromUrl(const QUrl &url)
+*Node::childFromUrl(const QUrl &url) const
 {
     QMutexLocker locker(&m_mutex);
     for (int i = 0; i < ChildrenTypeCount; ++i)
@@ -201,18 +201,12 @@ Node::row()
     if (!m_parent)
         return -1;
 
-    return m_parent->rowOf(this);
-}
-
-int
-Node::rowOf(Node *child) const
-{
-    QMutexLocker locker(&m_mutex);
-    return m_children[Visible].indexOf(child);
+    QMutexLocker locker(&m_parent->m_mutex);
+    return m_parent->m_children[Visible].indexOf(this);
 }
 
 QIcon
-Node::icon()
+Node::icon() const
 {
     if (this == m_model->m_rootNode)
         return QIcon();
@@ -233,16 +227,16 @@ Node::isPopulated() const
     return m_isPopulated;
 }
 
-int Node::sortColumn() { return m_model->sortColumn(); }
+int Node::sortColumn() const { return m_model->sortColumn(); }
 
-Qt::SortOrder Node::sortOrder() { return m_model->sortOrder(); }
+Qt::SortOrder Node::sortOrder() const { return m_model->sortOrder(); }
 
-bool Node::showHidden() { return m_model->showHidden(); }
+bool Node::showHidden() const { return m_model->showHidden(); }
 
-Worker::Gatherer *Node::gatherer() { return m_model->dataGatherer(); }
+Worker::Gatherer *Node::gatherer() const { return m_model->dataGatherer(); }
 
 QString
-Node::mimeType()
+Node::mimeType() const
 {
     if (Data *d = moreData())
         return d->mimeType;
@@ -250,7 +244,7 @@ Node::mimeType()
 }
 
 QString
-Node::fileType()
+Node::fileType() const
 {
     if (isSymLink())
         return QString("symlink");
@@ -259,26 +253,25 @@ Node::fileType()
     else if (isExec())
         return QString("exec");
 
-    if (!m_model->isWorking())
     if (Data *d = moreData())
         return d->fileType;
     return suffix();
 }
 
 struct Data
-*Node::moreData()
+*Node::moreData() const
 {
     const bool parentPopulated = m_parent && m_parent->isPopulated();
-    if (parentPopulated && !m_model->isWorking())
+    if (parentPopulated)
     {
         m_hasRequestedMoreData=true;
-        return DataLoader::data(m_filePath);
+        return DataLoader::data(m_filePath, m_model->isWorking());
     }
     return 0;
 }
 
 QString
-Node::permissionsString()
+Node::permissionsString() const
 {
     const QFile::Permissions p = permissions();
     QString perm;
@@ -308,7 +301,7 @@ Node::rename(const QString &newName)
 }
 
 QString
-Node::category()
+Node::category() const
 {
     if (m_parent && m_parent == m_model->m_rootNode)
         return QObject::tr("scheme");
@@ -330,7 +323,7 @@ Node::category()
 }
 
 QVariant
-Node::data(const int column)
+Node::data(const int column) const
 {
     if (exists())
         switch (column)
@@ -558,6 +551,7 @@ Node::rePopulate()
                 new Node(m_model, QUrl::fromLocalFile(file), this, file);
         }
     }
+//#if defined(Q_OS_WIN)
     else if (this == m_model->schemeNode("file"))
     {
         QList<Device *> devices = Devices::instance()->devices();
@@ -568,6 +562,9 @@ Node::rePopulate()
                 new Node(m_model, QUrl::fromLocalFile(device->mountPath()), this, device->mountPath());
         }
     }
+//#endif
+    else
+        return;
 
     m_mutex.lock();
     m_isPopulated = true;
@@ -585,7 +582,7 @@ Node::rePopulate()
 }
 
 bool
-Node::isExec()
+Node::isExec() const
 {
     if (m_isExe == -1)
     {
@@ -638,13 +635,13 @@ AppNode::AppNode(Model *model, Node *parent, const QUrl &url, const QString &fil
 }
 
 QIcon
-AppNode::icon()
+AppNode::icon() const
 {
     return QIcon::fromTheme(m_appIcon, FileIconProvider::fileIcon(*this));
 }
 
 QString
-AppNode::category()
+AppNode::category() const
 {
     return m_category;
 }
@@ -656,7 +653,7 @@ AppNode::name() const
 }
 
 QVariant
-AppNode::data(const int column)
+AppNode::data(const int column) const
 {
     if (exists())
         switch (column)

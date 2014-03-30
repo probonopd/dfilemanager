@@ -37,7 +37,7 @@ class ColumnsWidget : public QScrollArea
     Q_OBJECT
 public:
     explicit ColumnsWidget(QWidget *parent = 0);
-    ~ColumnsWidget(){}
+    ~ColumnsWidget();
     void setModel(FS::Model *model);
     inline void setSelectionModel(QItemSelectionModel *model) { m_slctModel = model; }
     QModelIndex currentIndex();

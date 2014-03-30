@@ -69,6 +69,7 @@ public:
     inline void setActiveFileName(const QString &fileName) { m_activeFile = fileName; update(); }
     inline QString activeFileName() { return m_activeFile; }
     QRect expanderRect(const QModelIndex &index);
+    QRect visualRect(const QModelIndex &index) const;
     
 signals:
     void newTabRequest(const QModelIndex &index);
@@ -89,6 +90,7 @@ protected:
     bool eventFilter(QObject *o, QEvent *e);
     void resizeEvent(QResizeEvent *e);
     void showEvent(QShowEvent *e);
+    void paintEvent(QPaintEvent *e);
 
 private slots:
     void modelUrlChanged();

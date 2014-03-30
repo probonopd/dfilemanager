@@ -71,7 +71,6 @@ class Model : public QAbstractItemModel
     Q_OBJECT
 public:
     enum History { Back, Forward };
-
     explicit Model(QObject *parent = 0);
     ~Model();
 
@@ -89,7 +88,7 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     int columnCount(const QModelIndex &parent = QModelIndex()) const { return 4; }
 
-    Node *nodeFromIndex(const QModelIndex &index) const;
+    Node *node(const QModelIndex &index) const;
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
     QModelIndex parent(const QModelIndex &child) const;
     QModelIndex index(const QUrl &url);
@@ -109,7 +108,7 @@ public:
     QModelIndexList category(const QModelIndex &fromCat);
 
     QUrl rootUrl() const { return m_url; }
-    Node *rootNode();
+    Node *rootNode() const;
 
     QIcon fileIcon(const QModelIndex &index) const;
     QString fileName(const QModelIndex &index) const;
@@ -121,8 +120,8 @@ public:
     QFileInfo fileInfo(const QModelIndex &index) const;
     QModelIndex mkdir(const QModelIndex &parent, const QString &name);
 
-    inline Worker::Gatherer *dataGatherer() { return m_dataGatherer; }
-    inline QFileSystemWatcher *dirWatcher() { return m_watcher; }
+    inline Worker::Gatherer *dataGatherer() const { return m_dataGatherer; }
+    inline QFileSystemWatcher *dirWatcher() const { return m_watcher; }
 
     void getSort(const QUrl &url);
     void setSort(const int sortColumn, const int sortOrder);
@@ -145,9 +144,11 @@ public:
     inline QMenu *schemes() { return m_schemeMenu; }
     Node *schemeNode(const QString &scheme);
 
-    QString title(const QUrl &url = QUrl());
+    QString title(const QUrl &url = QUrl()) const;
     void watchDir(const QString &path);
     void unWatchDir(const QString &path);
+
+    QFont font() const { return static_cast<const QWidget *>(static_cast<const QObject *>(this)->parent())->font(); }
 
 protected:
     bool handleFileUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
@@ -185,7 +186,7 @@ signals:
     void urlLoaded(const QUrl &url);
 
 private:
-    Node *m_rootNode, *m_current;
+    Node *m_rootNode, *m_current, *m_currentRoot;
     mutable QMap<QString, Node *> m_schemeNodes;
     QHash<QUrl, Node *> m_nodes;
     bool m_showHidden, m_lockHistory, m_isDestroyed;

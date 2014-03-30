@@ -59,7 +59,7 @@ public:
 
     static inline void clearQueue() { instance()->_clearQueue(); }
     static inline void removeData(const QString &file) { instance()->_removeData(file); }
-    static inline struct Data *data(const QString &file) { return instance()->_data(file); }
+    static inline struct Data *data(const QString &file, const bool checkOnly = false) { return instance()->_data(file, checkOnly); }
     bool hasData(const QString &file) const;
     struct Data *fetchData(const QString &file);
 
@@ -80,7 +80,7 @@ protected:
     bool hasQueue() const;
     bool enqueue(const QString &file);
     QString dequeue();
-    Data *_data(const QString &file);
+    Data *_data(const QString &file, const bool checkOnly);
 
 private:
     mutable QMutex m_mtx;

@@ -87,6 +87,7 @@ Model::Model(QObject *parent)
     , m_lockHistory(false)
     , m_schemeMenu(new QMenu())
     , m_current(0)
+    , m_currentRoot(0)
     , m_timer(new QTimer(this))
     , m_isDestroyed(false)
 {
@@ -165,6 +166,7 @@ Model::handleFileUrl(QUrl &url, int &hasUrlReady)
     if (!m_watcher->directories().isEmpty())
         m_watcher->removePaths(m_watcher->directories());
     watchDir(file);
+    m_currentRoot = sNode;
     if (!node)
         dataGatherer()->generateNode(file, sNode);
     else
@@ -198,6 +200,7 @@ Model::handleSearchUrl(QUrl &url, int &hasUrlReady)
     if (!fi.exists())
         return false;
 
+    m_currentRoot = sNode;
     m_current = new Node(this, url, sNode);
     m_dataGatherer->search(searchName, fi.filePath(), m_current);
     hasUrlReady = 1;
@@ -209,6 +212,7 @@ Model::handleApplicationsUrl(QUrl &url, int &hasUrlReady)
 {
 #if defined(Q_OS_UNIX)
     m_current = schemeNode(url.scheme());
+    m_currentRoot = m_current;
     hasUrlReady = 1;
     m_dataGatherer->populateApplications("/usr/share/applications", m_current);
     return true;
@@ -221,6 +225,7 @@ Model::handleDevicesUrl(QUrl &url, int &hasUrlReady)
 {
 #if defined(Q_OS_UNIX)
     m_current = schemeNode("file");
+    m_currentRoot = m_current;
     hasUrlReady = 2;
     return true;
 #endif
@@ -376,11 +381,11 @@ Model::unWatchDir(const QString &path)
 Qt::ItemFlags
 Model::flags(const QModelIndex &index) const
 {
-    Node *node = nodeFromIndex(index);
+    Node *n = node(index);
     Qt::ItemFlags flags = QAbstractItemModel::flags(index);
-    if (node->isWritable()) flags |= Qt::ItemIsEditable;
-    if (node->isDir()) flags |= Qt::ItemIsDropEnabled;
-    if (node->isReadable() && !isWorking()) flags |= Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
+    if (n->isWritable()) flags |= Qt::ItemIsEditable;
+    if (n->isDir()) flags |= Qt::ItemIsDropEnabled;
+    if (n->isReadable() && !isWorking()) flags |= Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
     return flags;
 }
 
@@ -402,10 +407,7 @@ Model::newData(const QString &file)
 bool
 Model::hasThumb(const QString &file)
 {
-    if (isWorking())
-        return false;
-
-    if (Data *d = DataLoader::data(file))
+    if (Data *d = DataLoader::data(file, true))
         return !d->thumb.isNull();
 
     return false;
@@ -414,9 +416,9 @@ Model::hasThumb(const QString &file)
 bool
 Model::hasThumb(const QModelIndex &index)
 {
-    Node *node = nodeFromIndex(index);
-    if (node->exists())
-        return hasThumb(node->filePath());
+    Node *n = node(index);
+    if (n->exists())
+        return hasThumb(n->filePath());
     return false;
 }
 
@@ -426,39 +428,39 @@ Model::data(const QModelIndex &index, int role) const
     if (!index.isValid()||index.column()>3||index.row()>100000)
         return QVariant();
 
-    Node *node = nodeFromIndex(index);
+    Node *n = node(index);
     const int col = index.column();
 
-    if (node == m_rootNode || (role == FileIconRole && col > 0))
+    if (n == m_rootNode || n == m_currentRoot || (role == FileIconRole && col > 0))
         return QVariant();
 
     if (role == FilePathRole)
-        return node->filePath();
+        return n->filePath();
     if (role == FilePermissions)
-        return node->permissionsString();
+        return n->permissionsString();
     if (role == FileIconRole)
-        return node->icon();
+        return n->icon();
     if (role == Qt::TextAlignmentRole)
         return bool(col == 1) ? int(Qt::AlignVCenter|Qt::AlignRight) : int(Qt::AlignLeft|Qt::AlignVCenter);
     if (role == Category)
-        return node->category();
+        return n->category();
     if (role == MimeType)
-        return node->mimeType();
+        return n->mimeType();
     if (role == FileType)
-        return node->fileType();
+        return n->fileType();
     if (role == Url)
-        return node->url();
+        return n->url();
 
     if (role == Qt::FontRole && !col)
     {
-        QFont f(qApp->font());
-        f.setItalic(node->isSymLink());
-        f.setUnderline(node->isExec());
+        QFont f(font());
+        f.setItalic(n->isSymLink());
+        f.setUnderline(n->isExec());
         return f;
     }
 
     if (role == Qt::DisplayRole || role == Qt::EditRole)
-        return node->data(col);
+        return n->data(col);
 
     return QVariant();
 }
@@ -469,11 +471,11 @@ Model::setData(const QModelIndex &index, const QVariant &value, int role)
     if (!index.isValid() || role != Qt::EditRole)
         return false;
 
-    Node *node = nodeFromIndex(index);
+    Node *n = node(index);
     const QString &newName = value.toString();
-    const QString &oldName = node->fileName();
-    const QString &path = node->path();
-    if (node->rename(newName))
+    const QString &oldName = n->fileName();
+    const QString &path = n->path();
+    if (n->rename(newName))
     {
         emit fileRenamed(path, oldName, newName);
         emit dataChanged(index, index);
@@ -511,33 +513,29 @@ QMimeData
         const QModelIndex &index = indexes.at(i);
         if (!index.isValid() || index.column())
             continue;
-        Node *node = nodeFromIndex(index);
-        urls << QUrl::fromLocalFile(node->filePath());
+        Node *n = node(index);
+        urls << QUrl::fromLocalFile(n->filePath());
     }
     QMimeData *data = new QMimeData();
     data->setUrls(urls);
     return data;
 }
 
-int
-Model::rowCount(const QModelIndex &parent) const
-{
-    return nodeFromIndex(parent)->childCount();
-}
-
 Node
-*Model::nodeFromIndex(const QModelIndex &index) const
+*Model::node(const QModelIndex &index) const
 {
     Node *node = static_cast<Node *>(index.internalPointer());
     if (index.isValid() && index.row() < 100000 && index.column() < 5 && node)
         return node;
-    return m_rootNode;
+    return m_currentRoot?m_currentRoot:m_rootNode;
 }
 
 QModelIndex
 Model::indexForLocalFile(const QString &filePath)
 {
     Node *node = schemeNode("file")->localNode(filePath);
+    if (node == m_currentRoot)
+        return QModelIndex();
     if (node)
         return createIndex(node->row(), 0, node);
     return QModelIndex();
@@ -557,11 +555,6 @@ Model::index(const QUrl &url)
             return createIndex(n->row(), 0, n);
     }
 
-    Node *sNode = schemeNode(url.scheme());
-
-    if (url.path().isEmpty())
-        return createIndex(sNode->row(), 0, sNode);
-
     if (url.isLocalFile())
         return indexForLocalFile(url.toLocalFile());
 
@@ -576,34 +569,48 @@ Model::index(const QUrl &url)
 QModelIndex
 Model::index(int row, int column, const QModelIndex &parent) const
 {
-    Node *parentNode = nodeFromIndex(parent);
+    Node *parentNode = node(parent);
     Node *childNode = parentNode->child(row);
 
     if (childNode)
+    {
+        if (m_schemeNodes.values().contains(childNode))
+            return QModelIndex();
         return createIndex(row, column, childNode);
+    }
     return QModelIndex();
 }
 
 QModelIndex
 Model::parent(const QModelIndex &child) const
 {
-    Node *childNode = nodeFromIndex(child);
+    Node *childNode = node(child);
     if (Node * parentNode = childNode->parent())
+    {
+        if (m_schemeNodes.values().contains(parentNode))
+            return QModelIndex();
         return createIndex(parentNode->row(), 0, parentNode);
+    }
     return QModelIndex();
+}
+
+int
+Model::rowCount(const QModelIndex &parent) const
+{
+    return node(parent)->childCount();
 }
 
 bool
 Model::hasChildren(const QModelIndex &parent) const
 {
-    Node *n = nodeFromIndex(parent);
+    Node *n = node(parent);
     return n->hasChildren()||n->isDir();
 }
 
 bool
 Model::canFetchMore(const QModelIndex &parent) const
 {
-    return nodeFromIndex(parent)->isDir();
+    return node(parent)->isDir();
 }
 
 void
@@ -611,9 +618,9 @@ Model::fetchMore(const QModelIndex &parent)
 {
     if (parent.isValid() && parent.column() != 0)
         return;
-    Node *node = nodeFromIndex(parent);
-    if (node && !node->isPopulated() && node->exists())
-        dataGatherer()->populateNode(node);
+    Node *n = node(parent);
+    if (n && !n->isPopulated() && n->exists())
+        dataGatherer()->populateNode(n);
 }
 
 void
@@ -629,7 +636,7 @@ Model::sort(int column, Qt::SortOrder order)
     const QModelIndexList &oldList = persistentIndexList();
     QList<QPair<int, Node *> > old;
     for (int i = 0; i < oldList.count(); ++i)
-        old << QPair<int, Node *>(oldList.at(i).column(), nodeFromIndex(oldList.at(i)));
+        old << QPair<int, Node *>(oldList.at(i).column(), node(oldList.at(i)));
 
     rootNode()->sort();
 
@@ -696,11 +703,11 @@ Model::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int c
     if (!data->hasUrls())
         return false;
 
-    Node *node = nodeFromIndex(parent);
-    if (!node->isDir())
+    Node *n = node(parent);
+    if (!n->isDir())
         return false;
 
-    IO::Manager::copy(data->urls(), node->filePath(), true, true);
+    IO::Manager::copy(data->urls(), n->filePath(), true, true);
     return true;
 }
 
@@ -709,14 +716,14 @@ Model::mkdir(const QModelIndex &parent, const QString &name)
 {
     if (parent.isValid())
     {
-        Node *node = nodeFromIndex(parent);
-        QDir dir(node->filePath());
+        Node *n = node(parent);
+        QDir dir(n->filePath());
         if (!dir.isAbsolute())
             return QModelIndex();
         m_watcher->blockSignals(true);
         if (!dir.mkdir(name))
             QMessageBox::warning(static_cast<QWidget *>(m_parent), "There was an error", QString("Could not create folder in %2").arg(dir.path()));
-        node->rePopulate();
+        n->rePopulate();
         m_watcher->blockSignals(false);
         return index(QUrl::fromLocalFile(dir.absoluteFilePath(name)));
     }
@@ -726,7 +733,7 @@ Model::mkdir(const QModelIndex &parent, const QString &name)
 QUrl
 Model::url(const QModelIndex &index) const
 {
-    return nodeFromIndex(index)->url();
+    return node(index)->url();
 }
 
 QModelIndexList
@@ -740,7 +747,7 @@ Model::category(const QString &cat)
         const QModelIndex &child = index(i, 0, parent);
         if (!child.isValid())
             continue;
-        if (nodeFromIndex(child)->category() == cat)
+        if (node(child)->category() == cat)
             categ << child;
     }
     return categ;
@@ -749,7 +756,7 @@ Model::category(const QString &cat)
 QModelIndexList
 Model::category(const QModelIndex &fromCat)
 {
-    return category(nodeFromIndex(fromCat)->category());
+    return category(node(fromCat)->category());
 }
 
 QStringList
@@ -764,9 +771,9 @@ Model::categories()
         if (!child.isValid())
             continue;
 
-        if (Node *node = nodeFromIndex(child))
-            if (!cats.contains(node->category()))
-                cats << node->category();
+        if (Node *n = node(child))
+            if (!cats.contains(n->category()))
+                cats << n->category();
     }
     return cats;
 }
@@ -774,7 +781,7 @@ Model::categories()
 void
 Model::exec(const QModelIndex &index)
 {
-    nodeFromIndex(index)->exec();
+    node(index)->exec();
 }
 
 void
@@ -840,30 +847,30 @@ Model::schemeFromSchemeMenu()
 QString
 Model::fileName(const QModelIndex &index) const
 {
-    return nodeFromIndex(index)->name();
+    return node(index)->name();
 }
 
 QIcon
 Model::fileIcon(const QModelIndex &index) const
 {
-    return nodeFromIndex(index)->icon();
+    return node(index)->icon();
 }
 
 bool Model::isDir(const QModelIndex &index) const
 {
-    return nodeFromIndex(index)->isDir();
+    return node(index)->isDir();
 }
 QFileInfo Model::fileInfo(const QModelIndex &index) const
 {
-    return *nodeFromIndex(index);
+    return *node(index);
 }
 
-Node *Model::rootNode() { return m_rootNode; }
+Node *Model::rootNode() const { return m_currentRoot; }
 
 bool Model::isWorking() const { return m_dataGatherer->isRunning(); }
 
 QString
-Model::title(const QUrl &url)
+Model::title(const QUrl &url) const
 {
     QUrl u = url;
     if (u.isEmpty())
@@ -894,6 +901,10 @@ Node
     QUrl url;
     url.setScheme(scheme);
     Node *node = new Node(this, url, m_rootNode);
+//#if defined(Q_OS_UNIX)
+//    if (scheme == "file")
+//        new Node(this, QUrl::fromLocalFile("/"), node, "/");
+//#endif
     m_schemeMenu->addAction(scheme, this, SLOT(schemeFromSchemeMenu()));
     m_schemeNodes.insert(scheme, node);
     return node;

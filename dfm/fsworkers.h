@@ -50,20 +50,19 @@ public:
     Node(FS::Model *model = 0, const QUrl &url = QUrl(), Node *parent = 0, const QString &filePath = QString());
     virtual ~Node();
 
-    inline Model *model() { return m_model; }
-    Worker::Gatherer *gatherer();
+    inline Model *model() const { return m_model; }
+    Worker::Gatherer *gatherer() const;
 
     virtual QString name() const { return m_name; }
     bool rename(const QString &newName);
     inline QString filePath() const { return m_filePath; }
 
     int row();
-    int rowOf(Node *child) const;
     int childCount(Children children = Visible) const;
     void addChild(Node *node);
-    Node *child(const int c, Children fromChildren = Visible);
-    Node *child(const QString &name, const bool nameIsPath = true);
-    Node *childFromUrl(const QUrl &url);
+    Node *child(const int c, Children fromChildren = Visible) const;
+    Node *child(const QString &name, const bool nameIsPath = true) const;
+    Node *childFromUrl(const QUrl &url) const;
     inline bool hasChildren() const { return !m_children[Visible].isEmpty(); }
     void insertChild(Node *n, const int i);
 
@@ -71,23 +70,26 @@ public:
     void rePopulate();
     bool isPopulated() const;
 
-    virtual QVariant data(const int column);
-    QString permissionsString();
-    virtual QString category();
-    inline QString scheme() { return url().scheme(); }
-    QString mimeType();
-    QString fileType();
-    bool isExec();
-    virtual QIcon icon();
-    virtual void exec();
-    void sort();
-    int sortColumn();
-    Qt::SortOrder sortOrder();
+    virtual QVariant data(const int column) const;
+    virtual QIcon icon() const;
+    virtual QString category() const;
 
-    struct Data *moreData();
+    QString permissionsString() const;
+    inline QString scheme() const { return url().scheme(); }
+    QString mimeType() const;
+    QString fileType() const;
+    bool isExec() const;
+
+    virtual void exec();
+
+    void sort();
+    int sortColumn() const;
+    Qt::SortOrder sortOrder() const;
+
+    struct Data *moreData() const;
 
     void setHiddenVisible(bool visible);
-    bool showHidden();
+    bool showHidden() const;
 
     void setFilter(const QString &filter);
     inline QString filter() const { return m_filter; }
@@ -97,19 +99,22 @@ public:
 
     Node *localNode(const QString &path, bool checkOnly = true);
     Node *nodeFromLocalPath(const QString &path, bool checkOnly = true);
+
     inline QUrl url() const { return m_url; }
     inline void setUrl(const QUrl &url) { m_url = url; }
 
-    Node *parent() { return m_parent; }
+    inline Node *parent() const { return m_parent; }
 
 private:
-    bool m_isPopulated, m_hasRequestedMoreData;
-    int m_isExe;
+    mutable bool m_hasRequestedMoreData;
+    mutable int m_isExe;
+    mutable QMutex m_mutex;
+
+    bool m_isPopulated;
     Nodes m_children[ChildrenTypeCount];
     Node *m_parent;
     QString m_filePath, m_filter, m_name;
     QUrl m_url;
-    mutable QMutex m_mutex;
     Model *m_model;
     QIcon m_icon;
 };
@@ -122,11 +127,11 @@ public:
     AppNode(Model *model = 0, Node *parent = 0, const QUrl &url = QUrl(), const QString &filePath = QString());
 
     QString name() const;
-    QString category();
-    QString comment() { return m_comment; }
-    QString command() { return m_appCmd; }
-    QIcon icon();
-    QVariant data(const int column);
+    QString category() const;
+    inline QString comment() const { return m_comment; }
+    inline QString command() const { return m_appCmd; }
+    QIcon icon() const;
+    QVariant data(const int column) const;
     void exec();
 
 private:

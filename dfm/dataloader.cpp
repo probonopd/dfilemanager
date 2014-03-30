@@ -82,7 +82,7 @@ Data
 }
 
 Data
-*DataLoader::_data(const QString &file)
+*DataLoader::_data(const QString &file, const bool checkOnly)
 {
     if (hasData(file))
     {
@@ -93,6 +93,8 @@ Data
 
         delete m_data.take(file);
     }
+    if (checkOnly)
+        return 0;
     if (enqueue(file) && isPaused())
         setPause(false);
     return 0;

@@ -120,17 +120,14 @@ inline static void drawDeviceUsage(const int usage, QPainter *painter, const QSt
 void
 PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
+    if (!index.isValid() || !RECT.isValid() || !RECT.intersects(m_placesView->viewport()->rect()))
+        return;
     painter->save(); //must save... have to restore at end
     painter->setRenderHint(QPainter::Antialiasing);
 
-    const bool underMouse = option.state & QStyle::State_MouseOver,
-            selected = option.state & QStyle::State_Selected;
+    const bool selected = option.state & QStyle::State_Selected;
 
     const QPalette::ColorRole fgr = m_placesView->foregroundRole(), bgr = m_placesView->backgroundRole();
-
-    QColor baseColor = m_placesView->palette().color(bgr);
-    if (underMouse)
-        painter->fillRect(RECT, baseColor);
 
     int step = selected ? 8 : ViewAnimator::hoverLevel(m_placesView, index);
 
@@ -144,8 +141,6 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     QColor fg = isHeader(index) ? mid : PAL.color(fgr);
     QPalette pal(PAL);
     pal.setColor(fgr, fg);
-    const QStyleOptionViewItem &copy(option);
-    const_cast<QStyleOptionViewItem *>(&copy)->palette = pal;
 
     QFont font(index.data(Qt::FontRole).value<QFont>());
     font.setBold(selected || isHeader(index));
@@ -153,9 +148,8 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 
     if (step && !isHeader(index))
     {
-        const_cast<QStyleOptionViewItem *>(&copy)->state |= QStyle::State_MouseOver; //grrrrr, must trick styles....
         painter->setOpacity((1.0f/8.0f)*step);
-        QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, painter, m_placesView);
+        m_placesView->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, painter, m_placesView);
         painter->setOpacity(1);
     }
 
@@ -210,12 +204,12 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
         iconPix = QPixmap::fromImage(img);
     }
 
-
     if (qMax(iconPix.width(), iconPix.height()) > 16)
         iconPix = iconPix.scaled(QSize(16, 16), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
     QApplication::style()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, iconPix);
-    if (selected && Store::config.behaviour.invActBookmark) QApplication::style()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, iconPix);
+    if (selected && Store::config.behaviour.invActBookmark)
+        QApplication::style()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, iconPix);
     painter->restore();
 }
 
@@ -529,6 +523,11 @@ void
 PlacesView::paletteOps()
 {
     QPalette::ColorRole bg = viewport()->backgroundRole(), fg = viewport()->foregroundRole();
+    if (Store::config.behaviour.sideBarStyle == -1)
+    {
+        viewport()->setAutoFillBackground(false);
+        setFrameStyle(0);
+    }
     if (!viewport()->autoFillBackground())
     {
         bg = backgroundRole();
@@ -768,6 +767,32 @@ PlacesView::keyReleaseEvent(QKeyEvent *event)
     if (event->key() == Qt::Key_F2)
         renPlace();
     QTreeView::keyReleaseEvent(event);
+}
+
+void
+PlacesView::drawItemsRecursive(QPainter *painter, const QModelIndex &parent)
+{
+    for (int i = 0; i < model()->rowCount(parent); ++i)
+    {
+        const QModelIndex &index = model()->index(i, 0, parent);
+        const QRect vr(visualRect(index));
+        QStyleOptionViewItemV4 option(viewOptions());
+        if (ViewAnimator::hoverLevel(this, index))
+            option.state |= QStyle::State_MouseOver;
+        if (selectionModel()->isSelected(index))
+            option.state |= QStyle::State_Selected;
+        option.rect=vr;
+        itemDelegate()->paint(painter, option, index);
+        drawItemsRecursive(painter, index);
+    }
+}
+
+void
+PlacesView::paintEvent(QPaintEvent *event)
+{
+    QPainter p(viewport());
+    drawItemsRecursive(&p);
+    p.end();
 }
 
 void

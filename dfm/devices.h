@@ -78,6 +78,7 @@ public:
     QList<Device *> devices() { return m_devices.values(); }
     QStringList mounts() const;
     void removeMount(const QString &mount);
+    bool isDevice(const QString &path) { return m_mounts.contains(path); }
 
 signals:
     void deviceAdded(Device *dev);

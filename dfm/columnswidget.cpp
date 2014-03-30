@@ -54,6 +54,11 @@ ColumnsWidget::ColumnsWidget(QWidget *parent)
     setCursor(Qt::ArrowCursor);
 }
 
+ColumnsWidget::~ColumnsWidget()
+{
+    m_map.clear();
+}
+
 void
 ColumnsWidget::setModel(FS::Model *model)
 {
@@ -104,7 +109,7 @@ void
 ColumnsWidget::reconnectViews()
 {
     foreach (ColumnsView *view, m_map.values())
-        connectView(view);  
+        connectView(view);
 }
 
 void
@@ -147,14 +152,15 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
     {
         const QModelIndex &index = list.at(i);
         if (m_map.contains(index))
+        if (ColumnsView *view = m_map.value(index, 0))
         {
             if (i+1<list.size())
             {
                 const QString &activeName = list.at(i+1).data().toString();
-                m_map.value(index)->setActiveFileName(activeName);
+                view->setActiveFileName(activeName);
             }
             else
-                m_map.value(index)->setActiveFileName(QString());
+                view->setActiveFileName(QString());
             continue;
         }
         ColumnsView *view = new ColumnsView(this, m_model, index);

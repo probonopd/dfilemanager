@@ -113,10 +113,17 @@ InfoWidget::InfoWidget(QWidget *parent)
 void
 InfoWidget::paletteOps()
 {
-    m_viewport->setAutoFillBackground(true);
+    m_viewport->setAutoFillBackground(Store::config.behaviour.sideBarStyle != -1);
+    if (Store::config.behaviour.sideBarStyle == -1)
+        setFrameStyle(0);
     QPalette::ColorRole bg = backgroundRole(), fg = foregroundRole();
     QPalette pal = palette();
     const QColor fgc = pal.color(fg), bgc = pal.color(bg);
+    if (Store::config.behaviour.sideBarStyle == 0)
+    {
+        pal.setColor(bg, pal.color(QPalette::Base));
+        pal.setColor(fg, pal.color(QPalette::Text));
+    }
     if (Store::config.behaviour.sideBarStyle == 1)
     {
         //base color... slight hihglight tint

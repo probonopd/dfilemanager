@@ -66,6 +66,11 @@ void
 RecentFoldersView::paletteOps()
 {
     QPalette::ColorRole bg = viewport()->backgroundRole(), fg = viewport()->foregroundRole();
+    if (Store::config.behaviour.sideBarStyle == -1)
+    {
+        viewport()->setAutoFillBackground(false);
+        setFrameStyle(0);
+    }
     if (!viewport()->autoFillBackground())
     {
         bg = backgroundRole();

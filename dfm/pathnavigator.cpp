@@ -109,7 +109,7 @@ NavButton::NavButton(QWidget *parent, const QUrl &url, const QString &text)
     , m_margin(4)
     , m_text(text)
 {
-    setMaximumHeight(16);
+//    setMaximumHeight(16);
     if (m_nav->url() != url)
         setMinimumWidth(23);
     if (text.isEmpty())
@@ -177,7 +177,7 @@ NavButton::paintEvent(QPaintEvent *e)
         icon = FS::FileIconProvider::fileIcon(QFileInfo(m_url.toLocalFile()));
     const QPixmap &pix = icon.pixmap(16);
     QPainter p(this);
-    p.drawTiledPixmap(m_margin, 0, 16, 16, pix);
+    p.drawTiledPixmap(QRect(m_margin, height()/2-8, 16, 16), pix);
 
     const QRect &textRect = QRect(18+m_margin, 0, width()-(18+m_margin), height());
     const QColor &fg = palette().color(foregroundRole());
@@ -386,7 +386,9 @@ NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
     , m_schemeButton(new Button(this))
     , m_stack(new QStackedLayout())
     , m_viewport(new QWidget(this))
+    , m_dock(0)
 {
+    setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
     m_pathBox->setInsertPolicy(QComboBox::InsertAtBottom);
     m_pathBox->setEditable(true);
     m_pathBox->setDuplicatesEnabled(false);
@@ -416,11 +418,11 @@ NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
     m_viewport->setLayout(layout);
     m_viewport->setContentsMargins(4, 0, 0, 0);
 
-    QHBoxLayout *viewPortLay = new QHBoxLayout(this);
-    viewPortLay->addWidget(m_viewport);
-    viewPortLay->setContentsMargins(0, 0, 0, 0);
-    viewPortLay->setSpacing(0);
-    setLayout(viewPortLay);
+    QHBoxLayout *ml = new QHBoxLayout();
+    ml->setContentsMargins(0, 0, 0, 0);
+    ml->setSpacing(0);
+    ml->addWidget(m_viewport);
+    setLayout(ml);
 
     QTimer::singleShot(0, this, SLOT(paletteOps()));
     QTimer::singleShot(0, this, SLOT(postConstructorJobs()));
@@ -429,7 +431,7 @@ NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
 void
 NavBar::postConstructorJobs()
 {
-    m_schemeButton->setIcon(IconProvider::icon(IconProvider::Circle, 16, palette().color(foregroundRole()), false));
+    m_schemeButton->setIcon(IconProvider::icon(IconProvider::Circle, 16, m_viewport->palette().color(foregroundRole()), false));
 //    m_schemeButton->setMenu(m_fsModel->schemes());
     m_schemeButton->setFixedSize(16, 16);
 }
@@ -437,41 +439,71 @@ NavBar::postConstructorJobs()
 void
 NavBar::paletteOps()
 {
-    const int style = Store::config.behaviour.pathBarStyle;
-    if (style > 0)
+    const int barStyle = Store::config.behaviour.pathBarStyle;
+    if (barStyle == -1 && style()->objectName() == "oxygen")
+    {
+//        setContentsMargins(0, 0, 0, 0);
+        setFrameStyle(0);
+        m_dock = new QDockWidget(this);
+        m_dock->setFeatures(QDockWidget::NoDockWidgetFeatures);
+        m_dock->setVisible(true);
+        m_dock->setFixedSize(size());
+        m_dock->setAttribute(Qt::WA_TransparentForMouseEvents);
+        m_dock->setMask(QRegion(rect())-rect().adjusted(4, 4, -4, -4));
+        return;
+    }
+    if (barStyle > -1)
+    {
         m_viewport->setAutoFillBackground(true);
-    if (style != 0)
         setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    }
     else
         setContentsMargins(0, 0, 0, 0);
+
     QPalette::ColorRole bg = backgroundRole(), fg = foregroundRole();
     QPalette pal = palette();
     const QColor fgc = pal.color(fg), bgc = pal.color(bg);
-    if (style == 1)
+    if (barStyle == 0)
+    {
+        pal.setColor(bg, pal.color(QPalette::Base));
+        pal.setColor(fg, pal.color(QPalette::Text));
+    }
+    if (barStyle == 1)
     {
         //base color... slight hihglight tint
         QColor midC = Ops::colorMid(pal.color(QPalette::Base), qApp->palette().color(QPalette::Highlight), 10, 1);
         pal.setColor(bg, Ops::colorMid(Qt::black, midC, 1, 10));
         pal.setColor(fg, qApp->palette().color(QPalette::Text));
     }
-    else if (style == 2)
+    else if (barStyle == 2)
     {
         pal.setColor(bg, Ops::colorMid(fgc, qApp->palette().color(QPalette::Highlight), 10, 1));
         pal.setColor(fg, bgc);
     }
-    else if (style == 3)
+    else if (barStyle == 3)
     {
         const QColor &wtext = pal.color(QPalette::WindowText), w = pal.color(QPalette::Window);
         pal.setColor(bg, Ops::colorMid(wtext, qApp->palette().color(QPalette::Highlight), 10, 1));
         pal.setColor(fg, w);
     }
     pal.setBrush(bg, pal.color(bg));
-    setPalette(pal);
+    m_viewport->setPalette(pal);
 
     QPalette ppal(m_pathBox->palette());
-    ppal.setColor(QPalette::Text, palette().color(foregroundRole()));
-    ppal.setColor(QPalette::Base, palette().color(backgroundRole()));
+    ppal.setColor(QPalette::Text, pal.color(foregroundRole()));
+    ppal.setColor(QPalette::Base, pal.color(backgroundRole()));
     m_pathBox->setPalette(ppal);
+}
+
+void
+NavBar::resizeEvent(QResizeEvent *e)
+{
+    QFrame::resizeEvent(e);
+    if (m_dock)
+    {
+        m_dock->setFixedSize(e->size());
+        m_dock->setMask(QRegion(rect())-rect().adjusted(4, 4, -4, -4));
+    }
 }
 
 void
@@ -479,8 +511,10 @@ NavBar::urlFromEdit(const QString &urlString)
 {
     const QString &checked = Ops::sanityChecked(urlString);
     QUrl url = QUrl::fromUserInput(checked);
-    url = url.toEncoded(QUrl::StripTrailingSlash);
-    if (url.isLocalFile())
+    if (!url.toString().endsWith("///"))
+        url = url.toEncoded(QUrl::StripTrailingSlash);
+//    qDebug() << url << "NavBar::urlFromEdit";
+    if (url.isLocalFile() /*&& !url.path().isEmpty()*/)
     {
         QString path = url.toLocalFile();
         if (path.endsWith(":"))
@@ -498,10 +532,6 @@ NavBar::urlFromEdit(const QString &urlString)
 void
 NavBar::setUrl(const QUrl &url)
 {
-    if (!m_fsModel)
-        return;
-    if (url != m_fsModel->rootUrl())
-        return;
     bool exists = false;
     for (int i = 0; i < m_pathBox->count(); i++)
         if (m_pathBox->itemText(i) == url.toString())
@@ -519,12 +549,12 @@ NavBar::setEditable(const bool editable)
     if (!editable && url().isLocalFile())
     {
         m_stack->setCurrentWidget(m_pathNav);
-        m_schemeButton->setIcon(IconProvider::icon(IconProvider::Circle, 16, palette().color(foregroundRole()), false));
+        m_schemeButton->setIcon(IconProvider::icon(IconProvider::Circle, 16, m_viewport->palette().color(foregroundRole()), false));
     }
     else
     {
         m_stack->setCurrentWidget(m_pathBox);
-        m_schemeButton->setIcon(IconProvider::icon(IconProvider::OK, 16, palette().color(foregroundRole()), false));
+        m_schemeButton->setIcon(IconProvider::icon(IconProvider::OK, 16, m_viewport->palette().color(foregroundRole()), false));
     }
     currentWidget()->setFocus();     
 }
@@ -550,7 +580,7 @@ PathCompleter::pathFromIndex(const QModelIndex &index) const
 //    if (index.data(FS::FileType).toString() == "directory")
     const FS::Model *fsModel = static_cast<const FS::Model *>(index.model());
     QString path = fsModel->url(index).toString();
-    if (fsModel->fileInfo(index).isDir())
+    if (fsModel->fileInfo(index).isDir() && !path.endsWith("/"))
         path.append("/");
     return path;
 }
@@ -562,7 +592,7 @@ PathCompleter::splitPath(const QString &path) const
     if (!url.isLocalFile())
         return QStringList();
     QStringList list;
-    list << url.scheme();
+//    list << url.scheme();
     QStringList plist = QStringList() << url.toLocalFile().split("/", QString::SkipEmptyParts);
 #if defined(Q_OS_UNIX)
     list << "/";

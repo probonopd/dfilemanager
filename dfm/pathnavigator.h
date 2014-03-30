@@ -35,6 +35,7 @@
 #include <QBoxLayout>
 #include <QCompleter>
 #include <QListView>
+#include <QDockWidget>
 
 #include "filesystemmodel.h"
 #include "operations.h"
@@ -179,16 +180,21 @@ public slots:
     void startAnimating();
     void stopAnimating();
 
+protected:
+    void resizeEvent(QResizeEvent *);
+
 signals:
     void newPath(const QString &path);
 
 private:
+    QPixmap m_pix;
     PathBox *m_pathBox;
     PathNavigator *m_pathNav;
     FS::Model *m_fsModel;
     Button *m_schemeButton;
     QStackedLayout *m_stack;
     QWidget *m_viewport;
+    QDockWidget *m_dock;
 };
 
 class PathCompleter : public QCompleter

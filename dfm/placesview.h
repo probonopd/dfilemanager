@@ -261,6 +261,8 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void paletteChange(const QPalette &pal);
+    void paintEvent(QPaintEvent *event);
+    void drawItemsRecursive(QPainter *painter, const QModelIndex &parent = QModelIndex());
 
 signals:
     void newTabRequest(const QUrl &url);

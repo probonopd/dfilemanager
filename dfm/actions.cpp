@@ -368,29 +368,32 @@ MainWindow::createMenus()
         m_actions[ShowMenuBar]->setChecked(false);
 }
 
-static QAction *genSeparator()
+static QAction *genSeparator(QObject *parent)
 {
-    QAction *a = new QAction(qApp);
+    QAction *a = new QAction(parent);
     a->setSeparator(true);
     return a;
 }
 
-QMenu
-*MainWindow::rightClick(const QString &file, const QPoint &pos) const
+void
+MainWindow::rightClick(const QString &file, const QPoint &pos) const
 {
+    QMenu menu;
     QList<QAction *> firstGroup;
     firstGroup << m_actions[OpenInTab]
             << m_actions[MkDir]
+            << genSeparator(&menu)
             << m_actions[Paste]
             << m_actions[Copy]
             << m_actions[Cut]
+            << genSeparator(&menu)
             << m_actions[DeleteSelection]
             << m_actions[Rename];
     QList<QAction *> secondGroup;
     secondGroup << m_actions[GoUp]
             << m_actions[GoBack]
             << m_actions[GoForward]
-            << genSeparator()
+            << genSeparator(&menu)
             << m_actions[Properties];
 
     QMenu openWith;
@@ -398,7 +401,6 @@ QMenu
     QList<QAction *> owa = QList<QAction *>() << Store::openWithActions(file) << m_actions[CustomCommand];
     openWith.addActions(owa);
 
-    QMenu menu;
     if (!Store::customActions().isEmpty())
     {
         menu.addMenu(Store::customActionsMenu());
@@ -410,7 +412,6 @@ QMenu
     menu.addSeparator();
     menu.addActions(secondGroup);
     menu.exec(pos);
-    return &menu;
 }
 
 void
