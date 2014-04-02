@@ -189,7 +189,7 @@ private:
     Node *m_rootNode, *m_current, *m_currentRoot;
     mutable QMap<QString, Node *> m_schemeNodes;
     QHash<QUrl, Node *> m_nodes;
-    bool m_showHidden, m_lockHistory, m_isDestroyed;
+    bool m_showHidden, m_lockHistory;
     Qt::SortOrder m_sortOrder;
     int m_sortColumn;
     QFileSystemWatcher *m_watcher;

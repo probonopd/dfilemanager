@@ -56,7 +56,7 @@ ColumnsWidget::ColumnsWidget(QWidget *parent)
 
 ColumnsWidget::~ColumnsWidget()
 {
-    m_map.clear();
+    m_columns.clear();
 }
 
 void
@@ -76,8 +76,10 @@ ColumnsWidget::currentIndex()
 ColumnsView
 *ColumnsWidget::currentView()
 {
-    ColumnsView *view = qobject_cast<ColumnsView *>(focusWidget());
-    if (view && m_map.values().contains(view))
+    if (ColumnsView *view = qobject_cast<ColumnsView *>(focusWidget()))
+        return view;
+    if (!m_columns.isEmpty())
+    if (ColumnsView *view = m_columns.last())
         return view;
     return 0;
 }
@@ -108,51 +110,72 @@ ColumnsWidget::connectView(ColumnsView *view)
 void
 ColumnsWidget::reconnectViews()
 {
-    foreach (ColumnsView *view, m_map.values())
+    foreach (ColumnsView *view, m_columns)
         connectView(view);
 }
 
 void
-ColumnsWidget::clearFrom(const QModelIndexList &list)
+ColumnsWidget::removeView(ColumnsView *view)
 {
-    QMapIterator<QPersistentModelIndex, ColumnsView *> i(m_map);
-    while (i.hasNext())
+    view->deleteLater();
+    if (QLayoutItem *item = m_viewLay->takeAt(m_viewLay->indexOf(view)))
+        delete item;
+}
+
+void
+ColumnsWidget::clear(const QModelIndexList &list)
+{
+    for (int i = 0; i < m_columns.count(); ++i)
     {
-        i.next();
-        if (!list.contains(i.key()) || !i.key().isValid())
-        {
-            int at = m_viewLay->indexOf(i.value());
-            QLayoutItem *item = m_viewLay->takeAt(at);
-            if (item)
-            {
-                if (item->widget())
-                    item->widget()->deleteLater();
-                delete item;
-            }
-        }
+        ColumnsView *view = m_columns.at(i);
+        const QModelIndex &index = view->rootIndex();
+        const QString &viewUrl = index.data(FS::Url).toUrl().toString();
+        const QString &rootUrl = m_rootIndex.data(FS::Url).toUrl().toString();
+
+        if (!rootUrl.contains(viewUrl) || !list.contains(index))
+            removeView(view);
     }
+}
+
+ColumnsView
+*ColumnsWidget::column(const QModelIndex &index) const
+{
+    for (int i = 0; i < m_columns.count(); ++i)
+    {
+        ColumnsView *v = m_columns.at(i);
+        if (v->rootIndex() == index)
+            return v;
+    }
+    return 0;
+}
+
+QModelIndexList
+ColumnsWidget::parents(const QModelIndex &index) const
+{
+    QModelIndexList list;
+    QModelIndex idx = index;
+    while (idx.isValid())
+    {
+        list.prepend(idx);
+        const QString &path = idx.data(FS::FilePathRole).toString();
+        if (MainWindow::currentWindow()->placesView()->hasPlace(path))
+            return list;
+        idx=idx.parent();
+    }
+    return list;
 }
 
 void
 ColumnsWidget::setRootIndex(const QModelIndex &index)
 {
     m_rootIndex = index;
-    QModelIndexList list;
-    QModelIndex idx = index;
-    while (idx.isValid())
-    {
-        list.prepend(idx);
-        idx=idx.parent();
-    }
-//    if (list.size() > 1)
-//        list.removeFirst();
-    clearFrom(list);
+    const QModelIndexList &list = parents(index);
+    clear(list);
 
     for (int i=0; i<list.size(); ++i)
     {
         const QModelIndex &index = list.at(i);
-        if (m_map.contains(index))
-        if (ColumnsView *view = m_map.value(index, 0))
+        if (ColumnsView *view = column(index))
         {
             if (i+1<list.size())
             {
@@ -173,9 +196,11 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
             view->setActiveFileName(QString());
         connectView(view);
         view->setSelectionModel(m_slctModel);
-        m_map.insert(index, view);
+        m_columns << view;
         m_viewLay->insertWidget(m_viewLay->count()-1, view);
     }
+    if (!m_columns.isEmpty())
+        m_columns.last()->setFocus();
 }
 
 void
@@ -189,7 +214,7 @@ void
 ColumnsWidget::showEvent(QShowEvent *e)
 {
     QScrollArea::showEvent(e);
-    ensureWidgetVisible(m_map.value(m_rootIndex, 0));
+    ensureWidgetVisible(currentView());
 }
 
 void

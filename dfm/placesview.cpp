@@ -795,6 +795,21 @@ PlacesView::paintEvent(QPaintEvent *event)
     p.end();
 }
 
+bool
+PlacesView::hasPlace(const QString &path) const
+{
+    for (int c = 0; c < containers().count(); ++c)
+    {
+        Container *cont = container(c);
+        for (int p = 0; p < cont->rowCount(); ++p)
+        {
+            if (cont->place(p)->path() == path)
+                return true;
+        }
+    }
+    return false;
+}
+
 void
 PlacesView::removePlace()
 {

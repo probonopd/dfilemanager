@@ -104,6 +104,12 @@ ViewContainer::ViewContainer(QWidget *parent)
 ViewContainer::~ViewContainer()
 {
 //    qDebug() << "deleting container" << m_model->rootUrl() << this;
+    delete m_iconView;
+    delete m_detailsView;
+    delete m_columnsWidget;
+    delete m_flowView;
+    delete m_navBar;
+    delete m_model;
 }
 
 void

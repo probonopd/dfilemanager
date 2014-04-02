@@ -106,7 +106,6 @@ public:
     inline Node *parent() const { return m_parent; }
 
 private:
-    mutable bool m_hasRequestedMoreData;
     mutable int m_isExe;
     mutable QMutex m_mutex;
 

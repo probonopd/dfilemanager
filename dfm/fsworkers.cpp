@@ -73,7 +73,6 @@ Node::Node(Model *model, const QUrl &url, Node *parent, const QString &filePath)
     , m_parent(parent)
     , m_url(url)
     , m_isExe(-1)
-    , m_hasRequestedMoreData(false)
 {
     if (url.path().isEmpty() && !url.scheme().isEmpty())
         m_name = url.scheme();
@@ -84,8 +83,8 @@ Node::Node(Model *model, const QUrl &url, Node *parent, const QString &filePath)
     else
         m_name = fileName();
 
-    if (m_parent && m_parent->m_parent == m_model->m_rootNode)
-        m_name = m_filePath;
+//    if (m_parent && m_parent->m_parent == static_cast<Node *>(&m_model->m_rootNode))
+//        m_name = m_filePath;
 
     if (m_name.isEmpty())
         m_name = url.toEncoded(QUrl::RemoveScheme);
@@ -208,8 +207,8 @@ Node::row()
 QIcon
 Node::icon() const
 {
-    if (this == m_model->m_rootNode)
-        return QIcon();
+//    if (this == static_cast<Node *>(&m_model->m_rootNode))
+//        return QIcon();
     if (Devices::instance()->mounts().contains(m_filePath))
         return FileIconProvider::typeIcon(FileIconProvider::Drive);
     Data *d = moreData();
@@ -261,13 +260,7 @@ Node::fileType() const
 struct Data
 *Node::moreData() const
 {
-    const bool parentPopulated = m_parent && m_parent->isPopulated();
-    if (parentPopulated)
-    {
-        m_hasRequestedMoreData=true;
-        return DataLoader::data(m_filePath, m_model->isWorking());
-    }
-    return 0;
+    return DataLoader::data(m_filePath, m_model->isWorking());
 }
 
 QString
@@ -303,8 +296,8 @@ Node::rename(const QString &newName)
 QString
 Node::category() const
 {
-    if (m_parent && m_parent == m_model->m_rootNode)
-        return QObject::tr("scheme");
+//    if (m_parent && m_parent == static_cast<Node *>(&m_model->m_rootNode))
+//        return QObject::tr("scheme");
     if (isHidden())
         return QString(isDir()?"hidden directory":"hidden file");
     switch (sortColumn())
@@ -539,7 +532,10 @@ Node::rePopulate()
         m_model->getSort(m_url);
 
     if (isPopulated())
+    {
         removeDeleted();
+        setHiddenVisible(showHidden());
+    }
 
     if (isAbsolute())
     {
@@ -586,7 +582,6 @@ Node::isExec() const
 {
     if (m_isExe == -1)
     {
-        if (m_hasRequestedMoreData)
         if (Data *d = moreData())
         {
             const bool exeSuffix = bool(suffix() == "exe");

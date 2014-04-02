@@ -191,7 +191,6 @@ public:
     inline explicit PlacesModel(QObject *parent = 0) : QStandardItemModel(parent), m_places(qobject_cast<PlacesView *>(parent)) {}
     ~PlacesModel();
 
-protected:
     QVariant data(const QModelIndex &index, int role) const;
     QStringList mimeTypes() const { return QStringList() << "text/uri-list"; }
 
@@ -208,6 +207,7 @@ public:
     ~PlacesView();
     QMenu *containerAsMenu(const int cont);
     bool getKdePlaces();
+    bool hasPlace(const QString &path) const;
     inline QStringList hiddenDevices() const { return m_hiddenDevices; }
     inline void addHiddenDevice(const QString &devPath) { if (!m_hiddenDevices.contains(devPath)) m_hiddenDevices << devPath; }
     inline void removeHiddenDevice(const QString &devPath) { m_hiddenDevices.removeOne(devPath); }
@@ -225,10 +225,10 @@ public:
     template<typename T>
     inline T currentItem() const { return itemFromIndex<T>(currentIndex()); }
 
-    inline Container *container(const int i) { return dynamic_cast<Container *>(m_model->item(i)); }
+    inline Container *container(const int i) const { return dynamic_cast<Container *>(m_model->item(i)); }
     inline void setCurrentItem(QStandardItem *item) { setCurrentIndex(indexFromItem(item)); }
-    inline int containerCount() { return m_model->rowCount(); }
-    inline Containers containers()
+    inline int containerCount() const { return m_model->rowCount(); }
+    inline Containers containers() const
     {
         Containers c;
         for (int i = 0; i < containerCount(); ++i)

@@ -89,7 +89,6 @@ Model::Model(QObject *parent)
     , m_current(0)
     , m_currentRoot(0)
     , m_timer(new QTimer(this))
-    , m_isDestroyed(false)
 {
     connect(DataLoader::instance(), SIGNAL(newData(QString)), this, SLOT(newData(QString)));
     connect(m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)));
@@ -104,11 +103,10 @@ Model::Model(QObject *parent)
 
 Model::~Model()
 {
-    m_isDestroyed = true;
     m_dataGatherer->setCancelled(true);
     m_dataGatherer->wait();
-    delete m_rootNode;
     delete m_schemeMenu;
+    delete m_rootNode;
 }
 
 void
@@ -535,7 +533,7 @@ Model::indexForLocalFile(const QString &filePath)
 {
     Node *node = schemeNode("file")->localNode(filePath);
     if (node == m_currentRoot)
-        return QModelIndex();
+        return createIndex(-1, -1, node);
     if (node)
         return createIndex(node->row(), 0, node);
     return QModelIndex();
@@ -574,7 +572,7 @@ Model::index(int row, int column, const QModelIndex &parent) const
 
     if (childNode)
     {
-        if (m_schemeNodes.values().contains(childNode))
+        if (childNode == m_currentRoot)
             return QModelIndex();
         return createIndex(row, column, childNode);
     }
@@ -587,7 +585,7 @@ Model::parent(const QModelIndex &child) const
     Node *childNode = node(child);
     if (Node * parentNode = childNode->parent())
     {
-        if (m_schemeNodes.values().contains(parentNode))
+        if (parentNode == m_currentRoot)
             return QModelIndex();
         return createIndex(parentNode->row(), 0, parentNode);
     }

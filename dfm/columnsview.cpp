@@ -206,13 +206,16 @@ public:
     {
         if (!index.isValid()||!option.rect.isValid())
             return;
+        const float opacity = painter->opacity();
+        if (option.state & QStyle::State_MouseOver)
+            painter->setOpacity(1.0f);
         if (index.data().toString() == m_view->activeFileName() && !(option.state & QStyle::State_MouseOver))
         {
-            painter->setOpacity(0.5f);
+            painter->setOpacity(opacity*0.5f);
             const_cast<QStyleOptionViewItem *>(&option)->state |= QStyle::State_MouseOver;
             QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, painter, m_view);
             const_cast<QStyleOptionViewItem *>(&option)->state &= ~QStyle::State_MouseOver;
-            painter->setOpacity(1.0f);
+            painter->setOpacity(opacity);
         }
         FileItemDelegate::paint(painter, option, index);
         if (m_model->isDir(index))
@@ -234,6 +237,7 @@ public:
             painter->drawPolygon(QPolygon(3, points));
             painter->restore();
         }
+        painter->setOpacity(opacity);
     }
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
@@ -312,16 +316,7 @@ ColumnsView::ColumnsView(QWidget *parent, FS::Model *model, const QModelIndex &r
 
 ColumnsView::~ColumnsView()
 {
-    QMapIterator<QPersistentModelIndex, ColumnsView *> i(m_columnsWidget->m_map);
-    while (i.hasNext())
-    {
-        i.next();
-        if (i.value() == this)
-        {
-            m_columnsWidget->m_map.remove(i.key());
-            break;
-        }
-    }
+    m_columnsWidget->m_columns.removeOne(this);
 }
 
 void
@@ -489,6 +484,8 @@ void
 ColumnsView::paintEvent(QPaintEvent *e)
 {
     QPainter painter(viewport());
+    if (this != m_columnsWidget->currentView())
+        painter.setOpacity(0.75f);
     for (int i = 0; i < model()->rowCount(rootIndex()); ++i)
     {
         const QModelIndex &index = model()->index(i, 0, rootIndex());

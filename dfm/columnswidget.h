@@ -43,8 +43,9 @@ public:
     QModelIndex currentIndex();
     ColumnsView *currentView();
     inline ViewContainer *container() { return m_container; }
-    void clearFrom(const QModelIndexList &list = QModelIndexList());
+    void clear(const QModelIndexList &list = QModelIndexList());
     void scrollTo(const QModelIndex &index);
+    ColumnsView *column(const QModelIndex &index) const;
     
 public slots:
     void edit(const QModelIndex &index);
@@ -54,6 +55,8 @@ public slots:
 
 protected:
     void connectView(ColumnsView *view);
+    void removeView(ColumnsView *view);
+    QModelIndexList parents(const QModelIndex &index) const;
     void showEvent(QShowEvent *e);
     void wheelEvent(QWheelEvent *e);
 
@@ -62,7 +65,7 @@ private:
     QItemSelectionModel *m_slctModel;
     QFrame *m_viewport;
     QHBoxLayout *m_viewLay;
-    QMap<QPersistentModelIndex, ColumnsView *> m_map;
+    QList<ColumnsView *> m_columns;
     static QMap<QUrl, int> m_widthMap;
     ViewContainer *m_container;
     QPersistentModelIndex m_rootIndex;
