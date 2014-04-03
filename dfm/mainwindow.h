@@ -121,6 +121,7 @@ public slots:
     void addTab(ViewContainer *container, int index = -1);
     void receiveMessage(const QStringList &message);
     inline void setRootPath(const QString &path) { model()->setUrl(QUrl::fromLocalFile(path)); }
+    void updateFilterBox();
 
 protected:
     void closeEvent(QCloseEvent *event);

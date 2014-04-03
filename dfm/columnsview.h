@@ -84,7 +84,7 @@ protected:
     void keyPressEvent(QKeyEvent *);
     void mousePressEvent(QMouseEvent *event) { QListView::mousePressEvent(event); m_pressPos = event->pos(); }
     void mouseDoubleClickEvent(QMouseEvent *event);
-//    void focusInEvent(QFocusEvent *event) { QListView::focusInEvent(event); emit focusRequest(this); /*viewport()->update();*/ }
+    void focusInEvent(QFocusEvent *event);
 //    void focusOutEvent(QFocusEvent *event) { QListView::focusOutEvent(event); viewport()->update(); }
     void wheelEvent(QWheelEvent *e);
     bool eventFilter(QObject *o, QEvent *e);

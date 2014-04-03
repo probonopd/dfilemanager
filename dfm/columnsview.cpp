@@ -334,6 +334,13 @@ ColumnsView::directoryRemoved(const QString &path)
         deleteLater();
 }
 
+void
+ColumnsView::focusInEvent(QFocusEvent *event)
+{
+    QListView::focusInEvent(event);
+    emit m_columnsWidget->container()->viewChanged();
+}
+
 bool
 ColumnsView::eventFilter(QObject *o, QEvent *e)
 {

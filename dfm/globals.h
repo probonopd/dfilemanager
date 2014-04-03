@@ -43,6 +43,8 @@ static bool defaultBool = false;
 static QUrl defaultUrl = QUrl();
 static QDir::Filters allEntries = QDir::AllEntries|QDir::NoDotAndDotDot|QDir::Hidden|QDir::System;
 
+enum SearchMode { Filter = 0, Search = 1 };
+
 namespace FS
 {
 enum Roles

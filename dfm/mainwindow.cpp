@@ -393,8 +393,7 @@ MainWindow::urlChanged(const QUrl &url)
         if (url.isLocalFile())
             m_placesView->activateAppropriatePlace(url.toLocalFile());
     }
-    if (m_filterBox->mode() == Filter)
-        m_filterBox->clear();
+    updateFilterBox();
     m_tabBar->setTabText(tab, title);
     m_tabBar->setTabIcon(tab, c->model()->fileIcon(c->model()->index(url)));
     setActions();
@@ -486,11 +485,19 @@ MainWindow::viewAction(const ViewContainer::View view)
 }
 
 void
+MainWindow::updateFilterBox()
+{
+    m_filterBox->setMode(model()->isSearching() ? Search : Filter);
+    m_filterBox->setText(model()->isSearching() ? model()->searchString() : model()->filter(activeContainer()->currentView()->rootIndex().data(FS::FilePathRole).toString()));
+}
+
+void
 MainWindow::checkViewAct()
 {
     m_actions[viewAction(activeContainer()->currentViewType())]->setChecked(true);
     m_iconSizeSlider->setVisible(activeContainer()->currentViewType() == ViewContainer::Icon);
     emit viewChanged(activeContainer()->currentView());
+    updateFilterBox();
 }
 
 void
@@ -586,12 +593,10 @@ MainWindow::currentTabChanged(int tab)
     m_iconSizeSlider->setToolTip(QString("Size: %1 px").arg(QString::number(activeContainer()->iconSize().width())));
     m_placesView->activateAppropriatePlace(model()->rootUrl().toLocalFile()); //TODO: placesview url based
     updateStatusBar(model()->rootUrl());
-    m_filterBox->setText(model()->currentSearchString());
     m_actions[ShowHidden]->setChecked(model()->showHidden());
     setActions();
     activeContainer()->setFocus();
-    if (activeContainer())
-        m_filterBox->setText(model()->currentSearchString());
+    updateFilterBox();
 }
 
 void

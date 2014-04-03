@@ -143,6 +143,8 @@ Node::addChild(Node *node)
 
     if (node->isHidden() && !m_model->showHidden())
         m_children[Hidden] << node;
+    else if (!node->name().contains(m_filter, Qt::CaseInsensitive))
+        m_children[Filtered] << node;
     else
     {
         int z = childCount(), i = -1;

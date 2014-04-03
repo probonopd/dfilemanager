@@ -783,13 +783,30 @@ Model::exec(const QModelIndex &index)
 }
 
 void
-Model::setFilter(const QString &filter)
+Model::setFilter(const QString &filter, const QString &path)
 {
-    if (!m_current)
-        return;
     emit layoutAboutToBeChanged();
-    m_current->setFilter(filter);
+    if (!path.isEmpty())
+    {
+        if (Node *n = m_currentRoot->localNode(path))
+            n->setFilter(filter);
+    }
+    else if (m_current)
+        m_current->setFilter(filter);
     emit layoutChanged();
+}
+
+QString
+Model::filter(const QString &path) const
+{
+    if (!path.isEmpty())
+    {
+        if (Node *n = m_currentRoot->localNode(path))
+            return n->filter();
+    }
+    else if (m_current)
+        return m_current->filter();
+    return QString();
 }
 
 void
@@ -824,10 +841,20 @@ Model::cancelSearch()
     dataGatherer()->setCancelled(true);
 }
 
-QString
-Model::currentSearchString()
+bool
+Model::isSearching() const
 {
-    return QString();
+    if (m_current)
+        return m_current->scheme() == "search";
+    if (m_currentRoot)
+        return m_currentRoot->scheme() == "search";
+    return false;
+}
+
+QString
+Model::searchString() const
+{
+    return m_dataGatherer->m_searchName;
 }
 
 void

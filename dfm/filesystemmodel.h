@@ -138,8 +138,10 @@ public:
     inline bool canGoForward() const { return !m_history[Forward].isEmpty(); }
 
     void search(const QString &fileName);
-    void setFilter(const QString &setFilter);
-    QString currentSearchString();
+    void setFilter(const QString &setFilter, const QString &path = QString());
+    QString filter(const QString &path = QString()) const;
+    bool isSearching() const;
+    QString searchString() const;
 
     inline QMenu *schemes() { return m_schemeMenu; }
     Node *schemeNode(const QString &scheme);

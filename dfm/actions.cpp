@@ -18,10 +18,11 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QMenuBar>
+#include <QButtonGroup>
 
 #include "mainwindow.h"
 #include "iconprovider.h"
-#include <QMenuBar>
 
 using namespace DFM;
 
@@ -435,12 +436,15 @@ MainWindow::createToolBars()
 //        QHBoxLayout *hb(new QHBoxLayout());
 //        hb->setContentsMargins(0, 0, 0, 0);
 //        hb->setSpacing(0);
-//        QToolButton *goBack(new QToolButton());
+//        QToolButton *goBack(new QToolButton(history));
 //        goBack->setDefaultAction(m_actions[GoBack]);
 //        goBack->setCheckable(true);
-//        QToolButton *goForward(new QToolButton());
+//        QButtonGroup *g = new QButtonGroup(history);
+//        g->addButton(goBack);
+//        QToolButton *goForward(new QToolButton(history));
 //        goForward->setDefaultAction(m_actions[GoForward]);
 //        goForward->setCheckable(true);
+//        g->addButton(goForward);
 //        hb->addWidget(goBack);
 //        hb->addWidget(goForward);
 //        history->setLayout(hb);

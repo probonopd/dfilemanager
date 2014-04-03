@@ -81,7 +81,7 @@ public:
     void goHome();
     void animateIconSize(int start, int stop);
     NavBar *breadCrumbs();
-    QString currentFilter();
+    QString currentFilter() const;
     void sort(const int column = 0, const Qt::SortOrder order = Qt::AscendingOrder);
     PathNavigator *pathNav();
 
@@ -131,6 +131,8 @@ private:
     QItemSelectionModel *m_selectModel;
     NavBar *m_navBar;
     QVBoxLayout *m_layout;
+    friend class ColumnsView;
+    friend class ColumnsWidget;
 };
 
 }

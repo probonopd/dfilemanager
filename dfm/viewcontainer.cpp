@@ -18,18 +18,19 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-
-#include "viewcontainer.h"
-#include "operations.h"
-#include "iojob.h"
-#include "deletedialog.h"
-#include "mainwindow.h"
 #include <QProcess>
 #include <QMap>
 #include <QInputDialog>
 #include <QCompleter>
 #include <QMenu>
 #include <QDesktopServices>
+#include <QAbstractItemView>
+
+#include "viewcontainer.h"
+#include "operations.h"
+#include "iojob.h"
+#include "deletedialog.h"
+#include "mainwindow.h"
 
 using namespace DFM;
 
@@ -274,9 +275,28 @@ void
 ViewContainer::setFilter(const QString &filter)
 {
     m_dirFilter = filter;
-    m_model->setFilter(filter);
+    if (QAbstractItemView *v = currentView())
+    {
+        if (v->rootIndex().data(FS::Url).toUrl().isLocalFile())
+            m_model->setFilter(filter, v->rootIndex().data(FS::FilePathRole).toString());
+    }
+    else
+        m_model->setFilter(filter);
     emit filterChanged();
 }
+
+QString ViewContainer::currentFilter() const
+{
+    if (QAbstractItemView *v = currentView())
+    {
+        if (v->rootIndex().data(FS::Url).toUrl().isLocalFile())
+            return m_model->filter(v->rootIndex().data(FS::FilePathRole).toString());
+    }
+    else
+        return m_model->filter();
+    return QString();
+}
+
 
 void
 ViewContainer::deleteCurrentSelection()
@@ -415,5 +435,3 @@ void ViewContainer::setPathEditable(const bool editable) { m_navBar->setEditable
 
 void ViewContainer::animateIconSize(int start, int stop) { m_iconView->setNewSize(stop); }
 QSize ViewContainer::iconSize() { return m_iconView->iconSize(); }
-
-QString ViewContainer::currentFilter() { return m_dirFilter; }
