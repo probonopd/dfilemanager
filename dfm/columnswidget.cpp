@@ -160,6 +160,8 @@ ColumnsWidget::parents(const QModelIndex &index) const
         const QString &path = idx.data(FS::FilePathRole).toString();
         if (MainWindow::currentWindow()->placesView()->hasPlace(path))
             return list;
+        if (Devices::instance()->isDevice(path))
+            return list;
         idx=idx.parent();
     }
     return list;

@@ -367,12 +367,12 @@ Node
     Node *n = this;
     do {
         const QString &p = dir.absolutePath();
-        if (Node *node = child(p, true))
-        {
-            n = node;
-            break;
-        }
-        else
+//        if (Node *node = child(p, true))
+//        {
+//            n = node;
+//            break;
+//        }
+//        else
             paths.prepend(p);
     } while (dir.cdUp());
 
