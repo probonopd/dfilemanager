@@ -247,12 +247,8 @@ Node::mimeType() const
 QString
 Node::fileType() const
 {
-    if (isSymLink())
-        return QString("symlink");
-    else if (isDir())
+    if (isDir())
         return QString("directory");
-    else if (isExec())
-        return QString("exec");
 
     if (Data *d = moreData())
         return d->fileType;
@@ -261,7 +257,7 @@ Node::fileType() const
 
 struct Data
 *Node::moreData() const
-{
+{ 
     return DataLoader::data(m_filePath, m_model->isWorking());
 }
 
@@ -323,7 +319,7 @@ Node::data(const int column) const
     if (exists())
         switch (column)
         {
-        case 0: return m_name; break;
+        case 0: return name(); break;
         case 1: return isDir()?(moreData()?moreData()->count:QString("--")):Ops::prettySize(size()); break;
         case 2:
         {
@@ -331,8 +327,6 @@ Node::data(const int column) const
                 return QString("symlink");
             else if (isDir())
                 return QString("directory");
-            else if (isExec())
-                return QString("exec");
             else if (suffix().isEmpty())
                 return QString("file");
             else

@@ -740,7 +740,7 @@ Model::category(const QString &cat)
     QModelIndexList categ;
     const QModelIndex &parent = index(m_url);
     const int count = rowCount(parent);
-    for (int i = 0; i<count; ++i)
+    for (int i = 0; i < count; ++i)
     {
         const QModelIndex &child = index(i, 0, parent);
         if (!child.isValid())
@@ -763,7 +763,7 @@ Model::categories()
     const QModelIndex &parent = index(m_url);
     const int count = rowCount(parent);
     QStringList cats;
-    for (int i = 0; i<count; ++i)
+    for (int i = 0; i < count; ++i)
     {
         const QModelIndex &child = index(i, 0, parent);
         if (!child.isValid())
