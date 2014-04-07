@@ -486,20 +486,10 @@ MainWindow::createToolBars()
     m_toolBar->addSeparator();
     m_toolBar->addAction(m_actions[ShowHidden]);
 
-    QWidget *searchWidget = new QWidget(m_toolBar);
-    searchWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    QGridLayout *gl = new QGridLayout(searchWidget);
-
-    QWidget *spacerMax = new QWidget(searchWidget);
-    spacerMax->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-
-    gl->setSpacing(0);
-    gl->setContentsMargins(0, 0, 0, 0);
-    gl->setColumnStretch(1, 1);
-    gl->addWidget(spacerMax, 0, 0);
-    gl->addWidget(m_filterBox, 0, 1);
-
-    m_toolBar->addWidget(searchWidget);
+    QWidget *stretch = new QWidget(m_toolBar);
+    stretch->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    m_toolBar->addWidget(stretch);
+    m_toolBar->addWidget(m_filterBox);
 
     m_menuButton = new QToolButton(this);
     m_menuButton->setIcon(IconProvider::icon(IconProvider::Sort, 16, m_sortButton->palette().color(m_sortButton->foregroundRole()), false));

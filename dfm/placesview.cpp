@@ -777,11 +777,12 @@ PlacesView::drawItemsRecursive(QPainter *painter, const QModelIndex &parent)
         const QModelIndex &index = model()->index(i, 0, parent);
         const QRect vr(visualRect(index));
         QStyleOptionViewItemV4 option(viewOptions());
+        option.rect=vr;
         if (ViewAnimator::hoverLevel(this, index))
             option.state |= QStyle::State_MouseOver;
         if (selectionModel()->isSelected(index))
             option.state |= QStyle::State_Selected;
-        option.rect=vr;
+
         itemDelegate()->paint(painter, option, index);
         drawItemsRecursive(painter, index);
     }
@@ -790,8 +791,22 @@ PlacesView::drawItemsRecursive(QPainter *painter, const QModelIndex &parent)
 void
 PlacesView::paintEvent(QPaintEvent *event)
 {
+//    QTreeView::paintEvent(event);
     QPainter p(viewport());
     drawItemsRecursive(&p);
+    if (showDropIndicator() && state() == QAbstractItemView::DraggingState
+            && viewport()->cursor().shape() != Qt::ForbiddenCursor)
+    {
+        QStyleOption opt;
+        opt.init(this);
+        QRect rect(visualRect(indexAt(mapFromGlobal(QCursor::pos()))));
+        if (dropIndicatorPosition() == AboveItem)
+            rect.setBottom(rect.top()-1);
+        else if (dropIndicatorPosition() == BelowItem)
+            rect.setTop(rect.bottom()+1);
+        opt.rect = rect;
+        style()->drawPrimitive(QStyle::PE_IndicatorItemViewItemDrop, &opt, &p, this);
+    }
     p.end();
 }
 
@@ -815,9 +830,10 @@ PlacesView::removePlace()
 {
     if (currentItem())
         if (currentItem() != m_devManager
-             && !m_devManager->isDevice(currentItem()))
-    {
+                && !m_devManager->isDevice(currentItem()))
+        {
             delete currentItem();
+            m_lastClicked = 0;
             if (currentItem()->parent())
                 currentItem()->parent()->removeRow(currentIndex().row());
             else

@@ -376,8 +376,8 @@ Node
             paths.prepend(p);
     } while (dir.cdUp());
 
-    if (path == n->filePath())
-        return n;
+//    if (path == n->filePath())
+//        return n;
 
     while (!paths.isEmpty() && n)
         n = n->nodeFromLocalPath(paths.takeFirst(), checkOnly);

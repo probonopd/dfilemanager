@@ -532,8 +532,8 @@ QModelIndex
 Model::indexForLocalFile(const QString &filePath)
 {
     Node *node = schemeNode("file")->localNode(filePath);
-    if (node == m_currentRoot)
-        return createIndex(-1, -1, node);
+    if (node == m_currentRoot || node == m_rootNode)
+        return QModelIndex();
     if (node)
         return createIndex(node->row(), 0, node);
     return QModelIndex();
@@ -547,7 +547,7 @@ Model::index(const QUrl &url)
 
     if (m_current)
     {
-        if (url == m_url)
+        if (url == m_url && m_current->url() == url)
             return createIndex(m_current->row(), 0, m_current);
         if (Node *n = m_current->childFromUrl(url))
             return createIndex(n->row(), 0, n);
@@ -585,7 +585,7 @@ Model::parent(const QModelIndex &child) const
     Node *childNode = node(child);
     if (Node * parentNode = childNode->parent())
     {
-        if (parentNode == m_currentRoot)
+        if (parentNode == m_currentRoot || parentNode == m_rootNode)
             return QModelIndex();
         return createIndex(parentNode->row(), 0, parentNode);
     }

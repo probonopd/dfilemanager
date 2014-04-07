@@ -1074,6 +1074,7 @@ ViewContainer
         m_tabBar->blockSignals(true);
         m_tabBar->removeTab(tab);
         m_tabBar->blockSignals(false);
+        m_tabBar->setVisible(m_tabBar->count() > 1 || !Store::config.behaviour.hideTabBarWhenOnlyOneTab);
         return c;
     }
     return 0;
@@ -1115,7 +1116,9 @@ TabManager::insertTab(int index, ViewContainer *c, const QIcon &icon, const QStr
     if (!c)
         return -1;
     index = insertWidget(index, c);
-    return m_tabBar->insertTab(index, icon, text);
+    index = m_tabBar->insertTab(index, icon, text);
+    m_tabBar->setVisible(m_tabBar->count() > 1 || !Store::config.behaviour.hideTabBarWhenOnlyOneTab);
+    return index;
 }
 
 int

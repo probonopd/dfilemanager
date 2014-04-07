@@ -53,7 +53,6 @@ public:
     enum View { Icon = 0, Details = 1, Columns = 2, Flow = 3 };
     explicit ViewContainer(QWidget *parent = 0);
     ~ViewContainer();
-    static QList<QAction *> rightClickActions();
     FS::Model *model();
     void setView(const View view, bool store = true);
     QAbstractItemView *currentView() const;
@@ -72,7 +71,6 @@ public:
     bool canGoBack();
     bool canGoForward();
     bool pathVisible();
-    void addActions(QList<QAction *> actions);
     void goBack();
     void goForward();
     bool goUp();

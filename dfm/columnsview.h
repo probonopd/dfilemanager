@@ -75,13 +75,12 @@ signals:
     void newTabRequest(const QModelIndex &index);
     void showed(ColumnsView *view);
     void dirActivated(const QModelIndex &dir);
-    void expandRequest(const QModelIndex &index);
     void opened(const QModelIndex &index);
 
 protected:
     void contextMenuEvent(QContextMenuEvent *event);
-    void mouseReleaseEvent(QMouseEvent *e);
     void keyPressEvent(QKeyEvent *);
+    void mouseReleaseEvent(QMouseEvent *e);
     void mousePressEvent(QMouseEvent *event) { QListView::mousePressEvent(event); m_pressPos = event->pos(); }
     void mouseDoubleClickEvent(QMouseEvent *event);
     void focusInEvent(QFocusEvent *event);
@@ -95,9 +94,11 @@ protected:
 private slots:
     void modelUrlChanged();
     void directoryRemoved(const QString &path);
+    void indexHovered(const QModelIndex &index);
 
 private:
     ColumnsWidget *m_columnsWidget;
+    QModelIndex m_lastHovered;
     ResizeCorner *m_corner;
     FS::Model *m_model;
     QPoint m_pressPos;

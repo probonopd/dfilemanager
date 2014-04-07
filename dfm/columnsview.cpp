@@ -286,6 +286,7 @@ ColumnsView::ColumnsView(QWidget *parent, FS::Model *model, const QModelIndex &r
     setModel(model);
     setRootIndex(rootIndex);
     verticalScrollBar()->installEventFilter(this);
+    connect(this, SIGNAL(entered(QModelIndex)), this, SLOT(indexHovered(QModelIndex)));
     connect(m_model, SIGNAL(urlChanged(QUrl)), this, SLOT(modelUrlChanged()));
     connect(m_model, SIGNAL(directoryRemoved(QString)), this, SLOT(directoryRemoved(QString)));
     int w = Store::config.views.columnsView.colWidth;
@@ -317,6 +318,12 @@ ColumnsView::ColumnsView(QWidget *parent, FS::Model *model, const QModelIndex &r
 ColumnsView::~ColumnsView()
 {
     m_columnsWidget->m_columns.removeOne(this);
+}
+
+void
+ColumnsView::indexHovered(const QModelIndex &index)
+{
+    qDebug() << index << "hovered";
 }
 
 void
@@ -480,11 +487,12 @@ ColumnsView::showEvent(QShowEvent *e)
 QRect
 ColumnsView::visualRect(const QModelIndex &index) const
 {
-    int y = index.row()*16;
-    int x = viewport()->rect().left();
-    int w = viewport()->width();
-    int h = 16;
-    return QRect(x, y, w, h).translated(0, -verticalOffset());
+    return QListView::visualRect(index);
+//    int y = index.row()*16;
+//    int x = viewport()->rect().left();
+//    int w = viewport()->width();
+//    int h = 16;
+//    return QRect(x, y, w, h).translated(0, -verticalOffset());
 }
 
 void
@@ -506,6 +514,19 @@ ColumnsView::paintEvent(QPaintEvent *e)
             option.state |= QStyle::State_MouseOver;
         option.rect=vr;
         itemDelegate()->paint(&painter, option, index);
+    }
+    if (showDropIndicator() && state() == QAbstractItemView::DraggingState
+            && viewport()->cursor().shape() != Qt::ForbiddenCursor )
+    {
+        QStyleOption opt;
+        opt.init(this);
+        QRect rect(visualRect(indexAt(mapFromGlobal(QCursor::pos()))));
+        if (dropIndicatorPosition() == AboveItem)
+            rect.setBottom(rect.top()-1);
+        else if (dropIndicatorPosition() == BelowItem)
+            rect.setTop(rect.bottom()+1);
+        opt.rect = rect;
+        style()->drawPrimitive(QStyle::PE_IndicatorItemViewItemDrop, &opt, &painter, this);
     }
     painter.end();
 }

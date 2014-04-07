@@ -440,10 +440,8 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
                 model()->index(model()->rootUrl())) ? m_statusMessage : m_statusMessage + m_slctnMessage;
         if(m_statusBar->currentMessage() != newMessage)
             m_statusBar->showMessage(newMessage);
-        return false;
     }
-
-    if (obj == m_placesView && (event->type() == QEvent::Resize || event->type() == QEvent::Show) && !m_placesDock->isFloating())
+    else if (obj == m_placesView && (event->type() == QEvent::Resize || event->type() == QEvent::Show) && !m_placesDock->isFloating())
         updateToolbarSpacer();
 
     return QMainWindow::eventFilter(obj, event);
@@ -487,6 +485,8 @@ MainWindow::viewAction(const ViewContainer::View view)
 void
 MainWindow::updateFilterBox()
 {
+    if (!model() || !activeContainer() || !activeContainer()->currentView())
+        return;
     m_filterBox->setMode(model()->isSearching() ? Search : Filter);
     m_filterBox->setText(model()->isSearching() ? model()->searchString() : model()->filter(activeContainer()->currentView()->rootIndex().data(FS::FilePathRole).toString()));
 }
@@ -550,16 +550,13 @@ MainWindow::connectContainer(ViewContainer *container)
 void
 MainWindow::addTab(const QUrl &url)
 {
-    ViewContainer *container = new ViewContainer();
+    ViewContainer *container = new ViewContainer(this);
     connectContainer(container);
     FS::Model *model = container->model();
     model->setUrl(url);
     const QString &title = model->title(url);
     const QModelIndex &idx = model->index(url);
     m_tabManager->addTab(container, model->fileIcon(idx), title);
-
-    if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
-        m_tabBar->setVisible(m_tabBar->count() > 1);
 }
 
 void
@@ -571,9 +568,6 @@ MainWindow::addTab(ViewContainer *container, int index)
     const QString &title = model->title(url);
     const QModelIndex &idx = model->index(url);
     m_tabManager->insertTab(index, container, model->fileIcon(idx), title);
-
-    if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
-        m_tabBar->setVisible(m_tabBar->count() > 1);
 }
 
 void
@@ -605,8 +599,6 @@ MainWindow::tabCloseRequest(int tab)
     m_tabManager->deleteTab(tab);
 //    if (activeContainer())
 //        activeContainer()->setFocus();
-    if (Store::config.behaviour.hideTabBarWhenOnlyOneTab)
-        m_tabBar->setVisible(m_tabBar->count() > 1);
 }
 
 void
@@ -879,7 +871,7 @@ MainWindow::updateIcons()
 void
 MainWindow::updateConfig()
 {
-    m_tabBar->setVisible(m_tabBar->count() > 1 ? true : !Store::config.behaviour.hideTabBarWhenOnlyOneTab);
+    m_tabBar->setVisible(m_tabBar->count() > 1 || !Store::config.behaviour.hideTabBarWhenOnlyOneTab);
     if (activeContainer())
         activeContainer()->refresh();
     updateIcons();

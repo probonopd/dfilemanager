@@ -164,6 +164,8 @@ ColumnsWidget::parents(const QModelIndex &index) const
             return list;
         idx=idx.parent();
     }
+    if (list.isEmpty())
+        list << QModelIndex();
     return list;
 }
 
@@ -177,25 +179,15 @@ ColumnsWidget::setRootIndex(const QModelIndex &index)
     for (int i=0; i<list.size(); ++i)
     {
         const QModelIndex &index = list.at(i);
+        const bool isntLast = i+1<list.size();
+        const QString &activeName(isntLast?list.at(i+1).data().toString():QString());
         if (ColumnsView *view = column(index))
         {
-            if (i+1<list.size())
-            {
-                const QString &activeName = list.at(i+1).data().toString();
-                view->setActiveFileName(activeName);
-            }
-            else
-                view->setActiveFileName(QString());
+            view->setActiveFileName(activeName);
             continue;
         }
         ColumnsView *view = new ColumnsView(this, m_model, index);
-        if (i+1<list.size())
-        {
-            const QString &activeName = list.at(i+1).data().toString();
-            view->setActiveFileName(activeName);
-        }
-        else
-            view->setActiveFileName(QString());
+        view->setActiveFileName(activeName);
         connectView(view);
         view->setSelectionModel(m_slctModel);
         m_columns << view;
@@ -209,14 +201,16 @@ void
 ColumnsWidget::showCurrent()
 {
     if (!m_isResizingColumns)
-        ensureWidgetVisible(currentView(), currentView()?currentView()->width():0);
+        if (ColumnsView *view = currentView())
+            ensureWidgetVisible(view, view->width());
 }
 
 void
 ColumnsWidget::showEvent(QShowEvent *e)
 {
     QScrollArea::showEvent(e);
-    ensureWidgetVisible(currentView());
+    if (ColumnsView *view = currentView())
+        ensureWidgetVisible(view, view->width());
 }
 
 void

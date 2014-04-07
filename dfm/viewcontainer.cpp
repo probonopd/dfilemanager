@@ -164,30 +164,6 @@ ViewContainer::setView(const View view, bool store)
 #endif
 }
 
-static QList<QAction *> s_actions;
-
-QList<QAction *> ViewContainer::rightClickActions() { return s_actions; }
-
-void
-ViewContainer::addActions(QList<QAction *> actions)
-{
-    if (s_actions.isEmpty())
-        s_actions = actions;
-    VIEWS(addActions(actions));
-    Store::settings()->beginGroup("Scripts");
-    foreach (const QString &string, Store::settings()->childKeys())
-    {
-        QStringList actions = Store::settings()->value(string).toStringList(); //0 == name, 1 == script, 2 == keysequence
-        QAction *action = new QAction(actions[0], this);
-        action->setData(actions[1]);
-        if (actions.count() > 2)
-            action->setShortcut(QKeySequence(actions[2]));
-        connect (action, SIGNAL(triggered()), this, SLOT(scriptTriggered()));
-        VIEWS(addAction(action));
-    }
-    Store::settings()->endGroup();
-}
-
 void
 ViewContainer::activate(const QModelIndex &index)
 {
@@ -209,12 +185,6 @@ ViewContainer::setUrl(const QUrl &url)
                 setView(view, false);
         }
         m_detailsView->setItemsExpandable(false);
-        for (int i = 0; i < views().count(); ++i)
-            if (views().at(i))
-            {
-                views().at(i)->setAttribute(Qt::WA_Hover, false);
-                views().at(i)->setMouseTracking(false);
-            }
         m_selectModel->clearSelection();
     }
 }
@@ -222,12 +192,6 @@ ViewContainer::setUrl(const QUrl &url)
 void
 ViewContainer::loadedUrl(const QUrl &url)
 {
-    for (int i = 0; i < views().count(); ++i)
-        if (views().at(i))
-        {
-            views().at(i)->setAttribute(Qt::WA_Hover, true);
-            views().at(i)->setMouseTracking(true);
-        }
     m_detailsView->setItemsExpandable(true);
 }
 
