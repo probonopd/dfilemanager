@@ -490,6 +490,8 @@ MainWindow::createToolBars()
     stretch->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
     m_toolBar->addWidget(stretch);
     m_toolBar->addWidget(m_filterBox);
+    m_menuSep = m_toolBar->addSeparator();
+    m_menuSep->setVisible(!Store::config.behaviour.gayWindow&&!menuBar()->isVisible());
 
     m_menuButton = new QToolButton(this);
     m_menuButton->setIcon(IconProvider::icon(IconProvider::Sort, 16, m_sortButton->palette().color(m_sortButton->foregroundRole()), false));

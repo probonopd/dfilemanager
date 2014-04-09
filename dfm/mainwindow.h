@@ -208,7 +208,7 @@ private:
     QMainWindow *m_tabWin;
     QMenu *m_mainMenu;
     QToolButton *m_sortButton, *m_menuButton;
-    QAction *m_menuAction;
+    QAction *m_menuAction, *m_menuSep;
     QToolBar *m_toolBar;
     QProgressBar *m_ioProgress;
 

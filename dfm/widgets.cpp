@@ -172,7 +172,7 @@ StatusBar::StatusBar(QWidget *parent)
         m_layout[i]->setSpacing(0);
         m_layout[i]->setContentsMargins(0, 0, 0, 0);
     }
-    connect(this, SIGNAL(messageChanged(QString)), m_messageLbl, SLOT(setText(QString)));
+//    connect(this, SIGNAL(messageChanged(QString)), m_messageLbl, SLOT(setText(QString)));
 
     m_layout[Main]->addLayout(m_layout[Left]);
     m_layout[Main]->addStretch();

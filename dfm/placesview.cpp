@@ -794,12 +794,13 @@ PlacesView::paintEvent(QPaintEvent *event)
 //    QTreeView::paintEvent(event);
     QPainter p(viewport());
     drawItemsRecursive(&p);
+    const QModelIndex &index = indexAt(mapFromGlobal(QCursor::pos()));
     if (showDropIndicator() && state() == QAbstractItemView::DraggingState
-            && viewport()->cursor().shape() != Qt::ForbiddenCursor)
+            && viewport()->cursor().shape() != Qt::ForbiddenCursor && m_model->flags(index) & Qt::ItemIsDropEnabled)
     {
         QStyleOption opt;
         opt.init(this);
-        QRect rect(visualRect(indexAt(mapFromGlobal(QCursor::pos()))));
+        QRect rect(visualRect(index));
         if (dropIndicatorPosition() == AboveItem)
             rect.setBottom(rect.top()-1);
         else if (dropIndicatorPosition() == BelowItem)

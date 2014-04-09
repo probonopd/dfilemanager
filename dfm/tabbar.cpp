@@ -395,6 +395,8 @@ FooBar::eventFilter(QObject *o, QEvent *e)
         QPainter p(m_toolBar);
         p.setBrushOrigin(0, -m_tabBar->height());
         p.fillRect(m_toolBar->rect(), headGrad(MainWindow::window(m_toolBar)));
+        p.setPen(low);
+        p.drawLine(m_toolBar->rect().bottomLeft(), m_toolBar->rect().bottomRight());
         p.end();
         return true;
     }
@@ -630,7 +632,8 @@ TabBar::postConstructorOps()
 //    m_closeButton->setAutoRaise(true);
 //    m_closeButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     const QIcon &icon = IconProvider::icon(IconProvider::CloseTab, 16, palette().color(foregroundRole()), Store::config.behaviour.systemIcons);
-    m_closeButton->setIcon(icon);
+    if (m_closeButton)
+        m_closeButton->setIcon(icon);
 }
 
 void

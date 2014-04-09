@@ -331,7 +331,7 @@ MainWindow::mainSelectionChanged()
         m_slctnMessage = QString(" :: %1 Items Selected").arg(QString::number(selected.count()));
 
     const QString &newMessage = selected.isEmpty() ? m_statusMessage : m_statusMessage + m_slctnMessage;
-    m_statusBar->showMessage(newMessage);
+    m_statusBar->setMessage(newMessage);
 }
 
 void
@@ -405,7 +405,7 @@ MainWindow::updateStatusBar(const QUrl &url)
     if (!model())
         return;
     m_statusMessage = Ops::getStatusBarMessage(url, model());
-    m_statusBar->showMessage(m_statusMessage);
+    m_statusBar->setMessage(m_statusMessage);
 }
 
 void
@@ -439,7 +439,7 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
                                activeContainer()->selectionModel()->currentIndex().parent() !=
                 model()->index(model()->rootUrl())) ? m_statusMessage : m_statusMessage + m_slctnMessage;
         if(m_statusBar->currentMessage() != newMessage)
-            m_statusBar->showMessage(newMessage);
+            m_statusBar->setMessage(newMessage);
     }
     else if (obj == m_placesView && (event->type() == QEvent::Resize || event->type() == QEvent::Show) && !m_placesDock->isFloating())
         updateToolbarSpacer();
@@ -522,6 +522,7 @@ MainWindow::toggleMenuVisible()
 {
     menuBar()->setVisible(m_actions[ShowMenuBar]->isChecked());
     m_menuAction->setVisible(!m_actions[ShowMenuBar]->isChecked()&&!Store::config.behaviour.gayWindow);
+    m_menuSep->setVisible(!m_actions[ShowMenuBar]->isChecked()&&!Store::config.behaviour.gayWindow);
 }
 
 void MainWindow::toggleStatusVisible() { m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked()); }
@@ -668,7 +669,7 @@ MainWindow::viewItemHovered(const QModelIndex &index)
     QString message = file.filePath();
     if (file.isSymLink())
         message.append(QString(" -> %1").arg(file.symLinkTarget()));
-    m_statusBar->showMessage(message);
+    m_statusBar->setMessage(message);
 }
 
 void
@@ -680,7 +681,7 @@ MainWindow::viewClearHover()
                            ||  activeContainer()->selectionModel()->currentIndex().parent() != model()->index(model()->rootUrl()))
             ? m_statusMessage : m_statusMessage + m_slctnMessage;
     if (m_statusBar->currentMessage() != newMessage)
-        m_statusBar->showMessage(newMessage);
+        m_statusBar->setMessage(newMessage);
 }
 
 void

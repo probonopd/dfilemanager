@@ -79,9 +79,10 @@ public:
     explicit StatusBar(QWidget *parent = 0);
     void addLeftWidget(QWidget *widget);
     void addRightWidget(QWidget *widget);
+    void setMessage(const QString &message) { m_messageLbl->setText(message); }
 
 protected:
-    void paintEvent(QPaintEvent *){}
+//    void paintEvent(QPaintEvent *){}
     void resizeEvent(QResizeEvent *);
 
 private:
