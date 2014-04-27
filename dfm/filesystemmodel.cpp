@@ -381,6 +381,7 @@ Model::flags(const QModelIndex &index) const
 {
     Node *n = node(index);
     Qt::ItemFlags flags = QAbstractItemModel::flags(index);
+    //crashes here... TODO: make sure n is valid.
     if (n->isWritable()) flags |= Qt::ItemIsEditable;
     if (n->isDir()) flags |= Qt::ItemIsDropEnabled;
     if (n->isReadable() && !isWorking()) flags |= Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
@@ -449,10 +450,11 @@ Model::data(const QModelIndex &index, int role) const
     if (role == Url)
         return n->url();
 
+    if (!isWorking())
     if (role == Qt::FontRole && !col)
     {
         QFont f(font());
-        f.setItalic(n->isSymLink());
+        f.setItalic(n->isSymLink());  //sometimes crashes on this.... cause of iconview painting
         f.setUnderline(n->isExec());
         return f;
     }
@@ -583,7 +585,7 @@ QModelIndex
 Model::parent(const QModelIndex &child) const
 {
     Node *childNode = node(child);
-    if (Node * parentNode = childNode->parent())
+    if (Node *parentNode = childNode->parent())
     {
         if (parentNode == m_currentRoot || parentNode == m_rootNode)
             return QModelIndex();
@@ -622,21 +624,19 @@ Model::fetchMore(const QModelIndex &parent)
 }
 
 void
-Model::sort(int column, Qt::SortOrder order)
+Model::sortNode(Node *n)
 {
-    if (isWorking() || m_url.isEmpty())
-        return;
-    const bool orderChanged = bool(m_sortColumn!=column||m_sortOrder!=order);
-    m_sortColumn = column;
-    m_sortOrder = order;
-    qDebug() << "sort called" << m_url << column << order;
+    if (!n)
+        n = m_currentRoot;
+    if (!n)
+        n = m_rootNode;
     emit layoutAboutToBeChanged();
     const QModelIndexList &oldList = persistentIndexList();
     QList<QPair<int, Node *> > old;
     for (int i = 0; i < oldList.count(); ++i)
         old << QPair<int, Node *>(oldList.at(i).column(), node(oldList.at(i)));
 
-    rootNode()->sort();
+    n->sort();
 
     QModelIndexList newList;
     for (int i = 0; i < old.count(); ++i)
@@ -649,9 +649,21 @@ Model::sort(int column, Qt::SortOrder order)
         newList << idx;
     }
     changePersistentIndexList(oldList, newList);
+    emit layoutChanged();
+}
+
+void
+Model::sort(int column, Qt::SortOrder order)
+{
+    if (isWorking() || m_url.isEmpty())
+        return;
+    const bool orderChanged = bool(m_sortColumn!=column||m_sortOrder!=order);
+    m_sortColumn = column;
+    m_sortOrder = order;
+    qDebug() << "sort called" << m_url << column << order;
+    sortNode();
     if (orderChanged)
         emit sortingChanged(column, (int)order);
-    emit layoutChanged();
 
 #ifdef Q_WS_X11
     if (Store::config.views.dirSettings && orderChanged && m_url.isLocalFile())

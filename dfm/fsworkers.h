@@ -57,7 +57,8 @@ public:
     bool rename(const QString &newName);
     inline QString filePath() const { return m_filePath; }
 
-    int row();
+    int row() const;
+    int rowOf(const Node *node) const;
     int childCount(Children children = Visible) const;
     void addChild(Node *node);
     Node *child(const int c, Children fromChildren = Visible) const;

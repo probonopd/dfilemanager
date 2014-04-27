@@ -97,6 +97,7 @@ Node::~Node()
 {
     if (m_parent)
         m_parent->removeChild(this);
+    m_parent = 0;
     if (m_model->m_nodes.contains(m_url))
         m_model->m_nodes.remove(m_url);
     for (int i = 0; i < ChildrenTypeCount; ++i)
@@ -197,13 +198,19 @@ Node
 
 
 int
-Node::row()
+Node::row() const
 {
     if (!m_parent)
         return -1;
 
-    QMutexLocker locker(&m_parent->m_mutex);
-    return m_parent->m_children[Visible].indexOf(this);
+    return m_parent->rowOf(this);
+}
+
+int
+Node::rowOf(const Node *node) const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_children[Visible].indexOf(const_cast<Node *>(node));
 }
 
 QIcon
@@ -498,8 +505,11 @@ Node::setFilter(const QString &filter)
             else
                 m_children[Visible] << m_children[Filtered].takeAt(f);
         }
-    if (m_children[Visible].count() > 1)
-        qStableSort(m_children[Visible].begin(), m_children[Visible].end(), lessThen);
+    locker.unlock();
+    m_model->sortNode(this);
+//    if (m_children[Visible].count() > 1)
+//        qStableSort(m_children[Visible].begin(), m_children[Visible].end(), lessThen);
+//        m_model->sort(sortColumn(), sortOrder());
 }
 
 void

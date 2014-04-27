@@ -73,7 +73,7 @@ void
 DFM::ViewBase::keyPressEvent(QKeyEvent *ke)
 {
     SearchBox *searchBox = DFM::MainWindow::currentWindow()->searchBox();
-    if (!ke->text().isEmpty() && !ke->modifiers())
+    if (!ke->text().isEmpty() && !ke->modifiers() && ke->key() != Qt::Key_Escape)
     {
         searchBox->setMode(Filter);
         searchBox->setText(QString("%1%2").arg(searchBox->text(), ke->text()));

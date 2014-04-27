@@ -150,6 +150,8 @@ public:
     void watchDir(const QString &path);
     void unWatchDir(const QString &path);
 
+    void sortNode(Node *n = 0);
+
     QFont font() const { return static_cast<const QWidget *>(static_cast<const QObject *>(this)->parent())->font(); }
 
 protected:

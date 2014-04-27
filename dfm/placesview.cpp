@@ -149,7 +149,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     if (step && !isHeader(index))
     {
         painter->setOpacity((1.0f/8.0f)*step);
-        m_placesView->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, painter, m_placesView);
+        m_placesView->style()->drawControl(QStyle::CE_ItemViewItem, &option, painter, m_placesView);
         painter->setOpacity(1);
     }
 
@@ -782,6 +782,8 @@ PlacesView::drawItemsRecursive(QPainter *painter, const QModelIndex &parent)
             option.state |= QStyle::State_MouseOver;
         if (selectionModel()->isSelected(index))
             option.state |= QStyle::State_Selected;
+        if (isExpanded(index))
+            option.state |= QStyle::State_Open;
 
         itemDelegate()->paint(painter, option, index);
         drawItemsRecursive(painter, index);

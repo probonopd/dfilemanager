@@ -183,6 +183,7 @@ StatusBar::StatusBar(QWidget *parent)
     m_viewport->setContentsMargins(0, 0, 0, 0);
     m_viewport->setLayout(m_layout[Main]);
     setSizeGripEnabled(false);
+    setContentsMargins(2, 2, 2, 2);
 }
 
 void

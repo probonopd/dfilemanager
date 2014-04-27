@@ -41,7 +41,8 @@ public:
         const bool isSelected = option.state & QStyle::State_Selected;
         if (index.column() > 0 &&  !isHovered && !isSelected)
             painter->setOpacity(0.66);
-        FileItemDelegate::paint(painter, option, index);
+        //crashed here when deleting....
+        QStyledItemDelegate::paint(painter, option, index);
         painter->restore();
     }
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
