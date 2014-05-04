@@ -200,8 +200,8 @@ MainWindow::receiveMessage(const QStringList &message)
                 if (ioProgress == -1) //busy...
                 {
                     m_ioProgress->setVisible(true);
-                    m_ioProgress->setValue(0);
                     m_ioProgress->setRange(0, 0);
+                    m_ioProgress->setValue(0);
                 }
                 else
                 {

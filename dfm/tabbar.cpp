@@ -472,6 +472,7 @@ TabButton::TabButton(QWidget *parent)
 {
     if (Store::config.behaviour.gayWindow)
         setFixedSize(28, 18);
+
     connect(MainWindow::window(this), SIGNAL(settingsChanged()), this, SLOT(regenPixmaps()));
 }
 
@@ -550,10 +551,13 @@ TabButton::resizeEvent(QResizeEvent *e)
 void
 TabButton::regenPixmaps()
 {
-    QStyleOptionTab tab;
+    QStyleOptionTabV3 tab;
     tab.state = QStyle::State_Enabled;
     tab.rect = rect();
-    tab.position = QStyleOptionTab::OnlyOneTab;
+    if (!style()->objectName().contains("styleproject", Qt::CaseInsensitive))
+        tab.position = QStyleOptionTab::OnlyOneTab;
+    else
+        tab.position = QStyleOptionTab::End;
 
     for (int i = 0; i < 2; ++i)
     {
@@ -664,7 +668,12 @@ TabBar::correctAddButtonPos()
 {
     if (!m_addButton || !count())
         return;
-    int x = tabRect(count()-1).right()+Store::config.behaviour.tabOverlap/2;
+
+    int x = tabRect(count()-1).right();
+    if (!style()->objectName().contains("styleproject", Qt::CaseInsensitive))
+        x+=Store::config.behaviour.tabOverlap/2;
+    else
+        x-=4;
     int y = qFloor((float)rect().height()/2.0f-(float)m_addButton->height()/2.0f);
     m_addButton->move(x, y);
 }

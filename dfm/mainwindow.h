@@ -212,7 +212,7 @@ private:
     QToolBar *m_toolBar;
     QProgressBar *m_ioProgress;
 
-    Menu *m_goMenu;
+    QMenu *m_goMenu;
     QAction *m_actions[ActionCount];
     QActionGroup *m_sortActs;
 

@@ -340,9 +340,7 @@ MainWindow::createMenus()
     viewMenu->addAction(m_actions[ShowPathBar]);
     m_mainMenu->addMenu(viewMenu);
 
-    m_goMenu = new Menu(this);
-    m_goMenu->setTitle(tr("&Go"));
-    menuBar()->addMenu(m_goMenu);
+    m_goMenu = menuBar()->addMenu(tr("&Go"));
     m_goMenu->addAction(m_actions[GoUp]);
     m_goMenu->addAction(m_actions[GoBack]);
     m_goMenu->addAction(m_actions[GoForward]);
