@@ -98,6 +98,8 @@ Model::Model(QObject *parent)
     connect(DataLoader::instance(), SIGNAL(noLongerExists(QString)), this, SLOT(fileDeleted(QString)));
     connect(Devices::instance(), SIGNAL(deviceAdded(Device*)), this, SLOT(updateFileNode()));
     connect(Devices::instance(), SIGNAL(deviceRemoved(Device*)), this, SLOT(updateFileNode()));
+//    connect(this, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(rowsDeleted(QModelIndex,int,int)));
+    connect(this, SIGNAL(deleteNodeLater(Node*)), this, SLOT(deleteNode(Node*)));
     schemeNode("file")->rePopulate();
 }
 
@@ -379,6 +381,7 @@ Model::unWatchDir(const QString &path)
 Qt::ItemFlags
 Model::flags(const QModelIndex &index) const
 {
+    //QMutexLocker locker(&m_mutex);
     Node *n = node(index);
     Qt::ItemFlags flags = QAbstractItemModel::flags(index);
     //crashes here... TODO: make sure n is valid.
@@ -424,6 +427,7 @@ Model::hasThumb(const QModelIndex &index)
 QVariant
 Model::data(const QModelIndex &index, int role) const
 {
+    //QMutexLocker locker(&m_mutex);
     if (!index.isValid()||index.column()>3||index.row()>100000)
         return QVariant();
 
@@ -525,7 +529,7 @@ Node
 *Model::node(const QModelIndex &index) const
 {
     Node *node = static_cast<Node *>(index.internalPointer());
-    if (index.isValid() && index.row() < 100000 && index.column() < 5 && node)
+    if (index.isValid() && index.row() < 0xffffffff && index.column() < 5 && node)
         return node;
     return m_currentRoot?m_currentRoot:m_rootNode;
 }
@@ -533,6 +537,7 @@ Node
 QModelIndex
 Model::indexForLocalFile(const QString &filePath)
 {
+//    //QMutexLocker locker(&m_mutex);
     Node *node = schemeNode("file")->localNode(filePath);
     if (node == m_currentRoot || node == m_rootNode)
         return QModelIndex();
@@ -544,6 +549,7 @@ Model::indexForLocalFile(const QString &filePath)
 QModelIndex
 Model::index(const QUrl &url)
 {
+    //QMutexLocker locker(&m_mutex);
     if (url.scheme().isEmpty())
         return QModelIndex();
 
@@ -569,9 +575,9 @@ Model::index(const QUrl &url)
 QModelIndex
 Model::index(int row, int column, const QModelIndex &parent) const
 {
+    //QMutexLocker locker(&m_mutex);
     Node *parentNode = node(parent);
     Node *childNode = parentNode->child(row);
-
     if (childNode)
     {
         if (childNode == m_currentRoot)
@@ -584,6 +590,9 @@ Model::index(int row, int column, const QModelIndex &parent) const
 QModelIndex
 Model::parent(const QModelIndex &child) const
 {
+    //QMutexLocker locker(&m_mutex);
+    if (!child.isValid())
+        return QModelIndex();
     Node *childNode = node(child);
     if (Node *parentNode = childNode->parent())
     {
@@ -597,12 +606,14 @@ Model::parent(const QModelIndex &child) const
 int
 Model::rowCount(const QModelIndex &parent) const
 {
+    //QMutexLocker locker(&m_mutex);
     return node(parent)->childCount();
 }
 
 bool
 Model::hasChildren(const QModelIndex &parent) const
 {
+    //QMutexLocker locker(&m_mutex);
     Node *n = node(parent);
     return n->hasChildren()||n->isDir();
 }
@@ -610,12 +621,14 @@ Model::hasChildren(const QModelIndex &parent) const
 bool
 Model::canFetchMore(const QModelIndex &parent) const
 {
+    //QMutexLocker locker(&m_mutex);
     return node(parent)->isDir();
 }
 
 void
 Model::fetchMore(const QModelIndex &parent)
 {
+    //QMutexLocker locker(&m_mutex);
     if (parent.isValid() && parent.column() != 0)
         return;
     Node *n = node(parent);
@@ -955,4 +968,10 @@ Model::fileDeleted(const QString &path)
         return;
     if (Node *p = n->parent())
         m_dataGatherer->populateNode(p);
+}
+
+void
+Model::deleteNode(Node *node)
+{
+    delete node;
 }

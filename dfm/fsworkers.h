@@ -46,7 +46,8 @@ class Node : public QFileInfo
     friend class Model;
     friend class Worker::Gatherer;
 public:
-    enum Children { Visible = 0, Hidden = 1, Filtered = 2, ChildrenTypeCount = 3 };
+    enum Child { Visible = 0, Hidden = 1, Filtered = 2, ChildrenTypeCount = 3 };
+    typedef unsigned int Children;
     Node(FS::Model *model = 0, const QUrl &url = QUrl(), Node *parent = 0, const QString &filePath = QString());
     virtual ~Node();
 
@@ -64,8 +65,9 @@ public:
     Node *child(const int c, Children fromChildren = Visible) const;
     Node *child(const QString &name, const bool nameIsPath = true) const;
     Node *childFromUrl(const QUrl &url) const;
-    inline bool hasChildren() const { return !m_children[Visible].isEmpty(); }
+    bool hasChildren() const;
     void insertChild(Node *n, const int i);
+    void deleteLater();
 
     void removeDeleted();
     void rePopulate();
@@ -104,14 +106,14 @@ public:
     inline QUrl url() const { return m_url; }
     inline void setUrl(const QUrl &url) { m_url = url; }
 
-    inline Node *parent() const { return m_parent; }
+    Node *parent() const;
 
 private:
     mutable int m_isExe;
     mutable QMutex m_mutex;
 
-    bool m_isPopulated;
-    Nodes m_children[ChildrenTypeCount];
+    bool m_isPopulated, m_isDeleted;
+    Nodes m_children[ChildrenTypeCount], m_toAdd;
     Node *m_parent;
     QString m_filePath, m_filter, m_name;
     QUrl m_url;

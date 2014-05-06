@@ -73,6 +73,7 @@ Node::Node(Model *model, const QUrl &url, Node *parent, const QString &filePath)
     , m_parent(parent)
     , m_url(url)
     , m_isExe(-1)
+    , m_isDeleted(false)
 {
     if (url.path().isEmpty() && !url.scheme().isEmpty())
         m_name = url.scheme();
@@ -82,9 +83,6 @@ Node::Node(Model *model, const QUrl &url, Node *parent, const QString &filePath)
         m_name = filePath;
     else
         m_name = fileName();
-
-//    if (m_parent && m_parent->m_parent == static_cast<Node *>(&m_model->m_rootNode))
-//        m_name = m_filePath;
 
     if (m_name.isEmpty())
         m_name = url.toEncoded(QUrl::RemoveScheme);
@@ -108,17 +106,25 @@ Node::~Node()
 }
 
 void
+Node::deleteLater()
+{
+    m_isDeleted = true;
+    m_parent->removeChild(this);
+    emit m_model->deleteNodeLater(this);
+}
+
+void
 Node::removeChild(Node *node)
 {
     for (int i = 0; i < ChildrenTypeCount; ++i)
     {
         m_mutex.lock();
-        const bool hasNode = m_children[i].contains(node);
+        const int idx(m_children[i].indexOf(node));
         m_mutex.unlock();
-        if (hasNode)
+        if (idx != -1)
         {
             if (!i)
-                m_model->beginRemoveRows(m_model->createIndex(row(), 0, this), node->row(), node->row());
+                m_model->beginRemoveRows(m_model->createIndex(row(), 0, this), idx, idx);
             m_mutex.lock();
             m_children[i].removeOne(node);
             m_mutex.unlock();
@@ -211,6 +217,20 @@ Node::rowOf(const Node *node) const
 {
     QMutexLocker locker(&m_mutex);
     return m_children[Visible].indexOf(const_cast<Node *>(node));
+}
+
+Node
+*Node::parent() const
+{
+//    QMutexLocker locker(&m_mutex);
+    return m_parent;
+}
+
+bool
+Node::hasChildren() const
+{
+    QMutexLocker locker(&m_mutex);
+    return !m_children[Visible].isEmpty();
 }
 
 QIcon
@@ -397,10 +417,10 @@ Node
     }
     for (int i = 0; i < ChildrenTypeCount; ++i)
     {
-        int c = childCount((Children)i);
+        int c = childCount(i);
         while (--c > -1)
         {
-            Node *node = child(c, (Children)i);
+            Node *node = child(c, i);
             if (node && node->filePath() == path)
             {
                 if (i)
@@ -517,13 +537,13 @@ Node::removeDeleted()
 {
     for (int i = 0; i < ChildrenTypeCount; ++i)
     {
-        int c = childCount(Children(i));
+        int c = childCount(i);
         while (--c > -1)
         {
-            Node *node = child(c, Children(i));
+            Node *node = child(c, i);
             node->refresh();
             if (!node->exists())
-                delete node;
+                node->deleteLater();
         }
     }
 }

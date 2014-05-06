@@ -159,6 +159,7 @@ protected:
     bool handleSearchUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
     bool handleApplicationsUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
     bool handleDevicesUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
+//    void beginInsertRows(const QModelIndex &parent, int first, int last);
 
 public slots:
     bool setUrl(QUrl url);
@@ -176,6 +177,7 @@ private slots:
     void refreshCurrent();
     void fileDeleted(const QString &path);
     void updateFileNode();
+    void deleteNode(Node *node);
 
 signals:
     void flowDataChanged(const QModelIndex &start, const QModelIndex &end);
@@ -188,9 +190,11 @@ signals:
     void startedWorking();
     void finishedWorking();
     void urlLoaded(const QUrl &url);
+    void deleteNodeLater(Node *node);
 
 private:
     Node *m_rootNode, *m_current, *m_currentRoot;
+    mutable QMutex m_mutex;
     mutable QMap<QString, Node *> m_schemeNodes;
     QHash<QUrl, Node *> m_nodes;
     bool m_showHidden, m_lockHistory;

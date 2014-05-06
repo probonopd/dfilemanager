@@ -544,7 +544,7 @@ Flow::rowsRemoved(const QModelIndex &parent, int start, int end)
     m_timeLine->stop();
 
     for (int i = start; i <= end; ++i)
-        if (m_items.count() > i)
+        if (i > 1 && i < m_items.size())
             delete m_items.takeAt(i);
 
     m_scrollBar->blockSignals(true);
