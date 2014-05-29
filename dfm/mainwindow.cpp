@@ -54,6 +54,8 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     center->setFrameStyle(0/*QFrame::StyledPanel|QFrame::Sunken*/);
     m_filterBox = new SearchBox(m_toolBar);
     m_toolBarSpacer = new QWidget(m_toolBar);
+    m_sortButton = new QToolButton(m_toolBar);
+    m_menuButton = new QToolButton(m_toolBar);
     m_placesDock = new Docks::DockWidget(m_tabWin, tr("Bookmarks"), Qt::SubWindow, Docks::Left);
     m_recentDock = new Docks::DockWidget(m_tabWin, tr("Recent Folders"), Qt::SubWindow, Docks::Right);
     m_infoDock = new Docks::DockWidget(m_tabWin, tr("Information"), Qt::SubWindow, Docks::Bottom);
@@ -105,9 +107,9 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     connect(m_tabManager, SIGNAL(tabCloseRequested(int)), this, SLOT(tabCloseRequest(int)));
 
     createActions();
-    readSettings();
     createMenus();
     createToolBars();
+    readSettings();
     setupStatusBar();
 
     if (Store::config.behaviour.gayWindow)
@@ -821,9 +823,6 @@ MainWindow::updateToolbarSpacer()
 void
 MainWindow::updateIcons()
 {
-    if (!m_sortButton)
-        return;
-
     QColor fg = m_toolBar->palette().color(m_toolBar->foregroundRole());
     if (QWidget *firstTB = m_toolBar->widgetForAction(m_actions[GoBack]))
     {
@@ -875,9 +874,10 @@ MainWindow::updateConfig()
     m_tabBar->setVisible(m_tabBar->count() > 1 || !Store::config.behaviour.hideTabBarWhenOnlyOneTab);
     if (activeContainer())
         activeContainer()->refresh();
-    updateIcons();
+
     m_placesView->viewport()->update();
     emit settingsChanged();
+    QTimer::singleShot(0, this, SLOT(updateIcons()));
 }
 
 void

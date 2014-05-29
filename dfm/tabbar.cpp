@@ -554,7 +554,8 @@ TabButton::regenPixmaps()
     QStyleOptionTabV3 tab;
     tab.state = QStyle::State_Enabled;
     tab.rect = rect();
-    if (!style()->objectName().contains("styleproject", Qt::CaseInsensitive))
+    const bool sp(style()->objectName().compare("styleproject", Qt::CaseInsensitive) == 0);
+    if (!sp)
         tab.position = QStyleOptionTab::OnlyOneTab;
     else
         tab.position = QStyleOptionTab::End;
@@ -568,6 +569,8 @@ TabButton::regenPixmaps()
     style()->drawControl(QStyle::CE_TabBarTab, &tab, &p, parentWidget());
     QRect iconRect(0, 0, 16, 16);
     iconRect.moveCenter(rect().center());
+    if (sp)
+        iconRect.moveLeft(iconRect.left()-style()->pixelMetric(QStyle::PM_TabBarTabOverlap)/2-2);
     const QIcon &icon = IconProvider::icon(IconProvider::NewTab, 16, Ops::colorMid(palette().color(foregroundRole()), palette().color(backgroundRole()), 4, 1), Store::config.behaviour.systemIcons);
     icon.paint(&p, iconRect, Qt::AlignCenter, QIcon::Normal);
     p.end();
@@ -780,7 +783,7 @@ TabBar::resizeEvent(QResizeEvent *e)
 {
     QTabBar::resizeEvent(e);
     if (!Store::config.behaviour.gayWindow && m_addButton)
-        m_addButton->setFixedSize(28, height());
+        m_addButton->setFixedSize(32, height());
 
     correctAddButtonPos();
 }

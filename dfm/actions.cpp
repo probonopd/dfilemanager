@@ -461,16 +461,16 @@ MainWindow::createToolBars()
     m_toolBar->addAction(m_actions[FlowView]);
 //    m_toolBar->addSeparator();
 
-    QWidget *spacerFixed = new QWidget(m_toolBar);
-    spacerFixed->setFixedWidth(64);
-    m_toolBar->addWidget(spacerFixed);
+//    QWidget *spacerFixed = new QWidget(m_toolBar);
+//    spacerFixed->setFixedWidth(64);
+//    m_toolBar->addWidget(spacerFixed);
+    m_toolBar->addSeparator();
     m_toolBar->addAction(m_actions[Configure]);
 
     m_toolBar->addSeparator();
     m_toolBar->addAction(m_actions[GoHome]);
 
     m_toolBar->addSeparator();
-    m_sortButton = new QToolButton(this);
     m_sortButton->setIcon(IconProvider::icon(IconProvider::Sort, 16, m_sortButton->palette().color(m_sortButton->foregroundRole()), false));
     QMenu *sortMenu = new QMenu(m_sortButton);
     sortMenu->setSeparatorsCollapsible(false);
@@ -491,7 +491,6 @@ MainWindow::createToolBars()
     m_menuSep = m_toolBar->addSeparator();
     m_menuSep->setVisible(!Store::config.behaviour.gayWindow&&!menuBar()->isVisible());
 
-    m_menuButton = new QToolButton(this);
     m_menuButton->setIcon(IconProvider::icon(IconProvider::Sort, 16, m_sortButton->palette().color(m_sortButton->foregroundRole()), false));
     m_menuButton->setMenu(mainMenu());
     m_menuButton->setPopupMode(QToolButton::InstantPopup);
