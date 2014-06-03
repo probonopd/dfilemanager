@@ -49,6 +49,7 @@
 #define dApp static_cast<Application*>(QApplication::instance())
 #define MAINWINDOW static_cast<DFM::MainWindow*>(dApp->mainWindow())
 #define DPY QX11Info::display()
+#define SEP "#PATHSEP#"
 
 class Application : public QApplication
 {
@@ -57,7 +58,7 @@ public:
     enum Type { Browser = 0, IOJob = 1 };
     explicit Application(int &argc, char *argv[]); /*: QApplication(argc, argv) {}*/
     inline bool isRunning() { return m_isRunning; }
-    void setMessage(const QStringList &message, const QString &serverName = QString());
+    void setMessage(QStringList message, const QString &serverName = QString());
     QList<ThumbInterface *> thumbIfaces() { return m_allThumbIfaces; }
     QList<ThumbInterface *> activeThumbIfaces() { return m_thumbIfaces.values(); }
     inline bool hasThumbIfaces() { return !m_allThumbIfaces.isEmpty(); }

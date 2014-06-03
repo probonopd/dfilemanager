@@ -21,6 +21,7 @@
 
 #include "operations.h"
 #include "mainwindow.h"
+#include "application.h"
 #include <QFileInfo>
 #include <QVector>
 #include <QDebug>
@@ -362,7 +363,7 @@ Ops::extractIoData(const QStringList &args, IOJobData &ioJobData)
 
     ioJobData.ioTask = taskFromString(args.at(2));
     ioJobData.inPaths = args.at(3);
-    ioJobData.inList = args.at(3).split(",", QString::SkipEmptyParts);
+    ioJobData.inList = args.at(3).split(SEP, QString::SkipEmptyParts);
     ioJobData.outPath = args.at(4);
     return true;
 }

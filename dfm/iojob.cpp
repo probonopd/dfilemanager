@@ -291,13 +291,13 @@ Manager::remove(const QStringList &paths)
     {
         inPaths.append(paths.at(i));
         if (i != paths.count()-1)
-            inPaths.append(",");
+            inPaths.append(SEP);
     }
     ioJobData.inPaths = inPaths;
     ioJobData.outPath = QString();
     ioJobData.ioTask = RemoveTask;
 
-    QProcess::startDetached(qApp->applicationFilePath(), Ops::fromIoJobData(ioJobData));
+    QProcess::startDetached(dApp->applicationFilePath(), Ops::fromIoJobData(ioJobData));
 }
 
 void
@@ -309,7 +309,7 @@ Manager::copy(const QStringList &sourceFiles, const QString &destination, bool c
     {
         inPaths.append(sourceFiles.at(i));
         if (i != sourceFiles.count()-1)
-            inPaths.append(",");
+            inPaths.append(SEP);
     }
     ioJobData.inPaths = inPaths;
     ioJobData.outPath = destination;
@@ -742,7 +742,7 @@ Manager::remove(const QString &path) const
     if (m_canceled)
         return false;
     if (!QFileInfo(path).isDir())
-        QFile::remove(path);
+        return QFile::remove(path);
     QDirIterator it(path, allEntries, QDirIterator::Subdirectories);
     QStringList children;
     while (it.hasNext())

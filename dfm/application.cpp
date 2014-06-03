@@ -88,8 +88,9 @@ Application::Application(int &argc, char *argv[])
 void
 Application::socketConnected()
 {
-    const char *data = m_message.toLocal8Bit().data();
-    m_socket->write(data, qstrlen(data));
+//    const char *data = m_message.toAscii().data();
+//    qDebug() << m_message << data;
+    m_socket->write(m_message.toAscii().data(), m_message.size());
     m_socket->flush();
 }
 
@@ -99,20 +100,23 @@ Application::newServerConnection()
 {
     QLocalSocket *ls = m_server->nextPendingConnection();
     ls->waitForReadyRead();
-    const QString &message = ls->readAll();
+    const QString message(ls->readAll());
     connect(ls, SIGNAL(disconnected()), ls, SLOT(deleteLater()));
     ls->disconnectFromServer();
-    emit lastMessage(message.split("_,_"));
+    emit lastMessage(message.split(SEP));
 }
 
 void
-Application::setMessage(const QStringList &message, const QString &serverName)
+Application::setMessage(QStringList message, const QString &serverName)
 {
 //    if (!m_isRunning && serverName.isEmpty())
 //        return;
+    for (int i = 0; i < message.size(); ++i)
+        if (message.at(i).isEmpty())
+            message.removeAt(i);
     m_socket->abort();
     const QString &server = serverName.isEmpty() ? name[m_type] : serverName;
-    m_message = message.join("_,_");
+    m_message = message.join(SEP);
     m_socket->connectToServer(server);
 }
 
