@@ -71,7 +71,10 @@ QString
 Device::devPath() const
 {
 #if defined(Q_OS_UNIX)
-    return m_solid.isValid() ? m_solid.as<Solid::Block>()->device() : QString();
+    if (m_solid.isValid())
+    if (const Solid::Block *block = m_solid.as<Solid::Block>())
+        return block->device();
+    return QString();
 #else
     return m_fileInfo.filePath();
 #endif
