@@ -47,7 +47,7 @@ public:
     Device(Solid::Device solid = Solid::Device());
 #endif
     Device(const QFileInfo &dev = QFileInfo());
-    ~Device() {}
+    ~Device();
     void setMounted(const bool mount);
     bool isMounted() const;
     QString mountPath() const;

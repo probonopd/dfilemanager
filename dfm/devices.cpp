@@ -27,17 +27,26 @@ using namespace DFM;
 #if defined(Q_OS_UNIX)
 Device::Device(Solid::Device solid):m_solid(solid)
 {
-    connect (m_solid.as<Solid::StorageAccess>(), SIGNAL(accessibilityChanged(bool, const QString &)), this, SIGNAL(accessibilityChanged(bool, const QString &)));
+    connect(m_solid.as<Solid::StorageAccess>(), SIGNAL(accessibilityChanged(bool, const QString &)), this, SIGNAL(accessibilityChanged(bool, const QString &)));
 }
 #endif
 
 Device::Device(const QFileInfo &dev):m_fileInfo(dev){}
 
+Device::~Device()
+{
+//#if defined(Q_OS_UNIX)
+//#endif
+}
+
 bool
 Device::isMounted() const
 {
 #if defined(Q_OS_UNIX)
-    return m_solid.isValid() && m_solid.as<Solid::StorageAccess>()->isAccessible();
+    if (m_solid.isValid())
+    if (const Solid::StorageAccess *sa = m_solid.as<Solid::StorageAccess>())
+        return sa->isAccessible();
+    return false;
 #else
     return true;
 #endif
@@ -49,11 +58,14 @@ Device::setMounted(const bool mount)
 #if defined(Q_OS_UNIX)
     if (!m_solid.isValid())
         return;
+    Solid::StorageAccess *sa(0);
+    if (!(sa = m_solid.as<Solid::StorageAccess>()))
+        return;
 
     if (mount)
-        m_solid.as<Solid::StorageAccess>()->setup();
+        sa->setup();
     else
-        m_solid.as<Solid::StorageAccess>()->teardown();
+        sa->teardown();
 #endif
 }
 
@@ -61,7 +73,10 @@ QString
 Device::mountPath() const
 {
 #if defined(Q_OS_UNIX)
-    return m_solid.isValid() ? m_solid.as<Solid::StorageAccess>()->filePath() : QString();
+    if (m_solid.isValid())
+    if (const Solid::StorageAccess *sa = m_solid.as<Solid::StorageAccess>())
+        return sa->filePath();
+    return QString();
 #else
     return m_fileInfo.filePath();
 #endif
@@ -201,9 +216,11 @@ Devices::deviceRemoved(const QString &dev)
     {
         Device *d = m_devices.take(dev);
         emit deviceRemoved(d);
-        if (d->isMounted() && m_mounts.contains(d->mountPath()))
+        if (d && d->isMounted() && m_mounts.contains(d->mountPath()))
+        {
             m_mounts.removeOne(d->mountPath());
-        delete d;
+            delete d;
+        }
     }
 }
 #endif

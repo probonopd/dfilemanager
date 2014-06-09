@@ -278,8 +278,9 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev)
 
 DeviceItem::~DeviceItem()
 {
-//    delete m_button;
-//    delete m_device; ????
+    delete m_button;
+//    if (m_device)
+//        delete m_device;
 }
 
 void

@@ -122,19 +122,19 @@ class DeviceItem : public QObject, public Place //have to inherit QObject for si
 public:
     DeviceItem(DeviceManager *parentItem = 0, PlacesView *view = 0, Device *dev = 0);
     ~DeviceItem();
-    void setMounted(const bool mount) { m_device->setMounted(mount); }
-    inline bool isMounted() const { return m_device->isMounted(); }
-    inline QString mountPath() const { return m_device->mountPath(); }
-    inline QString devPath() const { return m_device->devPath(); }
-    inline QString product() const { return m_device->product(); }
-    inline quint64 usedBytes() const { return m_device->usedBytes(); }
-    inline quint64 freeBytes() const { return m_device->freeBytes(); }
-    inline quint64 totalBytes() const { return m_device->totalBytes(); }
-    inline int used() const { return m_device->used(); }
+    inline void setMounted(const bool mount) { if (m_device) m_device->setMounted(mount); }
+    inline bool isMounted() const { return m_device?m_device->isMounted():false; }
+    inline QString mountPath() const { return m_device?m_device->mountPath():QString(); }
+    inline QString devPath() const { return m_device?m_device->devPath():QString(); }
+    inline QString product() const { return m_device?m_device->product():QString(); }
+    inline quint64 usedBytes() const { return m_device?m_device->usedBytes():0; }
+    inline quint64 freeBytes() const { return m_device?m_device->freeBytes():0; }
+    inline quint64 totalBytes() const { return m_device?m_device->totalBytes():0; }
+    inline int used() const { return m_device?m_device->used():0; }
     inline bool isVisible() const { return m_isVisible; }
     bool isHidden() const;
     inline QList<QAction *> actions() const { return m_actions; }
-    QString name() const { return isMounted() ? mountPath() : m_device->description(); }
+    QString name() const { return isMounted() ? mountPath() : m_device?m_device->description():QString(); }
     QString path() const { return mountPath(); }
 //    inline void mount() { setMounted(true); }
 //    inline void unMount() { setMounted(false); }
