@@ -484,9 +484,9 @@ MainWindow::createToolBars()
     m_toolBar->addSeparator();
     m_toolBar->addAction(m_actions[ShowHidden]);
 
-    m_toolBarStretch = new QWidget(m_toolBar);
-//    m_toolBarStretch->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_toolBar->addWidget(m_toolBarStretch);
+    QWidget *stretch = new QWidget(m_toolBar);
+    stretch->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_toolBar->addWidget(stretch);
     m_toolBar->addWidget(m_filterBox);
     m_menuSep = m_toolBar->addSeparator();
     m_menuSep->setVisible(!Store::config.behaviour.gayWindow&&!menuBar()->isVisible());

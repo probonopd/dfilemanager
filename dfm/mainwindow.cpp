@@ -43,7 +43,6 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     , m_menuButton(0)
     , m_menuAction(0)
     , m_tabBar(0)
-    , m_toolBarStretch(0)
     , m_tabWin(new QMainWindow(this))
     , m_toolBar(new QToolBar(tr("Show ToolBar"), this))
     , m_statusBar(new StatusBar(this))
@@ -446,11 +445,11 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
     }
     else if (obj == m_placesView && (event->type() == QEvent::Resize || event->type() == QEvent::Show) && !m_placesDock->isFloating())
         updateToolbarSpacer();
-    else if (obj == m_toolBar && event->type() == QEvent::Resize && m_sortButton)
-    {
-        const unsigned short int area(m_toolBar->width()-m_sortButton->geometry().right());
-        m_toolBarStretch->setFixedWidth(area*0.2f);
-    }
+//    else if (obj == m_toolBar && event->type() == QEvent::Resize && m_sortButton)
+//    {
+//        unsigned short area(m_toolBar->width()-m_sortButton->geometry().right());
+//        m_filterBox->setFixedWidth(qMax(area>>1, ));
+//    }
 
     return QMainWindow::eventFilter(obj, event);
 }

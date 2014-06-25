@@ -193,7 +193,7 @@ signals:
 
 private:
     StatusBar *m_statusBar;
-    QWidget *m_toolBarSpacer, *m_toolBarStretch;
+    QWidget *m_toolBarSpacer;
     SearchBox *m_filterBox;
     Docks::DockWidget *m_placesDock, *m_recentDock, *m_infoDock;
     QString m_statusMessage, m_slctnMessage;
