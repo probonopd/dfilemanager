@@ -50,6 +50,7 @@
 #define MAINWINDOW static_cast<DFM::MainWindow*>(dApp->mainWindow())
 #define DPY QX11Info::display()
 #define SEP "#PATHSEP#"
+#define CSEP "#SEPARATOR#"
 
 class Application : public QApplication
 {

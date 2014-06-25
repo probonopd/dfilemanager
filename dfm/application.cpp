@@ -101,9 +101,10 @@ Application::newServerConnection()
     QLocalSocket *ls = m_server->nextPendingConnection();
     ls->waitForReadyRead();
     const QString message(ls->readAll());
+//    qDebug() << "newmessage" << message;
     connect(ls, SIGNAL(disconnected()), ls, SLOT(deleteLater()));
     ls->disconnectFromServer();
-    emit lastMessage(message.split(SEP));
+    emit lastMessage(message.split(CSEP));
 }
 
 void
@@ -111,12 +112,13 @@ Application::setMessage(QStringList message, const QString &serverName)
 {
 //    if (!m_isRunning && serverName.isEmpty())
 //        return;
-    for (int i = 0; i < message.size(); ++i)
-        if (message.at(i).isEmpty())
-            message.removeAt(i);
+//    qDebug() << "setmessage" << message;
+//    for (int i = 0; i < message.size(); ++i)
+//        if (message.at(i).isEmpty())
+//            message.removeAt(i);
     m_socket->abort();
     const QString &server = serverName.isEmpty() ? name[m_type] : serverName;
-    m_message = message.join(SEP);
+    m_message = message.join(CSEP);
     m_socket->connectToServer(server);
 }
 

@@ -43,6 +43,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     , m_menuButton(0)
     , m_menuAction(0)
     , m_tabBar(0)
+    , m_toolBarStretch(0)
     , m_tabWin(new QMainWindow(this))
     , m_toolBar(new QToolBar(tr("Show ToolBar"), this))
     , m_statusBar(new StatusBar(this))
@@ -79,10 +80,9 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     m_tabManager->setTabBar(m_tabBar);
 
     int is = 16;
-    QSize tbs(QSize(is, is));
+    QSize tbs(is, is);
     m_toolBar->setIconSize(tbs);
     m_infoDock->setWidget(m_infoWidget);
-
     m_tabWin->setWindowFlags(0);
     m_placesDock->setWidget(m_placesView);
     m_placesDock->setObjectName(tr("Bookmarks"));
@@ -167,6 +167,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked());
 //    foreach (QAction *a, m_toolBar->actions())
 //        connect(a, SIGNAL(changed()), this, SLOT(updateIcons()));
+    m_toolBar->installEventFilter(this);
     QTimer::singleShot(0, this, SLOT(updateIcons()));
 }
 
@@ -440,11 +441,16 @@ MainWindow::eventFilter(QObject *obj, QEvent *event)
         const QString &newMessage = (activeContainer()->selectionModel()->selection().isEmpty() ||
                                activeContainer()->selectionModel()->currentIndex().parent() !=
                 model()->index(model()->rootUrl())) ? m_statusMessage : m_statusMessage + m_slctnMessage;
-        if(m_statusBar->currentMessage() != newMessage)
+        if (m_statusBar->currentMessage() != newMessage)
             m_statusBar->setMessage(newMessage);
     }
     else if (obj == m_placesView && (event->type() == QEvent::Resize || event->type() == QEvent::Show) && !m_placesDock->isFloating())
         updateToolbarSpacer();
+    else if (obj == m_toolBar && event->type() == QEvent::Resize && m_sortButton)
+    {
+        const unsigned short int area(m_toolBar->width()-m_sortButton->geometry().right());
+        m_toolBarStretch->setFixedWidth(area*0.2f);
+    }
 
     return QMainWindow::eventFilter(obj, event);
 }

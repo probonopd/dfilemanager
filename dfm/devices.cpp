@@ -27,6 +27,11 @@ using namespace DFM;
 #if defined(Q_OS_UNIX)
 Device::Device(Solid::Device solid):m_solid(solid)
 {
+    if (!m_solid.is<Solid::StorageAccess>())
+    {
+        deleteLater();
+        return;
+    }
     connect(m_solid.as<Solid::StorageAccess>(), SIGNAL(accessibilityChanged(bool, const QString &)), this, SIGNAL(accessibilityChanged(bool, const QString &)));
 }
 #endif
@@ -44,8 +49,8 @@ Device::isMounted() const
 {
 #if defined(Q_OS_UNIX)
     if (m_solid.isValid())
-    if (const Solid::StorageAccess *sa = m_solid.as<Solid::StorageAccess>())
-        return sa->isAccessible();
+        if (const Solid::StorageAccess *sa = m_solid.as<Solid::StorageAccess>())
+            return sa->isAccessible();
     return false;
 #else
     return true;
@@ -74,8 +79,8 @@ Device::mountPath() const
 {
 #if defined(Q_OS_UNIX)
     if (m_solid.isValid())
-    if (const Solid::StorageAccess *sa = m_solid.as<Solid::StorageAccess>())
-        return sa->filePath();
+        if (const Solid::StorageAccess *sa = m_solid.as<Solid::StorageAccess>())
+            return sa->filePath();
     return QString();
 #else
     return m_fileInfo.filePath();
@@ -87,8 +92,8 @@ Device::devPath() const
 {
 #if defined(Q_OS_UNIX)
     if (m_solid.isValid())
-    if (const Solid::Block *block = m_solid.as<Solid::Block>())
-        return block->device();
+        if (const Solid::Block *block = m_solid.as<Solid::Block>())
+            return block->device();
     return QString();
 #else
     return m_fileInfo.filePath();

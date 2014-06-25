@@ -159,9 +159,10 @@ SearchBox::SearchBox(QWidget *parent)
 {
     setPlaceholderText("Filter By Name");
 
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    setMaximumWidth(222);
+//    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+//    setMaximumWidth(222);
     setMouseTracking(true);
+    setAlignment(Qt::AlignCenter);
 
     connect(this, SIGNAL(textChanged(QString)), this, SLOT(setClearButtonEnabled(QString)));
     connect(m_clearSearch, SIGNAL(clicked()), this, SLOT(clear()));

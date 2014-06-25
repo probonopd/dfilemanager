@@ -153,13 +153,12 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
         painter->setOpacity(1);
     }
 
+    DeviceItem *d = m_placesView->itemFromIndex<DeviceItem *>(index);
     if (Store::config.behaviour.devUsage)
-        if (DeviceItem *d = m_placesView->itemFromIndex<DeviceItem *>(index))
-            if (d->isMounted() && d->totalBytes())
-                drawDeviceUsage(d->used(), painter, option);
-    if (DeviceItem *d = m_placesView->itemFromIndex<DeviceItem *>(index))
-        if (d->isHidden())
-            painter->setOpacity(0.5f);
+        if (d && d->isMounted() && d->totalBytes())
+            drawDeviceUsage(d->used(), painter, option);
+    if (d && d->isHidden())
+        painter->setOpacity(0.5f);
 
     if (selected)
         fg = PAL.color(QPalette::HighlightedText);
@@ -255,10 +254,10 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev)
 //    QColor fg = Operations::colorMid(m_view->palette().color(QPalette::Highlight), mid, 1, 5);
     m_button->setVisible(true);
     m_button->setToolTip(isMounted() ? "Unmount" : "Mount");
-    connect (m_button, SIGNAL(clicked()), this, SLOT(toggleMount()));
-    connect (m_timer, SIGNAL(timeout()), this, SLOT(updateSpace()));
+    connect(m_button, SIGNAL(clicked()), this, SLOT(toggleMount()));
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(updateSpace()));
     m_timer->start(1000);
-    connect (m_device, SIGNAL(accessibilityChanged(bool, const QString &)), this, SLOT(changeState()));
+    connect(m_device, SIGNAL(accessibilityChanged(bool, const QString &)), this, SLOT(changeState()));
     updateSpace();
     setDragEnabled(false);
     connect(m_view, SIGNAL(expanded(QModelIndex)), this, SLOT(updateTb()));
