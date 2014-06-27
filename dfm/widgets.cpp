@@ -38,6 +38,7 @@ Button::Button(QWidget *parent)
     , m_isAnimating(false)
     , m_menu(0)
     , m_animStep(0)
+    , m_opacity(1.0f)
     , m_animTimer(new QTimer(this))
 {
     m_stepSize = 360/STEPS;
@@ -89,6 +90,8 @@ Button::paintEvent(QPaintEvent *e)
     QWidget::paintEvent(e);
     QPainter p(this);
     QRect iconRect = rect();
+    if (!underMouse())
+        p.setOpacity(m_opacity);
     if (m_menu)
         iconRect.setRight(iconRect.right()-(ARROW+ARROWMARGIN));
     if (m_isAnimating)

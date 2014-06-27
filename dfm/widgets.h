@@ -46,6 +46,7 @@ public:
     ~Button();
     void setIcon(const QIcon &icon);
     void setMenu(QMenu *menu);
+    void setOpacity(const float opacity) { m_opacity = opacity; update(); }
 
 public slots:
     void animate();
@@ -66,6 +67,7 @@ protected:
 private:
     bool m_hasPress, m_isAnimating;
     int m_animStep, m_stepSize;
+    float m_opacity;
     QIcon m_icon, m_animIcon;
     QMenu *m_menu;
     QTimer *m_animTimer;

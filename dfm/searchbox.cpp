@@ -93,6 +93,7 @@ SearchTypeSelector::SearchTypeSelector(SearchBox *parent) : Button(parent), m_se
     m->addSeparator();
     QAction *cancel = m->addAction(tr("Cancel Search"));
     QAction *close = m->addAction(tr("Close Search"));
+    setOpacity(0.5f);
 
     connect(filter, SIGNAL(triggered()), this, SLOT(filter()));
     connect(search, SIGNAL(triggered()), this, SLOT(search()));
@@ -163,6 +164,9 @@ SearchBox::SearchBox(QWidget *parent)
 //    setMaximumWidth(222);
     setMouseTracking(true);
     setAlignment(Qt::AlignCenter);
+    QFont f(font());
+    f.setBold(true);
+    setFont(f);
 
     connect(this, SIGNAL(textChanged(QString)), this, SLOT(setClearButtonEnabled(QString)));
     connect(m_clearSearch, SIGNAL(clicked()), this, SLOT(clear()));

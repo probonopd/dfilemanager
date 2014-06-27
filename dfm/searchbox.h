@@ -96,7 +96,7 @@ class SearchBox : public QLineEdit
 public:
     explicit SearchBox(QWidget *parent = 0);
     ~SearchBox(){}
-    QSize sizeHint() const { return QLineEdit::sizeHint()+QSize(64, 0); }
+    QSize sizeHint() const { return QSize(320, QLineEdit::sizeHint().height()); }
 //    QSize minimumSizeHint() const { return QLineEdit::minimumSizeHint()+QSize(64, 0); }
     inline SearchMode mode() { return m_mode; }
 

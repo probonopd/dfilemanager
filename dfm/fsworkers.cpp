@@ -501,11 +501,17 @@ Node::clearVisible()
 void
 Node::setFilter(const QString &filter)
 {
-    QMutexLocker locker(&m_mutex);
     if (filter == m_filter || model()->isWorking())
         return;
 
+    emit m_model->layoutAboutToBeChanged();
+    const QModelIndexList &oldList = m_model->persistentIndexList();
+    QList<QPair<int, Node *> > old;
+    for (int i = 0; i < oldList.count(); ++i)
+        old << QPair<int, Node *>(oldList.at(i).column(), m_model->node(oldList.at(i)));
     m_filter = filter;
+
+    m_mutex.lock();
     for (int i = 0; i < Filtered; ++i)
     {
         int c = m_children[i].count();
@@ -513,7 +519,6 @@ Node::setFilter(const QString &filter)
             if (!m_children[i].at(c)->name().contains(filter, Qt::CaseInsensitive))
                 m_children[Filtered] << m_children[i].takeAt(c);
     }
-
     int f = m_children[Filtered].count();
     while (--f > -1)
         if (m_children[Filtered].at(f)->name().contains(filter, Qt::CaseInsensitive))
@@ -525,7 +530,21 @@ Node::setFilter(const QString &filter)
             else
                 m_children[Visible] << m_children[Filtered].takeAt(f);
         }
-    locker.unlock();
+    m_mutex.unlock();
+
+    QModelIndexList newList;
+    for (int i = 0; i < old.count(); ++i)
+    {
+        QPair<int, Node *> n = old.at(i);
+        Node *node = n.second;
+        QModelIndex idx = m_model->index(QUrl::fromLocalFile(node->filePath()));
+        if (n.first > 0)
+            idx = idx.sibling(idx.row(), n.first);
+        newList << idx;
+    }
+    m_model->changePersistentIndexList(oldList, newList);
+    emit m_model->layoutChanged();
+
     m_model->sortNode(this);
 //    if (m_children[Visible].count() > 1)
 //        qStableSort(m_children[Visible].begin(), m_children[Visible].end(), lessThen);
