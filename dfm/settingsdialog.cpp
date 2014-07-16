@@ -47,6 +47,7 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     , m_invActBookm(new QCheckBox(tr("Icon on active bookmark follows textrole"), this))
     , m_pathBarPlace(new QComboBox(this))
     , m_useIOQueue(new QCheckBox(tr("Queue IO operations (copy/move/delete)"), this))
+    , m_showCloseTabButton(new QCheckBox(tr("Show closebutton for tabs"), this))
 {
     m_hideTabBar->setChecked(Store::config.behaviour.hideTabBarWhenOnlyOneTab);
     m_useCustomIcons->setChecked(Store::config.behaviour.systemIcons);
@@ -54,6 +55,7 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     m_capsConts->setChecked(Store::config.behaviour.capsContainers);
     m_invActBookm->setChecked(Store::config.behaviour.invActBookmark);
     m_useIOQueue->setChecked(Store::config.behaviour.useIOQueue);
+    m_showCloseTabButton->setChecked(Store::config.behaviour.showCloseTabButton);
     m_startUpWidget->setStartupPath(Store::settings()->value("startPath").toString());
 
     m_tabsBox->setCheckable(true);
@@ -126,6 +128,7 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     gl->addWidget(m_invActBookm, ++row, 0, 1, 2);
     gl->addWidget(m_capsConts, ++row, 0, 1, 2);
     gl->addWidget(m_useIOQueue, ++row, 0, 1, 2);
+    gl->addWidget(m_showCloseTabButton, ++row, 0, 1, 2);
     gl->addWidget(new QLabel(tr("PathBar position:")), ++row, 0, 1, 1);
     gl->addWidget(m_pathBarPlace, row, 1, 1, 1);
     gl->addWidget(m_tabsBox, ++row, 0, 1, 2);
@@ -401,6 +404,7 @@ SettingsDialog::accept()
     Store::config.views.detailsView.altRows = m_viewWidget->m_altRows->isChecked();
     Store::config.behaviour.pathBarPlace = m_behWidget->m_pathBarPlace->currentIndex();
     Store::config.behaviour.useIOQueue = m_behWidget->m_useIOQueue->isChecked();
+    Store::config.behaviour.showCloseTabButton = m_behWidget->m_showCloseTabButton->isChecked();
 
     Store::settings()->setValue("behaviour.useIOQueue", Store::config.behaviour.useIOQueue);
     Store::settings()->setValue("behaviour.gayWindow", m_behWidget->m_tabsBox->isChecked());

@@ -71,6 +71,7 @@ Store::readConfiguration()
     config.behaviour.sideBarStyle = settings()->value("sideBarStyle", 1).toInt();
     config.behaviour.pathBarPlace = settings()->value("behaviour.pathBarPlace", 0).toInt();
     config.behaviour.useIOQueue = settings()->value("behaviour.useIOQueue", true).toBool();
+    config.behaviour.showCloseTabButton = settings()->value("behaviour.showCloseTabButton", false).toBool();
 
     config.views.showThumbs = settings()->value("showThumbs", false).toBool();
     config.views.activeThumbIfaces = settings()->value("activeThumbIfaces", QStringList()).toStringList();
@@ -155,6 +156,7 @@ Store::writeConfiguration()
 
     settings()->setValue("behaviour.pathBarPlace", config.behaviour.pathBarPlace);
     settings()->setValue("behaviour.useIOQueue", config.behaviour.useIOQueue);
+    settings()->setValue("behaviour.showCloseTabButton", config.behaviour.showCloseTabButton);
 
     settings()->setValue("detailsView.rowPadding", config.views.detailsView.rowPadding);
     settings()->setValue("detailsView.altRows", config.views.detailsView.altRows);

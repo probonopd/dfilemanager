@@ -176,7 +176,6 @@ protected:
     void dragMoveEvent(QDragMoveEvent *e);
     void dropEvent(QDropEvent *e);
     bool eventFilter(QObject *, QEvent *);
-    void correctAddButtonPos();
     void drawTab(QPainter *p, int index);
 
 private slots:
@@ -184,6 +183,7 @@ private slots:
     void newWindowTab(int tab);
     void closeCurrent();
     void postConstructorOps();
+    void correctAddButtonPos();
 
 private:
     friend class FooBar;

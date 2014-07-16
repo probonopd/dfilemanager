@@ -566,17 +566,17 @@ TabButton::regenPixmaps()
         m_pix[i].fill(Qt::transparent);
     }
     QPainter p(&m_pix[0]);
-    style()->drawControl(QStyle::CE_TabBarTab, &tab, &p, parentWidget());
+//    style()->drawControl(QStyle::CE_TabBarTab, &tab, &p, parentWidget());
     QRect iconRect(0, 0, 16, 16);
     iconRect.moveCenter(rect().center());
-    if (sp)
-        iconRect.moveLeft(iconRect.left()-style()->pixelMetric(QStyle::PM_TabBarTabOverlap)/2-2);
+//    if (sp)
+//        iconRect.moveLeft(iconRect.left()-style()->pixelMetric(QStyle::PM_TabBarTabOverlap)/2-2);
     const QIcon &icon = IconProvider::icon(IconProvider::NewTab, 16, Ops::colorMid(palette().color(foregroundRole()), palette().color(backgroundRole()), 4, 1), Store::config.behaviour.systemIcons);
     icon.paint(&p, iconRect, Qt::AlignCenter, QIcon::Normal);
     p.end();
     p.begin(&m_pix[1]);
     tab.state |= QStyle::State_MouseOver;
-    style()->drawControl(QStyle::CE_TabBarTab, &tab, &p, parentWidget());
+//    style()->drawControl(QStyle::CE_TabBarTab, &tab, &p, parentWidget());
     const QIcon &activeIcon = IconProvider::icon(IconProvider::NewTab, 16, palette().color(QPalette::Highlight), Store::config.behaviour.systemIcons);
     activeIcon.paint(&p, iconRect, Qt::AlignCenter, QIcon::Selected, QIcon::On);
     p.end();
@@ -612,7 +612,7 @@ TabBar::TabBar(QWidget *parent)
         setAttribute(Qt::WA_NoSystemBackground);
     setMovable(false);
     setDrawBase(true);
-    setExpanding(false);
+//    setExpanding(false);
     setElideMode(Qt::ElideRight);
     setAcceptDrops(true);
     m_dropIndicator->setFixedWidth(8);
@@ -629,8 +629,13 @@ TabBar::TabBar(QWidget *parent)
         QTimer::singleShot(0, this, SLOT(postConstructorOps()));
     }
     connect(MainWindow::window(this), SIGNAL(settingsChanged()), this, SLOT(postConstructorOps()));
+    QAction *closeCurrent = new QAction(tr("Close current tab"), this);
+    connect(closeCurrent, SIGNAL(triggered()), this, SLOT(closeCurrent()));
+    addAction(closeCurrent);
+    closeCurrent->setShortcut(QKeySequence(QString("Ctrl+W")));
 
     setLayout(m_layout);
+    QTimer::singleShot(1000, this, SLOT(correctAddButtonPos()));
 }
 
 void
@@ -640,7 +645,10 @@ TabBar::postConstructorOps()
 //    m_closeButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     const QIcon &icon = IconProvider::icon(IconProvider::CloseTab, 16, palette().color(foregroundRole()), Store::config.behaviour.systemIcons);
     if (m_closeButton)
+    {
         m_closeButton->setIcon(icon);
+        m_closeButton->setVisible(Store::config.behaviour.showCloseTabButton);
+    }
 }
 
 void
@@ -652,7 +660,6 @@ TabBar::setTabCloseButton(QToolButton *closeButton)
     l->setContentsMargins(0, 0, 0, 0);
     l->setSpacing(0);
     m_closeButton = closeButton;
-    m_closeButton->setShortcut(QKeySequence(QString("Ctrl+W")));
     l->addWidget(m_closeButton);
     connect(closeButton, SIGNAL(clicked()), this, SLOT(closeCurrent()));
     w->setLayout(l);
@@ -673,9 +680,9 @@ TabBar::correctAddButtonPos()
         return;
 
     int x = tabRect(count()-1).right();
-    if (!style()->objectName().contains("styleproject", Qt::CaseInsensitive))
-        x+=Store::config.behaviour.tabOverlap/2;
-    else
+//    if (!style()->objectName().contains("styleproject", Qt::CaseInsensitive))
+//        x+=Store::config.behaviour.tabOverlap/2;
+//    else
         x-=4;
     int y = qFloor((float)rect().height()/2.0f-(float)m_addButton->height()/2.0f);
     m_addButton->move(x, y);
@@ -783,7 +790,7 @@ TabBar::resizeEvent(QResizeEvent *e)
 {
     QTabBar::resizeEvent(e);
     if (!Store::config.behaviour.gayWindow && m_addButton)
-        m_addButton->setFixedSize(32, height());
+        m_addButton->setFixedSize(16, height());
 
     correctAddButtonPos();
 }
@@ -1027,17 +1034,17 @@ TabBar::paintEvent(QPaintEvent *event)
 QSize
 TabBar::tabSizeHint(int index) const
 {
+    if (expanding())
+        return QTabBar::tabSizeHint(index);
     if (Store::config.behaviour.gayWindow)
         return QSize(qMin(Store::config.behaviour.tabWidth,(width()/count())-(m_addButton?qCeil(((float)m_addButton->width()/(float)count())+2):0)), Store::config.behaviour.tabHeight/*QTabBar::tabSizeHint(index).height()+3*/);
-    else
-    {
-        int w = width();
-        if (m_addButton)
-            w -= m_addButton->width();
-        if (m_closeButton)
-            w -= m_closeButton->width();
-        return QSize(qMin(150, w/count()), QTabBar::tabSizeHint(index).height());
-    }
+
+    int w = width();
+    if (m_addButton)
+        w -= m_addButton->width();
+    if (m_closeButton)
+        w -= m_closeButton->width();
+    return QSize(qMin(150, w/count()), QTabBar::tabSizeHint(index).height());
 }
 
 void
