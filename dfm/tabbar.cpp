@@ -566,11 +566,8 @@ TabButton::regenPixmaps()
         m_pix[i].fill(Qt::transparent);
     }
     QPainter p(&m_pix[0]);
-//    style()->drawControl(QStyle::CE_TabBarTab, &tab, &p, parentWidget());
     QRect iconRect(0, 0, 16, 16);
     iconRect.moveCenter(rect().center());
-//    if (sp)
-//        iconRect.moveLeft(iconRect.left()-style()->pixelMetric(QStyle::PM_TabBarTabOverlap)/2-2);
     const QIcon &icon = IconProvider::icon(IconProvider::NewTab, 16, Ops::colorMid(palette().color(foregroundRole()), palette().color(backgroundRole()), 4, 1), Store::config.behaviour.systemIcons);
     icon.paint(&p, iconRect, Qt::AlignCenter, QIcon::Normal);
     p.end();

@@ -105,10 +105,13 @@ public slots:
 
 protected:
     void resizeEvent(QResizeEvent *);
+    QPoint posFor(bool selector = true) const;
 
 private slots:
     void setClearButtonEnabled(QString filter) { m_clearSearch->setVisible(!filter.isEmpty()); }
     void search();
+    void correctSelectorPos();
+
 
 private:
     SearchTypeSelector *m_selector;

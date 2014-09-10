@@ -164,11 +164,12 @@ SearchBox::SearchBox(QWidget *parent)
 //    setMaximumWidth(222);
     setMouseTracking(true);
     setAlignment(Qt::AlignCenter);
-    QFont f(font());
-    f.setBold(true);
-    setFont(f);
+//    QFont f(font());
+//    f.setBold(true);
+//    setFont(f);
 
     connect(this, SIGNAL(textChanged(QString)), this, SLOT(setClearButtonEnabled(QString)));
+    connect(this, SIGNAL(textChanged(QString)), this, SLOT(correctSelectorPos()));
     connect(m_clearSearch, SIGNAL(clicked()), this, SLOT(clear()));
     connect(m_selector, SIGNAL(modeChanged(SearchMode)), this, SLOT(setMode(SearchMode)));
     connect(this, SIGNAL(returnPressed()), this, SLOT(search()));
@@ -179,9 +180,11 @@ void
 SearchBox::resizeEvent(QResizeEvent *event)
 {
     QLineEdit::resizeEvent(event);
-    setTextMargins(m_selector->rect().width()+m_margin, 0, m_clearSearch->width()+m_margin, 0);
-    m_selector->move(rect().left() + m_margin, (rect().bottom()-m_selector->rect().bottom())>>1);
-    m_clearSearch->move(rect().right()-(m_margin+m_clearSearch->width()), (rect().bottom()-m_clearSearch->rect().bottom())>>1);
+//    setTextMargins(m_selector->rect().width()+m_margin, 0, m_clearSearch->width()+m_margin, 0);
+//    m_selector->move(rect().left() + m_margin, (rect().bottom()-m_selector->rect().bottom())>>1);
+    m_selector->move(posFor());
+    m_clearSearch->move(posFor(false));
+//    m_clearSearch->move(rect().right()-(m_margin+m_clearSearch->width()), (rect().bottom()-m_clearSearch->rect().bottom())>>1);
 }
 
 void
@@ -191,6 +194,7 @@ SearchBox::setMode(const SearchMode mode)
         setPlaceholderText("Filter by name");
     else if (mode==Search)
         setPlaceholderText("Search...");
+    correctSelectorPos();
     m_mode = mode;
 }
 
@@ -204,4 +208,20 @@ SearchBox::search()
     if (!fsModel)
         return;
     fsModel->search(text());
+}
+
+QPoint
+SearchBox::posFor(bool selector) const
+{
+    const QRect tr(fontMetrics().boundingRect(rect(), alignment(), text().isEmpty()?placeholderText():text()));
+    const QSize sz(selector?m_selector->size():m_clearSearch->size());
+    const int top((size().height()/2)-(sz.height()/2));
+    return QPoint(selector?tr.left()-(sz.width()+m_margin):tr.right()+m_margin, top);
+}
+
+void
+SearchBox::correctSelectorPos()
+{
+    m_selector->move(posFor(true));
+    m_clearSearch->move(posFor(false));
 }
