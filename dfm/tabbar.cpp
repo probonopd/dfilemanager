@@ -535,7 +535,7 @@ TabButton::paintEvent(QPaintEvent *e)
     }
     else
     {
-        p.drawTiledPixmap(rect(), m_pix[underMouse()]);
+        p.drawTiledPixmap(rect().translated(2, 0), m_pix[underMouse()]);
     }
     p.end();
 }
@@ -566,16 +566,16 @@ TabButton::regenPixmaps()
         m_pix[i].fill(Qt::transparent);
     }
     QPainter p(&m_pix[0]);
-    QRect iconRect(0, 0, 16, 16);
-    iconRect.moveCenter(rect().center());
+//    QRect iconRect(0, 0, 16, 16);
+//    iconRect.moveCenter(rect().center());
     const QIcon &icon = IconProvider::icon(IconProvider::NewTab, 16, Ops::colorMid(palette().color(foregroundRole()), palette().color(backgroundRole()), 4, 1), Store::config.behaviour.systemIcons);
-    icon.paint(&p, iconRect, Qt::AlignCenter, QIcon::Normal);
+    icon.paint(&p, rect(), Qt::AlignCenter, QIcon::Normal);
     p.end();
     p.begin(&m_pix[1]);
     tab.state |= QStyle::State_MouseOver;
 //    style()->drawControl(QStyle::CE_TabBarTab, &tab, &p, parentWidget());
     const QIcon &activeIcon = IconProvider::icon(IconProvider::NewTab, 16, palette().color(QPalette::Highlight), Store::config.behaviour.systemIcons);
-    activeIcon.paint(&p, iconRect, Qt::AlignCenter, QIcon::Selected, QIcon::On);
+    activeIcon.paint(&p, rect(), Qt::AlignCenter, QIcon::Selected, QIcon::On);
     p.end();
 }
 
@@ -783,13 +783,20 @@ TabBar::dropEvent(QDropEvent *e)
 }
 
 void
+TabBar::showEvent(QShowEvent *e)
+{
+    QTabBar::showEvent(e);
+    QTimer::singleShot(250, this, SLOT(correctAddButtonPos()));
+}
+
+void
 TabBar::resizeEvent(QResizeEvent *e)
 {
     QTabBar::resizeEvent(e);
     if (!Store::config.behaviour.gayWindow && m_addButton)
         m_addButton->setFixedSize(16, height());
 
-    correctAddButtonPos();
+    QTimer::singleShot(0, this, SLOT(correctAddButtonPos()));
 }
 
 void

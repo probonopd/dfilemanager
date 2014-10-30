@@ -50,13 +50,16 @@ inline static QPixmap shadowPix(int size, int intens, QColor c)
     QPixmap pix(size, size);
     pix.fill(Qt::transparent);
     QPainter p(&pix);
+    p.translate(0.5f, 0.5f);
     QRect r(pix.rect());
-    const float d = r.height()/2;
+    const float d = (float)r.height()/2.0f;
     QRadialGradient rg(r.center(), d);
-    const QColor &c2(QColor(c.red(), c.green(), c.blue(), c.alpha()/4));
-    rg.setColorAt(0, c);
-    rg.setColorAt(0.5, c2);
-    rg.setColorAt(1, Qt::transparent);
+//    const QColor &c2(QColor(c.red(), c.green(), c.blue(), c.alpha()/4));
+//    c.setAlpha(192);
+    rg.setColorAt(0.2f, c);
+    c.setAlpha(96);
+    rg.setColorAt(0.5f, c);
+    rg.setColorAt(0.8f, Qt::transparent);
     p.setBrush(rg);
     p.setPen(Qt::NoPen);
     p.setRenderHint(QPainter::Antialiasing);
@@ -71,7 +74,7 @@ public:
     enum ShadowPart { TopLeft = 0, Top, TopRight, Left, Center, Right, BottomLeft, Bottom, BottomRight };
     inline explicit IconDelegate(IconView *parent)
         : FileItemDelegate(parent)
-        , m_size(4)
+        , m_size(5)
         , m_iv(parent)
     {
         genShadowData();
@@ -133,23 +136,14 @@ public:
         painter->setFont(index.data(Qt::FontRole).value<QFont>());
         painter->drawText(RECT.adjusted(0, DECOSIZE.height()+4, 0, 0), Qt::AlignTop|Qt::AlignHCenter, text(option, index));
         painter->setPen(pen);
-//        QApplication::style()->drawItemText(painter, tr.adjusted(-2, 0, 2, 0), Qt::AlignCenter, PAL, option.state & QStyle::State_Enabled, et, high);
 
         const QPixmap &pixmap = pix(option, index);
 
         QRect theRect = pixmap.rect();
         theRect.moveCenter(QRect(RECT.topLeft(), QSize(RECT.width(), DECOSIZE.height()+2)).center());
-        m_hitRects.insert(index.internalPointer(), theRect);
 
         if (m_model->hasThumb(index))
-        {
-            const int d = 4;
-            const QRect r(theRect.adjusted(-d, -d, d+1, d+2));
-            renderShadow(r, painter);
-
-            painter->fillRect(theRect.adjusted(-2, -2, 2, 2), PAL.color(QPalette::Base));
-            painter->fillRect(theRect.adjusted(-1, -1, 1, 1), QColor(0, 0, 0, 64));
-        }
+            renderShadow(theRect.adjusted(-(m_size-1), -(m_size-1), m_size-1, m_size), painter);
         QApplication::style()->drawItemPixmap(painter, theRect, Qt::AlignCenter, pixmap);
         painter->restore();
     }
@@ -158,19 +152,19 @@ public:
     {
         return m_iv->gridSize();
     }
-    inline void clearData() { m_textData.clear(); m_pixData.clear(); m_hitRects.clear(); }
+    inline void clearData() { m_textData.clear(); m_pixData.clear(); }
     inline void clear(const QModelIndex &index)
     {
         if (m_pixData.contains(index.internalPointer()))
             m_pixData.remove(index.internalPointer());
         if (m_textData.contains(index.internalPointer()))
             m_textData.remove(index.internalPointer());
-        if (m_hitRects.contains(index.internalPointer()))
-            m_hitRects.remove(index.internalPointer());
     }
-    bool isHitted(const QModelIndex &index, const QPoint &p)
+    bool isHitted(const QModelIndex &index, const QPoint &p, const QRect &r = QRect()) const
     {
-        return m_hitRects.value(index.internalPointer(), QRect()).contains(p);
+        QRect theRect = QRect(QPoint(0, 0), m_iv->iconSize());
+        theRect.moveCenter(QRect(r.topLeft(), QSize(r.width(), m_iv->iconSize().height()+2)).center());
+        return theRect.contains(p);
     }
 protected:
     QPixmap pix(const QStyleOptionViewItem &option, const QModelIndex &index) const
@@ -286,7 +280,6 @@ private:
     IconView *m_iv;
     mutable QHash<void *, QString> m_textData;
     mutable QHash<void *, QPixmap> m_pixData;
-    mutable QHash<void *, QRect> m_hitRects;
     FS::Model *m_model;
 };
 
@@ -656,7 +649,7 @@ IconView::paintEvent(QPaintEvent *e)
         {
             const QString &category(m_categories.at(cat));
             const QRect catRect = visualRect(category);
-            if (!viewport()->rect().intersects(catRect))
+            if (!e->rect().intersects(catRect))
                 continue;
 
             renderCategory(category, catRect, &p, cat);
@@ -666,7 +659,7 @@ IconView::paintEvent(QPaintEvent *e)
             {
                 const QModelIndex &index(block.at(i));
                 const QRect vr(visualRect(index));
-                if (!viewport()->rect().intersects(vr))
+                if (!e->rect().intersects(vr))
                     continue;
                 QStyleOptionViewItemV4 option(viewOptions());
                 option.rect=vr;
@@ -682,7 +675,7 @@ IconView::paintEvent(QPaintEvent *e)
         {
             const QModelIndex &index(m_model->index(i, 0, rootIndex()));
             const QRect vr(visualRect(index));
-            if (!viewport()->rect().intersects(vr))
+            if (!e->rect().intersects(vr))
                 continue;
             QStyleOptionViewItemV4 option(viewOptions());
             option.rect=vr;
@@ -823,7 +816,7 @@ IconView::indexAt(const QPoint &p) const
 //        if (!viewport()->rect().intersects(r))
 //            continue;
         if (r.contains(p))
-            if (static_cast<IconDelegate *>(itemDelegate())->isHitted(index, p))
+            if (static_cast<IconDelegate *>(itemDelegate())->isHitted(index, p, r))
                 return index;
     }
     return QModelIndex();

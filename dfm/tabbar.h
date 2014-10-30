@@ -171,6 +171,7 @@ protected:
     void mouseMoveEvent(QMouseEvent *e);
     void leaveEvent(QEvent *e);
     void resizeEvent(QResizeEvent *e);
+    void showEvent(QShowEvent *);
     void dragEnterEvent(QDragEnterEvent *e);
     void dragLeaveEvent(QDragLeaveEvent *e);
     void dragMoveEvent(QDragMoveEvent *e);

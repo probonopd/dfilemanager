@@ -812,10 +812,10 @@ void
 MainWindow::updateToolbarSpacer()
 {
     int w = m_placesView->viewport()->width();
-    if (QWidget *b = m_toolBar->widgetForAction(m_actions[GoBack]))
-        w -= b->width();
+//    if (QWidget *b = m_toolBar->widgetForAction(m_actions[GoBack]))
+//        w -= b->geometry().right();
     if (QWidget *b = m_toolBar->widgetForAction(m_actions[GoForward]))
-        w -= b->width();
+        w -= b->geometry().right();
     w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
     if (m_toolBarSpacer->width() != w)
     {

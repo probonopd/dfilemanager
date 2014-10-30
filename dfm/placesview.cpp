@@ -277,9 +277,7 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev)
 
 DeviceItem::~DeviceItem()
 {
-    delete m_button;
-//    if (m_device)
-//        delete m_device;
+    m_button = 0; //parented by the viewport so no need to delete...
 }
 
 void
@@ -344,11 +342,16 @@ DeviceItem::updateSpace()
 {
     if (isMounted())
     {
+        static quint64 s_fb(0);
+        const quint64 fb(freeBytes());
+        if (fb == s_fb)
+            return;
+        s_fb = fb;
         if (Store::config.behaviour.devUsage)
             m_view->update(index());
 //        int t = 0;
 //        QString free(QString::number(realSize((float)freeBytes(), &t)));
-        setToolTip(Ops::prettySize(freeBytes()) + " Free");
+        setToolTip(Ops::prettySize(fb) + " Free");
     }
 }
 
