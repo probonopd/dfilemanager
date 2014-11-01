@@ -27,6 +27,8 @@
 #include <QTimer>
 #include <QEvent>
 
+#define STEPS 8
+
 class ViewAnimator : public QObject
 {
     Q_OBJECT

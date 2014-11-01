@@ -74,8 +74,8 @@ public:
     explicit Model(QObject *parent = 0);
     ~Model();
 
-    bool hasThumb(const QString &file);
-    bool hasThumb(const QModelIndex &index);
+    bool hasThumb(const QString &file) const;
+    bool hasThumb(const QModelIndex &index) const;
 
     Qt::ItemFlags flags(const QModelIndex &index) const;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;

@@ -407,7 +407,7 @@ Model::newData(const QString &file)
 }
 
 bool
-Model::hasThumb(const QString &file)
+Model::hasThumb(const QString &file) const
 {
     if (Data *d = DataLoader::data(file, true))
         return !d->thumb.isNull();
@@ -416,7 +416,7 @@ Model::hasThumb(const QString &file)
 }
 
 bool
-Model::hasThumb(const QModelIndex &index)
+Model::hasThumb(const QModelIndex &index) const
 {
     Node *n = node(index);
     if (n->exists())

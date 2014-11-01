@@ -23,8 +23,6 @@
 #include "filesystemmodel.h"
 #include <QTreeView>
 
-#define STEPS 8
-
 QMap<QAbstractItemView *, ViewAnimator *> ViewAnimator::s_views;
 
 ViewAnimator::ViewAnimator(QObject *parent) : QObject(parent),
@@ -82,17 +80,17 @@ ViewAnimator::animEvent()
         QModelIndex index(it.next().key());
         const bool mouse(index == m_current);
         const int val(it.value());
-        if (mouse && val < STEPS) //hovering...
+        if (mouse && val < STEPS)
         {
             needRunning = true;
-            m_vals.insert(index, val+2);
+            m_vals.insert(index, (val&~1)+2);
         }
-        else if (!mouse && val > 0) //left widget and animate out
+        else if (!mouse && val > 0)
         {
             needRunning = true;
             m_vals.insert(index, val-1);
         }
-        else if (!mouse && val == 0) //animation done for this widget
+        else if (!mouse && val == 0)
             m_vals.remove(index);
 
         m_view->update(index);
