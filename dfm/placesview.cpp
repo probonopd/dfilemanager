@@ -486,8 +486,8 @@ PlacesView::PlacesView(QWidget *parent)
     , m_devManager(0L)
     , m_lastClicked(0L)
 {
-    ViewAnimator::manage(this);
     setModel(m_model = new PlacesModel(this));
+    ViewAnimator::manage(this);
     m_timer->setInterval(1000);
 
     setUniformRowHeights(false);

@@ -32,31 +32,27 @@ class ViewAnimator : public QObject
     Q_OBJECT
 public:
     static ViewAnimator *manage(QAbstractItemView *view);
-    static inline int hoverLevel(QAbstractItemView *view, const QModelIndex &index) { return view->findChild<ViewAnimator*>()->hoverLevelForIndex(index); }
+    static int hoverLevel(QAbstractItemView *view, const QModelIndex &index);
 
 protected:
     bool eventFilter(QObject *obj, QEvent *ev);
     explicit ViewAnimator(QObject *parent = 0);
-    inline int hoverLevelForIndex(const QModelIndex &index) const { return m_hoverLevel[index]; }
+    const int hoverLevelForIndex(const QModelIndex &index) const;
 
 public slots:
     void indexHovered(const QModelIndex &index);
     void removeHoveredIndex();
     void animEvent();
     void rowsRemoved(const QModelIndex & parent, int start, int end);
-    inline void clear() { m_hoverLevel.clear(); }
-
-signals:
-    void animation();
+    inline void clear() { m_vals.clear(); }
+    void removeView(QObject *view);
 
 private:
-    QMap<QModelIndex, int> m_hoverLevel;
-    const QAbstractItemModel *m_model;
-    QModelIndex m_hoveredIndex;
-    QTimer *m_animTimer;
+    static QMap<QAbstractItemView *, ViewAnimator *> s_views;
+    QMap<QModelIndex, int> m_vals;
+    QTimer *m_timer;
     QAbstractItemView *m_view;
-    int m_totalIndex;
-
+    QModelIndex m_current;
 };
 
 #endif // VIEWANIMATOR_H

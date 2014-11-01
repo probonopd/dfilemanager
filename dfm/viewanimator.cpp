@@ -23,33 +23,37 @@
 #include "filesystemmodel.h"
 #include <QTreeView>
 
+#define STEPS 8
+
+QMap<QAbstractItemView *, ViewAnimator *> ViewAnimator::s_views;
+
 ViewAnimator::ViewAnimator(QObject *parent) : QObject(parent),
-    m_totalIndex(0),
-    m_animTimer(new QTimer(this)),
-    m_view(static_cast<QAbstractItemView *>(parent)),
-    m_model(0)
+    m_timer(new QTimer(this)),
+    m_view(static_cast<QAbstractItemView *>(parent))
 {
-//    m_animTimer->setInterval(20);
-    connect(m_animTimer, SIGNAL(timeout()), this, SLOT(animEvent()));
+    //    m_animTimer->setInterval(20);
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(animEvent()));
     connect(m_view, SIGNAL(entered(QModelIndex)), this, SLOT(indexHovered(QModelIndex)));
     connect(m_view, SIGNAL(viewportEntered()), this, SLOT(removeHoveredIndex()));
-//    connect((static_cast<DFM::FileSystemModel *>(m_view->model())), SIGNAL(rootPathChanged(QString)), this, SLOT(clear()));
+    connect(m_view->model(), SIGNAL(layoutAboutToBeChanged()), this, SLOT(clear()));
+    connect(m_view, SIGNAL(destroyed(QObject*)), this, SLOT(removeView(QObject*)));
+    connect(m_view->model(), SIGNAL(rowsAboutToBeRemoved(QModelIndex,int,int)),
+            this, SLOT(rowsRemoved(QModelIndex,int,int)));
+    //    connect((static_cast<DFM::FileSystemModel *>(m_view->model())), SIGNAL(rootPathChanged(QString)), this, SLOT(clear()));
+    m_view->setMouseTracking(true);
     m_view->installEventFilter(this);
 }
 
 void
 ViewAnimator::indexHovered(const QModelIndex &index)
 {
-    if (!m_model && index.isValid())
+    if (index.isValid() && index != m_current && index.flags() & Qt::ItemIsEnabled)
     {
-        m_model = index.model();
-        connect(m_model, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(rowsRemoved(QModelIndex,int,int)));
-    }
-    if (index.isValid() && index.flags() & Qt::ItemIsEnabled)
-    {
-        m_hoveredIndex = index;
-        if (!m_animTimer->isActive())
-            m_animTimer->start(20);
+        m_current = index;
+        if (!m_vals.contains(m_current))
+            m_vals.insert(m_current, 0);
+        if (!m_timer->isActive())
+            m_timer->start(40);
     }
 }
 
@@ -57,64 +61,44 @@ void
 ViewAnimator::rowsRemoved(const QModelIndex &parent, int start, int end)
 {
     for (int i = start; i<=end; ++i)
-    {
-        const QModelIndex &index = m_model->index(i, 0, parent);
-        m_hoverLevel.remove(index);
-    }
+        m_vals.remove(m_view->model()->index(i, 0, parent));
 }
 
 void
 ViewAnimator::removeHoveredIndex()
 {
-    m_hoveredIndex = QModelIndex();
-    if (m_totalIndex && !m_animTimer->isActive())
-        m_animTimer->start(40);
+    m_current = QModelIndex();
+    if (!m_timer->isActive())
+        m_timer->start(40);
 }
 
 void
 ViewAnimator::animEvent()
 {
-    if (m_hoveredIndex != QModelIndex())
-        if (m_hoverLevel[m_hoveredIndex] == 8)  //we have decided to hover one item longer then 400 ms... no reason to keep timer running.
-        {
-            m_animTimer->stop();
-            return;
-        }
-    m_totalIndex = 0;
-    if (m_hoverLevel[m_hoveredIndex] < 8)
-        m_hoverLevel[m_hoveredIndex]++;
-
-    if (m_hoveredIndex != QModelIndex())
-        m_totalIndex = m_hoverLevel[m_hoveredIndex];
-
-    foreach (const QModelIndex &index, m_hoverLevel.keys())
+    bool needRunning(false);
+    QMapIterator<QModelIndex, int> it(m_vals);
+    while (it.hasNext())
     {
-        bool exists = false;
-        if (const DFM::FS::Model *fsModel = qobject_cast<const DFM::FS::Model *>(m_view->model()))
+        QModelIndex index(it.next().key());
+        const bool mouse(index == m_current);
+        const int val(it.value());
+        if (mouse && val < STEPS) //hovering...
         {
-            if (index.isValid() && fsModel->index(index.row(), 0, m_view->rootIndex()) == index)
-                exists = true;
+            needRunning = true;
+            m_vals.insert(index, val+2);
         }
-        else
-            exists = index.isValid();
-        if (exists)
-        if (m_hoverLevel[index] > 0)
+        else if (!mouse && val > 0) //left widget and animate out
         {
-            if (index != m_hoveredIndex)
-            {
-                m_hoverLevel[index]--;
-                m_totalIndex += m_hoverLevel[index];
-            }
-            m_view->update(index);
-//            if (QTreeView *tv = qobject_cast<QTreeView *>(m_view))
-//                if (DFM::FileSystemModel *fsm = qobject_cast<DFM::FileSystemModel *>(tv->model()))
-//                    for (int i = 0; i < tv->model()->columnCount(index.parent()); ++i)
-//                        tv->update(fsm->index(index.row(), i));
+            needRunning = true;
+            m_vals.insert(index, val-1);
         }
+        else if (!mouse && val == 0) //animation done for this widget
+            m_vals.remove(index);
+
+        m_view->update(index);
     }
-    if (!m_totalIndex)
-        m_animTimer->stop();
-    emit animation();
+    if (!needRunning)
+        m_timer->stop();
 }
 
 bool
@@ -128,7 +112,34 @@ ViewAnimator::eventFilter(QObject *obj, QEvent *ev)
 ViewAnimator
 *ViewAnimator::manage(QAbstractItemView *view)
 {
-    if (ViewAnimator *anim = view->findChild<ViewAnimator*>())
-        return anim;
-    return new ViewAnimator(view);
+    if (s_views.contains(view))
+        return s_views.value(view);
+
+    ViewAnimator *va(new ViewAnimator(view));
+    s_views.insert(view, va);
+    return va;
+}
+
+const int
+ViewAnimator::hoverLevelForIndex(const QModelIndex &index) const
+{
+    if (index.isValid())
+        return m_vals.value(index, 0);
+    return 0;
+}
+
+int
+ViewAnimator::hoverLevel(QAbstractItemView *view, const QModelIndex &index)
+{
+    if (index.isValid() && s_views.contains(view))
+        return s_views.value(view)->hoverLevelForIndex(index);
+    return 0;
+}
+
+void
+ViewAnimator::removeView(QObject *view)
+{
+    QAbstractItemView *v(static_cast<QAbstractItemView *>(view));
+    if (s_views.contains(v))
+        s_views.remove(v);
 }

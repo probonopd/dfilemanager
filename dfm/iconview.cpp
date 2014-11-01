@@ -316,7 +316,6 @@ IconView::IconView(QWidget *parent)
 //    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setSelectionBehavior(QAbstractItemView::SelectRows);
 
-    ViewAnimator::manage(this);
     connect(verticalScrollBar(), SIGNAL(valueChanged(int)), viewport(), SLOT(update()));
     connect(m_wheelTimer, SIGNAL(timeout()), this, SLOT(scrollEvent()));
     connect(this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)));
@@ -770,6 +769,7 @@ IconView::setModel(QAbstractItemModel *model)
         connect(m_model, SIGNAL(modelReset()), this, SLOT(updateLayout()));
         static_cast<IconDelegate*>(itemDelegate())->setModel(m_model);
     }
+    ViewAnimator::manage(this);
 }
 
 void
