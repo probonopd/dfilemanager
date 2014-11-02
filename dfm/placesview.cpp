@@ -773,23 +773,26 @@ PlacesView::keyReleaseEvent(QKeyEvent *event)
 }
 
 void
-PlacesView::drawItemsRecursive(QPainter *painter, const QModelIndex &parent)
+PlacesView::drawItemsRecursive(QPainter *painter, const QRect &clip, const QModelIndex &parent)
 {
     for (int i = 0; i < model()->rowCount(parent); ++i)
     {
         const QModelIndex &index = model()->index(i, 0, parent);
         const QRect vr(visualRect(index));
-        QStyleOptionViewItemV4 option(viewOptions());
-        option.rect=vr;
-        if (ViewAnimator::hoverLevel(this, index))
-            option.state |= QStyle::State_MouseOver;
-        if (selectionModel()->isSelected(index))
-            option.state |= QStyle::State_Selected;
-        if (isExpanded(index))
-            option.state |= QStyle::State_Open;
+        if (vr.intersects(clip))
+        {
+            QStyleOptionViewItemV4 option(viewOptions());
+            option.rect=vr;
+            if (ViewAnimator::hoverLevel(this, index))
+                option.state |= QStyle::State_MouseOver;
+            if (selectionModel()->isSelected(index))
+                option.state |= QStyle::State_Selected;
+            if (isExpanded(index))
+                option.state |= QStyle::State_Open;
 
-        itemDelegate()->paint(painter, option, index);
-        drawItemsRecursive(painter, index);
+            itemDelegate()->paint(painter, option, index);
+        }
+        drawItemsRecursive(painter, clip, index);
     }
 }
 
@@ -798,7 +801,7 @@ PlacesView::paintEvent(QPaintEvent *event)
 {
 //    QTreeView::paintEvent(event);
     QPainter p(viewport());
-    drawItemsRecursive(&p);
+    drawItemsRecursive(&p, event->rect());
     const QModelIndex &index = indexAt(mapFromGlobal(QCursor::pos()));
     if (showDropIndicator() && state() == QAbstractItemView::DraggingState
             && viewport()->cursor().shape() != Qt::ForbiddenCursor && m_model->flags(index) & Qt::ItemIsDropEnabled)
