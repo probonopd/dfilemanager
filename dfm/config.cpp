@@ -113,6 +113,7 @@ Store::readConfiguration()
     config.views.dirSettings = settings()->value("views.dirSettings", false).toBool();
 
     config.behaviour.invActBookmark = settings()->value("behaviour.invActBookmark", false).toBool();
+    config.behaviour.invAllBookmarks = settings()->value("behaviour.invAllBookmarks", false).toBool();
 
     settings()->beginGroup("CustomActions");
     foreach (const QString &string, settings()->childKeys())
@@ -180,6 +181,7 @@ Store::writeConfiguration()
 
     settings()->setValue("useSystemIcons", config.behaviour.systemIcons);
     settings()->setValue("behaviour.invActBookmark", config.behaviour.invActBookmark);
+    settings()->setValue("behaviour.invAllBookmarks", config.behaviour.invAllBookmarks);
 
     settings()->setValue("pluginPath", config.pluginPath);
 

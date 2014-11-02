@@ -189,14 +189,14 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     QRect iconRect(QPoint(RECT.x()+(indent*0.75f), RECT.y() + (RECT.height() - DECOSIZE.height())/2), DECOSIZE);
     QPixmap iconPix = qvariant_cast<QIcon>(index.data(Qt::DecorationRole)).pixmap(DECOSIZE.height());
 
-    if (selected && Store::config.behaviour.invActBookmark)
+    if ((selected && Store::config.behaviour.invActBookmark) || Store::config.behaviour.invAllBookmarks)
     {
         QImage img = iconPix.toImage();
         img = img.convertToFormat(QImage::Format_ARGB32);
         int size = img.width() * img.height();
         QRgb *pixel = reinterpret_cast<QRgb *>(img.bits());
         int r = 0, g = 0, b = 0;
-        PAL.color(QPalette::HighlightedText).getRgb(&r, &g, &b); //foregroundcolor
+        PAL.color(selected?QPalette::HighlightedText:QPalette::Text).getRgb(&r, &g, &b); //foregroundcolor
         for (int i = 0; i < size; ++i)
             pixel[i] = qRgba(r, g, b, qBound(0, qAlpha(pixel[i]) - qGray(pixel[i]), 255));
 
@@ -207,7 +207,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
         iconPix = iconPix.scaled(QSize(16, 16), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
     QApplication::style()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, iconPix);
-    if (selected && Store::config.behaviour.invActBookmark)
+    if ((selected && Store::config.behaviour.invActBookmark) || Store::config.behaviour.invAllBookmarks)
         QApplication::style()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, iconPix);
     painter->restore();
 }

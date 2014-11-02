@@ -47,6 +47,7 @@ typedef struct Config
         invertedColors,
         capsContainers,
         invActBookmark,
+        invAllBookmarks,
         useIOQueue,
         showCloseTabButton;
 

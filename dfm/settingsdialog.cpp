@@ -45,6 +45,7 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     , m_capsConts(new QCheckBox(tr("Use CAPITAL LETTERS on containers in bookmarks")))
     , m_startUpWidget(new StartupWidget(this))
     , m_invActBookm(new QCheckBox(tr("Icon on active bookmark follows textrole"), this))
+    , m_invAllBookm(new QCheckBox(tr("All icons in bookmarks follow textrole"), this))
     , m_pathBarPlace(new QComboBox(this))
     , m_useIOQueue(new QCheckBox(tr("Queue IO operations (copy/move/delete)"), this))
     , m_showCloseTabButton(new QCheckBox(tr("Show closebutton for tabs"), this))
@@ -54,6 +55,7 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     m_drawDevUsage->setChecked(Store::config.behaviour.devUsage);
     m_capsConts->setChecked(Store::config.behaviour.capsContainers);
     m_invActBookm->setChecked(Store::config.behaviour.invActBookmark);
+    m_invAllBookm->setChecked(Store::config.behaviour.invAllBookmarks);
     m_useIOQueue->setChecked(Store::config.behaviour.useIOQueue);
     m_showCloseTabButton->setChecked(Store::config.behaviour.showCloseTabButton);
     m_startUpWidget->setStartupPath(Store::settings()->value("startPath").toString());
@@ -126,6 +128,7 @@ BehaviourWidget::BehaviourWidget(QWidget *parent)
     gl->addWidget(m_useCustomIcons, ++row, 0, 1, 2);
     gl->addWidget(m_drawDevUsage, ++row, 0, 1, 2);
     gl->addWidget(m_invActBookm, ++row, 0, 1, 2);
+    gl->addWidget(m_invAllBookm, ++row, 0, 1, 2);
     gl->addWidget(m_capsConts, ++row, 0, 1, 2);
     gl->addWidget(m_useIOQueue, ++row, 0, 1, 2);
     gl->addWidget(m_showCloseTabButton, ++row, 0, 1, 2);
@@ -400,6 +403,7 @@ SettingsDialog::accept()
     Store::config.behaviour.capsContainers = m_behWidget->m_capsConts->isChecked();
     Store::config.views.dirSettings = m_viewWidget->m_dirSettings->isChecked();
     Store::config.behaviour.invActBookmark = m_behWidget->m_invActBookm->isChecked();
+    Store::config.behaviour.invAllBookmarks = m_behWidget->m_invAllBookm->isChecked();
     Store::config.views.iconView.categorized = m_viewWidget->m_categorized->isChecked();
     Store::config.views.detailsView.altRows = m_viewWidget->m_altRows->isChecked();
     Store::config.behaviour.pathBarPlace = m_behWidget->m_pathBarPlace->currentIndex();
