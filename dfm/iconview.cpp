@@ -216,7 +216,7 @@ protected:
             sz.scale(RECT.width()-((SHADOW-2)*2), DECOSIZE.height()-SHADOW, Qt::KeepAspectRatio);
         else
             sz = DECOSIZE;
-        if (pixmap.size() != DECOSIZE)
+        if (pixmap.size() != DECOSIZE && pixmap.width()>sz.width() && pixmap.height()>sz.height())
             pixmap = pixmap.scaled(sz, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         m_pixData.insert(index.internalPointer(), pixmap);
         return pixmap;

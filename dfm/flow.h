@@ -55,8 +55,12 @@ class ScrollBar : public QScrollBar
     Q_OBJECT
 public:
     inline explicit ScrollBar(const Qt::Orientation o, QWidget *parent = 0) : QScrollBar(o, parent) {}
+    inline void setRange(int min, int max) { clearCache(); QScrollBar::setRange(min, max); }
+    inline void resizeEvent(QResizeEvent *e) { clearCache(); QScrollBar::resizeEvent(e); }
+    inline void clearCache() { for (int i = 0; i < 2; ++i) m_slider[i] = QPixmap(); m_groove = QPixmap(); }
 protected:
     void paintEvent(QPaintEvent *);
+    QPixmap m_slider[2], m_groove;
 };
 
 class GraphicsScene : public QGraphicsScene

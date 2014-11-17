@@ -277,6 +277,7 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev)
 
 DeviceItem::~DeviceItem()
 {
+    m_button->hide();
     m_button = 0; //parented by the viewport so no need to delete...
 }
 

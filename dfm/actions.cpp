@@ -211,6 +211,14 @@ MainWindow::createActions()
     connect(m_actions[CustomCommand], SIGNAL(triggered()), this, SLOT(customCommand()));
     addAction(m_actions[CustomCommand]);
 
+    m_actions[ShowToolBar] = new QAction(tr("Show ToolBar"),this);
+    m_actions[ShowToolBar]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+B"));
+    m_actions[ShowToolBar]->setShortcutContext(Qt::ApplicationShortcut);
+    m_actions[ShowToolBar]->setObjectName("actionTool");
+    m_actions[ShowToolBar]->setCheckable(true);
+    connect(m_actions[ShowToolBar],SIGNAL(triggered()),this, SLOT(toggleMenuVisible()));
+    addAction(m_actions[ShowToolBar]);
+
     m_actions[ShowMenuBar] = new QAction(tr("Show MenuBar"),this);
     m_actions[ShowMenuBar]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+M"));
     m_actions[ShowMenuBar]->setShortcutContext(Qt::ApplicationShortcut);
@@ -335,6 +343,7 @@ MainWindow::createMenus()
 
     QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
     viewMenu->addAction(m_actions[ShowMenuBar]);
+    viewMenu->addAction(m_actions[ShowToolBar]);
     viewMenu->addAction(m_actions[ShowStatusBar]);
     viewMenu->addAction(m_actions[EditPath]);
     viewMenu->addAction(m_actions[ShowPathBar]);

@@ -42,24 +42,27 @@ void
 PathSeparator::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
-    p.setRenderHint(QPainter::Antialiasing);
-    p.setPen(Qt::NoPen);
-    QColor fg = palette().color(underMouse()?QPalette::Highlight:foregroundRole());
-    QColor bg = palette().color(backgroundRole());
+//    p.setRenderHint(QPainter::Antialiasing);
+//    p.setPen(Qt::NoPen);
+//    QColor fg = palette().color(underMouse()?QPalette::Highlight:foregroundRole());
+//    QColor bg = palette().color(backgroundRole());
 
-    int y = bg.value()>fg.value()?1:-1;
-    QColor hl = Ops::colorMid(bg, y==1?Qt::white:Qt::black);
-    QRect r = rect();
-    QPainterPath triangle;
-    triangle.moveTo(r.topLeft());
-    triangle.lineTo(r.adjusted(0, r.height()/2, 0, 0).topRight());
-    triangle.lineTo(r.bottomLeft());
-    if (!underMouse())
-        p.setOpacity(0.5f);
-    p.setBrush(hl);
-    p.drawPath(triangle.translated(0, y));
-    p.setBrush(fg);
-    p.drawPath(triangle);
+//    int y = bg.value()>fg.value()?1:-1;
+//    QColor hl = Ops::colorMid(bg, y==1?Qt::white:Qt::black);
+//    QRect r = rect();
+//    QPainterPath triangle;
+//    triangle.moveTo(r.topLeft());
+//    triangle.lineTo(r.adjusted(0, r.height()/2, 0, 0).topRight());
+//    triangle.lineTo(r.bottomLeft());
+//    if (!underMouse())
+//        p.setOpacity(0.5f);
+//    p.setBrush(hl);
+//    p.drawPath(triangle.translated(0, y));
+//    p.setBrush(fg);
+//    p.drawPath(triangle);
+    QStyleOption opt;
+    opt.initFrom(this);
+    style()->drawPrimitive(QStyle::PE_IndicatorArrowRight, &opt, &p, this);
     p.end();
 }
 

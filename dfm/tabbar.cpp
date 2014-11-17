@@ -609,7 +609,7 @@ TabBar::TabBar(QWidget *parent)
         setAttribute(Qt::WA_NoSystemBackground);
     setMovable(false);
     setDrawBase(true);
-//    setExpanding(false);
+    setExpanding(!Store::config.behaviour.gayWindow);
     setElideMode(Qt::ElideRight);
     setAcceptDrops(true);
     m_dropIndicator->setFixedWidth(8);
@@ -680,6 +680,9 @@ TabBar::correctAddButtonPos()
 //    if (!style()->objectName().contains("styleproject", Qt::CaseInsensitive))
 //        x+=Store::config.behaviour.tabOverlap/2;
 //    else
+    if (Store::config.behaviour.gayWindow)
+        x+=Store::config.behaviour.tabRoundness;
+    else
         x-=4;
     int y = qFloor((float)rect().height()/2.0f-(float)m_addButton->height()/2.0f);
     m_addButton->move(x, y);
@@ -1085,8 +1088,11 @@ TabManager::TabManager(MainWindow *mainWin, QWidget *parent)
 void
 TabManager::deleteTab(const int tab)
 {
+    if (count() <= 1)
+        return;
     if (ViewContainer *c = takeTab(tab))
         c->deleteLater();
+    setCurrentIndex(m_tabBar->currentIndex());
 }
 
 ViewContainer

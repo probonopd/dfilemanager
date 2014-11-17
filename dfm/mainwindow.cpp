@@ -527,9 +527,16 @@ void MainWindow::customCommand() { activeContainer()->customCommand(); }
 void
 MainWindow::toggleMenuVisible()
 {
-    menuBar()->setVisible(m_actions[ShowMenuBar]->isChecked());
-    m_menuAction->setVisible(!m_actions[ShowMenuBar]->isChecked()&&!Store::config.behaviour.gayWindow);
-    m_menuSep->setVisible(!m_actions[ShowMenuBar]->isChecked()&&!Store::config.behaviour.gayWindow);
+    if (sender() == m_actions[ShowToolBar])
+    {
+        m_toolBar->setVisible(m_actions[ShowToolBar]->isChecked());
+    }
+    else
+    {
+        menuBar()->setVisible(m_actions[ShowMenuBar]->isChecked());
+        m_menuAction->setVisible(!m_actions[ShowMenuBar]->isChecked()&&!Store::config.behaviour.gayWindow);
+        m_menuSep->setVisible(!m_actions[ShowMenuBar]->isChecked()&&!Store::config.behaviour.gayWindow);
+    }
 }
 
 void MainWindow::toggleStatusVisible() { m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked()); }

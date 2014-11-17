@@ -53,35 +53,46 @@ ScrollBar::paintEvent(QPaintEvent *)
     const QRect &groove = style()->subControlRect(QStyle::CC_ScrollBar, &opt, QStyle::SC_ScrollBarGroove, this);
     const QRect &slider = style()->subControlRect(QStyle::CC_ScrollBar, &opt, QStyle::SC_ScrollBarSlider, this).adjusted(1, 1, -1, -1);
 
+    if (groove.isEmpty() || slider.isEmpty())
+        return;
     // we need to paint to pixmaps first to get antialiasing...
 
-    //groove
-    QPixmap grvPix(groove.size());
-    grvPix.fill(Qt::transparent);
-    const int grvR = qCeil(grvPix.height()/2.0f);
-    QPainter grvPt(&grvPix);
-    const int h = palette().color(QPalette::Highlight).hue();
-    QColor c; c.setHsv(h, 128, 32, 192);
-    grvPt.setRenderHint(QPainter::Antialiasing);
-    grvPt.setPen(Qt::NoPen);
-    grvPt.setBrush(c);
-    grvPt.drawRoundedRect(grvPix.rect(), grvR, grvR);
-    grvPt.end();
-    p.drawTiledPixmap(groove, grvPix);
+    if (m_groove.isNull())
+    {
+        //groove
+        const int h = palette().color(QPalette::Highlight).hue();
+        QColor c; c.setHsv(h, 128, 32, 192);
+        QPixmap grvPix(groove.size());
+        grvPix.fill(Qt::transparent);
+        const int grvR = qCeil(grvPix.height()/2.0f);
+        QPainter grvPt(&grvPix);
 
-    //slider
-    c.setHsv(h, 32, 222, underMouse()?128:64);
-    QPixmap sldrPix(slider.size());
-    sldrPix.fill(Qt::transparent);
-    const int sldrR = qCeil(sldrPix.height()/2.0f);
-    QPainter sldrPt(&sldrPix);
-    sldrPt.setRenderHint(QPainter::Antialiasing);
-    sldrPt.setPen(Qt::NoPen);
-    sldrPt.setBrush(c);
-    sldrPt.drawRoundedRect(sldrPix.rect(), sldrR, sldrR);
-    sldrPt.end();
-    p.drawTiledPixmap(slider, sldrPix);
+        grvPt.setRenderHint(QPainter::Antialiasing);
+        grvPt.setPen(Qt::NoPen);
+        grvPt.setBrush(c);
+        grvPt.drawRoundedRect(grvPix.rect(), grvR, grvR);
+        grvPt.end();
+        m_groove = grvPix;
 
+        //slider
+        c.setHsv(h, 32, 222);
+        for (int i = 0; i < 2; ++i)
+        {
+            c.setAlpha(i?128:64);
+            QPixmap sldrPix(slider.size());
+            sldrPix.fill(Qt::transparent);
+            const int sldrR = qCeil(sldrPix.height()/2.0f);
+            QPainter sldrPt(&sldrPix);
+            sldrPt.setRenderHint(QPainter::Antialiasing);
+            sldrPt.setPen(Qt::NoPen);
+            sldrPt.setBrush(c);
+            sldrPt.drawRoundedRect(sldrPix.rect(), sldrR, sldrR);
+            sldrPt.end();
+            m_slider[i] = sldrPix;
+        }
+    }
+    p.drawTiledPixmap(groove, m_groove);
+    p.drawTiledPixmap(slider, m_slider[underMouse()]);
     p.end();
 }
 
@@ -204,7 +215,7 @@ Flow::Flow(QWidget *parent)
     glf.setSampleBuffers(false);
     glf.setSwapInterval(0);
     glf.setStencil(true);
-    glf.setAccum(false);
+    glf.setAccum(true);
     glf.setDirectRendering(true);
     glf.setDoubleBuffer(true);
     QGLFormat::setDefaultFormat(glf);
@@ -308,16 +319,12 @@ Flow::prepareAnimation()
 #define RIGHT QPointF(m_x+space, m_y)
     m_anim[New]->setItem(m_items.at(validate(m_nextRow)));
     m_anim[New]->setPosAt(1, CENTER);
-
-
     m_anim[Prev]->setItem(m_items.at(validate(m_row)));
     m_anim[Prev]->setPosAt(1, m_nextRow > m_row ? LEFT : RIGHT);
 #undef CENTER
 #undef RIGHT
 #undef LEFT
-
     m_hasZUpdate = false;
-
     m_timeLine->setDuration(qMax(1.0f,250.0f/qAbs(m_row-m_newRow)));
     m_timeLine->start();
 }
@@ -336,12 +343,6 @@ Flow::animStep(const qreal value)
 
     rotate = ANGLE-rotate;
     m_items.at(m_nextRow)->transform(goingUp ? rotate : -rotate, Qt::YAxis, f, f);
-
-//    if (m_items.count() > 1)
-//        correctItemsPos(m_row-1, m_row+1);
-
-
-
 
 #define UP m_items.at(i)->savedX()-s
 #define DOWN m_items.at(i)->savedX()+s
