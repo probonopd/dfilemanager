@@ -1,13 +1,13 @@
  TEMPLATE        = lib
  CONFIG         += plugin
- INCLUDEPATH    += ../../dfm/ /usr/include/GraphicsMagick
+ INCLUDEPATH    += ../../dfm/ /usr/include/poppler/qt4
  HEADERS        += thumbspdf.h
  SOURCES        += thumbspdf.cpp
  TARGET          = $$qtLibraryTarget(thumbspdfplugin)
- LIBS           += -lGraphicsMagick++
+ LIBS           += -lpoppler-qt4
  
   unix {
-    target.path = /usr/lib/dfm
+    target.path = $$(PREFIX)/lib/dfm
     INSTALLS += target
   }
 

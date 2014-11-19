@@ -2,8 +2,8 @@ TEMPLATE = subdirs
 SUBDIRS += ThumbsImages
 CONFIG += ordered
 unix {
-exists("/usr/include/GraphicsMagick/Magick++/Image.h") {
-    message("Found GraphicsMagick, building thumbs plugin for pdf files")
+exists("/usr/include/poppler/qt4/poppler-qt4.h") {
+    message("Found Poppler, building thumbs plugin for pdf files")
     SUBDIRS += ThumbsPDF
 }
 exists("/usr/include/libffmpegthumbnailer/videothumbnailer.h") {
