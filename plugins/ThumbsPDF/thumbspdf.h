@@ -5,7 +5,6 @@
 #include <QStringList>
 #include <QImage>
 #include <QFileInfo>
-//#include <Magick++/Image.h>
 #include <poppler-qt4.h>
 
 class ThumbsPDF : public QObject, ThumbInterface
@@ -23,7 +22,7 @@ public:
     QString name() const { return tr("PDFThumbs"); }
     QString description() const { return tr("Thumbs generator for pdf files using poppler"); }
 
-    bool canRead(const QString &file) const { return QFileInfo(file).suffix() == "pdf"; }
+    bool canRead(const QString &mime) const { return mime.endsWith("pdf"); }
     bool thumb(const QString &file, const QString &mime, QImage &thumb, const int size);
 
 private:

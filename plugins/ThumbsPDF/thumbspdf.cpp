@@ -18,8 +18,9 @@ ThumbsPDF::init()
 bool
 ThumbsPDF::thumb(const QString &file, const QString &mime, QImage &thumb, const int size)
 {   
-    if (QFileInfo(file).size() > maxSize || !canRead(file))
+    if (QFileInfo(file).size() > maxSize || !canRead(mime))
         return false;
+
     
     document = Poppler::Document::load(file.toLocal8Bit().data());
     if (document == 0) {
