@@ -23,7 +23,7 @@ public:
     ~ThumbsMovies(){m_loopTimer->deleteLater();m_evLoop->deleteLater();m_mc->deleteLater();}
 
     bool canRead(const QString &file) const;
-    bool thumb(const QString &file, const int size, QImage &thumb);
+    bool thumb(const QString &file, const QString &mime, QImage &thumb, const int size);
 
     QString name() const { return tr("MovieThumbs"); }
     QString description() const { return tr("Plugin for loading thumbnails for videos using MovieThumbs"); }

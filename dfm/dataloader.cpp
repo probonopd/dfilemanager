@@ -141,15 +141,16 @@ DataLoader::getData(const QString &path)
         return;
     }
     QImage image;
+    const QString mime(m_mimeProvider.getMimeType(path));
     if (!dApp->activeThumbIfaces().isEmpty() && Store::config.views.showThumbs)
         for (int i = 0; i<dApp->activeThumbIfaces().count(); ++i)
-            if (dApp->activeThumbIfaces().at(i)->thumb(path, m_extent, image))
+            if (dApp->activeThumbIfaces().at(i)->thumb(path, mime, image, m_extent))
             {
                 data->thumb = image;
                 break;
             }
-    data->mimeType = m_mimeProvider.getMimeType(path);
-    QString iconName = data->mimeType;
+    data->mimeType = mime;
+    QString iconName = mime;
     iconName.replace("/", "-");
     data->iconName = iconName;
     data->lastModified = fi.lastModified().toString();

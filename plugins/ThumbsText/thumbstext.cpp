@@ -5,44 +5,16 @@
 #include <QTextStream>
 #include <QTextCodec>
 #include <QFileInfo>
-#include <magic.h>
 
 #if QT_VERSION < 0x050000
 Q_EXPORT_PLUGIN2(thumbstext, ThumbsText)
 #endif
 
-static magic_t s_magicMime;
-static QString getMimeType(const QString &file)
-{
-    const QFileInfo f(file);
-    if (!f.isReadable())
-        return QString();
-
-    if (f.isSymLink())
-        return "inode/symlink";
-    if (f.isDir())
-        return "inode/directory";
-    return QString(magic_file(s_magicMime, file.toLocal8Bit().data()));;
-}
-
-void
-ThumbsText::init()
-{
-    s_magicMime = magic_open(MAGIC_MIME_TYPE);
-    magic_load(s_magicMime, NULL);
-}
-
 bool
-ThumbsText::canRead(const QString &file) const
-{
-    return getMimeType(file).startsWith("text", Qt::CaseInsensitive);
-}
-
-bool
-ThumbsText::thumb(const QString &file, const int size, QImage &thumb)
+ThumbsText::thumb(const QString &file, const QString &mime, QImage &thumb, const int size)
 {
     QFile f(file);
-    if (!f.open(QFile::ReadOnly|QIODevice::Text) || !canRead(file))
+    if (!f.open(QFile::ReadOnly|QIODevice::Text) || !mime.startsWith("text", Qt::CaseInsensitive))
         return false;
 
     QImage img(QSize(size, size), QImage::Format_RGB32);

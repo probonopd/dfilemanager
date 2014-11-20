@@ -16,7 +16,7 @@ ThumbsPDF::init()
 }
 
 bool
-ThumbsPDF::thumb(const QString &file, const int size, QImage &thumb)
+ThumbsPDF::thumb(const QString &file, const QString &mime, QImage &thumb, const int size)
 {   
     if (QFileInfo(file).size() > maxSize || !canRead(file))
         return false;

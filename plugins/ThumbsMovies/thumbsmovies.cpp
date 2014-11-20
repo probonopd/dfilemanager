@@ -23,7 +23,7 @@ ThumbsMovies::init()
 }
 
 bool
-ThumbsMovies::thumb(const QString &file, const int size, QImage &thumb)
+ThumbsMovies::thumb(const QString &file, const QString &mime, QImage &thumb, const int size)
 {
     if (!canRead(file))
         return false;

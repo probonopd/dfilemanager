@@ -19,7 +19,7 @@ ThumbsImages::~ThumbsImages()
 }
 
 bool
-ThumbsImages::thumb(const QString &file, const int size, QImage &thumb)
+ThumbsImages::thumb(const QString &file, const QString &mime, QImage &thumb, const int size)
 {
     QImageReader ir(file);
     if (!ir.canRead()||!canRead(file))

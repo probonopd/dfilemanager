@@ -24,7 +24,7 @@ public:
     QString description() const { return tr("Thumbs generator for pdf files using poppler"); }
 
     bool canRead(const QString &file) const { return QFileInfo(file).suffix() == "pdf"; }
-    bool thumb(const QString &file, const int size, QImage &thumb);
+    bool thumb(const QString &file, const QString &mime, QImage &thumb, const int size);
 
 private:
     Poppler::Document* document;
