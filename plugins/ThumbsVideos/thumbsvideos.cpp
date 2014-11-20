@@ -14,7 +14,7 @@ ThumbsVideos::init()
 bool
 ThumbsVideos::thumb(const QString &file, const QString &mime, QImage &thumb, const int size)
 {
-    if (!canRead(file))
+    if (!canRead(mime))
         return false;
     try
     {
@@ -32,12 +32,9 @@ ThumbsVideos::thumb(const QString &file, const QString &mime, QImage &thumb, con
     return false;
 }
 
-#define END(_SUFFIX_) file.endsWith(_SUFFIX_, Qt::CaseInsensitive)
 
 bool
-ThumbsVideos::canRead(const QString &file) const
+ThumbsVideos::canRead(const QString &mime) const
 {
-    return END("mkv")||END("avi")||END("mp4")||END("mpg");
+    return mime.startsWith("video");
 }
-
-#undef END
