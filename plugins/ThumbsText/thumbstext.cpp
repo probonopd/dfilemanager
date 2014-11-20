@@ -13,8 +13,11 @@ Q_EXPORT_PLUGIN2(thumbstext, ThumbsText)
 bool
 ThumbsText::thumb(const QString &file, const QString &mime, QImage &thumb, const int size)
 {
+    if (!mime.startsWith("text", Qt::CaseInsensitive))
+        return false;
+    
     QFile f(file);
-    if (!f.open(QFile::ReadOnly|QIODevice::Text) || !mime.startsWith("text", Qt::CaseInsensitive))
+    if (!f.open(QFile::ReadOnly|QIODevice::Text))
         return false;
 
     QImage img(QSize(size, size), QImage::Format_RGB32);
