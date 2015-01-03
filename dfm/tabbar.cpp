@@ -682,8 +682,8 @@ TabBar::correctAddButtonPos()
 //    else
     if (Store::config.behaviour.gayWindow)
         x+=Store::config.behaviour.tabRoundness;
-    else
-        x-=4;
+//    else
+//        x-=4;
     int y = qFloor((float)rect().height()/2.0f-(float)m_addButton->height()/2.0f);
     m_addButton->move(x, y);
 }
@@ -1047,9 +1047,9 @@ TabBar::tabSizeHint(int index) const
         return QSize(qMin(Store::config.behaviour.tabWidth,(width()/count())-(m_addButton?qCeil(((float)m_addButton->width()/(float)count())+2):0)), Store::config.behaviour.tabHeight/*QTabBar::tabSizeHint(index).height()+3*/);
 
     int w = width();
-    if (m_addButton)
+    if (m_addButton && m_addButton->isVisible())
         w -= m_addButton->width();
-    if (m_closeButton)
+    if (m_closeButton && m_closeButton->isVisible())
         w -= m_closeButton->width();
     return QSize(qMin(150, w/count()), QTabBar::tabSizeHint(index).height());
 }

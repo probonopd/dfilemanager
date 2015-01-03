@@ -29,9 +29,6 @@
 class QImage;
 class QString;
 class QStringList;
-
-static QImage img = QImage();
-
 class ThumbInterface
 {
 public:

@@ -255,6 +255,7 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev)
     m_button->setVisible(true);
     m_button->setToolTip(isMounted() ? "Unmount" : "Mount");
     connect(m_button, SIGNAL(clicked()), this, SLOT(toggleMount()));
+    connect(m_button, SIGNAL(destroyed()), this, SLOT(buttonDestroyed()));
     connect(m_timer, SIGNAL(timeout()), this, SLOT(updateSpace()));
     m_timer->start(1000);
     connect(m_device, SIGNAL(accessibilityChanged(bool, const QString &)), this, SLOT(changeState()));
@@ -277,7 +278,8 @@ DeviceItem::DeviceItem(DeviceManager *parentItem, PlacesView *view, Device *dev)
 
 DeviceItem::~DeviceItem()
 {
-    m_button->hide();
+    if (m_button)
+        m_button->hide();
     m_button = 0; //parented by the viewport so no need to delete...
 }
 
@@ -471,6 +473,10 @@ PlacesModel::data(const QModelIndex &index, int role) const
                 return icon;
             }
     }
+    if (role == Qt::ToolTipRole)
+        if (Place *p = m_places->itemFromIndex<Place *>(index))
+            if (!dynamic_cast<DeviceItem *>(p))
+                return p->path();
     return QStandardItemModel::data(index, role);
 }
 

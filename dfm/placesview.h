@@ -151,6 +151,7 @@ private slots:
     void updateSpace();
     void changeState();
     void updateIcon();
+    inline void buttonDestroyed() { m_button = 0; }
 
 private:
     bool m_isVisible, m_isHidden;
