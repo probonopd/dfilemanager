@@ -14,6 +14,7 @@ find_package(X11)
 
 #find qt...
 if (QT5BUILD)
+    find_package(Qt5Core REQUIRED)
     find_package(Qt5Widgets REQUIRED)
     find_package(Qt5Gui REQUIRED)
     find_package(Qt5Widgets REQUIRED)
@@ -22,7 +23,7 @@ if (QT5BUILD)
     find_package(Qt5Xml REQUIRED)
     find_package(Qt5X11Extras)
     find_package(Qt5DBus)
-    include_directories(${Qt5Widgets_INCLUDE_DIRS} ${Qt5X11Extras_INCLUDE_DIRS} ${Qt5Network_INCLUDE_DIRS} ${Qt5OpenGL_INCLUDE_DIRS} ${Qt5Xml_INCLUDE_DIRS})
+    include_directories(${Qt5Core_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS} ${Qt5X11Extras_INCLUDE_DIRS} ${Qt5Network_INCLUDE_DIRS} ${Qt5OpenGL_INCLUDE_DIRS} ${Qt5Xml_INCLUDE_DIRS})
     add_definitions(${Qt5Widgets_DEFINITIONS})
     
     find_Library(SOLID_LIBRARY NAMES kf5solid)
