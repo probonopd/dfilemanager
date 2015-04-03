@@ -4,6 +4,7 @@
 #include <../../dfm/interfaces.h>
 #include <QStringList>
 #include <QImage>
+#include <QObject>
 
 class ThumbsImages : public QObject, ThumbInterface
 {

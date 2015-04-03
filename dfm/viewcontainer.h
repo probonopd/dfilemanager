@@ -108,7 +108,7 @@ signals:
     
 public slots:
     void activate(const QModelIndex &index);
-    bool setPathVisible(bool visible);
+    void setPathVisible(bool visible);
 
 private slots:
     void setUrl(const QUrl &url);

@@ -27,7 +27,6 @@
 int main(int argc, char *argv[])
 {
     //    Q_INIT_RESOURCE(resources);
-
 #if QT_VERSION < 0x050000
     QApplication::setGraphicsSystem("raster");
 #endif

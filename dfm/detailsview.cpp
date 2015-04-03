@@ -208,7 +208,7 @@ DetailsView::mouseReleaseEvent(QMouseEvent *e)
 void
 DetailsView::mousePressEvent(QMouseEvent *event)
 {
-    if (event->modifiers() == Qt::MetaModifier || indexAt(event->pos()).column())
+    if (event->modifiers() & Qt::MetaModifier || indexAt(event->pos()).column())
         setDragEnabled(false);
     m_pressedIndex = indexAt(event->pos()).internalPointer();
     m_pressPos = event->pos();

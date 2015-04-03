@@ -646,12 +646,10 @@ Node::exec()
 {
     if (!isAbsolute())
         return;
+
     if (isDir())
-    {
         m_model->setUrl(QUrl::fromLocalFile(m_filePath));
-        return;
-    }
-    if (isExec())
+    else if (isExec())
         QProcess::startDetached(m_filePath);
     else
         QDesktopServices::openUrl(QUrl::fromLocalFile(m_filePath));

@@ -143,7 +143,8 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     pal.setColor(fgr, fg);
 
     QFont font(index.data(Qt::FontRole).value<QFont>());
-    font.setBold(selected || isHeader(index));
+    if (selected || isHeader(index))
+        font.setBold(true);
     painter->setFont(font);
 
     if (step && !isHeader(index))

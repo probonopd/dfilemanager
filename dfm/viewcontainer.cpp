@@ -387,7 +387,7 @@ ViewContainer::genNewTabRequest(const QModelIndex &index)
 
 QModelIndex ViewContainer::indexAt(const QPoint &p) const { return currentView()->indexAt(mapFromParent(p)); }
 
-bool ViewContainer::setPathVisible(bool visible) { m_navBar->setVisible(visible); }
+void ViewContainer::setPathVisible(bool visible) { m_navBar->setVisible(visible); }
 bool ViewContainer::pathVisible() { return m_navBar->isVisible(); }
 
 bool ViewContainer::canGoBack() { return m_model->canGoBack(); }

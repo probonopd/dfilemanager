@@ -1,5 +1,6 @@
 #include "thumbsvideos.h"
 #include <QDebug>
+#include <QString>
 
 #if QT_VERSION < 0x050000
 Q_EXPORT_PLUGIN2(thumbsvideos, ThumbsVideos)
@@ -16,19 +17,10 @@ ThumbsVideos::thumb(const QString &file, const QString &mime, QImage &thumb, con
 {
     if (!canRead(mime))
         return false;
-    try
-    {
-        std::vector<uint8_t> pixels;
-        m_vt.generateThumbnail(file.toStdString(), Png, pixels);
-        if (thumb.loadFromData(pixels.data(), pixels.size(), "PNG"))
-            return true;
-    }
-    catch (std::exception &e)
-    {
-        qDebug() << e.what();
-        return false;
-    }
-
+    std::vector<uint8_t> pixels;
+    m_vt.generateThumbnail(file.toUtf8().constData(), Png, pixels);
+    if (thumb.loadFromData(pixels.data(), pixels.size(), "PNG"))
+        return true;
     return false;
 }
 

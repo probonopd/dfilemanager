@@ -90,7 +90,7 @@ Application::socketConnected()
 {
 //    const char *data = m_message.toAscii().data();
 //    qDebug() << m_message << data;
-    m_socket->write(m_message.toAscii().data(), m_message.size());
+    m_socket->write(m_message.toLatin1().data(), m_message.size());
     m_socket->flush();
 }
 

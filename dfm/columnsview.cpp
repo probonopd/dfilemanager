@@ -362,8 +362,7 @@ ColumnsView::eventFilter(QObject *o, QEvent *e)
             return true;
         }
     }
-    else
-        return QListView::eventFilter(o, e);
+    return QListView::eventFilter(o, e);
 }
 
 void

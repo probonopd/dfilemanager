@@ -27,7 +27,7 @@
 #include <QTimer>
 #include "operations.h"
 
-#ifdef Q_OS_UNIX
+#if defined(HASSOLID)
 #include "solid/device.h"
 #include "solid/block.h"
 #include "solid/storagedrive.h"
@@ -43,7 +43,7 @@ class Device : public QObject
 {
     Q_OBJECT
 public:
-#ifdef Q_OS_UNIX
+#if defined(HASSOLID)
     Device(Solid::Device solid = Solid::Device());
 #endif
     Device(const QFileInfo &dev = QFileInfo());
@@ -64,7 +64,7 @@ signals:
     void accessibilityChanged(bool m, const QString &a);
 
 private:
-#ifdef Q_OS_UNIX
+#if defined(HASSOLID)
     Solid::Device m_solid;
 #endif
     QFileInfo m_fileInfo;
@@ -86,7 +86,7 @@ signals:
 
 private slots:
     void populate();
-#ifdef Q_OS_UNIX
+#if defined(HASSOLID)
     void deviceAdded(const QString &dev);
     void deviceRemoved(const QString &dev);
 #endif

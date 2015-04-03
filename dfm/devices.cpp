@@ -24,7 +24,7 @@
 
 using namespace DFM;
 
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
 Device::Device(Solid::Device solid):m_solid(solid)
 {
     if (!m_solid.is<Solid::StorageAccess>())
@@ -40,14 +40,14 @@ Device::Device(const QFileInfo &dev):m_fileInfo(dev){}
 
 Device::~Device()
 {
-//#if defined(Q_OS_UNIX)
+//#if defined(HASSOLID)
 //#endif
 }
 
 bool
 Device::isMounted() const
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
     if (m_solid.isValid())
         if (const Solid::StorageAccess *sa = m_solid.as<Solid::StorageAccess>())
             return sa->isAccessible();
@@ -60,7 +60,7 @@ Device::isMounted() const
 void
 Device::setMounted(const bool mount)
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
     if (!m_solid.isValid())
         return;
     Solid::StorageAccess *sa(0);
@@ -77,7 +77,7 @@ Device::setMounted(const bool mount)
 QString
 Device::mountPath() const
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
     if (m_solid.isValid())
         if (const Solid::StorageAccess *sa = m_solid.as<Solid::StorageAccess>())
             return sa->filePath();
@@ -90,7 +90,7 @@ Device::mountPath() const
 QString
 Device::devPath() const
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
     if (m_solid.isValid())
         if (const Solid::Block *block = m_solid.as<Solid::Block>())
             return block->device();
@@ -103,7 +103,7 @@ Device::devPath() const
 QString
 Device::product() const
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
     return m_solid.isValid() ? m_solid.product() : QString();
 #else
     return QString();
@@ -113,7 +113,7 @@ Device::product() const
 quint64
 Device::usedBytes() const
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
     return Ops::getDriveInfo<Ops::Used>(mountPath());
 #else
     return 0;
@@ -123,7 +123,7 @@ Device::usedBytes() const
 quint64
 Device::freeBytes() const
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
     return Ops::getDriveInfo<Ops::Free>(mountPath());
 #else
     return 0;
@@ -133,7 +133,7 @@ Device::freeBytes() const
 quint64
 Device::totalBytes() const
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
     return Ops::getDriveInfo<Ops::Total>(mountPath());
 #else
     return 0;
@@ -143,7 +143,7 @@ Device::totalBytes() const
 int
 Device::used() const
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
     return usedBytes() ? (int)(((float)usedBytes()/(float)totalBytes())*100) : 0;
 #else
     return 0;
@@ -153,7 +153,7 @@ Device::used() const
 QString
 Device::description() const
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
     return m_solid.description();
 #else
     return QString();
@@ -176,7 +176,7 @@ Devices::Devices(QObject *parent)
     : QObject(parent)
     , m_timer(new QTimer(this))
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
     connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceAdded(QString)), this, SLOT(deviceAdded(QString)));
     connect (Solid::DeviceNotifier::instance(), SIGNAL(deviceRemoved(QString)), this, SLOT(deviceRemoved(QString)));
 #else // Q_OS_WIN
@@ -199,7 +199,7 @@ Devices::removeMount(const QString &mount)
         m_mounts.removeOne(mount);
 }
 
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
 void
 Devices::deviceAdded(const QString &dev)
 {
@@ -233,7 +233,7 @@ Devices::deviceRemoved(const QString &dev)
 void
 Devices::populate()
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASSOLID)
     foreach (Solid::Device dev, Solid::Device::listFromType(Solid::DeviceInterface::StorageAccess))
     {
         Device *d = new Device(dev);
