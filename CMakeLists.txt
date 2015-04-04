@@ -1,20 +1,10 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 project(dfm)
-
 option(QT5BUILD "build using qt5 instead of qt4" OFF)
-
-#this is quite some magic, no need to use qtX_wrap_cpp anymore
-set(CMAKE_AUTOMOC ON)
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-set(MAIN_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-find_package(X11)
 
 #find qt...
 if (QT5BUILD)
-    find_package(Qt5Core REQUIRED)
     find_package(Qt5Widgets REQUIRED)
     find_package(Qt5Gui REQUIRED)
     find_package(Qt5Widgets REQUIRED)
@@ -23,7 +13,7 @@ if (QT5BUILD)
     find_package(Qt5Xml REQUIRED)
     find_package(Qt5X11Extras)
     find_package(Qt5DBus)
-    include_directories(${Qt5Core_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS} ${Qt5X11Extras_INCLUDE_DIRS} ${Qt5Network_INCLUDE_DIRS} ${Qt5OpenGL_INCLUDE_DIRS} ${Qt5Xml_INCLUDE_DIRS})
+    include_directories(${Qt5Widgets_INCLUDE_DIRS} ${Qt5X11Extras_INCLUDE_DIRS} ${Qt5Network_INCLUDE_DIRS} ${Qt5OpenGL_INCLUDE_DIRS} ${Qt5Xml_INCLUDE_DIRS})
     add_definitions(${Qt5Widgets_DEFINITIONS})
     
     find_Library(SOLID_LIBRARY NAMES kf5solid)
@@ -58,6 +48,8 @@ else (QT5BUILD)
     endif (SOLID_LIBRARY)
 endif (QT5BUILD)
 
+find_package(X11)
+
 #find magic...
 find_library(MAGIC_LIBRARY NAMES magic)
 find_file(MAGIC_INCLUDES NAMES magic.h)
@@ -69,6 +61,10 @@ if (MAGIC_LIBRARY AND MAGIC_INCLUDES)
     include_directories(${MAGIC_INCLUDE_DIRS})
 endif (MAGIC_LIBRARY AND MAGIC_INCLUDES)
 
+#this is quite some magic, no need to use qtX_wrap_cpp anymore
+set(CMAKE_AUTOMOC ON)
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 #we need to first handle plugins...
 add_subdirectory(plugins)
 add_subdirectory(dfm)

@@ -1,8 +1,10 @@
+project(dfm)
+
 file(GLOB DFM_SRCS *.cpp)
 file(GLOB DFM_HDRS *.h)
 
-# #we basically need to moc all headers since they all contain Q_OBJECT code
 add_executable(dfm ${DFM_SRCS} ${DFM_HDRS})
+
 if (QT5BUILD)
     target_link_libraries(dfm Qt5::Core Qt5::Gui Qt5::Widgets Qt5::DBus Qt5::Network Qt5::OpenGL Qt5::Xml Qt5X11Extras)
 else (QT5BUILD)
