@@ -597,7 +597,7 @@ PathCompleter::splitPath(const QString &path) const
     QStringList list;
 //    list << url.scheme();
     QStringList plist = QStringList() << url.toLocalFile().split("/", QString::SkipEmptyParts);
-#if defined(Q_OS_UNIX)
+#if defined(ISUNIX)
     list << "/";
     list << plist;
 #else

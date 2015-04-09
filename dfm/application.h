@@ -37,7 +37,7 @@
 #include "config.h"
 #endif
 
-#ifdef Q_WS_X11
+#if defined(HASX11)
 #include <QX11Info>
 #endif
 
@@ -89,7 +89,7 @@ private slots:
     inline void setPlacesView(DFM::PlacesView *places) { m_places = places; }
     inline DFM::PlacesView *placesView() { return m_places; }
 #endif
-#ifdef Q_WS_X11
+#if defined(HASX11)
 #if 0
 protected:
     bool x11EventFilter(XEvent *xe);

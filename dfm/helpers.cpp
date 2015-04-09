@@ -3,7 +3,7 @@
 
 MimeProvider::MimeProvider()
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASMAGIC)
     m_mime = magic_open(MAGIC_MIME_TYPE);
     magic_load(m_mime, NULL);
     m_all = magic_open(MAGIC_CONTINUE);
@@ -13,7 +13,7 @@ MimeProvider::MimeProvider()
 
 MimeProvider::~MimeProvider()
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASMAGIC)
     magic_close(m_mime);
     magic_close(m_all);
 #endif
@@ -23,9 +23,9 @@ QString
 MimeProvider::getMimeType(const QString &file) const
 {
     QMutexLocker locker(&m_mutex);
-#if defined(Q_OS_UNIX)
+#if defined(HASMAGIC)
     return magic_file(m_mime, file.toLocal8Bit().data());
-#elif defined(Q_OS_WIN)
+#elif defined(ISWINDOWS)
     const QString &suffix = file.mid(file.lastIndexOf("."));
     if (!suffix.startsWith("."))
         return QString("Unknown");
@@ -43,9 +43,9 @@ QString
 MimeProvider::getFileType(const QString &file) const
 {
     QMutexLocker locker(&m_mutex);
-#if defined(Q_OS_UNIX)
+#if defined(HASMAGIC)
     return magic_file(m_all, file.toLocal8Bit().data());
-#elif defined(Q_OS_WIN)
+#elif defined(ISWINDOWS)
     const QString &suffix = file.mid(file.lastIndexOf("."));
     if (!suffix.startsWith("."))
         return QString("Unknown");

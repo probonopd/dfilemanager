@@ -592,7 +592,6 @@ Node::rePopulate()
                 new Node(m_model, QUrl::fromLocalFile(file), this, file);
         }
     }
-//#if defined(Q_OS_WIN)
     else if (this == m_model->schemeNode("file"))
     {
         QList<Device *> devices = Devices::instance()->devices();
@@ -603,7 +602,6 @@ Node::rePopulate()
                 new Node(m_model, QUrl::fromLocalFile(device->mountPath()), this, device->mountPath());
         }
     }
-//#endif
     else
         return;
 
@@ -709,7 +707,7 @@ AppNode::exec()
 {
     if (m_appCmd.isEmpty())
         return;
-#if defined(Q_OS_UNIX)
+#if defined(ISUNIX)
     QString app = m_appCmd.split(" ", QString::SkipEmptyParts).first();
     const QStringList p = QString(getenv("PATH")).split(":", QString::SkipEmptyParts);
     for (QStringList::const_iterator b = p.constBegin(), e = p.constEnd(); b!=e; ++b)

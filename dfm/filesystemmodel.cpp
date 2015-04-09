@@ -179,7 +179,7 @@ bool
 Model::handleSearchUrl(QUrl &url, int &hasUrlReady)
 {
     QString searchPath = url.path();
-#if !defined(Q_OS_UNIX)
+#if defined(ISWINDOWS)
     if (!searchPath.isEmpty())
         while (searchPath.startsWith("/"))
             searchPath.remove(0, 1);
@@ -210,7 +210,7 @@ Model::handleSearchUrl(QUrl &url, int &hasUrlReady)
 bool
 Model::handleApplicationsUrl(QUrl &url, int &hasUrlReady)
 {
-#if defined(Q_OS_UNIX)
+#if defined(ISUNIX)
     m_current = schemeNode(url.scheme());
     m_currentRoot = m_current;
     hasUrlReady = 1;
@@ -223,7 +223,7 @@ Model::handleApplicationsUrl(QUrl &url, int &hasUrlReady)
 bool
 Model::handleDevicesUrl(QUrl &url, int &hasUrlReady)
 {
-#if defined(Q_OS_UNIX)
+#if defined(ISUNIX)
     m_current = schemeNode("file");
     m_currentRoot = m_current;
     hasUrlReady = 2;
@@ -678,7 +678,7 @@ Model::sort(int column, Qt::SortOrder order)
     if (orderChanged)
         emit sortingChanged(column, (int)order);
 
-#ifdef Q_WS_X11
+#if defined(HASX11)
     if (Store::config.views.dirSettings && orderChanged && m_url.isLocalFile())
     {
         QDir dir(m_url.toLocalFile());
@@ -951,7 +951,7 @@ Node
     QUrl url;
     url.setScheme(scheme);
     Node *node = new Node(this, url, m_rootNode);
-//#if defined(Q_OS_UNIX)
+//#if defined(ISUNIX)
 //    if (scheme == "file")
 //        new Node(this, QUrl::fromLocalFile("/"), node, "/");
 //#endif

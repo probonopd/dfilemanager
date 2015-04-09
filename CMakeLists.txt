@@ -16,14 +16,31 @@ if (QT5BUILD)
     include_directories(${Qt5Widgets_INCLUDE_DIRS} ${Qt5X11Extras_INCLUDE_DIRS} ${Qt5Network_INCLUDE_DIRS} ${Qt5OpenGL_INCLUDE_DIRS} ${Qt5Xml_INCLUDE_DIRS})
     add_definitions(${Qt5Widgets_DEFINITIONS})
     
-    find_Library(SOLID_LIBRARY NAMES kf5solid)
+    find_Library(SOLID_LIBRARY NAMES KF5Solid)
     if (SOLID_LIBRARY)
         set(SOLID_FOUND ON)
-        add_definitions(-DHASSOLID)
-        message(STATUS "found kf5solid ${SOLID_LIBRARY}")
+        add_definitions(-DHASSOLID -DSOLID_VERSION=5)
+        message(STATUS "found KF5Solid ${SOLID_LIBRARY}")
+        find_path(STD_INCLUDE_PATH NAMES stdio.h)
+        find_file(SOLID_DIR NAMES KF5/Solid PATHS ${STD_INCLUDE_PATH})
+        if (SOLID_DIR)
+            message(STATUS "Found KF5solid include dir: ${SOLID_DIR}")
+            include_directories(${SOLID_DIR})
+        else (SOLID_DIR)
+            message(STATUS "*** No KF5Solid include path found ***")
+        endif (SOLID_DIR)
     else (SOLID_LIBRARY)
         message(STATUS "kf5solid not found, device management in bookmarksview bad at best")
     endif (SOLID_LIBRARY)
+    
+    # uninstall target, stolen from http://www.cmake.org/Wiki/CMake_FAQ#Can_I_do_.22make_uninstall.22_with_CMake.3F
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+        IMMEDIATE @ONLY)
+
+    add_custom_target(uninstall
+        COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 else (QT5BUILD)
     find_package(Qt4 REQUIRED)
     find_package(KDE4)
@@ -41,14 +58,32 @@ else (QT5BUILD)
     find_Library(SOLID_LIBRARY NAMES solid)
     if (SOLID_LIBRARY)
         set(SOLID_FOUND ON)
-        add_definitions(-DHASSOLID)
+        add_definitions(-DHASSOLID -DSOLID_VERSION=4)
         message(STATUS "found solid ${SOLID_LIBRARY}")
+        find_path(STD_INCLUDE_PATH NAMES stdio.h)
+        find_file(SOLID_DIR NAMES solid PATHS ${STD_INCLUDE_PATH})
+        if (SOLID_DIR)
+            message(STATUS "Found solid include dir: ${SOLID_DIR}")
+            include_directories(${SOLID_DIR})
+        else (SOLID_DIR)
+            message(STATUS "*** No include path found solid ***")
+        endif (SOLID_DIR)
      else (SOLID_LIBRARY)
         message(STATUS "solid not found, device management in bookmarksview bad at best")
-    endif (SOLID_LIBRARY)
+     endif (SOLID_LIBRARY)
 endif (QT5BUILD)
 
+if (UNIX)
+    add_definitions(-DISUNIX)
+elseif (WIN32)
+    add_definitions(-DISWINDOWS)
+endif (UNIX)
+
+#find x11...
 find_package(X11)
+if (X11_FOUND)
+    add_definitions(-DHASX11)
+endif (X11_FOUND)
 
 #find magic...
 find_library(MAGIC_LIBRARY NAMES magic)
@@ -60,6 +95,12 @@ if (MAGIC_LIBRARY AND MAGIC_INCLUDES)
     message(STATUS "found magic library: ${MAGIC_LIBRARY} and header: ${MAGIC_INCLUDES}")
     include_directories(${MAGIC_INCLUDE_DIRS})
 endif (MAGIC_LIBRARY AND MAGIC_INCLUDES)
+
+#find sys, sys/statfs.h etc...
+find_file(SYS_FILE NAMES sys)
+if (SYS_FILE)
+    add_definitions(-DHASSYS)
+endif (SYS_FILE)
 
 #this is quite some magic, no need to use qtX_wrap_cpp anymore
 set(CMAKE_AUTOMOC ON)

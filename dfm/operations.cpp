@@ -79,7 +79,7 @@ Ops::openWith()
     QAction *action = static_cast<QAction *>(sender());
     QString program;
     const QString &file = action->property("file").toString();
-#if defined(Q_OS_UNIX)
+#if defined(ISUNIX)
     program = action->data().toString().split(" ").at(0);
     QProcess::startDetached(program, QStringList() << file);
 #else
@@ -381,7 +381,7 @@ Ops::fromIoJobData(const IOJobData &data)
 bool
 Ops::sameDisk(const QString &file1, const QString &file2)
 {
-#if defined(Q_OS_UNIX)
+#if defined(HASSYS)
     const quint64 id1 = getDriveInfo<Id>(file1);
     const quint64 id2 = getDriveInfo<Id>(file2);
 #else //on windows we can simply match the drive letter... the first char in the strings

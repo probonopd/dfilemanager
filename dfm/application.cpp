@@ -31,7 +31,7 @@
 #include <QStandardPaths>
 #endif
 
-#ifdef Q_WS_X11
+#if defined(HASX11)
 #if 0
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -76,7 +76,7 @@ Application::Application(int &argc, char *argv[])
     }
     else
         qDebug() << "dfm is already running";
-#ifdef Q_WS_X11
+#if defined(HASX11)
 #if 0
     netWmDesktop = XInternAtom(DPY, "_NET_WM_DESKTOP", False);
     netClientListStacking = XInternAtom(DPY, "_NET_CLIENT_LIST_STACKING", False);
@@ -126,7 +126,7 @@ Application::setMessage(QStringList message, const QString &serverName)
 void
 Application::loadPlugins()
 {
-#ifdef Q_OS_UNIX
+#if defined(ISUNIX)
     QDir pluginsDir("/usr/lib/dfm");
     if (!pluginsDir.exists())
     {
@@ -201,7 +201,7 @@ Application::deActivateThumbInterface(const QString &name)
     }
 }
 
-#ifdef Q_WS_X11
+#if defined(HASX11)
 #if 0
 
 inline static void addState(Window win, Atom state)

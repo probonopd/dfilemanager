@@ -32,8 +32,11 @@
 #include "globals.h"
 #include "filesystemmodel.h"
 
-#ifdef Q_WS_X11
+#if defined(HASMAGIC)
 #include <magic.h>
+#endif
+
+#if  defined(HASSYS)
 #include <sys/statfs.h>
 #include <sys/types.h>
 #include <sys/vfs.h>
@@ -141,7 +144,7 @@ public:
     enum Usage {Free = 0, Used, Total, Id};
     template<Usage type> static inline quint64 getDriveInfo(const QString &file = QString())
     {
-#ifdef Q_WS_X11
+#if defined(HASSYS)
         if (!QFileInfo(file).exists())
             return 0;
         struct statfs sfs;

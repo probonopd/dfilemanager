@@ -430,7 +430,7 @@ Manager::doJob(const IOJobData &ioJobData)
                     error(s_errorBase.arg(m_inFile, m_outFile, m_destDir));
                 continue;
             }
-#ifdef Q_OS_UNIX
+#if defined(HASSYS)
             if (m_total > Ops::getDriveInfo<Ops::Free>(m_destDir))
                 error(QString("Not enough space on %1").arg(m_destDir));
 #endif

@@ -158,7 +158,7 @@ ViewContainer::setView(const View view, bool store)
         m_viewStack->setCurrentWidget(m_flowView);
     emit viewChanged();
 
-#ifdef Q_WS_X11
+#if defined(ISUNIX)
     if (Store::config.views.dirSettings && store && m_model->rootUrl().isLocalFile())
         Ops::writeDesktopValue<int>(QDir(m_model->rootUrl().toLocalFile()), "view", (int)view);
 #endif

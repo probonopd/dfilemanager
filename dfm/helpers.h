@@ -5,7 +5,7 @@
 #include <QMutex>
 #include <QKeyEvent>
 
-#if defined(Q_OS_UNIX)
+#if defined(HASMAGIC)
 #include <magic.h>
 #endif
 
@@ -18,7 +18,7 @@ public:
     QString getFileType(const QString &file) const;
 
 private:
-#if defined(Q_OS_UNIX)
+#if defined(HASMAGIC)
     magic_t m_mime, m_all;
 #endif
     mutable QMutex m_mutex;

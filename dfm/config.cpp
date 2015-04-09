@@ -33,7 +33,7 @@ Config Store::config;
 
 Store::Store(QObject *parent) : QObject(parent)
 {
-#ifdef Q_WS_X11
+#if defined(ISUNIX)
     m_settings = new QSettings("dfm", "dfm");
 #else
     m_settings = new QSettings(QSettings::IniFormat, QSettings::UserScope, "dfm", "dfm");
@@ -239,7 +239,7 @@ static inline QString desktopInfo(const QString &desktop, bool name)
     return name ? n : e;
 }
 
-#ifndef Q_OS_UNIX
+#if defined(ISWINDOWS)
 
 static QMap<QString, QString> apps()
 {
@@ -313,7 +313,7 @@ QList<QAction *>
 Store::openWithActions(const QString &file)
 {
     QList<QAction *> actionList;
-#if defined(Q_OS_UNIX)
+#if defined(ISUNIX)
     QFile mimeTypes("/usr/share/mime/globs");
     mimeTypes.open(QFile::ReadOnly);
     QStringList mimeTypesList = QString(mimeTypes.read(QFileInfo(mimeTypes).size())).split("\n", QString::SkipEmptyParts);

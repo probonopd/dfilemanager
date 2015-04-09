@@ -1006,7 +1006,7 @@ PlacesView::populate()
     if (m_model)
         m_model->clear();
     m_devManager = 0L;
-#ifdef Q_OS_UNIX
+#if defined(ISUNIX)
     QSettings s("dfm", "bookmarks");
 #else
     QSettings s(QSettings::IniFormat, QSettings::UserScope, "dfm", "bookmarks");
@@ -1042,7 +1042,7 @@ PlacesView::populate()
 void
 PlacesView::store()
 {
-#ifdef Q_OS_UNIX
+#if defined(ISUNIX)
     QSettings s("dfm", "bookmarks");
 #else
     QSettings s(QSettings::IniFormat, QSettings::UserScope, "dfm", "bookmarks");
