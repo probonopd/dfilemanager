@@ -38,7 +38,7 @@ RecentFoldersModel::data(const QModelIndex &index, int role) const
     if (role == Qt::DecorationRole)
     {
         const QString &file = item->data().toString();
-        Data *d = DataLoader::data(file);
+        Data *d = DDataLoader::data(file);
         if (d && QIcon::hasThemeIcon(d->iconName))
             return QIcon::fromTheme(d->iconName);
 #if defined(ISWINDOWS)

@@ -200,7 +200,7 @@ private:
     friend class FlowDataLoader;
 };
 
-class FlowDataLoader : public Thread
+class FlowDataLoader : public DThread
 {
     Q_OBJECT
 public:

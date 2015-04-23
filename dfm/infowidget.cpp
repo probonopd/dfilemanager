@@ -19,14 +19,14 @@
 ***************************************************************************/
 
 #include <QLayout>
+#include <QModelIndex>
+#include <QLabel>
+#include <QApplication>
 
 #include "infowidget.h"
 #include "operations.h"
 #include "filesystemmodel.h"
-#include "dataloader.h"
 #include "config.h"
-#include "helpers.h"
-#include "application.h"
 
 using namespace DFM;
 
@@ -159,8 +159,6 @@ InfoWidget::paintEvent(QPaintEvent *event)
 #endif
     QFrame::paintEvent(event);
 }
-
-static MimeProvider s_mimes;
 
 void
 InfoWidget::hovered(const QModelIndex &index)

@@ -28,13 +28,13 @@
 
 using namespace DFM;
 
-Thread::Thread(QObject *parent) : QThread(parent)
+DThread::DThread(QObject *parent) : QThread(parent)
   , m_quit(false)
   , m_pause(false)
 {}
 
 void
-Thread::setPause(bool p)
+DThread::setPause(bool p)
 {
     emit pauseToggled(p);
     m_pausingMutex.lock();
@@ -45,14 +45,14 @@ Thread::setPause(bool p)
 }
 
 bool
-Thread::isPaused() const
+DThread::isPaused() const
 {
     QMutexLocker locker(&m_pausingMutex);
     return m_pause;
 }
 
 void
-Thread::pause()
+DThread::pause()
 {
     m_pausingMutex.lock();
     if (m_pause)
@@ -61,7 +61,7 @@ Thread::pause()
 }
 
 void
-Thread::discontinue()
+DThread::discontinue()
 {
     m_pausingMutex.lock();
     m_quit=true;

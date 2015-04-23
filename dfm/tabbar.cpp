@@ -595,7 +595,6 @@ DropIndicator::paintEvent(QPaintEvent *)
 TabBar::TabBar(QWidget *parent)
     : QTabBar(parent)
     , m_addButton(0)
-    , m_hasPress(false)
     , m_dropIndicator(new DropIndicator(this))
     , m_filteringEvents(false)
     , m_closeButton(0)
@@ -702,7 +701,7 @@ TabBar::dragEnterEvent(QDragEnterEvent *e)
 {
     if (e->source() == this && e->mimeData()->property("tab").isValid())
         m_dropIndicator->show();
-    m_hasPress = false;
+    m_pressPos = QPoint();
     if (e->mimeData()->hasUrls())
         e->acceptProposedAction();
 }
@@ -738,7 +737,7 @@ void
 TabBar::dropEvent(QDropEvent *e)
 {
     m_dropIndicator->setVisible(false);
-    m_hasPress = false;
+    m_pressPos = QPoint();
     QApplication::restoreOverrideCursor();
     MainWindow *w = MainWindow::window(this);
     int tab = tabAt(e->pos());
@@ -805,7 +804,7 @@ TabBar::resizeEvent(QResizeEvent *e)
 void
 TabBar::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    m_hasPress = false;
+    m_pressPos = QPoint();
     QTabBar::mouseDoubleClickEvent(event);
     if (rect().contains(event->pos()) && event->button() == Qt::LeftButton)
     {
@@ -821,7 +820,7 @@ TabBar::mousePressEvent(QMouseEvent *e)
     e->accept();
     if (e->button() == Qt::LeftButton)
     {
-        m_hasPress = true;
+        m_pressPos = e->pos();
         if (FooBar *bar = MainWindow::window(this)->findChild<FooBar *>())
             QCoreApplication::sendEvent(bar, e);
     }
@@ -860,7 +859,7 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
             m_hoveredTab = -1;
         update();
     }
-    if (m_hasPress && tabAt(e->pos()) != -1)
+    if (!m_pressPos.isNull() && QPoint(m_pressPos-e->pos()).manhattanLength() > QApplication::startDragDistance() && tabAt(e->pos()) != -1)
     {
         m_dragCancelled = false;
         QDrag *drag = new QDrag(this);
@@ -887,8 +886,6 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
     }
     if (FooBar *bar = MainWindow::window(this)->findChild<FooBar *>())
         QCoreApplication::sendEvent(bar, e);
-    if (m_hasPress)
-        m_hasPress = false;
     if (m_dropIndicator->isVisible())
         m_dropIndicator->setVisible(false);
 }
@@ -902,17 +899,17 @@ TabBar::leaveEvent(QEvent *e)
         m_hoveredTab = -1;
         update();
     }
-    if (m_hasPress)
-        m_hasPress = false;
+    if (!m_pressPos.isNull())
+        m_pressPos = QPoint();
 }
 
 void
 TabBar::mouseReleaseEvent(QMouseEvent *e)
 {
     e->accept();
-    if (m_hasPress && tabAt(e->pos()) != -1)
+    if (!m_pressPos.isNull() && QPoint(m_pressPos-e->pos()).manhattanLength() < QApplication::startDragDistance() && tabAt(e->pos()) != -1)
         setCurrentIndex(tabAt(e->pos()));
-    m_hasPress = false;
+    m_pressPos = QPoint();
     if (e->button() == Qt::MiddleButton && tabAt(e->pos()) > -1 && count() > 1)
         emit tabCloseRequested(tabAt(e->pos()));
 }

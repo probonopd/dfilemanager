@@ -189,12 +189,13 @@ private slots:
 private:
     friend class FooBar;
     int m_hoveredTab;
-    bool m_hasPress, m_dragCancelled, m_filteringEvents;
+    bool m_dragCancelled, m_filteringEvents;
     QHBoxLayout *m_layout;
     TabButton *m_addButton;
     QToolButton *m_closeButton;
     DropIndicator *m_dropIndicator;
     QString m_lastDraggedFile;
+    QPoint m_pressPos;
 };
 
 class TabManager : public QStackedWidget

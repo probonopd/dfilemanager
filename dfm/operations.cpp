@@ -67,7 +67,7 @@ Ops::openFile(const QString &file)
 
     if (f.isDir())
         return false;
-    else if (f.isExecutable() && (f.suffix().isEmpty() || f.suffix() == "sh" || f.suffix() == "exe" || MimeProvider().getMimeType(file).contains("application", Qt::CaseInsensitive)))
+    else if (f.isExecutable() && (f.suffix().isEmpty() || f.suffix() == "sh" || f.suffix() == "exe" || DMimeProvider().getMimeType(file).contains("application", Qt::CaseInsensitive)))
         return QProcess::startDetached(f.filePath());
     else
         return QDesktopServices::openUrl(QUrl::fromLocalFile(f.filePath()));

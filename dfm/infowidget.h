@@ -23,9 +23,11 @@
 #define INFOWIDGET_H
 
 #include <QWidget>
-#include <QLabel>
 #include <QPainter>
-#include <QModelIndex>
+#include <QFrame>
+
+class QModelIndex;
+class QLabel;
 
 namespace DFM
 {

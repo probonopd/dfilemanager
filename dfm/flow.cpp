@@ -810,7 +810,7 @@ Flow::scrollBarMoved(const int value)
 //-----------------------------------------------------------------------------
 
 FlowDataLoader::FlowDataLoader(QObject *parent)
-    : Thread(parent)
+    : DThread(parent)
     , m_preView(static_cast<Flow *>(parent))
 {
     connect(this, SIGNAL(newData(PixmapItem*,QImage,QImage)), this, SLOT(setPixmaps(PixmapItem*,QImage,QImage)));
@@ -881,7 +881,7 @@ FlowDataLoader::discontinue()
 {
     QMutexLocker locker(&m_mtx);
     m_queue.clear();
-    Thread::discontinue();
+    DThread::discontinue();
 }
 
 bool

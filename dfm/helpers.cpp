@@ -1,7 +1,7 @@
 #include "helpers.h"
 #include "mainwindow.h"
 
-MimeProvider::MimeProvider()
+DMimeProvider::DMimeProvider()
 {
 #if defined(HASMAGIC)
     m_mime = magic_open(MAGIC_MIME_TYPE);
@@ -11,7 +11,7 @@ MimeProvider::MimeProvider()
 #endif
 }
 
-MimeProvider::~MimeProvider()
+DMimeProvider::~DMimeProvider()
 {
 #if defined(HASMAGIC)
     magic_close(m_mime);
@@ -20,7 +20,7 @@ MimeProvider::~MimeProvider()
 }
 
 QString
-MimeProvider::getMimeType(const QString &file) const
+DMimeProvider::getMimeType(const QString &file) const
 {
     QMutexLocker locker(&m_mutex);
 #if defined(HASMAGIC)
@@ -40,7 +40,7 @@ MimeProvider::getMimeType(const QString &file) const
 }
 
 QString
-MimeProvider::getFileType(const QString &file) const
+DMimeProvider::getFileType(const QString &file) const
 {
     QMutexLocker locker(&m_mutex);
 #if defined(HASMAGIC)
@@ -70,7 +70,7 @@ MimeProvider::getFileType(const QString &file) const
 //-----------------------------------------------------------------------------
 
 void
-DFM::ViewBase::keyPressEvent(QKeyEvent *ke)
+DFM::DViewBase::keyPressEvent(QKeyEvent *ke)
 {
     SearchBox *searchBox = DFM::MainWindow::currentWindow()->searchBox();
     if (!ke->text().isEmpty() && !ke->modifiers() && ke->key() != Qt::Key_Escape)

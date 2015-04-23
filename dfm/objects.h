@@ -33,11 +33,11 @@
 namespace DFM
 {
 
-class Thread : public QThread
+class DThread : public QThread
 {
     Q_OBJECT
 public:
-    explicit Thread(QObject *parent = 0);
+    explicit DThread(QObject *parent = 0);
     bool isPaused() const;
     void pause();
 

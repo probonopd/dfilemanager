@@ -333,7 +333,7 @@ Manager::copy(const QList<QUrl> &sourceFiles, const QString &destination, bool c
 }
 
 Manager::Manager(QObject *parent)
-    : Thread(parent)
+    : DThread(parent)
     , m_canceled(false)
     , m_cut(false)
     , m_total(0) //size in bytes of all files we are going to copy/move

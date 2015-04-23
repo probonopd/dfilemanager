@@ -3,6 +3,10 @@
 #include <QFileInfo>
 #include <QDebug>
 
+#if defined(HASEXIV)
+#include <exiv2/exiv2.hpp>
+#endif
+
 #if QT_VERSION < 0x050000
 Q_EXPORT_PLUGIN2(thumbsimages, ThumbsImages)
 #endif
@@ -18,11 +22,46 @@ ThumbsImages::~ThumbsImages()
     //destructor
 }
 
+static short getRotation(const QString &file)
+{
+#if defined(HASEXIV)
+    try
+    {
+        Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(file.toLatin1().data());
+        if (image.get())
+        {
+            image->readMetadata();
+            Exiv2::ExifData exifData = image->exifData();
+            Exiv2::ExifKey key("Exif.Image.Orientation");
+            Exiv2::ExifData::iterator keypos = exifData.findKey(key);
+            short rotation(1);
+            if (keypos != exifData.end())
+            {
+                Exiv2::Value::AutoPtr v = Exiv2::Value::create(Exiv2::unsignedShort);
+                v = keypos->getValue();
+                rotation = v->toLong();
+                return rotation;
+            }
+        }
+    }
+    catch (Exiv2::AnyError& e)
+    {
+        qDebug() << "Caught Exiv2 exception '" << e.what();
+    }
+#endif
+    return 1;
+}
+
+
+
 bool
 ThumbsImages::thumb(const QString &file, const QString &mime, QImage &thumb, const int size)
 {
-    QImageReader ir(file);
-    if (!ir.canRead()||!canRead(file))
+    Q_UNUSED(mime);
+//    QImageReader ir(file);
+    static QImageReader ir;
+    ir.setFileName(file);
+    if (!ir.canRead())
         return false;
 
     //sometimes ir.size() doesnt return a valid size,
@@ -39,30 +78,27 @@ ThumbsImages::thumb(const QString &file, const QString &mime, QImage &thumb, con
     //if the thumbsize isnt valid then we need to scale the
     //image after loading the whole image.
     if (qMax(img.size().width(), img.size().height()) > size)
+        img = img.scaled(size, size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+#if 0
+    const short rotation(getRotation(file));
+    if (!img.isNull() && rotation != 1)
     {
-        QSize sz(img.size());
-        sz.scale(size, size, Qt::KeepAspectRatio);
-        img = img.scaled(sz, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        QTransform t;
+        int wt(img.width()/2), ht(img.height()/2);
+        t.translate(wt, ht);
+        switch (rotation)
+        {
+        case 8: qDebug() << "transforming image" << file << "w/ 90 degrees (8)"; t.rotate(90); break;
+        case 3: qDebug() << "transforming image" << file << "w/ 180 degrees (3)"; t.rotate(180); break;
+        case 6: qDebug() << "transforming image" << file << "w/ -90 degrees (6)"; t.rotate(-90); break;
+        default: break;
+        }
+        t.translate(-wt, -ht);
+        img = img.transformed(t);
     }
+#endif
     thumb = img;
-    return !thumb.size().isEmpty();
-}
-
-static QStringList suf;
-
-QStringList
-ThumbsImages::suffixes() const
-{
-    if (suf.isEmpty())
-        for (int i = 0; i < QImageReader::supportedImageFormats().count(); ++i)
-            suf << QString(QImageReader::supportedImageFormats().at(i));
-    return suf;
-}
-
-bool
-ThumbsImages::canRead(const QString &file) const
-{
-    return suffixes().contains(QFileInfo(file).suffix(), Qt::CaseInsensitive);
+    return !thumb.isNull();
 }
 
 QString

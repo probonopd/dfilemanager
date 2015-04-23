@@ -38,7 +38,7 @@ namespace DFM
 {
 namespace FS{class Model;}
 class ViewContainer;
-class IconView : public QAbstractItemView, public ViewBase
+class IconView : public QAbstractItemView, public DViewBase
 {
     Q_OBJECT
 public:

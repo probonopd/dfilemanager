@@ -36,7 +36,7 @@ namespace DFM
 {
 namespace FS{class Model;}
 class ViewContainer;
-class DetailsView : public QTreeView, public ViewBase
+class DetailsView : public QTreeView, public DViewBase
 {
     Q_OBJECT
 public:

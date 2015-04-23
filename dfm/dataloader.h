@@ -23,72 +23,57 @@
 #define DATALOADER_H
 
 #include <QObject>
-#include <QHash>
 #include <QThread>
 #include <QModelIndex>
 #include <QDebug>
-#include <QImageReader>
 #include <QAbstractItemView>
 #include <QFile>
 #include <QDir>
 #include <QEvent>
-#include <QFileSystemWatcher>
-#include <QWaitCondition>
 #include <QMutex>
 #include <QQueue>
-#include "filesystemmodel.h"
-#include "interfaces.h"
 #include "objects.h"
 #include "helpers.h"
 
-namespace DFM
-{
-
-struct Data
+typedef struct _Data
 {
     QImage thumb;
     QString count; //entries for dirs...
     QString mimeType, iconName, lastModified, fileType;
-};
+} Data;
 
-class DataLoader : public Thread
+namespace DFM
+{
+
+class DDataLoader : public DThread
 {
     Q_OBJECT
 public:
-    static DataLoader *instance();
-
-    static inline void clearQueue() { instance()->_clearQueue(); }
-    static inline void removeData(const QString &file) { instance()->_removeData(file); }
-    static inline struct Data *data(const QString &file, const bool checkOnly = false) { return instance()->_data(file, checkOnly); }
-    bool hasData(const QString &file) const;
-    struct Data *fetchData(const QString &file);
+    static DDataLoader *instance();
+    static inline void clearQueue() { s_queue.clear(); }
+    static void removeData(const QString &file);
+    static Data *data(const QString &file, const bool checkOnly = false);
 
 public slots:
-    void discontinue() { m_mtx.lock(); m_queue.clear(); m_mtx.unlock(); Thread::discontinue(); }
+    void discontinue() { s_queue.clear(); DThread::discontinue(); }
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
-    void _removeData(const QString &file);
     
 signals:
     void newData(const QString &file);
     void noLongerExists(const QString &file);
 
 protected:
-    explicit DataLoader(QObject *parent = 0);
+    explicit DDataLoader(QObject *parent = 0);
     void run();
     void getData(const QString &path);
-    void _clearQueue();
-    bool hasQueue() const;
-    bool enqueue(const QString &file);
-    QString dequeue();
-    Data *_data(const QString &file, const bool checkOnly);
 
 private:
-    mutable QMutex m_mtx;
-    QHash<QString, Data *> m_data;
-    QQueue<QString> m_queue;
     int m_extent;
-    MimeProvider m_mimeProvider;
-    static DataLoader *m_instance;
+
+    static DHash<QString, Data *> s_data;
+    static DQueue<QString> s_queue;
+    static DMimeProvider s_mimeProvider;
+    static DDataLoader *s_instance;
 };
 
 }

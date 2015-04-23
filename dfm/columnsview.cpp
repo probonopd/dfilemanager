@@ -381,7 +381,7 @@ ColumnsView::keyPressEvent(QKeyEvent *event)
         event->accept();
         return;
     }
-    ViewBase::keyPressEvent(event);
+    DViewBase::keyPressEvent(event);
     QListView::keyPressEvent(event);
 }
 

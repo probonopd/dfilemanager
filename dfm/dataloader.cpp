@@ -29,84 +29,72 @@
 #include "application.h"
 #include <QBitmap>
 #include <QMutexLocker>
+#include <QImageReader>
+#include <QWaitCondition>
 
 using namespace DFM;
 
-DataLoader *DataLoader::m_instance = 0;
+DDataLoader *DDataLoader::s_instance = 0;
+DHash<QString, Data *> DDataLoader::s_data;
+DQueue<QString> DDataLoader::s_queue;
+DMimeProvider DDataLoader::s_mimeProvider;
 
-DataLoader::DataLoader(QObject *parent) :
-    Thread(parent),
+DDataLoader::DDataLoader(QObject *parent) :
+    DThread(parent),
     m_extent(256)
 {
     connect(dApp,SIGNAL(aboutToQuit()),this,SLOT(discontinue()));
     start();
 }
 
-DataLoader
-*DataLoader::instance()
+DDataLoader
+*DDataLoader::instance()
 {
-    if (!m_instance)
-        m_instance = new DataLoader(dApp);
-    return m_instance;
+    if (!s_instance)
+        s_instance = new DDataLoader(dApp);
+    return s_instance;
 }
 
 void
-DataLoader::fileRenamed(const QString &path, const QString &oldName, const QString &newName)
+DDataLoader::fileRenamed(const QString &path, const QString &oldName, const QString &newName)
 {
     const QString &file = QDir(path).absoluteFilePath(oldName);
-    _removeData(file);
+    removeData(file);
 }
 
 void
-DataLoader::_removeData(const QString &file)
+DDataLoader::removeData(const QString &file)
 {
     if (!QFileInfo(file).exists())
-        emit noLongerExists(file);
-    QMutexLocker locker(&m_mtx);
-    if (m_data.contains(file))
-        delete m_data.take(file);
-}
-
-bool
-DataLoader::hasData(const QString &file) const
-{
-    QMutexLocker locker(&m_mtx);
-    return m_data.contains(file);
+        emit s_instance->noLongerExists(file);
+    s_data.destroy(file);
 }
 
 Data
-*DataLoader::fetchData(const QString &file)
+*DDataLoader::data(const QString &file, const bool checkOnly)
 {
-    QMutexLocker locker(&m_mtx);
-    return m_data.value(file, 0);
-}
-
-Data
-*DataLoader::_data(const QString &file, const bool checkOnly)
-{
-    if (hasData(file))
+    if (Data *data = s_data.value(file, 0))
     {
-        Data *data = fetchData(file);
         const bool isChecked = data->lastModified == QFileInfo(file).lastModified().toString();
         if (isChecked)
             return data;
 
-        delete m_data.take(file);
+        s_data.destroy(file);
     }
     if (checkOnly)
         return 0;
-    if (enqueue(file) && isPaused())
-        setPause(false);
+    if (s_queue.enqueue(file) && s_instance->isPaused())
+        s_instance->setPause(false);
     return 0;
 }
 
 void
-DataLoader::getData(const QString &path)
+DDataLoader::getData(const QString &path)
 {
     const QFileInfo fi(path);
     if (!fi.isReadable() || !fi.exists())
     {
-        _removeData(path);
+        removeData(path);
         return;
     }
     Data *data = new Data();
@@ -131,17 +119,15 @@ DataLoader::getData(const QString &path)
         else
             count = QString("Empty");
         data->count = count;
-        data->mimeType = m_mimeProvider.getMimeType(path);
-        data->fileType = m_mimeProvider.getFileType(path);
+        data->mimeType = s_mimeProvider.getMimeType(path);
+        data->fileType = s_mimeProvider.getFileType(path);
         data->lastModified = fi.lastModified().toString();
-        m_mtx.lock();
-        m_data.insert(path, data);
-        m_mtx.unlock();
+        s_data.insert(path, data);
         emit newData(path);
         return;
     }
     QImage image;
-    const QString mime(m_mimeProvider.getMimeType(path));
+    const QString mime(s_mimeProvider.getMimeType(path));
     if (!dApp->activeThumbIfaces().isEmpty() && Store::config.views.showThumbs)
         for (int i = 0; i<dApp->activeThumbIfaces().count(); ++i)
             if (dApp->activeThumbIfaces().at(i)->thumb(path, mime, image, m_extent))
@@ -154,54 +140,21 @@ DataLoader::getData(const QString &path)
     iconName.replace("/", "-");
     data->iconName = iconName;
     data->lastModified = fi.lastModified().toString();
-    data->fileType = m_mimeProvider.getFileType(path);
-    m_mtx.lock();
-    m_data.insert(path, data);
-    m_mtx.unlock();
+    data->fileType = s_mimeProvider.getFileType(path);
+    s_data.insert(path, data);
     emit newData(path);
 }
 
-bool
-DataLoader::enqueue(const QString &file)
-{
-    QMutexLocker locker(&m_mtx);
-    if (m_queue.contains(file))
-        return false;
-    m_queue.enqueue(file);
-    return true;
-}
-
 void
-DataLoader::_clearQueue()
-{
-    QMutexLocker locker(&m_mtx);
-    m_queue.clear();
-}
-
-bool
-DataLoader::hasQueue() const
-{
-    QMutexLocker locker(&m_mtx);
-    return !m_queue.isEmpty();
-}
-
-QString
-DataLoader::dequeue()
-{
-    QMutexLocker locker(&m_mtx);
-    return m_queue.dequeue();
-}
-
-void
-DataLoader::run()
+DDataLoader::run()
 {
     foreach (ThumbInterface *ti, dApp->thumbIfaces())
         ti->init();
 
     while (!m_quit)
     {
-        while (hasQueue())
-            getData(dequeue());
+        while (!s_queue.isEmpty())
+            getData(s_queue.dequeue());
         setPause(!m_quit);
         pause();
     }

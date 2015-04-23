@@ -43,10 +43,11 @@
 #include "helpers.h"
 #include "globals.h"
 
+class QFileSystemWatcher;
 namespace DFM
 {
 
-class DataLoader;
+class DDataLoader;
 
 namespace FS
 {

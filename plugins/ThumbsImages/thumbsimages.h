@@ -17,10 +17,8 @@ class ThumbsImages : public QObject, ThumbInterface
 public:
     ~ThumbsImages();
     void init();
-    QStringList suffixes() const;
     QString name() const;
     QString description() const;
-    bool canRead(const QString &file) const;
     bool thumb(const QString &file, const QString &mime, QImage &thumb, const int size);
 };
 

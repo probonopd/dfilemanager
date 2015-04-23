@@ -28,21 +28,12 @@
 #include "operations.h"
 
 #if defined(HASSOLID)
-#if SOLID_VERSION < 5
 #include "solid/device.h"
 #include "solid/block.h"
 #include "solid/storagedrive.h"
 #include "solid/storagevolume.h"
 #include "solid/storageaccess.h"
 #include "solid/devicenotifier.h"
-#else
-#include "KF5/Solid/solid/device.h"
-#include "KF5/Solid/solid/block.h"
-#include "KF5/Solid/solid/storagedrive.h"
-#include "KF5/Solid/solid/storagevolume.h"
-#include "KF5/Solid/solid/storageaccess.h"
-#include "KF5/Solid/solid/devicenotifier.h"
-#endif
 #endif
 
 namespace DFM

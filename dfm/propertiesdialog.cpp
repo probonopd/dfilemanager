@@ -154,7 +154,7 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
         m_nameEdit->setMinimumWidth(128);
 
         l->addWidget(new QLabel(tr("Mimetype:"), this), ++row, 0, right);
-        l->addWidget(new QLabel(MimeProvider().getMimeType(file), this), row, 1, left);
+        l->addWidget(new QLabel(DMimeProvider().getMimeType(file), this), row, 1, left);
 
         l->addWidget(new QLabel(tr("Created:"), this), ++row, 0, right);
         l->addWidget(new QLabel(f.created().toString(), this), row, 1, left);
@@ -203,9 +203,9 @@ GeneralInfo::setIcon()
         settings.setValue("Desktop Entry/Icon", i.name());
         tb->setIcon(i);
 
-        if (DFM::DataLoader::data(file))
-            DFM::DataLoader::removeData(file);
-        DFM::DataLoader::data(file);
+        if (DFM::DDataLoader::data(file))
+            DFM::DDataLoader::removeData(file);
+        DFM::DDataLoader::data(file);
     }
 }
 
@@ -278,7 +278,7 @@ PreViewWidget::PreViewWidget(QWidget *parent, const QStringList &files)
 
     QFile f(file);
     QString s;
-    if (f.open(QFile::ReadOnly) && MimeProvider().getMimeType(file).contains("text"))
+    if (f.open(QFile::ReadOnly) && DMimeProvider().getMimeType(file).contains("text"))
     {
         while (!f.atEnd())
             s.append(QString(f.readLine()));

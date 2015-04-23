@@ -21,6 +21,7 @@
 #include <QImageReader>
 #include <QDirIterator>
 #include <QDesktopServices>
+#include <QFileSystemWatcher>
 
 #include "filesystemmodel.h"
 #include "iojob.h"
@@ -90,12 +91,12 @@ Model::Model(QObject *parent)
     , m_currentRoot(0)
     , m_timer(new QTimer(this))
 {
-    connect(DataLoader::instance(), SIGNAL(newData(QString)), this, SLOT(newData(QString)));
+    connect(DDataLoader::instance(), SIGNAL(newData(QString)), this, SLOT(newData(QString)));
     connect(m_watcher, SIGNAL(directoryChanged(QString)), this, SLOT(dirChanged(QString)));
     connect(m_dataGatherer, SIGNAL(nodeGenerated(QString,Node*)), this, SLOT(nodeGenerated(QString,Node*)));
-    connect(this, SIGNAL(fileRenamed(QString,QString,QString)), DataLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
+    connect(this, SIGNAL(fileRenamed(QString,QString,QString)), DDataLoader::instance(), SLOT(fileRenamed(QString,QString,QString)));
 //    connect(m_timer, SIGNAL(timeout()), this, SLOT(refreshCurrent()));
-    connect(DataLoader::instance(), SIGNAL(noLongerExists(QString)), this, SLOT(fileDeleted(QString)));
+    connect(DDataLoader::instance(), SIGNAL(noLongerExists(QString)), this, SLOT(fileDeleted(QString)));
     connect(Devices::instance(), SIGNAL(deviceAdded(Device*)), this, SLOT(updateFileNode()));
     connect(Devices::instance(), SIGNAL(deviceRemoved(Device*)), this, SLOT(updateFileNode()));
 //    connect(this, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(rowsDeleted(QModelIndex,int,int)));
@@ -260,7 +261,7 @@ Model::setUrl(QUrl url)
     int isReady(0);
     if (call<bool, Model, QUrl &, int &>(this, urlHandler, url, isReady))
     {
-        DataLoader::clearQueue();
+        DDataLoader::clearQueue();
         m_url = url;
         m_history[Back] << m_url;
         if (!m_lockHistory)
@@ -409,7 +410,7 @@ Model::newData(const QString &file)
 bool
 Model::hasThumb(const QString &file) const
 {
-    if (Data *d = DataLoader::data(file, true))
+    if (Data *d = DDataLoader::data(file, true))
         return !d->thumb.isNull();
 
     return false;

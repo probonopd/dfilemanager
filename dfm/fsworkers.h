@@ -89,7 +89,7 @@ public:
     int sortColumn() const;
     Qt::SortOrder sortOrder() const;
 
-    struct Data *moreData() const;
+    Data *moreData() const;
 
     void setHiddenVisible(bool visible);
     bool showHidden() const;
@@ -162,7 +162,7 @@ public:
 
 typedef QList<Job> Jobs;
 
-class Gatherer : public Thread
+class Gatherer : public DThread
 {
     Q_OBJECT
 public:

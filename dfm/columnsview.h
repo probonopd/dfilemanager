@@ -59,7 +59,7 @@ private:
     QPixmap m_pix[2];
 };
 
-class ColumnsView : public QListView, public ViewBase
+class ColumnsView : public QListView, public DViewBase
 {
     Q_OBJECT
 public:

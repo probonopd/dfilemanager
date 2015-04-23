@@ -107,7 +107,7 @@ private slots:
 
 //-----------------------------------------------------------------------------------------------
 
-class Manager : public Thread
+class Manager : public DThread
 {
     Q_OBJECT
 public:

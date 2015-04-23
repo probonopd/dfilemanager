@@ -351,7 +351,7 @@ Store::openWithActions(const QString &file)
         }
     }
 
-    QStringList apps = QStringList() << appsMap[MimeProvider().getMimeType(file)] << appsMap[mimeMap[QFileInfo(file).suffix()]];
+    QStringList apps = QStringList() << appsMap[DMimeProvider().getMimeType(file)] << appsMap[mimeMap[QFileInfo(file).suffix()]];
     apps.removeDuplicates();
 
     foreach(QString app, apps)

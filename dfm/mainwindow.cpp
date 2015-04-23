@@ -592,7 +592,7 @@ MainWindow::currentTabChanged(int tab)
         return;
 
     tab = qMax(tab, 0);
-    DataLoader::clearQueue();
+    DDataLoader::clearQueue();
     emit viewChanged(activeContainer()->currentView());
     sortingChanged(model()->sortColumn(), (int)model()->sortOrder());
     m_recentFoldersView->folderEntered(model()->rootUrl());

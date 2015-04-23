@@ -282,10 +282,10 @@ Node::fileType() const
     return suffix();
 }
 
-struct Data
+Data
 *Node::moreData() const
 { 
-    return DataLoader::data(m_filePath, m_model->isWorking());
+    return DDataLoader::data(m_filePath, m_model->isWorking());
 }
 
 QString
@@ -727,7 +727,7 @@ AppNode::exec()
 using namespace Worker;
 
 Gatherer::Gatherer(QObject *parent)
-    :Thread(parent)
+    :DThread(parent)
     , m_node(0)
     , m_model(static_cast<FS::Model *>(parent))
     , m_isCancelled(false)
