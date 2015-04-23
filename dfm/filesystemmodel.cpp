@@ -731,7 +731,14 @@ Model::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int c
     if (!n->isDir())
         return false;
 
-    IO::Manager::copy(data->urls(), n->filePath(), true, true);
+    QMenu m;
+    QAction *move = m.addAction(QString("move to %1").arg(n->filePath()));
+    m.addAction(QString("copy to %1").arg(n->filePath()));
+    if (QAction *a = m.exec(QCursor::pos()))
+    {
+        const bool cut(a == move);
+        IO::Manager::copy(data->urls(), n->filePath(), cut, cut);
+    }
     return true;
 }
 

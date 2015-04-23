@@ -771,7 +771,16 @@ TabBar::dropEvent(QDropEvent *e)
         {
             const QString &dest = w->containerForTab(tab)->model()->rootUrl().toLocalFile();
             if (QFileInfo(dest).exists())
-                IO::Manager::copy(e->mimeData()->urls(), dest, true, true);
+            {
+                QMenu m;
+                QAction *move = m.addAction(QString("move to %1").arg(dest));
+                m.addAction(QString("copy to %1").arg(dest));
+                if (QAction *a = m.exec(QCursor::pos()))
+                {
+                    const bool cut(a == move);
+                    IO::Manager::copy(e->mimeData()->urls(), dest, cut, cut);
+                }
+            }
         }
         else
         {
@@ -859,7 +868,9 @@ TabBar::mouseMoveEvent(QMouseEvent *e)
             m_hoveredTab = -1;
         update();
     }
-    if (!m_pressPos.isNull() && QPoint(m_pressPos-e->pos()).manhattanLength() > QApplication::startDragDistance() && tabAt(e->pos()) != -1)
+    if (!m_pressPos.isNull()
+            && QPoint(m_pressPos-e->pos()).manhattanLength() > QApplication::startDragDistance()
+            && tabAt(e->pos()) != -1)
     {
         m_dragCancelled = false;
         QDrag *drag = new QDrag(this);

@@ -669,7 +669,14 @@ PlacesView::dropEvent(QDropEvent *event)
             if (place) //dropping files on a place
             {
                 QApplication::restoreOverrideCursor();
-                IO::Manager::copy(files, place->path(), true, true);
+                QMenu m;
+                QAction *move = m.addAction(QString("move to %1").arg(place->path()));
+                m.addAction(QString("copy to %1").arg(place->path()));
+                if (QAction *a = m.exec(viewport()->mapToGlobal(event->pos())))
+                {
+                    const bool cut(a == move);
+                    IO::Manager::copy(files, place->path(), cut, cut);
+                }
                 RETURN;
             }
 
