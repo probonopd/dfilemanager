@@ -22,11 +22,29 @@
 #include <QDirIterator>
 #include <QDesktopServices>
 #include <QFileSystemWatcher>
+#include <QMessageBox>
+#include <QPainter>
+#include <QAbstractItemView>
+#include <QDir>
+#include <QTimer>
+#include <QMimeData>
+#include <QSettings>
+#include <QDateTime>
+#include <QUrl>
+#include <QLabel>
+#include <QDebug>
+#include <QMap>
+#include <QWaitCondition>
+#include <QMenu>
 
 #include "filesystemmodel.h"
 #include "iojob.h"
 #include "dataloader.h"
 #include "mainwindow.h"
+#include "dataloader.h"
+#include "fsworkers.h"
+#include "helpers.h"
+#include "config.h"
 
 using namespace DFM;
 using namespace FS;

@@ -22,30 +22,29 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-
-#include "filesystemmodel.h"
-#include "placesview.h"
-#include "iconview.h"
-#include "detailsview.h"
-#include "columnsview.h"
-#include "flowview.h"
-#include "searchbox.h"
-#include "viewcontainer.h"
-#include "tabbar.h"
-#include "config.h"
-#include "infowidget.h"
-#include "dockwidget.h"
-#include "recentfoldersview.h"
-
 #include <QMainWindow>
-#include <QFileSystemWatcher>
-#include <QProcess>
-#include <QProgressBar>
+#include <QUrl>
+#include "viewcontainer.h"
 
+class QSlider;
+class QAbstractItemView;
+class QModelIndex;
+class QItemSelection;
+class QToolButton;
+class QProgressBar;
+class QActionGroup;
 namespace DFM
 {
+namespace FS{class Model;}
+namespace Docks{class DockWidget;}
 class TabBar;
 class TabManager;
+class ViewContainer;
+class PlacesView;
+class InfoWidget;
+class SearchBox;
+class StatusBar;
+class RecentFoldersView;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -121,7 +120,7 @@ public slots:
     void addTab(const QUrl &url = QUrl());
     void addTab(ViewContainer *container, int index = -1);
     void receiveMessage(const QStringList &message);
-    inline void setRootPath(const QString &path) { model()->setUrl(QUrl::fromLocalFile(path)); }
+    void setRootPath(const QString &path);
     void updateFilterBox();
 
 protected:

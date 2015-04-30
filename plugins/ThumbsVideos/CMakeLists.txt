@@ -4,6 +4,7 @@ find_path(FFMPEGTHUMB_INCLUDE_DIRS NAMES videothumbnailer.h PATHS ${FFMPEGTHUMB_
 if (FFMPEGTHUMB_LIBRARY AND FFMPEGTHUMB_INCLUDE_DIRS)
     message(STATUS "found ffmpegthumbnailer library ${FFMPEGTHUMB_LIBRARY}, building plugin for thumbnailing videos")
     project(thumbsvideosplugin)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
 
     file(GLOB SRCS *.cpp)
     file(GLOB HDRS *.h)

@@ -30,14 +30,13 @@
 #include <QDebug>
 #include <QStatusBar>
 #include <QMouseEvent>
+#include "globals.h"
 
 namespace DFM
 {
 
 namespace Docks
 {
-
-enum Pos { Left = 1, Right = 2, Bottom = 4 };
 
 inline static QPixmap titlePix(bool floating, int size, QColor color)
 {

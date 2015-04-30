@@ -22,6 +22,7 @@
 #ifndef OPERATIONS_H
 #define OPERATIONS_H
 
+#include <QSettings>
 #include <QString>
 #include <QColor>
 #include <QFileInfo>

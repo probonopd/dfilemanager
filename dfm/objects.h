@@ -59,7 +59,7 @@ class FileItemDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
 public:
-    FileItemDelegate(QObject *parent = 0):QStyledItemDelegate(parent){}
+    explicit FileItemDelegate(QObject *parent = 0):QStyledItemDelegate(parent){}
     QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
     void setEditorData(QWidget *editor, const QModelIndex &index) const;
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;

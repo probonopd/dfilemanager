@@ -20,9 +20,18 @@
 
 #include <QMenuBar>
 #include <QButtonGroup>
+#include <QToolBar>
+#include <QContextMenuEvent>
+#include <QStatusBar>
+#include <QToolButton>
+#include <QAction>
+#include <QApplication>
 
 #include "mainwindow.h"
 #include "iconprovider.h"
+#include "config.h"
+#include "placesview.h"
+#include "searchbox.h"
 
 using namespace DFM;
 

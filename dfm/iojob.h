@@ -22,6 +22,7 @@
 #ifndef IOJOB_H
 #define IOJOB_H
 
+#include <QQueue>
 #include <QObject>
 #include <QFileInfo>
 #include <QDir>

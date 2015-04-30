@@ -23,6 +23,7 @@
 #include "iconprovider.h"
 #include "config.h"
 #include "mainwindow.h"
+#include "filesystemmodel.h"
 
 using namespace DFM;
 

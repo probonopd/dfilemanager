@@ -22,6 +22,7 @@
 #include "operations.h"
 #include "mainwindow.h"
 #include "application.h"
+#include "helpers.h"
 #include <QFileInfo>
 #include <QVector>
 #include <QDebug>
@@ -31,6 +32,8 @@
 #include <QItemSelectionModel>
 #include <QDesktopServices>
 #include <QClipboard>
+#include <QAbstractItemView>
+#include <QPainter>
 
 //#include <blkid/blkid.h> //dev block id info... maybe need later
 
@@ -239,6 +242,8 @@ Ops::blurred(const QImage& image, const QRect& rect, int radius, bool alphaOnly)
 
    return result;
 }
+
+#define SIZE 258.0f
 
 QImage
 Ops::flowImg(const QImage &image)

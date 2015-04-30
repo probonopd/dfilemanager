@@ -30,12 +30,14 @@
 #include <QTextCursor>
 #include <QTextFormat>
 #include <QDesktopServices>
-
+#include <QPainter>
 #include "iconview.h"
 #include "viewcontainer.h"
 #include "mainwindow.h"
 #include "operations.h"
 #include "viewanimator.h"
+#include "objects.h"
+#include "config.h"
 
 #define TEXT index.data().toString()
 #define RECT option.rect

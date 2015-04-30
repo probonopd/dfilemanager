@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
         DFM::MainWindow *mainWin = new DFM::MainWindow(app.arguments());
         QObject::connect(&app, SIGNAL(lastMessage(QStringList)), mainWin, SLOT(receiveMessage(QStringList)));
         mainWin->show();
+        break;
     }
     case Application::IOJob:
     {
@@ -69,7 +70,9 @@ int main(int argc, char *argv[])
         DFM::IOJobData ioJobData;
         if (DFM::Ops::extractIoData(app.arguments(), ioJobData))
             manager->queue(ioJobData);
+        break;
     }
+    default: break;
     } //end t
     return app.exec();
 }

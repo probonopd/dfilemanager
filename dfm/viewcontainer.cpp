@@ -25,19 +25,32 @@
 #include <QMenu>
 #include <QDesktopServices>
 #include <QAbstractItemView>
+#include <QStackedWidget>
+#include <QComboBox>
+#include <QLineEdit>
+#include <QMessageBox>
+#include <QStyledItemDelegate>
+#include <QMenu>
 
 #include "viewcontainer.h"
+#include "iconview.h"
+#include "detailsview.h"
+#include "flowview.h"
+#include "filesystemmodel.h"
+#include "pathnavigator.h"
 #include "operations.h"
 #include "iojob.h"
 #include "deletedialog.h"
 #include "mainwindow.h"
+#include "config.h"
+#include "columnview.h"
 
 using namespace DFM;
 
 #define VIEWS(RUN)\
     m_iconView->RUN;\
     m_detailsView->RUN;\
-    m_columnsWidget->RUN;\
+    m_columnView->RUN;\
     m_flowView->RUN
 
 ViewContainer::ViewContainer(QWidget *parent)
@@ -45,19 +58,18 @@ ViewContainer::ViewContainer(QWidget *parent)
     , m_model(new FS::Model(this))
     , m_viewStack(new QStackedWidget(this))
     , m_iconView(new IconView(this))
-    , m_columnsWidget(new ColumnsWidget(this))
+    , m_columnView(new ColumnView(this))
     , m_detailsView(new DetailsView(this))
     , m_flowView(new FlowView(this))
     , m_navBar(new NavBar(this, m_model))
     , m_layout(new QVBoxLayout())
+    , m_myView(Icon)
+    , m_back(false)
 {
     connect(m_model, SIGNAL(finishedWorking()), m_navBar, SLOT(stopAnimating()));
     connect(m_model, SIGNAL(startedWorking()), m_navBar, SLOT(startAnimating()));
 
     m_navBar->setVisible(Store::settings()->value("pathVisible", true).toBool());
-    m_myView = Icon;
-    m_back = false;
-
     m_viewStack->layout()->setSpacing(0);
     setFrameStyle(0/*QFrame::StyledPanel | QFrame::Sunken*/);
     setAutoFillBackground(false);
@@ -74,11 +86,12 @@ ViewContainer::ViewContainer(QWidget *parent)
     connect(m_iconView, SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)));
     connect(m_iconView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
     connect(m_detailsView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+    connect(m_columnView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
     connect(m_flowView->detailsView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
     connect(m_flowView->flow(), SIGNAL(centerIndexChanged(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
     connect(m_model, SIGNAL(sortingChanged(int,int)), this, SIGNAL(sortingChanged(int,int)));
 
-    foreach (QAbstractItemView *v, QList<QAbstractItemView *>() << m_iconView << m_detailsView /*<< m_columnsView*/ << m_flowView->detailsView())
+    foreach (QAbstractItemView *v, QList<QAbstractItemView *>() << m_iconView << m_detailsView << m_columnView << m_flowView->detailsView())
     {
         v->setMouseTracking(true);
         connect(v, SIGNAL(entered(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
@@ -88,7 +101,7 @@ ViewContainer::ViewContainer(QWidget *parent)
 
     m_viewStack->addWidget(m_iconView);
     m_viewStack->addWidget(m_detailsView);
-    m_viewStack->addWidget(m_columnsWidget);
+    m_viewStack->addWidget(m_columnView);
     m_viewStack->addWidget(m_flowView);
 
     m_layout->addWidget(m_viewStack, 1);
@@ -107,7 +120,7 @@ ViewContainer::~ViewContainer()
 //    qDebug() << "deleting container" << m_model->rootUrl() << this;
     delete m_iconView;
     delete m_detailsView;
-    delete m_columnsWidget;
+    delete m_columnView;
     delete m_flowView;
     delete m_navBar;
     delete m_model;
@@ -130,7 +143,7 @@ void ViewContainer::setModel(FS::Model *model) { VIEWS(setModel(model)); }
 QList<QAbstractItemView *>
 ViewContainer::views()
 {
-    return QList<QAbstractItemView *>() << m_iconView << m_detailsView << m_columnsWidget->currentView() << m_flowView->detailsView();
+    return QList<QAbstractItemView *>() << m_iconView << m_detailsView << m_columnView << m_flowView->detailsView();
 }
 
 void
@@ -153,7 +166,7 @@ ViewContainer::setView(const View view, bool store)
     else if (view == Details)
         m_viewStack->setCurrentWidget(m_detailsView);
     else if (view == Columns)
-        m_viewStack->setCurrentWidget(m_columnsWidget);
+        m_viewStack->setCurrentWidget(m_columnView);
     else if (view == Flow)
         m_viewStack->setCurrentWidget(m_flowView);
     emit viewChanged();
@@ -229,7 +242,7 @@ ViewContainer::rename()
     {
     case Icon : m_iconView->edit(m_iconView->currentIndex()); break;
     case Details : m_detailsView->edit(m_detailsView->currentIndex()); break;
-    case Columns : m_columnsWidget->edit(m_columnsWidget->currentIndex()); break;
+    case Columns : m_columnView->edit(m_columnView->currentIndex()); break;
     case Flow : m_flowView->detailsView()->edit(m_flowView->detailsView()->currentIndex()); break;
     default: break;
     }
@@ -249,7 +262,8 @@ ViewContainer::setFilter(const QString &filter)
     emit filterChanged();
 }
 
-QString ViewContainer::currentFilter() const
+QString
+ViewContainer::currentFilter() const
 {
     if (QAbstractItemView *v = currentView())
     {
@@ -300,14 +314,14 @@ ViewContainer::scrollToSelection()
     {
         m_iconView->scrollToTop();
         m_detailsView->scrollToTop();
-//        m_columnsWidget->scrollToTop();
+        m_columnView->scrollToTop();
         m_flowView->detailsView()->scrollToTop();
     }
     else
     {
         m_iconView->scrollTo(m_selectModel->selectedIndexes().first());
         m_detailsView->scrollTo(m_selectModel->selectedIndexes().first());
-//        m_columnsWidget->scrollTo(m_selectModel->selectedIndexes().first());
+        m_columnView->scrollTo(m_selectModel->selectedIndexes().first());
         m_flowView->detailsView()->scrollTo(m_selectModel->selectedIndexes().first());
     }
 }
@@ -357,8 +371,6 @@ ViewContainer::createDirectory()
 QAbstractItemView
 *ViewContainer::currentView() const
 {
-    if (m_myView == Columns)
-        return m_columnsWidget->currentView();
     if (m_myView != Flow)
         return static_cast<QAbstractItemView *>(m_viewStack->currentWidget());
     return static_cast<QAbstractItemView *>(m_flowView->detailsView());

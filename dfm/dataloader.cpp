@@ -21,16 +21,13 @@
 #include <QBitmap>
 #include "dataloader.h"
 #include <QImage>
-#include "columnsview.h"
-#include "mainwindow.h"
 #include "operations.h"
 #include "config.h"
-#include "viewcontainer.h"
 #include "application.h"
-#include <QBitmap>
 #include <QMutexLocker>
 #include <QImageReader>
 #include <QWaitCondition>
+#include <QDateTime>
 
 using namespace DFM;
 

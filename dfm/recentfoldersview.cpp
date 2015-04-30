@@ -20,12 +20,14 @@
 
 #include <QFileInfo>
 #include <QModelIndex>
+#include <QTimer>
 
 #include "recentfoldersview.h"
 #include "filesystemmodel.h"
 #include "config.h"
 #include "dataloader.h"
 #include "application.h"
+#include "operations.h"
 
 using namespace DFM;
 

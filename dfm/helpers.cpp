@@ -1,4 +1,5 @@
 #include "helpers.h"
+#include "searchbox.h"
 #include "mainwindow.h"
 
 DMimeProvider::DMimeProvider()

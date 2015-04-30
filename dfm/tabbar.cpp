@@ -22,8 +22,18 @@
 #include <qmath.h>
 #include <QMessageBox>
 #include <QDrag>
+#include <QToolBar>
+#include <QToolButton>
+#include <QWidget>
+#include <QMouseEvent>
+#include <QDrag>
+#include <QStackedWidget>
+#include <QApplication>
+#include <QMimeData>
 
-
+#include "mainwindow.h"
+#include "viewcontainer.h"
+#include "widgets.h"
 #include "tabbar.h"
 #include "config.h"
 #include "operations.h"

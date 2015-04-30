@@ -22,11 +22,13 @@
 #include <QDirIterator>
 #include <QMessageBox>
 #include <QLocalSocket>
+#include <QProcess>
 
 #include "iojob.h"
 #include "operations.h"
 #include "mainwindow.h"
 #include "application.h"
+#include "config.h"
 
 using namespace DFM;
 using namespace IO;

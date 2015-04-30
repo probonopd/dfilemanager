@@ -23,15 +23,12 @@
 #define TABBAR_H
 
 #include <QTabBar>
-#include <QToolBar>
-#include <QWidget>
-#include <QMouseEvent>
-#include <QDrag>
+#include <QFrame>
 #include <QStackedWidget>
 
-#include "mainwindow.h"
-#include "viewcontainer.h"
-
+class QHBoxLayout;
+class QToolBar;
+class QToolButton;
 namespace DFM
 {
 class MainWindow;

@@ -22,30 +22,25 @@
 #ifndef VIEWCONTAINER_H
 #define VIEWCONTAINER_H
 
-#include <QStackedWidget>
-#include <QComboBox>
-#include <QLineEdit>
-#include <QMessageBox>
-#include <QStyledItemDelegate>
-#include <QMenu>
+#include <QFrame>
 
-#include "iconview.h"
-#include "detailsview.h"
-#include "columnswidget.h"
-#include "flowview.h"
-#include "filesystemmodel.h"
-#include "pathnavigator.h"
-
+class QColumnView;
+class QStackedWidget;
+class QVBoxLayout;
+class QItemSelectionModel;
+class QModelIndex;
+class QAbstractItemView;
 namespace DFM
 {
 class Button;
-class ColumnsWidget;
 class IconView;
 class DetailsView;
 class FlowView;
 class NavBar;
 class PathNavigator;
+class ColumnView;
 namespace FS{class Model;}
+
 class ViewContainer : public QFrame
 {
     Q_OBJECT
@@ -88,7 +83,7 @@ protected:
     void setModel(FS::Model *model);
     void setSelectionModel(QItemSelectionModel *selectionModel);
     void scrollToSelection();
-    
+
 signals:
     void viewChanged();
     void iconSizeChanged(const int size);
@@ -105,7 +100,7 @@ signals:
     void urlChanged(const QUrl &url);
     void urlLoaded(const QUrl &url);
     void hiddenVisibilityChanged(const bool visible);
-    
+
 public slots:
     void activate(const QModelIndex &index);
     void setPathVisible(bool visible);
@@ -122,15 +117,13 @@ private:
     View m_myView;
     IconView *m_iconView;
     DetailsView *m_detailsView;
-    ColumnsWidget *m_columnsWidget;
+    ColumnView *m_columnView;
     FlowView *m_flowView;
     FS::Model *m_model;
     QStackedWidget *m_viewStack;
     QItemSelectionModel *m_selectModel;
     NavBar *m_navBar;
     QVBoxLayout *m_layout;
-    friend class ColumnsView;
-    friend class ColumnsWidget;
 };
 
 }

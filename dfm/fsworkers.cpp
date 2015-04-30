@@ -22,6 +22,7 @@
 #include <QList>
 #include <QDesktopServices>
 #include <QProcess>
+#include <QDateTime>
 
 #include "fsworkers.h"
 #include "helpers.h"

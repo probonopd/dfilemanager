@@ -22,7 +22,7 @@ ThumbsVideos::thumb(const QString &file, const QString &mime, QImage &thumb, con
     {
         m_vt.generateThumbnail(file.toUtf8().constData(), Png, pixels);
     }
-    catch (const std::exception& ex)
+    catch (const std::exception &ex)
     {
         qDebug() << "catched" << ex.what();
         return false;

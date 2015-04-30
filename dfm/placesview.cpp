@@ -24,11 +24,15 @@
 #include "icondialog.h"
 #include "viewanimator.h"
 #include "mainwindow.h"
+#include "config.h"
 
 #include <QInputDialog>
 #include <QMenu>
 #include <QMetaObject>
 #include <QMetaProperty>
+#include <QApplication>
+#include <QScrollBar>
+#include <QMimeData>
 
 using namespace DFM;
 

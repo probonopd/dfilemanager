@@ -22,9 +22,8 @@
 #ifndef DOCKWIDGET_H
 #define DOCKWIDGET_H
 
-#include "titlewidget.h"
 #include <QDockWidget>
-#include <QTimer>
+#include "globals.h"
 
 namespace DFM
 {

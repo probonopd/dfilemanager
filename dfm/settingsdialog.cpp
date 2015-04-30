@@ -26,6 +26,7 @@
 #include "interfaces.h"
 #include <QGroupBox>
 #include <QFileDialog>
+#include <QToolButton>
 
 using namespace DFM;
 

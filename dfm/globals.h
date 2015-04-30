@@ -31,19 +31,9 @@ namespace DFM
 
 enum IOTask { CopyTask = 0, MoveTask = 1, RemoveTask = 2 };
 
-struct IOJobData
-{
-    QString inPaths, outPath; //used for interprocess communication
-    QStringList inList;
-    IOTask ioTask;
-};
-
-static int defaultInteger = 0;
-static bool defaultBool = false;
-static QUrl defaultUrl = QUrl();
-static QDir::Filters allEntries = QDir::AllEntries|QDir::NoDotAndDotDot|QDir::Hidden|QDir::System;
-
 enum SearchMode { Filter = 0, Search = 1 };
+
+namespace Docks { enum Pos { Left = 1, Right = 2, Bottom = 4 }; }
 
 namespace FS
 {
@@ -59,6 +49,18 @@ enum Roles
     Url = Qt::UserRole + 6
 };
 }
+
+struct IOJobData
+{
+    QString inPaths, outPath; //used for interprocess communication
+    QStringList inList;
+    IOTask ioTask;
+};
+
+static int defaultInteger = 0;
+static bool defaultBool = false;
+static QUrl defaultUrl = QUrl();
+static QDir::Filters allEntries = QDir::AllEntries|QDir::NoDotAndDotDot|QDir::Hidden|QDir::System;
 
 template<typename T, typename Class>
 static inline T call(Class *object, T (Class::*function)())

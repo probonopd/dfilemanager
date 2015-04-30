@@ -18,6 +18,22 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QFileSystemWatcher>
+#include <QProcess>
+#include <QProgressBar>
+#include <QMimeData>
+#include "filesystemmodel.h"
+#include "placesview.h"
+#include "iconview.h"
+#include "detailsview.h"
+#include "flowview.h"
+#include "searchbox.h"
+#include "tabbar.h"
+#include "config.h"
+#include "infowidget.h"
+#include "dockwidget.h"
+#include "titlewidget.h"
+#include "recentfoldersview.h"
 
 #include "mainwindow.h"
 #include "application.h"
@@ -31,6 +47,7 @@
 #include <QMessageBox>
 #include <QList>
 #include "iconprovider.h"
+#include "pathnavigator.h"
 
 using namespace DFM;
 
@@ -250,6 +267,12 @@ MainWindow::receiveMessage(const QStringList &message)
         {
             setWindowState(windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
         }
+}
+
+void
+MainWindow::setRootPath(const QString &path)
+{
+    model()->setUrl(QUrl::fromLocalFile(path));
 }
 
 void

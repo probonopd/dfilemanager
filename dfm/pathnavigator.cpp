@@ -20,11 +20,14 @@
 
 #include <QDebug>
 #include <QCompleter>
+#include <QMimeData>
+#include <QApplication>
 
 #include "pathnavigator.h"
 #include "mainwindow.h"
 #include "iojob.h"
 #include "iconprovider.h"
+#include "config.h"
 
 using namespace DFM;
 
@@ -79,6 +82,12 @@ PathSeparator::mousePressEvent(QMouseEvent *event)
         if (!fi.isDir())
             continue;
         QAction *action = menu.addAction(child.data().toString(), m_fsModel, SLOT(setUrlFromDynamicPropertyUrl()));
+        if (m_fsModel->rootUrl().toString().startsWith(url.toString()))
+        {
+            QFont f(action->font());
+            f.setBold(true);
+            action->setFont(f);
+        }
         action->setProperty("url", QVariant::fromValue(url));
     }
     menu.exec(event->globalPos());
@@ -150,7 +159,16 @@ NavButton::dropEvent(QDropEvent *e)
 {
     const QFileInfo &fi = m_url.toLocalFile();
     if (fi.exists() && e->mimeData()->hasUrls())
-        IO::Manager::copy(e->mimeData()->urls(), fi.filePath(), true, true);
+    {
+        QMenu m;
+        QAction *move = m.addAction(QString("move to %1").arg(fi.filePath()));
+        m.addAction(QString("copy to %1").arg(fi.filePath()));
+        if (QAction *a = m.exec(QCursor::pos()))
+        {
+            const bool cut(a == move);
+            IO::Manager::copy(e->mimeData()->urls(), fi.filePath(), cut, cut);
+        }
+    }
     m_hasData = false;
     update();
 }

@@ -22,6 +22,8 @@
 #include <QModelIndex>
 #include <QLabel>
 #include <QApplication>
+#include <QTimer>
+#include <QDateTime>
 
 #include "infowidget.h"
 #include "operations.h"

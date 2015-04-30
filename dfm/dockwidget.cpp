@@ -18,9 +18,12 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-
+#include <QTimer>
+#include <QStyle>
 #include "dockwidget.h"
 #include "mainwindow.h"
+#include "titlewidget.h"
+#include "config.h"
 
 using namespace DFM;
 using namespace Docks;

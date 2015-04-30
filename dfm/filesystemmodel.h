@@ -22,28 +22,15 @@
 #ifndef FILESYSTEMMODEL_H
 #define FILESYSTEMMODEL_H
 
-#include <QFileIconProvider>
-#include <QPainter>
-#include <QAbstractItemView>
-#include <QDir>
-#include <QFileIconProvider>
-#include <QTimer>
-#include <QMimeData>
-#include <QSettings>
-#include <QDateTime>
-#include <QUrl>
-#include <QLabel>
-#include <QDebug>
-#include <QMap>
-#include <QWaitCondition>
-#include <QAbstractItemModel>
-
-#include "dataloader.h"
-#include "fsworkers.h"
-#include "helpers.h"
 #include "globals.h"
 
+#include <QAbstractItemModel>
+#include <QFileIconProvider>
+#include <QMutex>
+
 class QFileSystemWatcher;
+class QMenu;
+
 namespace DFM
 {
 

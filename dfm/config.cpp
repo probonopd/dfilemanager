@@ -23,6 +23,7 @@
 #include "mainwindow.h"
 #include "application.h"
 #include "helpers.h"
+#include "operations.h"
 #include <QDir>
 #include <QProcess>
 

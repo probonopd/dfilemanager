@@ -23,9 +23,12 @@
 #include "viewcontainer.h"
 #include "filesystemmodel.h"
 #include "mainwindow.h"
+#include "config.h"
+#include "objects.h"
 #include <qmath.h>
 #include <QTextEdit>
 #include <QMessageBox>
+#include <QPainter>
 
 using namespace DFM;
 
