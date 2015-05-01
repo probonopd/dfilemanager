@@ -24,6 +24,7 @@
 #include "config.h"
 #include "mainwindow.h"
 #include "filesystemmodel.h"
+#include "viewcontainer.h"
 
 using namespace DFM;
 

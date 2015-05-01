@@ -36,7 +36,6 @@
 #include <QMap>
 #include <QWaitCondition>
 #include <QMenu>
-
 #include "filesystemmodel.h"
 #include "iojob.h"
 #include "dataloader.h"
@@ -458,20 +457,24 @@ Model::data(const QModelIndex &index, int role) const
 
     if (role == FilePathRole)
         return n->filePath();
-    if (role == FilePermissions)
+    if (role == FilePermissionsRole)
         return n->permissionsString();
     if (role == FileIconRole)
         return n->icon();
     if (role == Qt::TextAlignmentRole)
         return bool(col == 1) ? int(Qt::AlignVCenter|Qt::AlignRight) : int(Qt::AlignLeft|Qt::AlignVCenter);
-    if (role == Category)
+    if (role == CategoryRole)
         return n->category();
-    if (role == MimeType)
+    if (role == MimeTypeRole)
         return n->mimeType();
-    if (role == FileType)
+    if (role == FileTypeRole)
         return n->fileType();
-    if (role == Url)
+    if (role == OwnderRole)
+        return n->owner();
+    if (role == UrlRole)
         return n->url();
+    if (role == LastModifiedRole)
+        return n->lastModified().toString();
 
     if (!isWorking())
     if (role == Qt::FontRole && !col)
@@ -504,6 +507,8 @@ Model::setData(const QModelIndex &index, const QVariant &value, int role)
         emit dataChanged(index, index);
         return true;
     }
+    else
+        QMessageBox::warning(MainWindow::currentWindow(), "Failed to rename", QString("%1 to %2").arg(n->name(), newName));
     return false;
 }
 

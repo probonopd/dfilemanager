@@ -127,38 +127,38 @@ MainWindow::createActions()
 
     QActionGroup *viewActs = new QActionGroup(this);
     viewActs->setExclusive(true);
-    m_actions[IconView] = viewActs->addAction(new QAction(tr("&Icons View"), this));
-    m_actions[IconView]->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+1"));
-    m_actions[IconView]->setShortcutContext(Qt::ApplicationShortcut);
-    m_actions[IconView]->setObjectName("actionIconView");
-    m_actions[IconView]->setCheckable(true);
-    m_actions[IconView]->setChecked(true);
-    connect(m_actions[IconView], SIGNAL(triggered()), this, SLOT(setViewIcons()));
-    addAction(m_actions[IconView]);
+    m_actions[Views_Icon] = viewActs->addAction(new QAction(tr("&Icons View"), this));
+    m_actions[Views_Icon]->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+1"));
+    m_actions[Views_Icon]->setShortcutContext(Qt::ApplicationShortcut);
+    m_actions[Views_Icon]->setObjectName("actionIconView");
+    m_actions[Views_Icon]->setCheckable(true);
+    m_actions[Views_Icon]->setChecked(true);
+    connect(m_actions[Views_Icon], SIGNAL(triggered()), this, SLOT(setViewIcons()));
+    addAction(m_actions[Views_Icon]);
 
-    m_actions[DetailView] = viewActs->addAction(new QAction(tr("&Details View"), this));
-    m_actions[DetailView]->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+2"));
-    m_actions[DetailView]->setShortcutContext(Qt::ApplicationShortcut);
-    m_actions[DetailView]->setObjectName("actionsListView");
-    m_actions[DetailView]->setCheckable(true);
-    connect(m_actions[DetailView], SIGNAL(triggered()), this, SLOT(setViewDetails()));
-    addAction(m_actions[DetailView]);
+    m_actions[Views_Detail] = viewActs->addAction(new QAction(tr("&Details View"), this));
+    m_actions[Views_Detail]->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+2"));
+    m_actions[Views_Detail]->setShortcutContext(Qt::ApplicationShortcut);
+    m_actions[Views_Detail]->setObjectName("actionsListView");
+    m_actions[Views_Detail]->setCheckable(true);
+    connect(m_actions[Views_Detail], SIGNAL(triggered()), this, SLOT(setViewDetails()));
+    addAction(m_actions[Views_Detail]);
 
-    m_actions[ColumnView] = viewActs->addAction(new QAction(tr("&Columns View"), this));
-    m_actions[ColumnView]->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+3"));
-    m_actions[ColumnView]->setShortcutContext(Qt::ApplicationShortcut);
-    m_actions[ColumnView]->setObjectName("actionColView");
-    m_actions[ColumnView]->setCheckable(true);
-    connect(m_actions[ColumnView], SIGNAL(triggered()), this, SLOT(setViewCols()));
-    addAction(m_actions[ColumnView]);
+    m_actions[Views_Column] = viewActs->addAction(new QAction(tr("&Columns View"), this));
+    m_actions[Views_Column]->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+3"));
+    m_actions[Views_Column]->setShortcutContext(Qt::ApplicationShortcut);
+    m_actions[Views_Column]->setObjectName("actionColView");
+    m_actions[Views_Column]->setCheckable(true);
+    connect(m_actions[Views_Column], SIGNAL(triggered()), this, SLOT(setViewCols()));
+    addAction(m_actions[Views_Column]);
 
-    m_actions[FlowView] = viewActs->addAction(new QAction(tr("&Flow"), this));
-    m_actions[FlowView]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+4"));
-    m_actions[FlowView]->setShortcutContext(Qt::ApplicationShortcut);
-    m_actions[FlowView]->setObjectName("actionFlow");
-    m_actions[FlowView]->setCheckable(true);
-    connect(m_actions[FlowView], SIGNAL(triggered()), this, SLOT(flowView()));
-    addAction(m_actions[FlowView]);
+    m_actions[Views_Flow] = viewActs->addAction(new QAction(tr("&Flow"), this));
+    m_actions[Views_Flow]->setShortcuts(QList<QKeySequence>() <<  QKeySequence("Ctrl+4"));
+    m_actions[Views_Flow]->setShortcutContext(Qt::ApplicationShortcut);
+    m_actions[Views_Flow]->setObjectName("actionFlow");
+    m_actions[Views_Flow]->setCheckable(true);
+    connect(m_actions[Views_Flow], SIGNAL(triggered()), this, SLOT(flowView()));
+    addAction(m_actions[Views_Flow]);
 
     m_actions[ShowHidden] = new QAction(tr("&Show Hidden"), this);
     m_actions[ShowHidden]->setShortcuts(QList<QKeySequence>() << QKeySequence("F8"));
@@ -473,10 +473,10 @@ MainWindow::createToolBars()
 //    }
 //    m_toolBar->addSeparator();
     m_toolBar->addWidget(m_toolBarSpacer);
-    m_toolBar->addAction(m_actions[IconView]);
-    m_toolBar->addAction(m_actions[DetailView]);
-    m_toolBar->addAction(m_actions[ColumnView]);
-    m_toolBar->addAction(m_actions[FlowView]);
+    m_toolBar->addAction(m_actions[Views_Icon]);
+    m_toolBar->addAction(m_actions[Views_Detail]);
+    m_toolBar->addAction(m_actions[Views_Column]);
+    m_toolBar->addAction(m_actions[Views_Flow]);
 //    m_toolBar->addSeparator();
 
 //    QWidget *spacerFixed = new QWidget(m_toolBar);

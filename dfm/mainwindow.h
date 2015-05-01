@@ -23,8 +23,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QUrl>
-#include "viewcontainer.h"
+#include "globals.h"
 
 class QSlider;
 class QAbstractItemView;
@@ -33,6 +32,7 @@ class QItemSelection;
 class QToolButton;
 class QProgressBar;
 class QActionGroup;
+class QUrl;
 namespace DFM
 {
 namespace FS{class Model;}
@@ -49,55 +49,10 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    enum Actions { GoBack = 0,
-                   GoUp,
-                   GoForward,
-                   GoHome,
-                   Exit,
-                   About,
-                   AboutQt,
-                   AddPlace,
-                   RenamePlace,
-                   RemovePlace,
-                   IconView,
-                   DetailView,
-                   ColumnView,
-                   FlowView,
-                   DeleteSelection,
-                   ShowHidden,
-                   MkDir,
-                   Copy,
-                   Cut,
-                   Paste,
-                   Rename,
-                   AddPlaceContainer,
-                   SetPlaceIcon,
-                   Refresh,
-                   CustomCommand,
-                   ShowMenuBar,
-                   ShowToolBar,
-                   ShowStatusBar,
-                   ShowPathBar,
-                   AddTab,
-                   OpenInTab,
-                   Configure,
-                   Properties,
-                   EditPath,
-                   NewWindow,
-                   SortName,
-                   SortSize,
-                   SortDate,
-                   SortType,
-                   SortDescending,
-                   GetFilePath,
-                   GetFileName,
-                   ActionCount
-                 };
-
     MainWindow(const QStringList &arguments = QStringList(), bool autoTab = true);
     ~MainWindow();
     ViewContainer *activeContainer();
-    inline FS::Model *model() { return activeContainer()->model(); }
+    FS::Model *model();
     inline PlacesView *placesView() { return m_placesView; }
     inline QToolBar *toolBar() { return m_toolBar; }
     static ViewContainer *currentContainer();
@@ -117,7 +72,7 @@ public:
     void rightClick(const QString &file, const QPoint &pos) const;
 
 public slots:
-    void addTab(const QUrl &url = QUrl());
+    void addTab(const QUrl &url);
     void addTab(ViewContainer *container, int index = -1);
     void receiveMessage(const QStringList &message);
     void setRootPath(const QString &path);
@@ -135,7 +90,6 @@ protected:
     void writeSettings();
     void setupStatusBar();
     void connectContainer(ViewContainer *container);
-    Actions viewAction(const ViewContainer::View view);
 
 private slots:
     void updateStatusBar(const QUrl &url);

@@ -27,7 +27,6 @@
 
 #include "infowidget.h"
 #include "operations.h"
-#include "filesystemmodel.h"
 #include "config.h"
 
 using namespace DFM;
@@ -176,16 +175,12 @@ InfoWidget::hovered(const QModelIndex &index)
         m_lastMod[0]->setText("Last Modified:");
         m_perm[0]->setText("Permissions:");
     }
-    const FS::Model *fsModel = static_cast<const FS::Model *>(index.model());
-    const QFileInfo i = fsModel->fileInfo(index);
-    m_tw->setPixmap(fsModel->fileIcon(index.sibling(index.row(), 0)).pixmap(64));
-    m_fileName->setText(i.fileName());
-    m_ownerLbl->setText(i.owner());
-    m_typeLbl->setText(index.data(FS::FileType).toString());
-    m_mimeLbl->setText(index.data(FS::MimeType).toString());
-
-    m_lastMod[1]->setText(i.lastModified().toString());
-    const QString &s(index.data(FS::FilePermissions).toString());
-    m_perm[1]->setText(s);
+    m_tw->setPixmap(index.sibling(index.row(), 0).data(FS::FileIconRole).value<QIcon>().pixmap(64));
+    m_fileName->setText(index.data(FS::FileNameRole).toString());
+    m_ownerLbl->setText(index.data(FS::OwnderRole).toString());
+    m_typeLbl->setText(index.data(FS::FileTypeRole).toString());
+    m_mimeLbl->setText(index.data(FS::MimeTypeRole).toString());
+    m_lastMod[1]->setText(index.data(FS::LastModifiedRole).toString());
+    m_perm[1]->setText(index.data(FS::FilePermissionsRole).toString());
     m_sizeLbl->setText(index.sibling(index.row(), 1).data().toString());
 }

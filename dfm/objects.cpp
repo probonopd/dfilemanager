@@ -20,8 +20,8 @@
 
 #include <QTextEdit>
 #include <QMessageBox>
+#include <QScrollBar>
 
-#include "filesystemmodel.h"
 #include "fsworkers.h"
 #include "objects.h"
 #include "application.h"
@@ -101,16 +101,8 @@ FileItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 void
 FileItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
-    QTextEdit *edit = qobject_cast<QTextEdit *>(editor);
-    FS::Model *fsModel = static_cast<FS::Model *>(model);
-    if (!edit||!fsModel)
-        return;
-    FS::Node *node = fsModel->node(index);
-    const QString &newName = edit->toPlainText();
-    if (node->name() == newName)
-        return;
-    if (!node->rename(newName))
-        QMessageBox::warning(edit->window(), "Failed to rename", QString("%1 to %2").arg(node->name(), newName));
+    if (QTextEdit *edit = qobject_cast<QTextEdit *>(editor))
+        model->setData(index, edit->toPlainText());
 }
 
 bool
@@ -136,4 +128,81 @@ FileItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewIt
     int frameWidth = QApplication::style()->pixelMetric(QStyle::PM_DefaultFrameWidth, &textOpt, editor);
     opt.rect = opt.rect.adjusted(-frameWidth, -frameWidth, frameWidth, frameWidth);
     QStyledItemDelegate::updateEditorGeometry(editor, opt, index);
+}
+
+//-------------------------------------------------------------------------------------------
+
+ScrollAnimator::ScrollAnimator(QObject *parent)
+    : QObject(parent)
+    , m_timer(new QTimer(this))
+    , m_up(false)
+    , m_delta(0)
+    , m_step(0)
+{
+    if (!parent)
+    {
+        deleteLater();
+        return;
+    }
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(updateScrollValue()));
+    static_cast<QAbstractScrollArea *>(parent)->viewport()->installEventFilter(this);
+}
+
+void
+ScrollAnimator::manage(QAbstractScrollArea *area)
+{
+    if (!area || area->findChild<ScrollAnimator *>())
+        return;
+    new ScrollAnimator(area);
+}
+
+#define MAXDELTA 80
+
+void
+ScrollAnimator::updateScrollValue()
+{
+
+    if (m_delta > 0)
+    {
+        QScrollBar *bar = static_cast<QAbstractScrollArea *>(parent())->verticalScrollBar();
+        if ((m_up && bar->value() == bar->minimum())
+               || (!m_up && bar->value() == bar->maximum()))
+        {
+            m_delta = 0;
+            m_timer->stop();
+            return;
+        }
+        bar->setValue(bar->value() + (m_up?-m_delta:m_delta));
+        m_delta -= m_step;
+    }
+    else
+    {
+        m_delta = 0;
+        m_timer->stop();
+    }
+}
+
+bool
+ScrollAnimator::processWheelEvent(QWheelEvent *e)
+{
+    if (e->orientation() == Qt::Horizontal)
+        return false;
+    const bool wasUp(m_up);
+    m_up = e->delta() > 0;
+    if (m_up != wasUp)
+        m_delta = 0;
+
+    m_delta+=30;
+    m_step=m_delta/10;
+    if (!m_timer->isActive())
+        m_timer->start(20);
+    return true;
+}
+
+bool
+ScrollAnimator::eventFilter(QObject *o, QEvent *e)
+{
+    if (e->type() == QEvent::Wheel)
+        return processWheelEvent(static_cast<QWheelEvent *>(e));
+    return false;
 }

@@ -18,17 +18,22 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
-
+#include <QMenu>
+#include <QDragMoveEvent>
+#include <QDebug>
+#include <QHeaderView>
+#include <qmath.h>
+#include <QTextEdit>
+#include <QMessageBox>
+#include <QPainter>
+#include "filesystemmodel.h"
+#include "viewcontainer.h"
 #include "detailsview.h"
 #include "viewcontainer.h"
 #include "filesystemmodel.h"
 #include "mainwindow.h"
 #include "config.h"
 #include "objects.h"
-#include <qmath.h>
-#include <QTextEdit>
-#include <QMessageBox>
-#include <QPainter>
 
 using namespace DFM;
 
@@ -60,6 +65,7 @@ DetailsView::DetailsView(QWidget *parent)
     , m_pressPos(QPoint())
     , m_pressedIndex(0)
 {
+    ScrollAnimator::manage(this);
     setItemDelegate(new DetailsDelegate());
     header()->setStretchLastSection(false);
     setUniformRowHeights(true);

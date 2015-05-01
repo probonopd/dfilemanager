@@ -22,6 +22,7 @@
 #include <QProcess>
 #include <QProgressBar>
 #include <QMimeData>
+#include "viewcontainer.h"
 #include "filesystemmodel.h"
 #include "placesview.h"
 #include "iconview.h"
@@ -34,7 +35,6 @@
 #include "dockwidget.h"
 #include "titlewidget.h"
 #include "recentfoldersview.h"
-
 #include "mainwindow.h"
 #include "application.h"
 #include "iojob.h"
@@ -499,19 +499,6 @@ MainWindow::genPlace()
     m_placesView->addPlace(file.fileName(), file.filePath(), FS::FileIconProvider::fileIcon(file));
 }
 
-MainWindow::Actions
-MainWindow::viewAction(const ViewContainer::View view)
-{
-    switch (view)
-    {
-    case ViewContainer::Icon: return IconView;
-    case ViewContainer::Details: return DetailView;
-    case ViewContainer::Columns: return ColumnView;
-    case ViewContainer::Flow: return FlowView;
-    default: return IconView;
-    }
-}
-
 void
 MainWindow::updateFilterBox()
 {
@@ -524,7 +511,7 @@ MainWindow::updateFilterBox()
 void
 MainWindow::checkViewAct()
 {
-    m_actions[viewAction(activeContainer()->currentViewType())]->setChecked(true);
+    m_actions[ViewContainer::viewAction(activeContainer()->currentViewType())]->setChecked(true);
     m_iconSizeSlider->setVisible(activeContainer()->currentViewType() == ViewContainer::Icon);
     emit viewChanged(activeContainer()->currentView());
     updateFilterBox();
@@ -884,10 +871,10 @@ MainWindow::updateIcons()
 #define SETICON(_ICON_) setIcon(IconProvider::icon(_ICON_, m_toolBar->iconSize().height(), fg, Store::config.behaviour.systemIcons))
     m_actions[GoBack]->SETICON(IconProvider::GoBack);
     m_actions[GoForward]->SETICON(IconProvider::GoForward);
-    m_actions[IconView]->SETICON(IconProvider::IconView);
-    m_actions[DetailView]->SETICON(IconProvider::DetailsView);
-    m_actions[ColumnView]->SETICON(IconProvider::ColumnsView);
-    m_actions[FlowView]->SETICON(IconProvider::FlowView);
+    m_actions[Views_Icon]->SETICON(IconProvider::IconView);
+    m_actions[Views_Detail]->SETICON(IconProvider::DetailsView);
+    m_actions[Views_Column]->SETICON(IconProvider::ColumnsView);
+    m_actions[Views_Flow]->SETICON(IconProvider::FlowView);
     m_actions[Configure]->SETICON(IconProvider::Configure);
     m_actions[GoHome]->SETICON(IconProvider::GoHome);
     m_actions[ShowHidden]->SETICON(IconProvider::Hidden);
@@ -957,4 +944,5 @@ MainWindow *MainWindow::currentWindow() { return s_currentWindow; }
 QList<MainWindow *> MainWindow::openWindows() { return s_openWindows; }
 ViewContainer *MainWindow::currentContainer() { return s_currentWindow->activeContainer(); }
 PlacesView *MainWindow::places() { return s_currentWindow->placesView(); }
+FS::Model *MainWindow::model() { return activeContainer()->model(); }
 

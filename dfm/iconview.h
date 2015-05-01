@@ -23,21 +23,11 @@
 #define ICONVIEW_H
 
 #include <QAbstractItemView>
-#include <QApplication>
-#include <QWheelEvent>
-#include <QScrollBar>
-#include <QSettings>
-#include <QPropertyAnimation>
-#include <QTransform>
-
-#include "filesystemmodel.h"
-#include "viewcontainer.h"
 #include "helpers.h"
 
 namespace DFM
 {
 namespace FS{class Model;}
-class ViewContainer;
 class IconView : public QAbstractItemView, public DViewBase
 {
     Q_OBJECT
@@ -92,7 +82,6 @@ signals:
     void opened(const QModelIndex &index);
     
 private slots:
-    void scrollEvent();
     void setGridHeight(int gh);
     void updateIconSize();
     void calculateRects();
@@ -100,13 +89,11 @@ private slots:
     void clear();
     void animatedScrollTo(const int pos);
     void scrollAnimation();
-    void sliderSlided(int value);
     void sizeTimerEvent();
 
 private:
     QPixmap m_pix;
     QSize m_gridSize, m_prevSize;
-    ViewContainer *m_container;
     QStringList m_categories;
     QPoint m_startPos, m_pressPos;
     QList<int> m_allowedSizes;
@@ -114,10 +101,10 @@ private:
     QHash<QString, QRect> m_catRects;
     bool m_slide, m_startSlide, m_hadSelection;
     FS::Model *m_model;
-    QTimer *m_wheelTimer, *m_sizeTimer, *m_layTimer, *m_scrollTimer, *m_resizeTimer;
+    QTimer *m_sizeTimer, *m_layTimer, *m_scrollTimer, *m_resizeTimer;
     QModelIndex m_firstIndex, m_pressedIndex;
     QPixmap m_homePix, m_bgPix[2];
-    int m_delta, m_newSize, m_gridHeight, m_horItems, m_contentsHeight, m_oldSliderVal;
+    int m_newSize, m_gridHeight, m_horItems, m_contentsHeight;
     QList<int> m_scrollValues;
 };
 }

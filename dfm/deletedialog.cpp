@@ -18,62 +18,65 @@
 *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 ***************************************************************************/
 
+#include <QStandardItemModel>
+#include <QListView>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
 
+#include "globals.h"
 #include "deletedialog.h"
-#include "mainwindow.h"
 
 using namespace DFM;
 
 DeleteDialog::DeleteDialog(const QModelIndexList &idxList, QWidget *parent) : QDialog(parent)
 {
-    m_fsModel = MainWindow::currentWindow()->currentContainer()->model();
     setWindowTitle("Careful!");
-    m_vLayout = new QVBoxLayout;
-    m_hLayout = new QHBoxLayout;
-    m_hl = new QHBoxLayout;
-    m_ok = new QPushButton;
-    m_cancel = new QPushButton;
-    m_listView = new QListView;
-    m_model = new QStandardItemModel;
-    m_textLabel = new QLabel;
-    m_pixLabel = new QLabel;
+    QVBoxLayout *vLayout = new QVBoxLayout();
+    QHBoxLayout *hLayout = new QHBoxLayout();
+    QHBoxLayout *hl = new QHBoxLayout();
+    QPushButton *ok = new QPushButton();
+    QPushButton *cancel = new QPushButton();
+    QListView *listView = new QListView();
+    QStandardItemModel *model = new QStandardItemModel();
+    QLabel *textLabel = new QLabel();
+    QLabel *pixLabel = new QLabel();
 
-    m_ok->setText("OK");
-    m_cancel->setText("Cancel");
-    m_listView->setModel(m_model);
-    m_pixLabel->setPixmap(style()->standardIcon(QStyle::SP_MessageBoxWarning).pixmap(32));
-    m_pixLabel->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
+    ok->setText("OK");
+    cancel->setText("Cancel");
+    listView->setModel(model);
+    pixLabel->setPixmap(style()->standardIcon(QStyle::SP_MessageBoxWarning).pixmap(32));
+    pixLabel->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
 
-    m_hLayout->addStretch();
-    m_hLayout->addWidget(m_ok);
-    m_hLayout->addWidget(m_cancel);
-    m_hLayout->addStretch();
-    m_hl->addWidget(m_pixLabel);
-    m_hl->addWidget(m_textLabel);
-    m_vLayout->addLayout(m_hl);
-    m_vLayout->addWidget(m_listView);
-    m_vLayout->addLayout(m_hLayout);
+    hLayout->addStretch();
+    hLayout->addWidget(ok);
+    hLayout->addWidget(cancel);
+    hLayout->addStretch();
+    hl->addWidget(pixLabel);
+    hl->addWidget(textLabel);
+    vLayout->addLayout(hl);
+    vLayout->addWidget(listView);
+    vLayout->addLayout(hLayout);
 
-    setLayout(m_vLayout);
+    setLayout(vLayout);
 
-    connect(m_ok,SIGNAL(released()),this,
-             SLOT(accept()));
-    connect(m_cancel, SIGNAL(released()),this,
-             SLOT(reject()));
+    connect(ok, SIGNAL(released()) ,this, SLOT(accept()));
+    connect(cancel, SIGNAL(released()), this, SLOT(reject()));
 
-    m_model->clear();
-    m_textLabel->clear();
+    model->clear();
+    textLabel->clear();
     if (idxList.count() > 1)
-        m_textLabel->setText("Are you sure you want to delete these " + QString::number(idxList.count()) + " items?");
+        textLabel->setText("Are you sure you want to delete these " + QString::number(idxList.count()) + " items?");
     else
-        m_textLabel->setText("Are you sure you want to delete this item?");
+        textLabel->setText("Are you sure you want to delete this item?");
 
     foreach (const QModelIndex &index, idxList)
     {
-        QStandardItem *item = new QStandardItem(m_fsModel->fileIcon(index), m_fsModel->fileInfo(index).filePath());
+        QStandardItem *item = new QStandardItem(index.data(FS::FileIconRole).value<QIcon>(), index.data(FS::FilePathRole).toString());
         item->setEditable(false);
         item->setSelectable(false);
-        m_model->appendRow(item);
+        model->appendRow(item);
     }
     exec();
 }

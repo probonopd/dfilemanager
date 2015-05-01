@@ -31,11 +31,6 @@
 #include <QStyledItemDelegate>
 
 #include "globals.h"
-#include "filesystemmodel.h"
-
-#if defined(HASMAGIC)
-#include <magic.h>
-#endif
 
 #if  defined(HASSYS)
 #include <sys/statfs.h>

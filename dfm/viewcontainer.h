@@ -23,6 +23,7 @@
 #define VIEWCONTAINER_H
 
 #include <QFrame>
+#include "globals.h"
 
 class QColumnView;
 class QStackedWidget;
@@ -46,6 +47,8 @@ class ViewContainer : public QFrame
     Q_OBJECT
 public:
     enum View { Icon = 0, Details = 1, Columns = 2, Flow = 3 };
+    static Actions viewAction(const View view);
+
     explicit ViewContainer(QWidget *parent = 0);
     ~ViewContainer();
     FS::Model *model();

@@ -77,7 +77,7 @@ PathSeparator::mousePressEvent(QMouseEvent *event)
     for (int i = 0; i < m_fsModel->rowCount(parent); ++i)
     {
         const QModelIndex &child = parent.child(i, 0);
-        const QUrl &url = child.data(FS::Url).toUrl();
+        const QUrl &url = child.data(FS::UrlRole).toUrl();
         const QFileInfo fi(url.toLocalFile());
         if (!fi.isDir())
             continue;

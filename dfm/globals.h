@@ -29,6 +29,51 @@
 namespace DFM
 {
 
+enum Actions { GoBack = 0,
+               GoUp,
+               GoForward,
+               GoHome,
+               Exit,
+               About,
+               AboutQt,
+               AddPlace,
+               RenamePlace,
+               RemovePlace,
+               Views_Icon,
+               Views_Detail,
+               Views_Column,
+               Views_Flow,
+               DeleteSelection,
+               ShowHidden,
+               MkDir,
+               Copy,
+               Cut,
+               Paste,
+               Rename,
+               AddPlaceContainer,
+               SetPlaceIcon,
+               Refresh,
+               CustomCommand,
+               ShowMenuBar,
+               ShowToolBar,
+               ShowStatusBar,
+               ShowPathBar,
+               AddTab,
+               OpenInTab,
+               Configure,
+               Properties,
+               EditPath,
+               NewWindow,
+               SortName,
+               SortSize,
+               SortDate,
+               SortType,
+               SortDescending,
+               GetFilePath,
+               GetFileName,
+               ActionCount
+             };
+
 enum IOTask { CopyTask = 0, MoveTask = 1, RemoveTask = 2 };
 
 enum SearchMode { Filter = 0, Search = 1 };
@@ -42,11 +87,13 @@ enum Roles
     FileIconRole = Qt::DecorationRole,
     FileNameRole = Qt::DisplayRole,
     FilePathRole = Qt::UserRole + 1,
-    FilePermissions = Qt::UserRole + 2,
-    Category = Qt::UserRole + 3,
-    MimeType = Qt::UserRole + 4,
-    FileType = Qt::UserRole + 5,
-    Url = Qt::UserRole + 6
+    FilePermissionsRole = Qt::UserRole + 2,
+    CategoryRole = Qt::UserRole + 3,
+    MimeTypeRole = Qt::UserRole + 4,
+    FileTypeRole = Qt::UserRole + 5,
+    OwnderRole = Qt::UserRole + 6,
+    UrlRole = Qt::UserRole + 7,
+    LastModifiedRole = Qt::UserRole + 8
 };
 }
 

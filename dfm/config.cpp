@@ -80,7 +80,6 @@ Store::readConfiguration()
     config.views.flowSize = settings()->value("flowSize", QByteArray()).toByteArray();
 
     //IconView
-    config.views.iconView.smoothScroll = settings()->value("smoothScroll", false).toBool();
     config.views.iconView.textWidth = settings()->value("textWidth", 16).toInt();
     config.views.iconView.iconSize = settings()->value("iconView.iconSize", 3).toInt();
     config.views.iconView.lineCount = settings()->value("iconView.lineCount", 3).toInt();
@@ -151,7 +150,6 @@ Store::writeConfiguration()
 {
     settings()->setValue("startPath", config.startPath);
     settings()->setValue("docks.lock", config.docks.lock);
-    settings()->setValue("smoothScroll", config.views.iconView.smoothScroll);
     settings()->setValue("showThumbs", config.views.showThumbs);
     settings()->setValue("drawDevUsage", config.behaviour.devUsage);
     settings()->setValue("textWidth", config.views.iconView.textWidth);

@@ -30,6 +30,8 @@
 #include <QWaitCondition>
 #include <QMutex>
 
+class QAbstractScrollArea;
+
 namespace DFM
 {
 
@@ -65,6 +67,27 @@ public:
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
     bool eventFilter(QObject *object, QEvent *event);
     void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+};
+
+class ScrollAnimator : public QObject
+{
+    Q_OBJECT
+public:
+    static void manage(QAbstractScrollArea *area);
+    static ScrollAnimator *instance();
+
+protected:
+    ScrollAnimator(QObject *parent = 0);
+    bool eventFilter(QObject *o, QEvent *e);
+    bool processWheelEvent(QWheelEvent *e);
+
+protected slots:
+    void updateScrollValue();
+
+private:
+    QTimer *m_timer;
+    bool m_up;
+    int m_delta, m_step;
 };
 
 }

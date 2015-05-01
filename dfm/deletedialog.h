@@ -23,33 +23,14 @@
 #define DELETEDIALOG_H
 
 #include <QDialog>
-#include <QStandardItemModel>
-#include <QListView>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QPushButton>
-
-#include <filesystemmodel.h>
 
 namespace DFM
 {
-
-namespace FS{class Model;}
 class DeleteDialog : public QDialog
 {
     Q_OBJECT
 public:
     DeleteDialog(const QModelIndexList &idxList, QWidget *parent = 0);
-    
-private:
-    QStandardItemModel *m_model;
-    QListView *m_listView;
-    QPushButton *m_ok, *m_cancel;
-    QVBoxLayout *m_vLayout;
-    QHBoxLayout *m_hLayout, *m_hl;
-    QLabel *m_textLabel, *m_pixLabel;
-    FS::Model *m_fsModel;
 };
 
 }

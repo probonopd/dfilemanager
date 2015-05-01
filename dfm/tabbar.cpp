@@ -30,6 +30,7 @@
 #include <QStackedWidget>
 #include <QApplication>
 #include <QMimeData>
+#include <QUrl>
 
 #include "mainwindow.h"
 #include "viewcontainer.h"
@@ -40,6 +41,7 @@
 #include "iconprovider.h"
 #include "iojob.h"
 #include "globals.h"
+#include "filesystemmodel.h"
 
 using namespace DFM;
 

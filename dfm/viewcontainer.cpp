@@ -55,17 +55,25 @@ using namespace DFM;
 
 ViewContainer::ViewContainer(QWidget *parent)
     : QFrame(parent)
-    , m_model(new FS::Model(this))
-    , m_viewStack(new QStackedWidget(this))
-    , m_iconView(new IconView(this))
-    , m_columnView(new ColumnView(this))
-    , m_detailsView(new DetailsView(this))
-    , m_flowView(new FlowView(this))
-    , m_navBar(new NavBar(this, m_model))
-    , m_layout(new QVBoxLayout())
+    , m_model(0)
+    , m_viewStack(0)
+    , m_iconView(0)
+    , m_columnView(0)
+    , m_detailsView(0)
+    , m_flowView(0)
+    , m_navBar(0)
+    , m_layout(0)
     , m_myView(Icon)
     , m_back(false)
 {
+    m_model = new FS::Model(this);
+    m_viewStack = new QStackedWidget(this);
+    m_iconView = new IconView(this);
+    m_columnView = new ColumnView(this);
+    m_detailsView = new DetailsView(this);
+    m_flowView = new FlowView(this);
+    m_navBar = new NavBar(this, m_model);
+    m_layout = new QVBoxLayout(this);
     connect(m_model, SIGNAL(finishedWorking()), m_navBar, SLOT(stopAnimating()));
     connect(m_model, SIGNAL(startedWorking()), m_navBar, SLOT(startAnimating()));
 
@@ -254,7 +262,7 @@ ViewContainer::setFilter(const QString &filter)
     m_dirFilter = filter;
     if (QAbstractItemView *v = currentView())
     {
-        if (v->rootIndex().data(FS::Url).toUrl().isLocalFile())
+        if (v->rootIndex().data(FS::UrlRole).toUrl().isLocalFile())
             m_model->setFilter(filter, v->rootIndex().data(FS::FilePathRole).toString());
     }
     else
@@ -267,7 +275,7 @@ ViewContainer::currentFilter() const
 {
     if (QAbstractItemView *v = currentView())
     {
-        if (v->rootIndex().data(FS::Url).toUrl().isLocalFile())
+        if (v->rootIndex().data(FS::UrlRole).toUrl().isLocalFile())
             return m_model->filter(v->rootIndex().data(FS::FilePathRole).toString());
     }
     else
@@ -396,6 +404,20 @@ ViewContainer::genNewTabRequest(const QModelIndex &index)
     if (fi.exists())
         emit newTabRequest(QUrl::fromLocalFile(fi.filePath()));
 }
+
+Actions
+ViewContainer::viewAction(const View view)
+{
+    switch (view)
+    {
+    case ViewContainer::Icon: return Views_Icon;
+    case ViewContainer::Details: return Views_Detail;
+    case ViewContainer::Columns: return Views_Column;
+    case ViewContainer::Flow: return Views_Flow;
+    default: return Views_Icon;
+    }
+}
+
 
 QModelIndex ViewContainer::indexAt(const QPoint &p) const { return currentView()->indexAt(mapFromParent(p)); }
 

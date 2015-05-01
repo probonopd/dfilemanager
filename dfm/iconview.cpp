@@ -31,6 +31,15 @@
 #include <QTextFormat>
 #include <QDesktopServices>
 #include <QPainter>
+#include <QApplication>
+#include <QWheelEvent>
+#include <QScrollBar>
+#include <QSettings>
+#include <QPropertyAnimation>
+#include <QTransform>
+#include <QDebug>
+#include "filesystemmodel.h"
+#include "viewcontainer.h"
 #include "iconview.h"
 #include "viewcontainer.h"
 #include "mainwindow.h"
@@ -298,25 +307,22 @@ private:
 
 IconView::IconView(QWidget *parent)
     : QAbstractItemView(parent)
-    , m_delta(0)
     , m_newSize(0)
     , m_gridHeight(0)
     , m_model(0)
-    , m_oldSliderVal(0)
     , m_horItems(0)
     , m_scrollTimer(new QTimer(this))
     , m_sizeTimer(new QTimer(this))
     , m_layTimer(new QTimer(this))
-    , m_wheelTimer(new QTimer(this))
     , m_resizeTimer(new QTimer(this))
     , m_hadSelection(false)
-    , m_container(static_cast<ViewContainer *>(parent))
-
 {
+    ScrollAnimator::manage(this);
     setItemDelegate(new IconDelegate(this));
     const int iSize = Store::config.views.iconView.iconSize*16;
     setGridHeight(iSize);
     setSelectionMode(QAbstractItemView::ExtendedSelection);
+
     setIconSize(QSize(iSize, iSize));
     updateLayout();
     setEditTriggers(QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
@@ -330,13 +336,11 @@ IconView::IconView(QWidget *parent)
     setSelectionBehavior(QAbstractItemView::SelectRows);
 
     connect(verticalScrollBar(), SIGNAL(valueChanged(int)), viewport(), SLOT(update()));
-    connect(m_wheelTimer, SIGNAL(timeout()), this, SLOT(scrollEvent()));
     connect(this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)));
-    connect(m_container, SIGNAL(settingsChanged()), this, SLOT(correctLayout()));
+    connect(static_cast<ViewContainer *>(parent), SIGNAL(settingsChanged()), this, SLOT(correctLayout()));
     connect(m_sizeTimer, SIGNAL(timeout()), this, SLOT(updateIconSize()));
     connect(m_layTimer, SIGNAL(timeout()), this, SLOT(calculateRects()));
     connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(scrollAnimation()));
-    connect(verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(sliderSlided(int)));
     connect(m_resizeTimer, SIGNAL(timeout()), this, SLOT(sizeTimerEvent()));
 
     m_slide = false;
@@ -344,10 +348,6 @@ IconView::IconView(QWidget *parent)
 
     for (int i = 16; i <= 256; i+=16)
         m_allowedSizes << i;
-
-//    QDir storage(QDesktopServices::storageLocation(QDesktopServices::DataLocation));
-//    if (storage.exists() && storage.isAbsolute())
-//        m_homePix.load(storage.absoluteFilePath("home.png"));
 }
 
 IconView::~IconView()
@@ -355,13 +355,6 @@ IconView::~IconView()
 
 }
 
-void
-IconView::sliderSlided(int value)
-{
-    if (m_pressPos!=QPoint())
-        m_pressPos.setY(m_pressPos.y()+(m_oldSliderVal-value));
-    m_oldSliderVal=value;
-}
 
 void
 IconView::setNewSize(const int size)
@@ -386,30 +379,16 @@ IconView::updateIconSize()
 }
 
 void
-IconView::wheelEvent(QWheelEvent * event)
+IconView::wheelEvent(QWheelEvent *event)
 {
-    if (event->orientation() == Qt::Vertical)
+    if (event->modifiers() & Qt::CTRL)
     {
-        const int numDegrees = event->delta();
-
-        if (event->modifiers() & Qt::CTRL)
-        {
-            MainWindow *mw = MainWindow::window(this);
-            if (QSlider *s = mw->iconSizeSlider())
-                s->setValue(s->value()+(numDegrees>0?1:-1));
-        }
-        else
-        {
-            if (Store::config.views.iconView.smoothScroll)
-            {
-                m_delta += numDegrees;
-                if (!m_wheelTimer->isActive())
-                    m_wheelTimer->start(25);
-            }
-            else
-                verticalScrollBar()->setValue(verticalScrollBar()->value()-(numDegrees));
-        }
+        MainWindow *mw = MainWindow::window(this);
+        if (QSlider *s = mw->iconSizeSlider())
+            s->setValue(s->value()+(event->delta()>0?1:-1));
     }
+    else
+        QAbstractItemView::wheelEvent(event);
     event->accept();
 }
 
@@ -419,27 +398,6 @@ IconView::showEvent(QShowEvent *e)
     QAbstractItemView::showEvent(e);
     updateLayout();
 }
-
-#define MAX 480
-
-void
-IconView::scrollEvent()
-{
-    if (m_delta > MAX)
-        m_delta = MAX;
-    else if (m_delta < -MAX)
-        m_delta = -MAX;
-    if (m_delta != 0)
-        verticalScrollBar()->setValue(verticalScrollBar()->value()-(m_delta/8));
-    if (m_delta > 0) //upwards
-        m_delta -= 30;
-    else if (m_delta < 0) //downwards
-        m_delta += 30;
-    else
-        m_wheelTimer->stop();
-}
-
-#undef MAX
 
 void
 IconView::keyPressEvent(QKeyEvent *event)
@@ -788,17 +746,9 @@ IconView::setModel(QAbstractItemModel *model)
 void
 IconView::setIconWidth(const int width)
 {
-//    float val = 0;
-//    if (verticalScrollBar()->isVisible())
-//        val = (float)verticalScrollBar()->value()/(float)verticalScrollBar()->maximum();
     QAbstractItemView::setIconSize(QSize(width, width));
     setGridHeight(width);
     setGridSize(QSize(gridSize().width(), m_gridHeight));
-//    if (m_firstIndex.isValid() /*&& width == m_newSize */)
-//        scrollTo(m_firstIndex, QAbstractItemView::PositionAtTop);
-//    if (val && verticalScrollBar()->isVisible())
-//        verticalScrollBar()->setValue(verticalScrollBar()->maximum()*val);
-
     updateLayout();
 }
 
@@ -820,8 +770,6 @@ IconView::visualRect(const QString &cat) const
 QModelIndex
 IconView::indexAt(const QPoint &p) const
 {
-    if (m_wheelTimer->isActive()||m_sizeTimer->isActive())
-        return QModelIndex();
     for (int i = 0; i < m_model->rowCount(rootIndex()); ++i)
     {
         const QModelIndex &index(m_model->index(i, 0, rootIndex()));
@@ -952,7 +900,7 @@ IconView::calculateRects()
         }
     }
     m_contentsHeight+=vsz;
-    if (m_contentsHeight>viewport()->height())
+    if (m_contentsHeight > viewport()->height())
         verticalScrollBar()->setRange(0, m_contentsHeight-viewport()->height());
     else
         verticalScrollBar()->setRange(0, -1);

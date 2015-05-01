@@ -73,7 +73,7 @@ typedef struct Config
         QStringList activeThumbIfaces;
         struct iconView
         {
-            bool smoothScroll, categorized;
+            bool categorized;
             int textWidth, iconSize, lineCount, categoryStyle;
         } iconView;
         struct detailsView

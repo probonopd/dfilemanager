@@ -25,6 +25,8 @@
 #include "mainwindow.h"
 #include "icondialog.h"
 #include "dataloader.h"
+#include "viewcontainer.h"
+#include "filesystemmodel.h"
 #include "helpers.h"
 #include <QDateTime>
 #include <QGroupBox>

@@ -52,7 +52,6 @@ public:
     void setRootIndex(const QModelIndex &index);
 
 protected:
-    void wheelEvent(QWheelEvent *e);
     void keyPressEvent(QKeyEvent *e);
     void keyReleaseEvent(QKeyEvent *e);
     void mousePressEvent(QMouseEvent *e);
@@ -63,18 +62,13 @@ protected:
     void resizeEvent(QResizeEvent *e);
     void paintEvent(QPaintEvent *e);
 
-protected slots:
-    void updateScrollValue();
-
 signals:
     void newTabRequest(const QModelIndex &index);
     void opened(const QModelIndex &index);
 
 private:
     QModelIndex m_pressIdx;
-    bool m_hasBeenShown, m_up;
-    QTimer *m_timer;
-    int m_delta;
+    bool m_hasBeenShown;
 };
 
 class ColumnView : public QAbstractItemView

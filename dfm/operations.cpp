@@ -34,6 +34,12 @@
 #include <QClipboard>
 #include <QAbstractItemView>
 #include <QPainter>
+#include "viewcontainer.h"
+#include "filesystemmodel.h"
+
+#if defined(HASMAGIC)
+#include <magic.h>
+#endif
 
 //#include <blkid/blkid.h> //dev block id info... maybe need later
 
@@ -439,7 +445,7 @@ Ops::getPathToClipBoard()
 {
     MainWindow *mw = MainWindow::currentWindow();
     int role = FS::FilePathRole;
-    if (sender() == mw->action(MainWindow::GetFileName))
+    if (sender() == mw->action(GetFileName))
         role = FS::FileNameRole;
     ViewContainer *c = mw->activeContainer();
     FS::Model *m = c->model();

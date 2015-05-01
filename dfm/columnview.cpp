@@ -161,7 +161,7 @@ ColumnView::destroyColumns(const QModelIndex &index)
 void
 ColumnView::open(const QModelIndex &index)
 {
-    if (index.data(FS::FileType).toString() == "directory")
+    if (index.data(FS::FileTypeRole).toString() == "directory")
     {
         destroyColumns(index.parent());
         m_columns << createColumn(index);
@@ -365,58 +365,10 @@ ColumnView::visualRegionForSelection(const QItemSelection &selection) const
 Column::Column(QWidget *parent)
     : QListView(parent)
     , m_hasBeenShown(false)
-    , m_timer(new QTimer(this))
-    , m_up(false)
-    , m_delta(0)
 {
-    connect(m_timer, SIGNAL(timeout()), this, SLOT(updateScrollValue()));
     setSelectionRectVisible(true);
     setUniformItemSizes(true);
-}
-
-static int step(1);
-
-void
-Column::updateScrollValue()
-{
-    if (m_delta > 0)
-    {
-        QScrollBar *bar = verticalScrollBar();
-        if ((m_up && bar->value() == bar->minimum())
-               || (!m_up && bar->value() == bar->maximum()))
-        {
-            m_delta = 0;
-            m_timer->stop();
-            return;
-        }
-        const int delta = m_up ? m_delta : -m_delta;
-        const QPoint pos(bar->mapFromGlobal(QCursor::pos()));
-        QWheelEvent we(pos, delta, Qt::MiddleButton, Qt::NoModifier);
-        QApplication::sendEvent(bar, &we);
-        m_delta -= qBound(1, qRound(m_delta/step), 120);
-    }
-    else
-    {
-        m_delta = 0;
-        m_timer->stop();
-    }
-}
-
-#define MAXDELTA 80
-
-void
-Column::wheelEvent(QWheelEvent *e)
-{
-    const bool wasUp(m_up);
-    m_up = e->delta() > 0;
-    if (m_up != wasUp)
-        m_delta = 0;
-
-    m_delta = qMin(MAXDELTA, m_delta+qAbs(e->delta()/4));
-    step = qMax(10, (MAXDELTA-m_delta+1)/8);
-    if (!m_timer->isActive())
-        m_timer->start(20);
-    e->accept();
+    ScrollAnimator::manage(this);
 }
 
 void
@@ -543,7 +495,7 @@ Column::showEvent(QShowEvent *e)
     if (!m_hasBeenShown)
     {
         bool ok;
-        int width = Ops::getDesktopValue<int>(QDir(rootIndex().data(FS::FilePathRole).toString()), KEY, &ok, rootIndex().data(FS::Url).toUrl().toString());
+        int width = Ops::getDesktopValue<int>(QDir(rootIndex().data(FS::FilePathRole).toString()), KEY, &ok, rootIndex().data(FS::UrlRole).toUrl().toString());
         if (!ok)
             width = Store::config.views.columnsView.colWidth;
         resize(width, height());
@@ -556,7 +508,7 @@ Column::resizeEvent(QResizeEvent *e)
 {
     QListView::resizeEvent(e);
     if (Store::config.views.dirSettings && m_hasBeenShown)
-        Ops::writeDesktopValue<int>(QDir(rootIndex().data(FS::FilePathRole).toString()), KEY, size().width(), rootIndex().data(FS::Url).toUrl().toString());
+        Ops::writeDesktopValue<int>(QDir(rootIndex().data(FS::FilePathRole).toString()), KEY, size().width(), rootIndex().data(FS::UrlRole).toUrl().toString());
     if (e->size().width() != e->oldSize().width())
         static_cast<ColumnView *>(parent())->updateLayout();
 }

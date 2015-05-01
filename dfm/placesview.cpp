@@ -25,6 +25,7 @@
 #include "viewanimator.h"
 #include "mainwindow.h"
 #include "config.h"
+#include "filesystemmodel.h"
 
 #include <QInputDialog>
 #include <QMenu>
@@ -498,6 +499,7 @@ PlacesView::PlacesView(QWidget *parent)
     , m_devManager(0L)
     , m_lastClicked(0L)
 {
+    ScrollAnimator::manage(this);
     setModel(m_model = new PlacesModel(this));
     ViewAnimator::manage(this);
     m_timer->setInterval(1000);

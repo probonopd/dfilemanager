@@ -207,7 +207,6 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
   , m_iconWidth(new QSlider(Qt::Horizontal, this))
   , m_width(new QLabel(this))
   , m_showThumbs(new QGroupBox(tr("Show thumbnails"), this))
-  , m_smoothScroll(new QCheckBox(tr("Smooth scrolling"), this))
   , m_rowPadding(new QSpinBox(this))
   , m_iconSlider(new QSlider(Qt::Horizontal, this))
   , m_size(new QLabel(QString::number(Store::config.views.iconView.iconSize*16) + " px", this))
@@ -219,7 +218,6 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
   , m_colWidth(new QSpinBox(this))
   , m_altRows(new QCheckBox(tr("Render rows with alternating colors"), this))
 {
-    m_smoothScroll->setChecked(Store::config.views.iconView.smoothScroll);
     m_categorized->setChecked(Store::config.views.iconView.categorized);
     m_showThumbs->setChecked(Store::config.views.showThumbs);
     m_singleClick->setChecked(Store::config.views.singleClick);
@@ -267,7 +265,6 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     iconLay->setColumnStretch(1, 50);
 //    iconLay->setColumnStretch(2, 50);
 
-    iconLay->addWidget(m_smoothScroll, ++row, 0, 1, 3, left);
     iconLay->addWidget(m_categorized, ++row, 0, 1, 3, left);
 
     iconLay->addWidget(new QLabel(tr("Default size for icons:"), this), ++row, 0, right);
@@ -391,7 +388,6 @@ SettingsDialog::accept()
 
     Store::config.behaviour.hideTabBarWhenOnlyOneTab = m_behWidget->m_hideTabBar->isChecked();
     Store::config.behaviour.systemIcons = m_behWidget->m_useCustomIcons->isChecked();
-    Store::config.views.iconView.smoothScroll = m_viewWidget->m_smoothScroll->isChecked();
     Store::config.views.showThumbs = m_viewWidget->m_showThumbs->isChecked();
     Store::config.behaviour.devUsage = m_behWidget->m_drawDevUsage->isChecked();
     Store::config.views.iconView.textWidth = m_viewWidget->m_iconWidth->value();
