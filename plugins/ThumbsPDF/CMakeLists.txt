@@ -1,9 +1,13 @@
-set(POPPLER_PATH /usr/include/poppler/qt4 /usr/local/include/poppler/qt4)
-find_library(POPPLER_LIBRARY NAMES poppler-qt4)
-find_file(POPPLER_INCLUDES NAMES poppler-qt4.h PATHS ${POPPLER_PATH})
-find_path(POPPLER_INCLUDE_DIRS NAMES poppler-qt4.h PATHS ${POPPLER_PATH})
-if (NOT QT5BUILD)
-if (POPPLER_LIBRARY AND POPPLER_INCLUDES)
+
+if (QT5BUILD)
+    find_library(POPPLER_LIBRARY NAMES ppoppler-qt5)
+    find_path(POPPLER_INCLUDE_DIRS NAMES qt5/poppler-qt5.h PATH_SUFFIXES poppler)
+else (QT5BUILD)
+    find_library(POPPLER_LIBRARY NAMES ppoppler-qt4)
+    find_path(POPPLER_INCLUDE_DIRS NAMES qt4/poppler-qt4.h PATH_SUFFIXES poppler)
+endif (QT5BUILD)
+
+if (POPPLER_LIBRARY AND POPPLER_INCLUDE_DIRS)
     project(thumbspdfplugin)
     message(STATUS "found poppler library: ${POPPLER_LIBRARY} and header: ${POPPLER_INCLUDES}, building poppler thumbnailing plugin...")
     include_directories(${POPPLER_INCLUDE_DIRS})
@@ -21,4 +25,4 @@ if (POPPLER_LIBRARY AND POPPLER_INCLUDES)
 
     install(TARGETS thumbspdfplugin LIBRARY DESTINATION lib/dfm)
 endif (POPPLER_LIBRARY AND POPPLER_INCLUDES)
-endif (NOT QT5BUILD)
+

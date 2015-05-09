@@ -147,6 +147,7 @@ Application::loadPlugins()
 #else
     QDir pluginsDir("/usr/lib/dfm");
 #endif
+    qDebug() << "attempting to load thumbnailer plugins from" << pluginsDir.path();
     if (!pluginsDir.exists())
     {
         QDir appDir = applicationDirPath();
