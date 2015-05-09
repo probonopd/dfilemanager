@@ -24,6 +24,7 @@
 #include "operations.h"
 #include "config.h"
 #include "application.h"
+#include "interfaces.h"
 #include <QMutexLocker>
 #include <QImageReader>
 #include <QWaitCondition>

@@ -23,14 +23,10 @@
 #define SEARCHBOX_H
 
 #include <QLineEdit>
-#include <QPixmap>
-#include <QDebug>
-#include <QToolButton>
-#include <QTimer>
-
 #include "widgets.h"
 #include "globals.h"
 
+class QTimer;
 namespace DFM
 {
 
@@ -41,8 +37,8 @@ public:
     explicit SearchIndicator(QWidget *parent = 0);
 
 public slots:
-    inline void start() { setVisible(true); m_timer->start(); }
-    inline void stop() { setVisible(false); m_timer->stop(); }
+    void start();
+    void stop();
 
 protected:
     void paintEvent(QPaintEvent *);

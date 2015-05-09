@@ -254,6 +254,18 @@ ColumnView::rowsAboutToBeRemoved(const QModelIndex &parent, int start, int end)
     }
 }
 
+bool
+ColumnView::edit(const QModelIndex &index, EditTrigger trigger, QEvent *event)
+{
+    for (int i = 0; i < m_columns.count(); ++i)
+    {
+        Column *c = m_columns.at(i);
+        if (index.parent() == c->rootIndex())
+            return c->edit(index, trigger, event);
+    }
+    return false;
+}
+
 /*
  * Pure virtual methods
  */
@@ -380,6 +392,8 @@ Column::paintEvent(QPaintEvent *e)
         const QModelIndex &index = model()->index(i, 0, rootIndex());
         QStyleOptionViewItemV4 opt = viewOptions();
         opt.rect = visualRect(index);
+        if (opt.rect.width() > viewport()->width())
+            opt.rect.setWidth(viewport()->width());
         if (!opt.rect.intersects(viewport()->rect()))
             continue;
         if (opt.rect.contains(viewport()->mapFromGlobal(QCursor::pos())))
@@ -541,8 +555,10 @@ Grip::mouseMoveEvent(QMouseEvent *e)
 {
     if (m_x != -1)
     {
+        const QSize size = parentWidget()->size();
         parentWidget()->resize(parentWidget()->width() + (e->globalX()-m_x), parentWidget()->height());
-        m_x = e->globalX();
+        if (size != parentWidget()->size())
+            m_x = e->globalX();
     }
     e->accept();
 }

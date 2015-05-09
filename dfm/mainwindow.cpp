@@ -48,6 +48,7 @@
 #include <QList>
 #include "iconprovider.h"
 #include "pathnavigator.h"
+#include "dataloader.h"
 
 using namespace DFM;
 
@@ -60,15 +61,19 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     , m_menuButton(0)
     , m_menuAction(0)
     , m_tabBar(0)
-    , m_tabWin(new QMainWindow(this))
-    , m_toolBar(new QToolBar(tr("Show ToolBar"), this))
-    , m_statusBar(new StatusBar(this))
+    , m_tabWin(0)
+    , m_toolBar(0)
+    , m_statusBar(0)
+    , m_cut(false)
 { 
+    m_tabWin = new QMainWindow(this);
     addActions(Store::customActions());
     s_openWindows << this;
     s_currentWindow = this;
-    QFrame *center(new QFrame(this));
-    center->setFrameStyle(0/*QFrame::StyledPanel|QFrame::Sunken*/);
+    QFrame *center = new QFrame(this);
+    center->setFrameStyle(0);
+    m_statusBar = new StatusBar(this);
+    m_toolBar = new QToolBar(tr("Show ToolBar"), this);
     m_filterBox = new SearchBox(m_toolBar);
     m_toolBarSpacer = new QWidget(m_toolBar);
     m_sortButton = new QToolButton(m_toolBar);
@@ -94,10 +99,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
 
     m_tabManager = new TabManager(this, m_tabWin);
     m_tabManager->setTabBar(m_tabBar);
-
-    int is = 16;
-    QSize tbs(is, is);
-    m_toolBar->setIconSize(tbs);
+    m_toolBar->setIconSize(QSize(16, 16));
     m_infoDock->setWidget(m_infoWidget);
     m_tabWin->setWindowFlags(0);
     m_placesDock->setWidget(m_placesView);
@@ -105,8 +107,6 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     m_recentDock->setWidget(m_recentFoldersView);
     m_recentDock->setObjectName(tr("Recent Folders"));
     m_infoDock->setObjectName(tr("Information"));
-
-    m_cut = false;
 
     addToolBar(m_toolBar);
     m_toolBar->setObjectName("viewToolBar");

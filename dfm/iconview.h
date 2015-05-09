@@ -56,8 +56,8 @@ protected:
     QRect visualRect(const QModelIndex &index) const;
     QRect visualRect(const QString &cat) const;
     QModelIndex indexAt(const QPoint &p) const;
-    void focusOutEvent(QFocusEvent *event) {m_pressPos=QPoint(); QAbstractItemView::focusOutEvent(event);}
-    void dragMoveEvent(QDragMoveEvent *event) {m_pressPos=QPoint(); QAbstractItemView::dragMoveEvent(event);}
+    void focusOutEvent(QFocusEvent *event);
+    void dragMoveEvent(QDragMoveEvent *event);
     void setIconWidth(const int width);
     inline int iconWidth() const { return iconSize().width(); }
     static bool isCategorized();

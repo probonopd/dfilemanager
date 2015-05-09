@@ -19,7 +19,7 @@
 ***************************************************************************/
 
 #include <QDir>
-
+#include <QTimer>
 #include "devices.h"
 
 using namespace DFM;

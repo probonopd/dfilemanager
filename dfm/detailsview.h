@@ -31,6 +31,7 @@ namespace FS{class Model;}
 class ViewContainer;
 class DetailsView : public QTreeView, public DViewBase
 {
+    friend class FlowView;
     Q_OBJECT
 public:
     explicit DetailsView(QWidget *parent = 0);

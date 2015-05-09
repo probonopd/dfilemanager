@@ -46,6 +46,7 @@ private:
 
 class Column : public QListView, public DViewBase
 {
+    friend class ColumnView;
     Q_OBJECT
 public:
     Column(QWidget *parent = 0);
@@ -93,6 +94,7 @@ protected:
     /*reimplemented virtuals*/
     void resizeEvent(QResizeEvent *e);
     void rowsAboutToBeRemoved(const QModelIndex &parent, int start, int end);
+    bool edit(const QModelIndex &index, EditTrigger trigger, QEvent *event);
 
     /*pure virtuals*/
     int horizontalOffset() const;

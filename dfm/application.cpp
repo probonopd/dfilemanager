@@ -26,6 +26,18 @@
 #include <QDebug>
 #include <QDesktopServices>
 #include <QPluginLoader>
+#include <QLocalServer>
+#include <QLocalSocket>
+#include <QFileSystemWatcher>
+#include <QFile>
+#include <QDir>
+#include <QMap>
+
+#if defined(HASX11)
+#include <QX11Info>
+#endif
+
+#include "interfaces.h"
 
 #if QT_VERSION >= 0x050000
 #include <QStandardPaths>
@@ -48,12 +60,15 @@ Application::Application(int &argc, char *argv[])
     , m_key()
     , m_fsWatcher(0)
     , m_type(Browser)
-    , m_server(new QLocalServer(this))
-    , m_socket(new QLocalSocket(this))
+    , m_server(0)
+    , m_socket(0)
     , m_message(QString("--"))
 {
     if (arguments().contains("--iojob"))
         m_type = IOJob;
+
+    m_server = new QLocalServer(this);
+    m_socket = new QLocalSocket(this);
 
     const QString &key = name[m_type];
     m_socket->connectToServer(key);
@@ -127,7 +142,11 @@ void
 Application::loadPlugins()
 {
 #if defined(ISUNIX)
+#if defined(INSTALL_PREFIX)
+    QDir pluginsDir(QString("%1/lib/dfm").arg(INSTALL_PREFIX));
+#else
     QDir pluginsDir("/usr/lib/dfm");
+#endif
     if (!pluginsDir.exists())
     {
         QDir appDir = applicationDirPath();
@@ -147,7 +166,7 @@ Application::loadPlugins()
 }
 
 void
-Application::loadPluginsFromDir(const QDir dir)
+Application::loadPluginsFromDir(const QDir &dir)
 {
     foreach (const QString &fileName, dir.entryList(QDir::AllEntries|QDir::NoDotAndDotDot))
     {
@@ -199,6 +218,42 @@ Application::deActivateThumbInterface(const QString &name)
             return;
         }
     }
+}
+
+QList<ThumbInterface *>
+Application::thumbIfaces()
+{
+    return m_allThumbIfaces;
+}
+
+QList<ThumbInterface *>
+Application::activeThumbIfaces()
+{
+    return m_thumbIfaces.values();
+}
+
+bool
+Application::hasThumbIfaces()
+{
+    return !m_allThumbIfaces.isEmpty();
+}
+
+bool
+Application::isActive(ThumbInterface *ti)
+{
+    return m_thumbIfaces.contains(ti->name());
+}
+
+void
+Application::activateThumbInterface(ThumbInterface *ti)
+{
+    m_thumbIfaces.insert(ti->name(), ti);
+}
+
+void
+Application::deActivateThumbInterface(ThumbInterface *ti)
+ {
+    m_thumbIfaces.remove(ti->name());
 }
 
 #if defined(HASX11)

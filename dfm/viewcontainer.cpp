@@ -36,6 +36,7 @@
 #include "iconview.h"
 #include "detailsview.h"
 #include "flowview.h"
+#include "flow.h"
 #include "filesystemmodel.h"
 #include "pathnavigator.h"
 #include "operations.h"
@@ -65,6 +66,7 @@ ViewContainer::ViewContainer(QWidget *parent)
     , m_layout(0)
     , m_myView(Icon)
     , m_back(false)
+    , m_currentView(0)
 {
     m_model = new FS::Model(this);
     m_viewStack = new QStackedWidget(this);
@@ -99,7 +101,7 @@ ViewContainer::ViewContainer(QWidget *parent)
     connect(m_flowView->flow(), SIGNAL(centerIndexChanged(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
     connect(m_model, SIGNAL(sortingChanged(int,int)), this, SIGNAL(sortingChanged(int,int)));
 
-    foreach (QAbstractItemView *v, QList<QAbstractItemView *>() << m_iconView << m_detailsView << m_columnView << m_flowView->detailsView())
+    foreach (QAbstractItemView *v, QList<QAbstractItemView *>() << m_iconView << m_detailsView << m_columnView << m_flowView)
     {
         v->setMouseTracking(true);
         connect(v, SIGNAL(entered(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
@@ -151,7 +153,7 @@ void ViewContainer::setModel(FS::Model *model) { VIEWS(setModel(model)); }
 QList<QAbstractItemView *>
 ViewContainer::views()
 {
-    return QList<QAbstractItemView *>() << m_iconView << m_detailsView << m_columnView << m_flowView->detailsView();
+    return QList<QAbstractItemView *>() << m_iconView << m_detailsView << m_columnView << m_flowView;
 }
 
 void
@@ -177,6 +179,7 @@ ViewContainer::setView(const View view, bool store)
         m_viewStack->setCurrentWidget(m_columnView);
     else if (view == Flow)
         m_viewStack->setCurrentWidget(m_flowView);
+    m_currentView = static_cast<QAbstractItemView *>(m_viewStack->currentWidget());
     emit viewChanged();
 
 #if defined(ISUNIX)
@@ -246,14 +249,8 @@ void ViewContainer::refresh() { m_model->refresh(); }
 void
 ViewContainer::rename()
 {
-    switch (m_myView)
-    {
-    case Icon : m_iconView->edit(m_iconView->currentIndex()); break;
-    case Details : m_detailsView->edit(m_detailsView->currentIndex()); break;
-    case Columns : m_columnView->edit(m_columnView->currentIndex()); break;
-    case Flow : m_flowView->detailsView()->edit(m_flowView->detailsView()->currentIndex()); break;
-    default: break;
-    }
+    if (m_currentView)
+        m_currentView->edit(m_currentView->currentIndex());
 }
 
 void
@@ -308,30 +305,11 @@ ViewContainer::deleteCurrentSelection()
     if (delUs.isEmpty())
         return;
 
-    if (DeleteDialog(delUs).result() == 0)
+    if (DeleteDialog(delUs).result() == QDialog::Rejected)
         return;
 
     if (!delList.isEmpty())
         IO::Manager::remove(delList);
-}
-
-void
-ViewContainer::scrollToSelection()
-{
-    if(m_selectModel->selectedIndexes().isEmpty())
-    {
-        m_iconView->scrollToTop();
-        m_detailsView->scrollToTop();
-        m_columnView->scrollToTop();
-        m_flowView->detailsView()->scrollToTop();
-    }
-    else
-    {
-        m_iconView->scrollTo(m_selectModel->selectedIndexes().first());
-        m_detailsView->scrollTo(m_selectModel->selectedIndexes().first());
-        m_columnView->scrollTo(m_selectModel->selectedIndexes().first());
-        m_flowView->detailsView()->scrollTo(m_selectModel->selectedIndexes().first());
-    }
 }
 
 void
@@ -379,9 +357,7 @@ ViewContainer::createDirectory()
 QAbstractItemView
 *ViewContainer::currentView() const
 {
-    if (m_myView != Flow)
-        return static_cast<QAbstractItemView *>(m_viewStack->currentWidget());
-    return static_cast<QAbstractItemView *>(m_flowView->detailsView());
+    return m_currentView;
 }
 
 //void

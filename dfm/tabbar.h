@@ -32,6 +32,7 @@ class QToolButton;
 namespace DFM
 {
 class MainWindow;
+class ViewContainer;
 
 class WindowFrame : public QWidget
 {
@@ -204,7 +205,7 @@ public:
 
     inline TabBar *tabBar() { return m_tabBar; }
     void setTabBar(TabBar *tabBar);
-    int addTab(ViewContainer *c,const QIcon& icon = QIcon(), const QString &text = QString());
+    int addTab(ViewContainer *c, const QIcon& icon = QIcon(), const QString &text = QString());
     int insertTab(int index, ViewContainer *c, const QIcon& icon = QIcon(), const QString &text = QString());
     ViewContainer *forTab(const int tab);
     ViewContainer *takeTab(const int tab);

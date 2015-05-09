@@ -19,6 +19,10 @@
 ***************************************************************************/
 
 
+#include <QPixmap>
+#include <QDebug>
+#include <QToolButton>
+#include <QTimer>
 #include "searchbox.h"
 #include "iconprovider.h"
 #include "config.h"
@@ -78,6 +82,20 @@ SearchIndicator::animate()
     else
         --m_step;
     update();
+}
+
+void
+SearchIndicator::start()
+{
+    setVisible(true);
+    m_timer->start();
+}
+
+void
+SearchIndicator::stop()
+{
+    setVisible(false);
+    m_timer->stop();
 }
 
 //--------------------------------------------------------------------------

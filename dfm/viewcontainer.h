@@ -85,7 +85,6 @@ protected:
     void leaveEvent(QEvent *) { emit leftView(); }
     void setModel(FS::Model *model);
     void setSelectionModel(QItemSelectionModel *selectionModel);
-    void scrollToSelection();
 
 signals:
     void viewChanged();
@@ -127,6 +126,7 @@ private:
     QItemSelectionModel *m_selectModel;
     NavBar *m_navBar;
     QVBoxLayout *m_layout;
+    QAbstractItemView *m_currentView;
 };
 
 }

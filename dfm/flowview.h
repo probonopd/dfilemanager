@@ -22,32 +22,24 @@
 #ifndef FLOWVIEW_H
 #define FLOWVIEW_H
 
-#include <QWidget>
-#include <QSplitter>
-#include <QVBoxLayout>
-#include <QSettings>
+#include <QAbstractItemView>
 
-#include <QGraphicsView>
-#include <QGraphicsScene>
-#include <QGraphicsEffect>
-#include <QGraphicsPixmapItem>
-
-#include "filesystemmodel.h"
-#include "detailsview.h"
-#include "flow.h"
-
+class QModelIndex;
+class QSplitter;
+class QItemSelectionModel;
+class QItemSelection;
 namespace DFM
 {
 class Flow;
 class DetailsView;
-class FlowView : public QWidget
+namespace FS{class Model;}
+class FlowView : public QAbstractItemView
 {
     Q_OBJECT
 public:
     explicit FlowView(QWidget *parent = 0);
     ~FlowView();
     void setModel(FS::Model *model);
-    QModelIndex rootIndex();
     QModelIndex currentIndex();
     void addActions(QList<QAction *> actions);
     inline DetailsView *detailsView() { return m_dView; }
@@ -55,9 +47,32 @@ public:
     FS::Model *model();
     inline QSplitter *splitter() { return m_splitter; }
     void setSelectionModel(QItemSelectionModel *selectionModel);
+    void scrollToTop();
+    void scrollToBottom();
+
+    /*pure virtuals*/
+    QModelIndex indexAt(const QPoint &point) const;
+    void scrollTo(const QModelIndex & index, ScrollHint hint = EnsureVisible);
+    QRect visualRect(const QModelIndex &index) const;
 
 public slots:
     void setRootIndex(const QModelIndex &rootIndex);
+
+signals:
+    void newTabRequest(const QModelIndex &index);
+    void opened(const QModelIndex &index);
+
+protected:
+    void resizeEvent(QResizeEvent *e);
+    bool edit(const QModelIndex &index, EditTrigger trigger, QEvent *event);
+
+    /*pure virtuals*/
+    int horizontalOffset() const;
+    int verticalOffset() const;
+    bool isIndexHidden(const QModelIndex &index) const;
+    QModelIndex moveCursor(CursorAction cursorAction, Qt::KeyboardModifiers modifiers);
+    void setSelection(const QRect & rect, QItemSelectionModel::SelectionFlags flags);
+    QRegion visualRegionForSelection(const QItemSelection &selection) const;
 
 private slots:
     void flowCurrentIndexChanged(const QModelIndex &index);

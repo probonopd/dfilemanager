@@ -29,9 +29,22 @@
 #include <qmath.h>
 #include <QTransform>
 #include <QRegion>
+#include <QGraphicsSimpleTextItem>
+#include <QGraphicsItemAnimation>
+#include <QGraphicsDropShadowEffect>
+#include <QGraphicsProxyWidget>
+#include <QGraphicsEffect>
+#include <QItemSelectionModel>
+#include <QHash>
+#include <QMouseEvent>
+#include <QGLWidget>
+#include <QList>
+#include <QTimeLine>
 
 #include "operations.h"
 #include "flow.h"
+#include "filesystemmodel.h"
+#include "dataloader.h"
 
 using namespace DFM;
 
@@ -805,6 +818,24 @@ Flow::scrollBarMoved(const int value)
 {
     if (m_items.count())
         showCenterIndex(m_model->index(qBound(0, value, m_items.count()), 0, m_rootIndex));
+}
+
+void
+Flow::setSelectionModel(QItemSelectionModel *model)
+{
+    m_selectionModel = model;
+}
+
+void
+Flow::animateCenterIndex(const QModelIndex &index)
+{
+    m_scrollBar->setValue(index.row());
+}
+
+bool
+Flow::isAnimating()
+{
+    return bool(m_timeLine->state() == QTimeLine::Running);
 }
 
 //-----------------------------------------------------------------------------

@@ -22,29 +22,21 @@
 #ifndef FLOW_H
 #define FLOW_H
 
-#include <QGraphicsView>
+#include <QScrollBar>
 #include <QGraphicsScene>
 #include <QGraphicsPixmapItem>
-#include <QGraphicsSimpleTextItem>
-#include <QGraphicsItemAnimation>
-#include <QGraphicsDropShadowEffect>
-#include <QGraphicsProxyWidget>
-#include <QGraphicsEffect>
-#include <QItemSelectionModel>
-#include <QHash>
-#include <QMouseEvent>
-#include <QGLWidget>
-#include <QScrollBar>
-#include <QList>
-#include <QTimeLine>
-
-#include "filesystemmodel.h"
-#include "dataloader.h"
+#include <QGraphicsView>
+#include <QQueue>
 #include "objects.h"
 
+class QModelIndex;
+class QPersistentModelIndex;
+class QItemSelectionModel;
+class QGraphicsItemAnimation;
+class QTimeLine;
 namespace DFM
 {
-
+namespace FS{class Model;}
 #define SIZE 258.0f
 #define RECT QRectF(0.0f, 0.0f, SIZE, SIZE)
 class Flow;
@@ -114,7 +106,6 @@ private:
     float m_rotate, m_savedX;
     bool m_isDirty;
     QPainterPath m_shape;
-    mutable QMutex m_mutex;
     friend class Flow;
     friend class FlowDataLoader;
 };
@@ -131,13 +122,12 @@ public:
     explicit Flow(QWidget *parent = 0);
     ~Flow();
     void setModel(FS::Model *model);
-    inline void setSelectionModel(QItemSelectionModel *model) { m_selectionModel = model; }
+    void setSelectionModel(QItemSelectionModel *model);
     void setCenterIndex(const QModelIndex &index);
     void showCenterIndex(const QModelIndex &index);
-    inline void animateCenterIndex(const QModelIndex &index) { m_scrollBar->setValue(index.row()); }
-    inline FS::Model *model() { return m_model; }
+    void animateCenterIndex(const QModelIndex &index);
     QModelIndex indexOfItem(PixmapItem *item);
-    inline bool isAnimating() { return bool(m_timeLine->state() == QTimeLine::Running); }
+    bool isAnimating();
     
 signals:
     void centerIndexChanged(const QModelIndex &centerIndex);

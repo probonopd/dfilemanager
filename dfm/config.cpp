@@ -26,6 +26,7 @@
 #include "operations.h"
 #include <QDir>
 #include <QProcess>
+#include <QTextStream>
 
 using namespace DFM;
 

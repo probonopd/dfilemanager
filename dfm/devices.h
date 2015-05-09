@@ -22,9 +22,7 @@
 #ifndef DEVICES_H
 #define DEVICES_H
 
-#include <QObject>
 #include <QMap>
-#include <QTimer>
 #include "operations.h"
 
 #if defined(HASSOLID)

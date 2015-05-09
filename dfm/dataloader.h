@@ -22,16 +22,6 @@
 #ifndef DATALOADER_H
 #define DATALOADER_H
 
-#include <QObject>
-#include <QThread>
-#include <QModelIndex>
-#include <QDebug>
-#include <QAbstractItemView>
-#include <QFile>
-#include <QDir>
-#include <QEvent>
-#include <QMutex>
-#include <QQueue>
 #include "objects.h"
 #include "helpers.h"
 

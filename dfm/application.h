@@ -23,25 +23,7 @@
 #define APPLICATION_H
 
 #include <QApplication>
-#include <QSharedMemory>
-#include <QLocalServer>
-#include <QLocalSocket>
-#include <QFileSystemWatcher>
-#include <QFile>
-#include <QDir>
 #include <QMap>
-#if 0
-#include <QMainWindow>
-#include "dockwidget.h"
-#include "placesview.h"
-#include "config.h"
-#endif
-
-#if defined(HASX11)
-#include <QX11Info>
-#endif
-
-#include "interfaces.h"
 #include "globals.h"
 
 //#include <GL/glut.h>
@@ -52,6 +34,11 @@
 #define SEP "#PATHSEP#"
 #define CSEP "#SEPARATOR#"
 
+class ThumbInterface;
+class QDir;
+class QFileSystemWatcher;
+class QLocalSocket;
+class QLocalServer;
 class Application : public QApplication
 {
     Q_OBJECT
@@ -60,18 +47,18 @@ public:
     explicit Application(int &argc, char *argv[]); /*: QApplication(argc, argv) {}*/
     inline bool isRunning() { return m_isRunning; }
     void setMessage(QStringList message, const QString &serverName = QString());
-    QList<ThumbInterface *> thumbIfaces() { return m_allThumbIfaces; }
-    QList<ThumbInterface *> activeThumbIfaces() { return m_thumbIfaces.values(); }
-    inline bool hasThumbIfaces() { return !m_allThumbIfaces.isEmpty(); }
-    inline bool isActive(ThumbInterface *ti) { return m_thumbIfaces.contains(ti->name()); }
-    inline void activateThumbInterface(ThumbInterface *ti) { m_thumbIfaces.insert(ti->name(), ti); }
+    QList<ThumbInterface *> thumbIfaces();
+    QList<ThumbInterface *> activeThumbIfaces();
+    bool hasThumbIfaces();
+    bool isActive(ThumbInterface *ti);
+    void activateThumbInterface(ThumbInterface *ti);
     void activateThumbInterface(const QString &name);
-    inline void deActivateThumbInterface(ThumbInterface *ti) { m_thumbIfaces.remove(ti->name()); }
+    void deActivateThumbInterface(ThumbInterface *ti);
     void deActivateThumbInterface(const QString &name);
     Type appType() { return m_type; }
 
     void loadPlugins();
-    void loadPluginsFromDir(const QDir dir);
+    void loadPluginsFromDir(const QDir &dir);
 
 //    bool notify(QObject * receiver, QEvent * event);
 

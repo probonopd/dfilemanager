@@ -28,13 +28,12 @@
 
 #include <QWidget>
 #include <QStatusBar>
-#include <QHBoxLayout>
 #include <QIcon>
-#include <QMenu>
-#include <QTimer>
-#include <QLabel>
-#include <QToolBar>
 
+class QMenu;
+class QHBoxLayout;
+class QLabel;
+class QTimer;
 namespace DFM
 {
 
@@ -81,7 +80,7 @@ public:
     explicit StatusBar(QWidget *parent = 0);
     void addLeftWidget(QWidget *widget);
     void addRightWidget(QWidget *widget);
-    void setMessage(const QString &message) { m_messageLbl->setText(message); }
+    void setMessage(const QString &message);
 
 protected:
 //    void paintEvent(QPaintEvent *){}

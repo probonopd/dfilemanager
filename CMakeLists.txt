@@ -74,6 +74,8 @@ else (QT5BUILD)
      endif (SOLID_LIBRARY)
 endif (QT5BUILD)
 
+add_definitions(-DINSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
+
 if (UNIX)
     add_definitions(-DISUNIX)
 elseif (WIN32)

@@ -21,6 +21,7 @@
 #include <QTextEdit>
 #include <QMessageBox>
 #include <QScrollBar>
+#include <QTimer>
 
 #include "fsworkers.h"
 #include "objects.h"
@@ -185,14 +186,14 @@ ScrollAnimator::updateScrollValue()
 bool
 ScrollAnimator::processWheelEvent(QWheelEvent *e)
 {
-    if (e->orientation() == Qt::Horizontal)
+    if (e->orientation() == Qt::Horizontal || e->modifiers())
         return false;
     const bool wasUp(m_up);
     m_up = e->delta() > 0;
     if (m_up != wasUp)
         m_delta = 0;
 
-    m_delta+=30;
+    m_delta+=10;
     m_step=m_delta/10;
     if (!m_timer->isActive())
         m_timer->start(20);

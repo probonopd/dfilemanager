@@ -393,6 +393,20 @@ IconView::wheelEvent(QWheelEvent *event)
 }
 
 void
+IconView::dragMoveEvent(QDragMoveEvent *event)
+{
+     m_pressPos=QPoint();
+     QAbstractItemView::dragMoveEvent(event);
+}
+
+void
+IconView::focusOutEvent(QFocusEvent *event)
+{
+    m_pressPos=QPoint();
+    QAbstractItemView::focusOutEvent(event);
+}
+
+void
 IconView::showEvent(QShowEvent *e)
 {
     QAbstractItemView::showEvent(e);
@@ -468,10 +482,6 @@ IconView::mouseMoveEvent(QMouseEvent *event)
             hasCount = true;
             m_hadSelection = false;
             QItemSelectionModel::SelectionFlags command = selectionCommand(index, event);
-//            if (command.testFlag(QItemSelectionModel::Toggle))
-//            {
-//                command &= ~QItemSelectionModel::Toggle;
-//            }
             setSelection(selectRect, command);
             if (index.isValid() && (index != selectionModel()->currentIndex()))
                 selectionModel()->setCurrentIndex(index, QItemSelectionModel::NoUpdate);

@@ -22,6 +22,12 @@
 #include <QPainter>
 #include <QMouseEvent>
 #include <QDebug>
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QMenu>
+#include <QTimer>
+#include <QLabel>
+#include <QToolBar>
 #include "widgets.h"
 #include "iconprovider.h"
 
@@ -205,4 +211,10 @@ void
 StatusBar::resizeEvent(QResizeEvent *e)
 {
     m_viewport->resize(e->size());
+}
+
+void
+StatusBar::setMessage(const QString &message)
+{
+    m_messageLbl->setText(message);
 }
