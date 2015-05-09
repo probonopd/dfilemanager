@@ -58,7 +58,6 @@ bool
 ThumbsImages::thumb(const QString &file, const QString &mime, QImage &thumb, const int size)
 {
     Q_UNUSED(mime);
-//    QImageReader ir(file);
     static QImageReader ir;
     ir.setFileName(file);
     if (!ir.canRead())
