@@ -73,11 +73,14 @@ DMimeProvider::getFileType(const QString &file) const
 void
 DFM::DViewBase::keyPressEvent(QKeyEvent *ke)
 {
-    SearchBox *searchBox = DFM::MainWindow::currentWindow()->searchBox();
-    if (!ke->text().isEmpty() && !ke->modifiers() && ke->key() != Qt::Key_Escape)
+    if (DFM::MainWindow *mw = DFM::MainWindow::currentWindow())
     {
-        searchBox->setMode(Filter);
-        searchBox->setText(QString("%1%2").arg(searchBox->text(), ke->text()));
-        searchBox->setFocus();
+        SearchBox *searchBox = mw->searchBox();
+        if (!ke->text().isEmpty() && !ke->modifiers() && ke->key() != Qt::Key_Escape)
+        {
+            searchBox->setMode(Filter);
+            searchBox->setText(QString("%1%2").arg(searchBox->text(), ke->text()));
+            searchBox->setFocus();
+        }
     }
 }

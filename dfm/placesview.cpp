@@ -524,10 +524,10 @@ PlacesView::PlacesView(QWidget *parent)
     setAnimated(true);
     setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 
-    connect (this, SIGNAL(changed()), this, SLOT(store()));
-    connect (this, SIGNAL(clicked(QModelIndex)), this, SLOT(emitPath(QModelIndex)));
-    connect (m_timer, SIGNAL(timeout()), this, SLOT(updateAllWindows()));
-    connect (MainWindow::currentWindow(), SIGNAL(settingsChanged()), viewport(), SLOT(update()));
+    connect(this, SIGNAL(changed()), this, SLOT(store()));
+    connect(this, SIGNAL(clicked(QModelIndex)), this, SLOT(emitPath(QModelIndex)));
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(updateAllWindows()));
+    connect(MainWindow::currentWindow(), SIGNAL(settingsChanged()), viewport(), SLOT(update()));
     QTimer::singleShot(0, this, SLOT(paletteOps()));
 }
 

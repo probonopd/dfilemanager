@@ -66,10 +66,10 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     , m_statusBar(0)
     , m_cut(false)
 { 
-    m_tabWin = new QMainWindow(this);
-    addActions(Store::customActions());
     s_openWindows << this;
     s_currentWindow = this;
+    m_tabWin = new QMainWindow(this);
+
     QFrame *center = new QFrame(this);
     center->setFrameStyle(0);
     m_statusBar = new StatusBar(this);
@@ -122,6 +122,7 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     connect(m_tabManager, SIGNAL(currentTabChanged(int)), this, SLOT(currentTabChanged(int)));
     connect(m_tabManager, SIGNAL(tabCloseRequested(int)), this, SLOT(tabCloseRequest(int)));
 
+    addActions(Store::customActions());
     createActions();
     createMenus();
     createToolBars();
@@ -181,8 +182,6 @@ MainWindow::MainWindow(const QStringList &arguments, bool autoTab)
     if (activeContainer())
         activeContainer()->setFocus();
     m_statusBar->setVisible(m_actions[ShowStatusBar]->isChecked());
-//    foreach (QAction *a, m_toolBar->actions())
-//        connect(a, SIGNAL(changed()), this, SLOT(updateIcons()));
     m_toolBar->installEventFilter(this);
     QTimer::singleShot(0, this, SLOT(updateIcons()));
 }

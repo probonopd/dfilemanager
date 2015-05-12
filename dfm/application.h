@@ -24,27 +24,26 @@
 
 #include <QApplication>
 #include <QMap>
+#include <QList>
 #include "globals.h"
 
-//#include <GL/glut.h>
-
 #define dApp static_cast<Application*>(QApplication::instance())
-#define MAINWINDOW static_cast<DFM::MainWindow*>(dApp->mainWindow())
-#define DPY QX11Info::display()
+//#define DPY QX11Info::display()
 #define SEP "#PATHSEP#"
 #define CSEP "#SEPARATOR#"
 
 class ThumbInterface;
 class QDir;
-class QFileSystemWatcher;
 class QLocalSocket;
 class QLocalServer;
+class QString;
+
 class Application : public QApplication
 {
     Q_OBJECT
 public:
     enum Type { Browser = 0, IOJob = 1 };
-    explicit Application(int &argc, char *argv[]); /*: QApplication(argc, argv) {}*/
+    Application(int &argc, char *argv[]);
     inline bool isRunning() { return m_isRunning; }
     void setMessage(QStringList message, const QString &serverName = QString());
     QList<ThumbInterface *> thumbIfaces();
@@ -55,7 +54,7 @@ public:
     void activateThumbInterface(const QString &name);
     void deActivateThumbInterface(ThumbInterface *ti);
     void deActivateThumbInterface(const QString &name);
-    Type appType() { return m_type; }
+    inline Type appType() { return m_type; }
 
     void loadPlugins();
     void loadPluginsFromDir(const QDir &dir);
@@ -69,15 +68,14 @@ private slots:
     void newServerConnection();
     void socketConnected();
 
+#if defined(HASX11)
 #if 0
     inline void manageDock(DFM::Docks::DockWidget *dock) { m_docks << dock; }
     inline void setMainWindow(QMainWindow *mainWin) { m_mainWindow = mainWin; }
     inline QMainWindow *mainWindow() { return m_mainWindow; }
     inline void setPlacesView(DFM::PlacesView *places) { m_places = places; }
     inline DFM::PlacesView *placesView() { return m_places; }
-#endif
-#if defined(HASX11)
-#if 0
+
 protected:
     bool x11EventFilter(XEvent *xe);
 #endif
@@ -86,7 +84,6 @@ protected:
 private:
     Type m_type;
     bool m_isRunning;
-    QFileSystemWatcher *m_fsWatcher;
     QString m_key, m_message;
     QMap<QString, ThumbInterface *> m_thumbIfaces;
     QList<ThumbInterface *> m_allThumbIfaces;

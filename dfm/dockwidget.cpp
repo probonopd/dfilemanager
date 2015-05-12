@@ -30,7 +30,6 @@ using namespace Docks;
 
 DockWidget::DockWidget(QWidget *parent, const QString &title, const Qt::WindowFlags &flags, const Pos &pos)
     : QDockWidget(title, parent, flags)
-    , m_mainWindow(MainWindow::currentWindow())
 //    , m_margin(0)
 //    , m_titleWidget(new TitleWidget(this, title, pos))
     , m_position(pos)
@@ -140,6 +139,7 @@ case Bottom:
 QRegion
 DockWidget::shape() const
 {
+#if 0
     int h = m_position < Bottom ? m_mainWindow->height()-32 : height(), w = width();
     QRegion mask;
     switch (m_position)
@@ -161,6 +161,9 @@ DockWidget::shape() const
         break;
     }
     return mask;
+#else
+    return QRegion();
+#endif
 }
 
 bool

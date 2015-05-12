@@ -499,7 +499,8 @@ void
 Column::contextMenuEvent(QContextMenuEvent *e)
 {
     const QString &file = indexAt(e->pos()).data(FS::FilePathRole).toString();
-    MainWindow::currentWindow()->rightClick(file, e->globalPos());
+    if (MainWindow *mw = MainWindow::currentWindow())
+        mw->rightClick(file, e->globalPos());
 }
 
 void

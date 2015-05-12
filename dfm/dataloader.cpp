@@ -41,7 +41,7 @@ DDataLoader::DDataLoader(QObject *parent) :
     DThread(parent),
     m_extent(256)
 {
-    connect(dApp,SIGNAL(aboutToQuit()),this,SLOT(discontinue()));
+    connect(dApp, SIGNAL(aboutToQuit()), this, SLOT(discontinue()));
     start();
 }
 
@@ -49,7 +49,7 @@ DDataLoader
 *DDataLoader::instance()
 {
     if (!s_instance)
-        s_instance = new DDataLoader(dApp);
+        s_instance = new DDataLoader();
     return s_instance;
 }
 

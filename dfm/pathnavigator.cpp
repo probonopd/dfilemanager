@@ -105,7 +105,8 @@ Menu::mousePressEvent(QMouseEvent *e)
         e->accept();
         QAction *action = qobject_cast<QAction *>(actionAt(e->pos()));
         const QUrl &path = action->property("url").toUrl();
-        MainWindow::currentWindow()->addTab(path);
+        if (MainWindow *mw = MainWindow::currentWindow())
+            mw->addTab(path);
     }
     else
         e->accept();
@@ -275,7 +276,8 @@ NavButton::mouseReleaseEvent(QMouseEvent *e)
     {
         m_hasPress = false;
         e->accept();
-        MainWindow::currentWindow()->addTab(m_url);
+        if (MainWindow *mw = MainWindow::currentWindow())
+            mw->addTab(m_url);
     }
     else
         e->accept();

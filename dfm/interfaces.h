@@ -24,7 +24,6 @@
 
 
 #include <QtPlugin>
-#include <QImage>
 
 class QImage;
 class QString;

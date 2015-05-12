@@ -2,6 +2,8 @@
 #include <QImageReader>
 #include <QFileInfo>
 #include <QDebug>
+#include <QStringList>
+#include <QImage>
 
 #if defined(HASEXIV)
 #include <exiv2/exiv2.hpp>

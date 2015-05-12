@@ -58,9 +58,6 @@ private slots:
     void postConstructorJobs();
 
 private:
-    QWidget *m_mainWindow;
-//    int m_margin;
-//    TitleWidget *m_titleWidget;
     Pos m_position;
     QTimer *m_timer;
     int m_animStep;

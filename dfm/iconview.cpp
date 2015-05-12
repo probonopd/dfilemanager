@@ -725,10 +725,11 @@ IconView::updateLayout()
 }
 
 void
-IconView::contextMenuEvent(QContextMenuEvent *event)
+IconView::contextMenuEvent(QContextMenuEvent *e)
 {
-    const QString &file = indexAt(event->pos()).data(FS::FilePathRole).toString();
-    MainWindow::currentWindow()->rightClick(file, event->globalPos());
+    const QString &file = indexAt(e->pos()).data(FS::FilePathRole).toString();
+    if (MainWindow *mw = MainWindow::currentWindow())
+        mw->rightClick(file, e->globalPos());
 }
 
 

@@ -444,6 +444,8 @@ void
 Ops::getPathToClipBoard()
 {
     MainWindow *mw = MainWindow::currentWindow();
+    if (!mw)
+        return;
     int role = FS::FilePathRole;
     if (sender() == mw->action(GetFileName))
         role = FS::FileNameRole;

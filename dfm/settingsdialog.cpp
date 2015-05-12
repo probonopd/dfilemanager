@@ -419,7 +419,8 @@ SettingsDialog::accept()
     Store::settings()->setValue("behaviour.gayWindow.windowsStyle", (bool)m_behWidget->m_layOrder->currentIndex());
 //    Store::settings()->setValue("behaviour.gayWindow.invertedColors", ???);
 
-    MainWindow::currentWindow()->updateConfig();
+    if (MainWindow *mw = MainWindow::currentWindow())
+        mw->updateConfig();
 
     QDialog::accept();
 }

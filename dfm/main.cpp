@@ -31,7 +31,6 @@ int main(int argc, char *argv[])
     QApplication::setGraphicsSystem("raster");
 #endif
     Application app(argc, argv);
-
     if (app.isRunning())
     {
         app.setMessage(app.arguments());
@@ -56,7 +55,6 @@ int main(int argc, char *argv[])
             app.setStyleSheet(file.readAll());
             file.close();
         }
-
         DFM::MainWindow *mainWin = new DFM::MainWindow(app.arguments());
         QObject::connect(&app, SIGNAL(lastMessage(QStringList)), mainWin, SLOT(receiveMessage(QStringList)));
         mainWin->show();

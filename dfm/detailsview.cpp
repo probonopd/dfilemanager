@@ -174,7 +174,8 @@ void
 DetailsView::contextMenuEvent(QContextMenuEvent *event)
 {
     const QString &file = indexAt(event->pos()).data(FS::FilePathRole).toString();
-    MainWindow::currentWindow()->rightClick(file, event->globalPos());
+    if (MainWindow *mw = MainWindow::currentWindow())
+        mw->rightClick(file, event->globalPos());
 }
 
 void

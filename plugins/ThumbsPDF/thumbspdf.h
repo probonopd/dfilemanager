@@ -5,7 +5,13 @@
 #include <QStringList>
 #include <QImage>
 #include <QFileInfo>
+#if defined(POPPLER_VERSION)
+#if POPPLER_VERSION < 5
 #include <poppler-qt4.h>
+#else
+#include <poppler-qt5.h>
+#endif
+#endif
 
 class ThumbsPDF : public QObject, ThumbInterface
 {
@@ -28,6 +34,5 @@ public:
 private:
     Poppler::Document* document;
 };
-
 
 #endif // THUMBSPDF_H

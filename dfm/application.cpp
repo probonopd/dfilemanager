@@ -20,7 +20,7 @@
 
 
 #include "application.h"
-#include "mainwindow.h"
+//#include "mainwindow.h"
 #include "config.h"
 #include <QSharedMemory>
 #include <QDebug>
@@ -28,14 +28,12 @@
 #include <QPluginLoader>
 #include <QLocalServer>
 #include <QLocalSocket>
-#include <QFileSystemWatcher>
 #include <QFile>
 #include <QDir>
-#include <QMap>
 
-#if defined(HASX11)
-#include <QX11Info>
-#endif
+//#if defined(HASX11)
+//#include <QX11Info>
+//#endif
 
 #include "interfaces.h"
 
@@ -55,18 +53,14 @@ static Atom netClientListStacking = 0;
 
 static QString name[] = { "dfm_browser", "dfm_iojob" };
 
-Application::Application(int &argc, char *argv[])
-    : QApplication(argc, argv)
-    , m_key()
-    , m_fsWatcher(0)
-    , m_type(Browser)
-    , m_server(0)
-    , m_socket(0)
-    , m_message(QString("--"))
+Application::Application(int &argc, char *argv[]) : QApplication(argc, argv)
 {
     if (arguments().contains("--iojob"))
         m_type = IOJob;
+    else
+        m_type = Browser;
 
+    m_message = "--";
     m_server = new QLocalServer(this);
     m_socket = new QLocalSocket(this);
 
@@ -87,7 +81,7 @@ Application::Application(int &argc, char *argv[])
     {
         if (!m_server->listen(name[m_type]))
             qDebug() << "Wasnt able to start the localServer... IPC will not work right";
-        setOrganizationName("dfm");        
+        setOrganizationName("dfm");
     }
     else
         qDebug() << "dfm is already running";
@@ -103,8 +97,6 @@ Application::Application(int &argc, char *argv[])
 void
 Application::socketConnected()
 {
-//    const char *data = m_message.toAscii().data();
-//    qDebug() << m_message << data;
     m_socket->write(m_message.toLatin1().data(), m_message.size());
     m_socket->flush();
 }
@@ -116,7 +108,6 @@ Application::newServerConnection()
     QLocalSocket *ls = m_server->nextPendingConnection();
     ls->waitForReadyRead();
     const QString message(ls->readAll());
-//    qDebug() << "newmessage" << message;
     connect(ls, SIGNAL(disconnected()), ls, SLOT(deleteLater()));
     ls->disconnectFromServer();
     emit lastMessage(message.split(CSEP));
@@ -125,12 +116,6 @@ Application::newServerConnection()
 void
 Application::setMessage(QStringList message, const QString &serverName)
 {
-//    if (!m_isRunning && serverName.isEmpty())
-//        return;
-//    qDebug() << "setmessage" << message;
-//    for (int i = 0; i < message.size(); ++i)
-//        if (message.at(i).isEmpty())
-//            message.removeAt(i);
     m_socket->abort();
     const QString &server = serverName.isEmpty() ? name[m_type] : serverName;
     m_message = message.join(CSEP);
@@ -175,6 +160,7 @@ Application::loadPluginsFromDir(const QDir &dir)
         QObject *plugin = loader.instance();
         if (ThumbInterface *it = qobject_cast<ThumbInterface *>(plugin))
         {
+            qDebug() << "found thumbnailer:" << it->name() << it->description();
             if (DFM::Store::config.views.activeThumbIfaces.contains(it->name()))
                 m_thumbIfaces.insert(it->name(), it);
             m_allThumbIfaces << it;

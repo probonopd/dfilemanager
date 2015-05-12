@@ -1,6 +1,5 @@
 #include "thumbspdf.h"
 #include <QDebug>
-#include <poppler-qt4.h>
 #include <QDir>
 #include <QFileInfo>
 
