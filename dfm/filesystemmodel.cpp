@@ -36,6 +36,10 @@
 #include <QMap>
 #include <QWaitCondition>
 #include <QMenu>
+#if !defined(QT_NO_DBUS)
+#include <QDBusMessage>
+#include <QDBusConnection>
+#endif
 #include "filesystemmodel.h"
 #include "iojob.h"
 #include "dataloader.h"
@@ -747,11 +751,22 @@ Model::setHiddenVisible(bool visible)
 bool
 Model::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
 {
-    if (!data->hasUrls())
-        return false;
-
     Node *n = node(parent);
     if (!n->isDir())
+        return false;
+#if !defined(QT_NO_DBUS)
+    //ark extract
+    if (data->hasFormat("application/x-kde-ark-dndextract-service") && data->hasFormat("application/x-kde-ark-dndextract-path"))
+    {
+        const QString dBusPath(data->data("application/x-kde-ark-dndextract-path"));
+        const QString dBusService(data->data("application/x-kde-ark-dndextract-service"));
+        QDBusMessage message = QDBusMessage::createMethodCall(dBusService, dBusPath, "org.kde.ark.DndExtract", "extractSelectedFilesTo");
+        message << n->filePath();
+        QDBusConnection::sessionBus().send(message);
+        return true;
+    }
+#endif
+    if (!data->hasUrls())
         return false;
 
     QMenu m;

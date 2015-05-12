@@ -89,7 +89,7 @@ public:
 
     bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
     QMimeData *mimeData(const QModelIndexList &indexes) const;
-    QStringList mimeTypes() const { return QStringList() << "text/uri-list"; }
+    QStringList mimeTypes() const { return QStringList() << "text/uri-list" << "application/x-kde-ark-dndextract-service" << "application/x-kde-ark-dndextract-path"; }
 
     QStringList categories();
     QModelIndexList category(const QString &cat);

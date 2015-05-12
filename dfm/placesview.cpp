@@ -749,12 +749,21 @@ PlacesView::dropEvent(QDropEvent *event)
 }
 
 void
+PlacesView::mouseMoveEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::MiddleButton)
+        event->accept();
+    else
+        QTreeView::mouseMoveEvent(event);
+}
+
+void
 PlacesView::mouseReleaseEvent(QMouseEvent *event)
 {
 //    m_lastClicked = itemAt(event->pos());
     if (event->button() == Qt::MiddleButton)
     {
-        event->ignore();
+        event->accept();
         return;
     }
     if (!indexAt(event->pos()).parent().isValid() && indexAt(event->pos()).isValid())
@@ -768,7 +777,7 @@ PlacesView::mousePressEvent(QMouseEvent *event)
     m_lastClicked = itemAt(event->pos());
     if (event->button() == Qt::MiddleButton)
     {
-        event->ignore();
+        event->accept();
         if (indexAt(event->pos()).isValid() && indexAt(event->pos()).parent().isValid())
             emit newTabRequest(QUrl::fromLocalFile(static_cast<Place *>(itemAt(event->pos()))->path()));
         return;

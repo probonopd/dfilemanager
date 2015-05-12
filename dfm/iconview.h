@@ -44,11 +44,11 @@ protected:
     void wheelEvent(QWheelEvent *);
     void resizeEvent(QResizeEvent *e);
     void mouseMoveEvent(QMouseEvent *e);
-    void contextMenuEvent(QContextMenuEvent *event);
+    void contextMenuEvent(QContextMenuEvent *e);
 
     void mouseReleaseEvent(QMouseEvent *e);
-    void mousePressEvent(QMouseEvent *event);
-    void mouseDoubleClickEvent(QMouseEvent *event);
+    void mousePressEvent(QMouseEvent *e);
+    void mouseDoubleClickEvent(QMouseEvent *e);
 
     void paintEvent(QPaintEvent *e);
     void keyPressEvent(QKeyEvent *e);
@@ -56,8 +56,8 @@ protected:
     QRect visualRect(const QModelIndex &index) const;
     QRect visualRect(const QString &cat) const;
     QModelIndex indexAt(const QPoint &p) const;
-    void focusOutEvent(QFocusEvent *event);
-    void dragMoveEvent(QDragMoveEvent *event);
+    void focusOutEvent(QFocusEvent *e);
+    void dragMoveEvent(QDragMoveEvent *e);
     void setIconWidth(const int width);
     inline int iconWidth() const { return iconSize().width(); }
     static bool isCategorized();
