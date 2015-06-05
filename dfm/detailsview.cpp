@@ -26,11 +26,8 @@
 #include <QTextEdit>
 #include <QMessageBox>
 #include <QPainter>
-#include "filesystemmodel.h"
 #include "viewcontainer.h"
 #include "detailsview.h"
-#include "viewcontainer.h"
-#include "filesystemmodel.h"
 #include "mainwindow.h"
 #include "config.h"
 #include "objects.h"
@@ -40,6 +37,7 @@ using namespace DFM;
 class DetailsDelegate : public FileItemDelegate
 {
 public:
+    DetailsDelegate(QObject *parent) : FileItemDelegate(parent) {}
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
         if (!index.data().isValid())
@@ -49,7 +47,6 @@ public:
         const bool isSelected = option.state & QStyle::State_Selected;
         if (index.column() > 0 &&  !isHovered && !isSelected)
             painter->setOpacity(0.66);
-        //crashed here when deleting....
         QStyledItemDelegate::paint(painter, option, index);
         painter->restore();
     }
@@ -61,12 +58,11 @@ public:
 
 DetailsView::DetailsView(QWidget *parent)
     : QTreeView(parent)
-    , m_model(0)
     , m_pressPos(QPoint())
     , m_pressedIndex(0)
 {
     ScrollAnimator::manage(this);
-    setItemDelegate(new DetailsDelegate());
+    setItemDelegate(new DetailsDelegate(this));
     header()->setStretchLastSection(false);
     setUniformRowHeights(true);
     setSelectionMode(ExtendedSelection);
@@ -116,7 +112,7 @@ ViewContainer
 void
 DetailsView::sortingChanged(const int column, const int order)
 {
-    if (header() && model() == m_model && column>-1&&column<header()->count())
+    if (header() && model() && column>-1&&column<header()->count())
     {
         header()->blockSignals(true);
         header()->setSortIndicator(column, (Qt::SortOrder)order);
@@ -141,7 +137,6 @@ void
 DetailsView::setModel(QAbstractItemModel *model)
 {
     QTreeView::setModel(model);
-    m_model = static_cast<FS::Model *>(model);
     for (int i = 0; i<header()->count(); ++i)
 #if QT_VERSION < 0x050000
         header()->setResizeMode(i, QHeaderView::Fixed);
@@ -241,7 +236,7 @@ DetailsView::resizeEvent(QResizeEvent *event)
 bool
 DetailsView::edit(const QModelIndex &index, EditTrigger trigger, QEvent *event)
 {
-    if (!index.isValid() || m_model->isWorking())
+    if (!index.isValid())
         return false;
     QModelIndex idx = index;
     if (idx.column())

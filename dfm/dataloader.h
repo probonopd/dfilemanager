@@ -25,12 +25,13 @@
 #include "objects.h"
 #include "helpers.h"
 
-typedef struct _Data
+class Data
 {
+public:
     QImage thumb;
     QString count; //entries for dirs...
     QString mimeType, iconName, lastModified, fileType;
-} Data;
+};
 
 namespace DFM
 {

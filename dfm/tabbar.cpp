@@ -41,7 +41,7 @@
 #include "iconprovider.h"
 #include "iojob.h"
 #include "globals.h"
-#include "filesystemmodel.h"
+#include "fsmodel.h"
 
 using namespace DFM;
 

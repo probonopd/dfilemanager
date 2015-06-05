@@ -25,126 +25,18 @@
 #include <QFileInfo>
 
 #include "objects.h"
-#include "filesystemmodel.h"
 #include "dataloader.h"
 #include "devices.h"
 
 namespace DFM
 {
-
 namespace FS
 {
-
-class Model;
-namespace Worker { class Gatherer; }
-
 class Node;
-typedef QList<Node *> Nodes;
-
-class Node : public QFileInfo
-{
-    friend class Model;
-    friend class Worker::Gatherer;
-public:
-    enum Child { Visible = 0, Hidden = 1, Filtered = 2, ChildrenTypeCount = 3 };
-    typedef unsigned int Children;
-    Node(FS::Model *model = 0, const QUrl &url = QUrl(), Node *parent = 0, const QString &filePath = QString());
-    virtual ~Node();
-
-    inline Model *model() const { return m_model; }
-    Worker::Gatherer *gatherer() const;
-
-    virtual QString name() const { return m_name; }
-    bool rename(const QString &newName);
-    inline QString filePath() const { return m_filePath; }
-
-    int row() const;
-    int rowOf(const Node *node) const;
-    int childCount(Children children = Visible) const;
-    void addChild(Node *node);
-    Node *child(const int c, Children fromChildren = Visible) const;
-    Node *child(const QString &name, const bool nameIsPath = true) const;
-    Node *childFromUrl(const QUrl &url) const;
-    bool hasChildren() const;
-    void insertChild(Node *n, const int i);
-    void deleteLater();
-
-    void removeDeleted();
-    void rePopulate();
-    bool isPopulated() const;
-
-    virtual QVariant data(const int column) const;
-    virtual QIcon icon() const;
-    virtual QString category() const;
-
-    QString permissionsString() const;
-    inline QString scheme() const { return url().scheme(); }
-    QString mimeType() const;
-    QString fileType() const;
-    bool isExec() const;
-
-    virtual void exec();
-
-    void sort();
-    int sortColumn() const;
-    Qt::SortOrder sortOrder() const;
-
-    Data *moreData() const;
-
-    void setHiddenVisible(bool visible);
-    bool showHidden() const;
-
-    void setFilter(const QString &filter);
-    inline QString filter() const { return m_filter; }
-
-    void clearVisible();
-    void removeChild(Node *node);
-
-    Node *localNode(const QString &path, bool checkOnly = true);
-    Node *nodeFromLocalPath(const QString &path, bool checkOnly = true);
-
-    inline QUrl url() const { return m_url; }
-    inline void setUrl(const QUrl &url) { m_url = url; }
-
-    Node *parent() const;
-
-private:
-    mutable int m_isExe;
-    mutable QMutex m_mutex;
-
-    bool m_isPopulated, m_isDeleted;
-    Nodes m_children[ChildrenTypeCount], m_toAdd;
-    Node *m_parent;
-    QString m_filePath, m_filter, m_name;
-    QUrl m_url;
-    Model *m_model;
-    QIcon m_icon;
-};
-
-//-----------------------------------------------------------------------------
-
-class AppNode : public Node
-{
-public:
-    AppNode(Model *model = 0, Node *parent = 0, const QUrl &url = QUrl(), const QString &filePath = QString());
-
-    QString name() const;
-    QString category() const;
-    inline QString comment() const { return m_comment; }
-    inline QString command() const { return m_appCmd; }
-    QIcon icon() const;
-    QVariant data(const int column) const;
-    void exec();
-
-private:
-    QString m_appName, m_appCmd, m_appIcon, m_category, m_comment, m_type;
-};
-
-//-----------------------------------------------------------------------------
-
+class Model;
 namespace Worker
 {
-enum Task { Populate = 0, Generate = 1, Search = 2, GetApps = 3, NoTask = 4 };
+enum Task { Populate = 0, Generate, Search, GetApps, NoTask };
 
 class Job
 {

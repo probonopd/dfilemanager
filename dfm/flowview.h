@@ -39,16 +39,17 @@ class FlowView : public QAbstractItemView
 public:
     explicit FlowView(QWidget *parent = 0);
     ~FlowView();
-    void setModel(FS::Model *model);
+
     QModelIndex currentIndex();
     void addActions(QList<QAction *> actions);
     inline DetailsView *detailsView() { return m_dView; }
     inline Flow *flow() { return m_flow; }
-    FS::Model *model();
     inline QSplitter *splitter() { return m_splitter; }
-    void setSelectionModel(QItemSelectionModel *selectionModel);
     void scrollToTop();
     void scrollToBottom();
+
+    void setModel(QAbstractItemModel *model);
+    void setSelectionModel(QItemSelectionModel *selectionModel);
 
     /*pure virtuals*/
     QModelIndex indexAt(const QPoint &point) const;

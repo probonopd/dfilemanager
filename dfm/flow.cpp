@@ -43,7 +43,7 @@
 
 #include "operations.h"
 #include "flow.h"
-#include "filesystemmodel.h"
+#include "fsmodel.h"
 #include "dataloader.h"
 
 using namespace DFM;

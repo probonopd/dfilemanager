@@ -27,7 +27,6 @@
 
 namespace DFM
 {
-namespace FS{class Model;}
 class ViewContainer;
 class DetailsView : public QTreeView, public DViewBase
 {
@@ -62,7 +61,6 @@ private slots:
     void readSettings();
 
 private:
-    FS::Model *m_model;
     QPoint m_pressPos;
     void *m_pressedIndex;
 };

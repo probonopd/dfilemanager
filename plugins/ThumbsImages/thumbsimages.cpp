@@ -80,7 +80,7 @@ ThumbsImages::thumb(const QString &file, const QString &mime, QImage &thumb, con
     //image after loading the whole image.
     if (qMax(img.size().width(), img.size().height()) > size)
         img = img.scaled(size, size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-#if 0
+#if defined(HASEXIV)
     const short rotation(getRotation(file));
     if (!img.isNull() && rotation != 1)
     {
@@ -89,9 +89,9 @@ ThumbsImages::thumb(const QString &file, const QString &mime, QImage &thumb, con
         t.translate(wt, ht);
         switch (rotation)
         {
-        case 8: qDebug() << "transforming image" << file << "w/ 90 degrees (8)"; t.rotate(90); break;
-        case 3: qDebug() << "transforming image" << file << "w/ 180 degrees (3)"; t.rotate(180); break;
-        case 6: qDebug() << "transforming image" << file << "w/ -90 degrees (6)"; t.rotate(-90); break;
+        case 8: t.rotate(-90); break;
+        case 3: t.rotate(180); break;
+        case 6: t.rotate(90); break;
         default: break;
         }
         t.translate(-wt, -ht);

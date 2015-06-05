@@ -29,7 +29,6 @@
 #include "columnview.h"
 #include "viewcontainer.h"
 #include "mainwindow.h"
-#include "filesystemmodel.h"
 #include "operations.h"
 #include "config.h"
 #include "objects.h"
@@ -46,7 +45,7 @@ public:
     {
         ColumnView *view = static_cast<ColumnView *>(parent());
         const bool childViews(view->activeIndexes().contains(index));
-        const bool isDir(static_cast<const FS::Model *>(index.model())->isDir(index));
+        const bool isDir(index.data(FS::FileIsDirRole).toBool());
         bool needBold(false);
         //background
         if (option.state & (QStyle::State_Selected|QStyle::State_MouseOver) || childViews)
@@ -161,7 +160,7 @@ ColumnView::destroyColumns(const QModelIndex &index)
 void
 ColumnView::open(const QModelIndex &index)
 {
-    if (index.data(FS::FileTypeRole).toString() == "directory")
+    if (index.data(FS::FileTypeRole).toString() == "directory" || m_columns.isEmpty())
     {
         destroyColumns(index.parent());
         m_columns << createColumn(index);
@@ -410,11 +409,8 @@ void
 Column::setRootIndex(const QModelIndex &index)
 {
     QListView::setRootIndex(index);
-    if (index.isValid())
-    {
-        const QString path = index.data(FS::FilePathRole).toString();
-        static_cast<FS::Model *>(const_cast<QAbstractItemModel *>(index.model()))->watchDir(path);
-    }
+    if (index.isValid() && index.data(FS::FileIsDirRole).toBool())
+        model()->setData(index, index.data(FS::FilePathRole), FS::WatchDirectoryRole);
 }
 
 void

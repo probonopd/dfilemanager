@@ -2,6 +2,16 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
+#include <QStringList>
+#include <QImage>
+
+#if defined(POPPLER_VERSION)
+#if POPPLER_VERSION < 5
+#include <poppler-qt4.h>
+#else
+#include <poppler-qt5.h>
+#endif
+#endif
 
 #if QT_VERSION < 0x050000
 Q_EXPORT_PLUGIN2(thumbspdf, ThumbsPDF)
@@ -17,6 +27,13 @@ ThumbsPDF::init()
 bool
 ThumbsPDF::thumb(const QString &file, const QString &mime, QImage &thumb, const int size)
 {   
+#if !defined(POPPLER_VERSION)
+    Q_UNUSED(file)
+    Q_UNUSED(mime)
+    Q_UNUSED(thumb)
+    Q_UNUSED(size)
+    return false;
+#else
     if (QFileInfo(file).size() > maxSize || !canRead(mime))
         return false;
     
@@ -39,4 +56,5 @@ ThumbsPDF::thumb(const QString &file, const QString &mime, QImage &thumb, const 
     
     delete document;
     return true;
+#endif
 }

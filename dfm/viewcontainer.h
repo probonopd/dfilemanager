@@ -26,7 +26,7 @@
 #include "globals.h"
 
 class QColumnView;
-class QStackedWidget;
+class QStackedLayout;
 class QVBoxLayout;
 class QItemSelectionModel;
 class QModelIndex;
@@ -34,36 +34,30 @@ class QAbstractItemView;
 namespace DFM
 {
 class Button;
-class IconView;
-class DetailsView;
-class FlowView;
 class NavBar;
 class PathNavigator;
-class ColumnView;
 namespace FS{class Model;}
 
 class ViewContainer : public QFrame
 {
     Q_OBJECT
 public:
-    enum View { Icon = 0, Details = 1, Columns = 2, Flow = 3 };
-    static Actions viewAction(const View view);
+    enum View { Icon = 0, Details, Columns, Flow, NViews };
+    static Action viewAction(const View view);
 
     explicit ViewContainer(QWidget *parent = 0);
     ~ViewContainer();
     FS::Model *model();
     void setView(const View view, bool store = true);
     QAbstractItemView *currentView() const;
-    QList<QAbstractItemView *> views();
-    View currentViewType() const { return m_myView; }
-    DetailsView *detailsView() { return m_detailsView; }
+    View currentViewType() const { return m_currentView; }
     void setPathEditable(const bool editable);
     void setRootIndex(const QModelIndex &index);
     void createDirectory();
     void setFilter(const QString &filter);
     void deleteCurrentSelection();
     void customCommand();
-    QSize iconSize();
+    const QSize iconSize() const;
     QItemSelectionModel *selectionModel();
     QModelIndex indexAt(const QPoint &p) const;
     bool canGoBack();
@@ -83,8 +77,6 @@ public:
 
 protected:
     void leaveEvent(QEvent *) { emit leftView(); }
-    void setModel(FS::Model *model);
-    void setSelectionModel(QItemSelectionModel *selectionModel);
 
 signals:
     void viewChanged();
@@ -116,17 +108,13 @@ private slots:
 private:
     bool m_back;
     QString m_dirFilter;
-    View m_myView;
-    IconView *m_iconView;
-    DetailsView *m_detailsView;
-    ColumnView *m_columnView;
-    FlowView *m_flowView;
+    View m_currentView;
     FS::Model *m_model;
-    QStackedWidget *m_viewStack;
+    QStackedLayout *m_viewStack;
     QItemSelectionModel *m_selectModel;
     NavBar *m_navBar;
     QVBoxLayout *m_layout;
-    QAbstractItemView *m_currentView;
+    QAbstractItemView *m_view[NViews];
 };
 
 }

@@ -36,11 +36,13 @@
 #include <QMap>
 #include <QWaitCondition>
 #include <QMenu>
+#include <QApplication>
 #if !defined(QT_NO_DBUS)
 #include <QDBusMessage>
 #include <QDBusConnection>
 #endif
-#include "filesystemmodel.h"
+#include "fsmodel.h"
+#include "fsnode.h"
 #include "iojob.h"
 #include "dataloader.h"
 #include "mainwindow.h"
@@ -53,10 +55,6 @@ using namespace DFM;
 using namespace FS;
 
 static FileIconProvider *s_instance = 0;
-
-FileIconProvider::FileIconProvider() : QFileIconProvider()
-{
-}
 
 FileIconProvider
 *FileIconProvider::instance()
@@ -99,7 +97,6 @@ FileIconProvider::icon(const QFileInfo &i) const
 
 Model::Model(QObject *parent)
     : QAbstractItemModel(parent)
-    , m_parent(parent)
     , m_rootNode(new Node(this))
     , m_showHidden(false)
     , m_sortOrder(Qt::AscendingOrder)
@@ -233,8 +230,7 @@ bool
 Model::handleApplicationsUrl(QUrl &url, int &hasUrlReady)
 {
 #if defined(ISUNIX)
-    m_current = schemeNode(url.scheme());
-    m_currentRoot = m_current;
+    m_currentRoot = m_current = schemeNode(url.scheme());
     hasUrlReady = 1;
     m_dataGatherer->populateApplications("/usr/share/applications", m_current);
     return true;
@@ -245,10 +241,22 @@ Model::handleApplicationsUrl(QUrl &url, int &hasUrlReady)
 bool
 Model::handleDevicesUrl(QUrl &url, int &hasUrlReady)
 {
+    Q_UNUSED(url)
 #if defined(ISUNIX)
-    m_current = schemeNode("file");
-    m_currentRoot = m_current;
+    m_currentRoot = m_current = schemeNode("file");
     hasUrlReady = 2;
+    return true;
+#endif
+    return false;
+}
+
+bool
+Model::handleTrashUrl(QUrl &url, int &hasUrlReady)
+{
+#if defined(ISUNIX)
+    m_currentRoot = m_current = schemeNode(url.scheme());
+    hasUrlReady = 1;
+    dataGatherer()->populateNode(m_current);
     return true;
 #endif
     return false;
@@ -273,14 +281,16 @@ Model::setUrl(QUrl url)
         urlHandler = &Model::handleApplicationsUrl;
     else if (url.scheme() == "devices")
         urlHandler = &Model::handleDevicesUrl;
+    else if (url.scheme() == "trash")
+        urlHandler = &Model::handleTrashUrl;
     else
-        qDebug() << "not sure what do w/ url" << url;
-
-    if (!urlHandler)
+    {
+        qDebug() << "unsupported url:" << url;
         return false;
+    }
 
     int isReady(0);
-    if (call<bool, Model, QUrl &, int &>(this, urlHandler, url, isReady))
+    if ((this->*urlHandler)(url, isReady))
     {
         DDataLoader::clearQueue();
         m_url = url;
@@ -403,10 +413,8 @@ Model::unWatchDir(const QString &path)
 Qt::ItemFlags
 Model::flags(const QModelIndex &index) const
 {
-    //QMutexLocker locker(&m_mutex);
     Node *n = node(index);
     Qt::ItemFlags flags = QAbstractItemModel::flags(index);
-    //crashes here... TODO: make sure n is valid.
     if (n->isWritable()) flags |= Qt::ItemIsEditable;
     if (n->isDir()) flags |= Qt::ItemIsDropEnabled;
     if (n->isReadable() && !isWorking()) flags |= Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
@@ -426,24 +434,19 @@ Model::newData(const QString &file)
             emit dataChanged(sibling, sibling);
         }
     }
-}
-
-bool
-Model::hasThumb(const QString &file) const
-{
-    if (Data *d = DDataLoader::data(file, true))
-        return !d->thumb.isNull();
-
-    return false;
-}
-
-bool
-Model::hasThumb(const QModelIndex &index) const
-{
-    Node *n = node(index);
-    if (n->exists())
-        return hasThumb(n->filePath());
-    return false;
+    else
+    {
+        const QModelIndex &parent = index(m_url);
+        for (int i = 0; i < rowCount(index(m_url)); ++i)
+        {
+            const QModelIndex &idx = index(i, 0, parent);
+            if (idx.data(FS::FilePathRole).toString() == file)
+            {
+                emit dataChanged(idx, idx);
+                return;
+            }
+        }
+    }
 }
 
 QVariant
@@ -465,6 +468,11 @@ Model::data(const QModelIndex &index, int role) const
         return n->permissionsString();
     if (role == FileIconRole)
         return n->icon();
+    if (role == FileIsDirRole)
+        return n->isDir();
+    if (role == FileHasThumbRole)
+    if (Data *d = DDataLoader::data(n->filePath(), true))
+        return !d->thumb.isNull();
     if (role == Qt::TextAlignmentRole)
         return bool(col == 1) ? int(Qt::AlignVCenter|Qt::AlignRight) : int(Qt::AlignLeft|Qt::AlignVCenter);
     if (role == CategoryRole)
@@ -480,10 +488,11 @@ Model::data(const QModelIndex &index, int role) const
     if (role == LastModifiedRole)
         return n->lastModified().toString();
 
+
     if (!isWorking())
     if (role == Qt::FontRole && !col)
     {
-        QFont f(font());
+        QFont f(qApp->font());
         f.setItalic(n->isSymLink());  //sometimes crashes on this.... cause of iconview painting
         f.setUnderline(n->isExec());
         return f;
@@ -498,21 +507,33 @@ Model::data(const QModelIndex &index, int role) const
 bool
 Model::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if (!index.isValid() || role != Qt::EditRole)
+    if (!index.isValid())
         return false;
 
-    Node *n = node(index);
-    const QString &newName = value.toString();
-    const QString &oldName = n->fileName();
-    const QString &path = n->path();
-    if (n->rename(newName))
+    switch (role)
     {
-        emit fileRenamed(path, oldName, newName);
-        emit dataChanged(index, index);
+    case WatchDirectoryRole:
+    {
+        watchDir(value.toString());
         return true;
     }
-    else
-        QMessageBox::warning(MainWindow::currentWindow(), "Failed to rename", QString("%1 to %2").arg(n->name(), newName));
+    case Qt::EditRole:
+    {
+        Node *n = node(index);
+        const QString &newName = value.toString();
+        const QString &oldName = n->fileName();
+        const QString &path = n->path();
+        if (n->rename(newName))
+        {
+            emit fileRenamed(path, oldName, newName);
+            emit dataChanged(index, index);
+            return true;
+        }
+        else
+            QMessageBox::warning(MainWindow::currentWindow(), "Failed to rename", QString("%1 to %2").arg(n->name(), newName));
+    }
+    default: break;
+    }
     return false;
 }
 
@@ -563,18 +584,6 @@ Node
 }
 
 QModelIndex
-Model::indexForLocalFile(const QString &filePath)
-{
-//    //QMutexLocker locker(&m_mutex);
-    Node *node = schemeNode("file")->localNode(filePath);
-    if (node == m_currentRoot || node == m_rootNode)
-        return QModelIndex();
-    if (node)
-        return createIndex(node->row(), 0, node);
-    return QModelIndex();
-}
-
-QModelIndex
 Model::index(const QUrl &url)
 {
     //QMutexLocker locker(&m_mutex);
@@ -588,9 +597,15 @@ Model::index(const QUrl &url)
         if (Node *n = m_current->childFromUrl(url))
             return createIndex(n->row(), 0, n);
     }
-
     if (url.isLocalFile())
-        return indexForLocalFile(url.toLocalFile());
+    {
+        Node *node = schemeNode("file")->localNode(url.toLocalFile());
+        if (node == m_currentRoot || node == m_rootNode)
+            return QModelIndex();
+        if (node)
+            return createIndex(node->row(), 0, node);
+        return QModelIndex();
+    }
 
     if (m_nodes.contains(url))
     {
@@ -791,7 +806,7 @@ Model::mkdir(const QModelIndex &parent, const QString &name)
             return QModelIndex();
         m_watcher->blockSignals(true);
         if (!dir.mkdir(name))
-            QMessageBox::warning(static_cast<QWidget *>(m_parent), "There was an error", QString("Could not create folder in %2").arg(dir.path()));
+            QMessageBox::warning(static_cast<QWidget *>(this->QObject::parent()), "There was an error", QString("Could not create folder in %2").arg(dir.path()));
         n->rePopulate();
         m_watcher->blockSignals(false);
         return index(QUrl::fromLocalFile(dir.absoluteFilePath(name)));
@@ -946,12 +961,6 @@ Model::fileName(const QModelIndex &index) const
     return node(index)->name();
 }
 
-QIcon
-Model::fileIcon(const QModelIndex &index) const
-{
-    return node(index)->icon();
-}
-
 bool Model::isDir(const QModelIndex &index) const
 {
     return node(index)->isDir();
@@ -996,11 +1005,12 @@ Node
 
     QUrl url;
     url.setScheme(scheme);
-    Node *node = new Node(this, url, m_rootNode);
-//#if defined(ISUNIX)
-//    if (scheme == "file")
-//        new Node(this, QUrl::fromLocalFile("/"), node, "/");
-//#endif
+
+    Node *node = 0;
+    if (scheme.toLower() == "trash")
+        node = new Node(this, url, m_rootNode, DTrash::trashPath(DTrash::TrashFiles));
+    else
+        node = new Node(this, url, m_rootNode);
     m_schemeMenu->addAction(scheme, this, SLOT(schemeFromSchemeMenu()));
     m_schemeNodes.insert(scheme, node);
     return node;

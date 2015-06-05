@@ -19,21 +19,19 @@
 ***************************************************************************/
 
 #include <QImageReader>
-
 #include <QWidget>
 #include <QSplitter>
 #include <QVBoxLayout>
 #include <QSettings>
-
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QGraphicsEffect>
 #include <QGraphicsPixmapItem>
+#include <QDebug>
 
-#include "filesystemmodel.h"
+#include "fsmodel.h"
 #include "detailsview.h"
 #include "flow.h"
-
 #include "flowview.h"
 #include "mainwindow.h"
 #include "config.h"
@@ -44,25 +42,31 @@ using namespace DFM;
 
 FlowView::FlowView(QWidget *parent)
     : QAbstractItemView(parent)
-    , m_splitter(new QSplitter(this))
-    , m_dView(new DetailsView(this))
-    , m_flow(new Flow(this))
+    , m_splitter(0)
+    , m_dView(0)
+    , m_flow(0)
 {
+    m_dView = new DetailsView(this);
+    m_dView->setRootIsDecorated(false);
+    m_dView->setItemsExpandable(false);
+
+    m_flow = new Flow(this);
+
+    m_splitter = new QSplitter(this);
     m_splitter->setOrientation(Qt::Vertical);
     m_splitter->addWidget(m_flow);
     m_splitter->addWidget(m_dView);
-    m_dView->setRootIsDecorated(false);
-    m_dView->setItemsExpandable(false);
     m_splitter->restoreState(Store::config.views.flowSize);
     m_splitter->setFrameStyle(0);
     m_splitter->setContentsMargins(0,0,0,0);
+    m_splitter->setHandleWidth(style()->pixelMetric(QStyle::PM_SplitterWidth));
 
     connect(m_flow, SIGNAL(centerIndexChanged(QModelIndex)), this, SLOT(flowCurrentIndexChanged(QModelIndex)));
     connect(m_splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(saveSplitter()));
     connect(m_dView, SIGNAL(entered(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
     connect(m_dView, SIGNAL(opened(QModelIndex)), this, SIGNAL(opened(QModelIndex)));
     connect(m_dView, SIGNAL(newTabRequest(QModelIndex)), this, SIGNAL(newTabRequest(QModelIndex)));
-    m_splitter->setHandleWidth(style()->pixelMetric(QStyle::PM_SplitterWidth));
+
 }
 
 FlowView::~FlowView(){}
@@ -73,17 +77,11 @@ FlowView::saveSplitter()
     Store::config.views.flowSize = m_splitter->saveState();
 }
 
-FS::Model
-*FlowView::model()
-{
-    return static_cast<FS::Model*>(m_dView->model());
-}
-
 void
-FlowView::setModel(FS::Model *model)
+FlowView::setModel(QAbstractItemModel *model)
 {
     m_dView->setModel(model);
-    m_flow->setModel(model);
+    m_flow->setModel(static_cast<FS::Model *>(model));
     QAbstractItemView::setModel(model);
 }
 
@@ -96,6 +94,15 @@ FlowView::setRootIndex(const QModelIndex &rootIndex)
 }
 
 void
+FlowView::setSelectionModel(QItemSelectionModel *selectionModel)
+{
+    m_dView->setSelectionModel(selectionModel);
+    m_flow->setSelectionModel(selectionModel);
+    connect(selectionModel, SIGNAL(selectionChanged(QItemSelection,QItemSelection)),this,SLOT(treeCurrentIndexChanged(QItemSelection,QItemSelection)));
+    QAbstractItemView::setSelectionModel(selectionModel);
+}
+
+void
 FlowView::treeCurrentIndexChanged(QItemSelection,QItemSelection)
 {
     const QModelIndex &index = m_dView->selectionModel()->currentIndex();
@@ -104,15 +111,6 @@ FlowView::treeCurrentIndexChanged(QItemSelection,QItemSelection)
         m_flow->animateCenterIndex(index);
         m_dView->scrollTo(index, QAbstractItemView::EnsureVisible);
     }
-}
-
-void
-FlowView::setSelectionModel(QItemSelectionModel *selectionModel)
-{
-    m_dView->setSelectionModel(selectionModel);
-    m_flow->setSelectionModel(selectionModel);
-    connect(m_dView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),this,SLOT(treeCurrentIndexChanged(QItemSelection,QItemSelection)));
-    QAbstractItemView::setSelectionModel(selectionModel);
 }
 
 void

@@ -20,7 +20,7 @@
 
 
 #include "viewanimator.h"
-#include "filesystemmodel.h"
+#include "fsmodel.h"
 #include <QTreeView>
 
 QMap<QAbstractItemView *, ViewAnimator *> ViewAnimator::s_views;

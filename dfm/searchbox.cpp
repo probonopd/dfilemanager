@@ -27,7 +27,7 @@
 #include "iconprovider.h"
 #include "config.h"
 #include "mainwindow.h"
-#include "filesystemmodel.h"
+#include "fsmodel.h"
 #include "viewcontainer.h"
 
 using namespace DFM;

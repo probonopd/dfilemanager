@@ -27,7 +27,6 @@
 
 namespace DFM
 {
-namespace FS{class Model;}
 class IconView : public QAbstractItemView, public DViewBase
 {
     Q_OBJECT
@@ -38,6 +37,7 @@ public:
     void setModel(QAbstractItemModel *model);
     inline QSize gridSize() const { return m_gridSize; }
     void scrollTo(const QModelIndex &index, ScrollHint hint = EnsureVisible);
+    void setRootIndex(const QModelIndex &index);
     inline QPixmap bgPix() const { return m_pix; }
 
 protected:
@@ -100,7 +100,6 @@ private:
     QHash<void *, QRect> m_rects;
     QHash<QString, QRect> m_catRects;
     bool m_slide, m_startSlide, m_hadSelection;
-    FS::Model *m_model;
     QTimer *m_sizeTimer, *m_layTimer, *m_scrollTimer, *m_resizeTimer;
     QModelIndex m_firstIndex, m_pressedIndex;
     QPixmap m_homePix, m_bgPix[2];

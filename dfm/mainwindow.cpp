@@ -22,8 +22,13 @@
 #include <QProcess>
 #include <QProgressBar>
 #include <QMimeData>
+#include <QToolTip>
+#include <QClipboard>
+#include <QMenuBar>
+#include <QMessageBox>
+#include <QList>
 #include "viewcontainer.h"
-#include "filesystemmodel.h"
+#include "fsmodel.h"
 #include "placesview.h"
 #include "iconview.h"
 #include "detailsview.h"
@@ -41,11 +46,6 @@
 #include "settingsdialog.h"
 #include "propertiesdialog.h"
 #include "tabbar.h"
-#include <QToolTip>
-#include <QClipboard>
-#include <QMenuBar>
-#include <QMessageBox>
-#include <QList>
 #include "iconprovider.h"
 #include "pathnavigator.h"
 #include "dataloader.h"
@@ -419,7 +419,7 @@ MainWindow::urlChanged(const QUrl &url)
     }
     updateFilterBox();
     m_tabBar->setTabText(tab, title);
-    m_tabBar->setTabIcon(tab, c->model()->fileIcon(c->model()->index(url)));
+    m_tabBar->setTabIcon(tab, c->model()->index(url).data(FS::FileIconRole).value<QIcon>());
     setActions();
 }
 
@@ -580,7 +580,7 @@ MainWindow::addTab(const QUrl &url)
     model->setUrl(url);
     const QString &title = model->title(url);
     const QModelIndex &idx = model->index(url);
-    m_tabManager->addTab(container, model->fileIcon(idx), title);
+    m_tabManager->addTab(container, idx.data(FS::FileIconRole).value<QIcon>(), title);
 }
 
 void
@@ -591,7 +591,7 @@ MainWindow::addTab(ViewContainer *container, int index)
     const QUrl &url = model->rootUrl();
     const QString &title = model->title(url);
     const QModelIndex &idx = model->index(url);
-    m_tabManager->insertTab(index, container, model->fileIcon(idx), title);
+    m_tabManager->insertTab(index, container, idx.data(FS::FileIconRole).value<QIcon>(), title);
 }
 
 void
@@ -937,6 +937,27 @@ MainWindow::activateUrl(const QUrl &url)
     if (!activeContainer()->model())
         return;
     activeContainer()->model()->setUrl(url);
+}
+
+void
+MainWindow::trash()
+{
+    if (sender())
+    if (ViewContainer *vc = activeContainer())
+    if (vc->selectionModel()->hasSelection())
+    {
+        QStringList files;
+        const QModelIndexList indexes = vc->selectionModel()->selectedIndexes();
+        for (int i = 0; i < indexes.count(); ++i)
+        if (!indexes.at(i).column())
+            files << indexes.at(i).data(FS::FilePathRole).toString();
+        if (sender() == m_actions[MoveToTrashAction])
+            DTrash::moveToTrash(files);
+        else if (sender() == m_actions[RestoreFromTrashAction])
+            DTrash::restoreFromTrash(files);
+        else if (sender() == m_actions[RemoveFromTrashAction])
+            DTrash::removeFromTrash(files);
+    }
 }
 
 MainWindow *MainWindow::currentWindow() { return s_currentWindow; }

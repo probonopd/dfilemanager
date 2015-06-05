@@ -29,7 +29,7 @@
 namespace DFM
 {
 
-enum Actions { GoBack = 0,
+enum Action { GoBack = 0,
                GoUp,
                GoForward,
                GoHome,
@@ -71,6 +71,9 @@ enum Actions { GoBack = 0,
                SortDescending,
                GetFilePath,
                GetFileName,
+               MoveToTrashAction,
+               RestoreFromTrashAction,
+               RemoveFromTrashAction,
                ActionCount
              };
 
@@ -87,13 +90,18 @@ enum Roles
     FileIconRole = Qt::DecorationRole,
     FileNameRole = Qt::DisplayRole,
     FilePathRole = Qt::UserRole + 1,
-    FilePermissionsRole = Qt::UserRole + 2,
-    CategoryRole = Qt::UserRole + 3,
-    MimeTypeRole = Qt::UserRole + 4,
-    FileTypeRole = Qt::UserRole + 5,
-    OwnderRole = Qt::UserRole + 6,
-    UrlRole = Qt::UserRole + 7,
-    LastModifiedRole = Qt::UserRole + 8
+    FileIsDirRole,
+    FilePermissionsRole,
+    FileHasThumbRole,
+    FileCategoryRole,
+    WatchDirectoryRole,
+    CategoryRole,
+    CategoryIndexesRole,
+    MimeTypeRole,
+    FileTypeRole,
+    OwnderRole,
+    UrlRole,
+    LastModifiedRole
 };
 }
 
@@ -108,36 +116,6 @@ static int defaultInteger = 0;
 static bool defaultBool = false;
 static QUrl defaultUrl = QUrl();
 static QDir::Filters allEntries = QDir::AllEntries|QDir::NoDotAndDotDot|QDir::Hidden|QDir::System;
-
-template<typename T, typename Class>
-static inline T call(Class *object, T (Class::*function)())
-{
-    return (object->*function)();
-}
-
-template<typename T, typename Class, typename FirstType>
-static inline T call(Class *object, T (Class::*function)(FirstType), FirstType arg1)
-{
-    return (object->*function)(arg1);
-}
-
-template<typename T, typename Class, typename FirstType, typename SecondType>
-static inline T call(Class *object, T (Class::*function)(FirstType, SecondType), FirstType arg1, SecondType arg2)
-{
-    return (object->*function)(arg1, arg2);
-}
-
-template<typename T, typename Class, typename FirstType, typename SecondType, typename ThirdType>
-static inline T call(Class *object, T (Class::*function)(FirstType, SecondType, ThirdType), FirstType arg1, SecondType arg2, ThirdType arg3)
-{
-    return (object->*function)(arg1, arg2, arg3);
-}
-
-template<typename T, typename Class, typename FirstType, typename SecondType, typename ThirdType, typename FourthType>
-static inline T call(Class *object, T (Class::*function)(FirstType, SecondType, ThirdType, FourthType), FirstType arg1, SecondType arg2, ThirdType arg3, FourthType arg4)
-{
-    return (object->*function)(arg1, arg2, arg3, arg4);
-}
 
 }
 

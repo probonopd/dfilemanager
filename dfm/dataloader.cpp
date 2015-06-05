@@ -126,13 +126,15 @@ DDataLoader::getData(const QString &path)
     }
     QImage image;
     const QString mime(s_mimeProvider.getMimeType(path));
+
     if (!dApp->activeThumbIfaces().isEmpty() && Store::config.views.showThumbs)
-        for (int i = 0; i<dApp->activeThumbIfaces().count(); ++i)
-            if (dApp->activeThumbIfaces().at(i)->thumb(path, mime, image, m_extent))
-            {
-                data->thumb = image;
-                break;
-            }
+    for (int i = 0; i<dApp->activeThumbIfaces().count(); ++i)
+    if (dApp->activeThumbIfaces().at(i)->thumb(path, mime, image, m_extent))
+    {
+        data->thumb = image;
+        break;
+    }
+
     data->mimeType = mime;
     QString iconName = mime;
     iconName.replace("/", "-");

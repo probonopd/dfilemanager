@@ -64,12 +64,12 @@ public:
     inline InfoWidget *infoWidget() { return m_infoWidget; }
     inline QMenu *mainMenu() { return m_mainMenu; }
     inline QSlider *iconSizeSlider() { return m_iconSizeSlider; }
-    inline QAction *action(const Actions action) { return m_actions[action]; }
+    inline QAction *action(const Action action) { return m_actions[action]; }
     ViewContainer *takeContainer(int tab);
     SearchBox *searchBox() { return m_filterBox; }
     void updateConfig();
     void createMenus();
-    void rightClick(const QString &file, const QPoint &pos) const;
+    void rightClick(const QString &file, const QPoint &pos);
 
 public slots:
     void addTab(const QUrl &url);
@@ -140,6 +140,7 @@ private slots:
     void setSorting();
     void sortingChanged(const int column, const int order);
     void updateToolbarSpacer();
+    void trash();
 
 signals:
     void viewChanged(QAbstractItemView *view);

@@ -25,7 +25,7 @@
 #include "viewanimator.h"
 #include "mainwindow.h"
 #include "config.h"
-#include "filesystemmodel.h"
+#include "fsmodel.h"
 
 #include <QInputDialog>
 #include <QMenu>
@@ -561,7 +561,7 @@ PlacesView::paletteOps()
         viewport()->setAutoFillBackground(true);
         //base color... slight hihglight tint
         QColor midC = Ops::colorMid(pal.color(QPalette::Base), qApp->palette().color(QPalette::Highlight), 10, 1);
-        pal.setColor(bg, Ops::colorMid(Qt::black, midC, 1, 10));
+        pal.setColor(bg, Ops::colorMid(Qt::black, midC, 255-pal.color(QPalette::Window).value(), 255));
         pal.setColor(fg, qApp->palette().color(fg));
     }
     else if (Store::config.behaviour.sideBarStyle == 2)

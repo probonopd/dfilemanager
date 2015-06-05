@@ -37,7 +37,7 @@
 #include <QListView>
 #include <QDockWidget>
 
-#include "filesystemmodel.h"
+#include "fsmodel.h"
 #include "operations.h"
 #include "widgets.h"
 

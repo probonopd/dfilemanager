@@ -25,7 +25,7 @@
 #include <QMenu>
 #include <QDesktopServices>
 #include <QAbstractItemView>
-#include <QStackedWidget>
+#include <QStackedLayout>
 #include <QComboBox>
 #include <QLineEdit>
 #include <QMessageBox>
@@ -37,7 +37,7 @@
 #include "detailsview.h"
 #include "flowview.h"
 #include "flow.h"
-#include "filesystemmodel.h"
+#include "fsmodel.h"
 #include "pathnavigator.h"
 #include "operations.h"
 #include "iojob.h"
@@ -48,76 +48,69 @@
 
 using namespace DFM;
 
-#define VIEWS(RUN)\
-    m_iconView->RUN;\
-    m_detailsView->RUN;\
-    m_columnView->RUN;\
-    m_flowView->RUN
-
 ViewContainer::ViewContainer(QWidget *parent)
     : QFrame(parent)
     , m_model(0)
     , m_viewStack(0)
-    , m_iconView(0)
-    , m_columnView(0)
-    , m_detailsView(0)
-    , m_flowView(0)
     , m_navBar(0)
     , m_layout(0)
-    , m_myView(Icon)
+    , m_currentView(Icon)
     , m_back(false)
-    , m_currentView(0)
+    , m_selectModel(0)
 {
+    m_view[Icon] = new IconView(this);
+    m_view[Details] = new DetailsView(this);
+    m_view[Columns] = new ColumnView(this);
+    m_view[Flow] = new FlowView(this);
+
     m_model = new FS::Model(this);
-    m_viewStack = new QStackedWidget(this);
-    m_iconView = new IconView(this);
-    m_columnView = new ColumnView(this);
-    m_detailsView = new DetailsView(this);
-    m_flowView = new FlowView(this);
+    m_selectModel = new QItemSelectionModel(m_model);
+
     m_navBar = new NavBar(this, m_model);
-    m_layout = new QVBoxLayout(this);
     connect(m_model, SIGNAL(finishedWorking()), m_navBar, SLOT(stopAnimating()));
     connect(m_model, SIGNAL(startedWorking()), m_navBar, SLOT(startAnimating()));
 
     m_navBar->setVisible(Store::settings()->value("pathVisible", true).toBool());
-    m_viewStack->layout()->setSpacing(0);
+
     setFrameStyle(0/*QFrame::StyledPanel | QFrame::Sunken*/);
     setAutoFillBackground(false);
 
-    setModel(m_model);
-    setSelectionModel(new QItemSelectionModel(m_model));
-
     connect(m_model, SIGNAL(urlChanged(QUrl)), this, SIGNAL(urlChanged(QUrl)));
     connect(m_model, SIGNAL(urlLoaded(QUrl)), this, SIGNAL(urlLoaded(QUrl)));
-    connect(selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SIGNAL(selectionChanged()));
     connect(m_model, SIGNAL(hiddenVisibilityChanged(bool)), this, SIGNAL(hiddenVisibilityChanged(bool)));
     connect(m_model, SIGNAL(urlChanged(QUrl)), this, SLOT(setUrl(QUrl)));
     connect(m_model, SIGNAL(urlLoaded(QUrl)), this, SLOT(loadedUrl(QUrl)));
-    connect(m_iconView, SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)));
-    connect(m_iconView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
-    connect(m_detailsView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
-    connect(m_columnView, SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
-    connect(m_flowView->detailsView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
-    connect(m_flowView->flow(), SIGNAL(centerIndexChanged(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
     connect(m_model, SIGNAL(sortingChanged(int,int)), this, SIGNAL(sortingChanged(int,int)));
 
-    foreach (QAbstractItemView *v, QList<QAbstractItemView *>() << m_iconView << m_detailsView << m_columnView << m_flowView)
+    connect(m_selectModel, SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SIGNAL(selectionChanged()));
+
+    connect(static_cast<IconView *>(m_view[Icon]), SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)));
+    connect(static_cast<FlowView *>(m_view[Flow])->flow(), SIGNAL(centerIndexChanged(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
+
+    connect(static_cast<IconView *>(m_view[Icon]), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+    connect(static_cast<DetailsView *>(m_view[Details]), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+    connect(static_cast<ColumnView *>(m_view[Columns]), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+    connect(static_cast<FlowView *>(m_view[Flow]), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+
+    m_viewStack = new QStackedLayout();
+    m_viewStack->setSpacing(0);
+    m_viewStack->setContentsMargins(0,0,0,0);
+    for (int i = 0; i < NViews; ++i)
     {
-        v->setMouseTracking(true);
-        connect(v, SIGNAL(entered(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
-        connect(v, SIGNAL(viewportEntered()), this, SIGNAL(viewportEntered()));
-        connect(v, SIGNAL(opened(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        connect(m_view[i], SIGNAL(entered(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
+        connect(m_view[i], SIGNAL(viewportEntered()), this, SIGNAL(viewportEntered()));
+        connect(m_view[i], SIGNAL(opened(const QModelIndex &)), this, SLOT(activate(const QModelIndex &)));
+        m_viewStack->addWidget(m_view[i]);
+        m_view[i]->setMouseTracking(true);
+        m_view[i]->setModel(m_model);
+        m_view[i]->setSelectionModel(m_selectModel);
     }
-
-    m_viewStack->addWidget(m_iconView);
-    m_viewStack->addWidget(m_detailsView);
-    m_viewStack->addWidget(m_columnView);
-    m_viewStack->addWidget(m_flowView);
-
-    m_layout->addWidget(m_viewStack, 1);
-    m_layout->addWidget(m_navBar);
-    m_layout->setContentsMargins(0,0,0,0);
+    m_layout = new QVBoxLayout();
     m_layout->setSpacing(0);
+    m_layout->setContentsMargins(0,0,0,0);
+    m_layout->addLayout(m_viewStack, 1);
+    m_layout->addWidget(m_navBar);
+
     setLayout(m_layout);
 
     setView((View)Store::config.behaviour.view, false);
@@ -127,13 +120,6 @@ ViewContainer::ViewContainer(QWidget *parent)
 
 ViewContainer::~ViewContainer()
 {
-//    qDebug() << "deleting container" << m_model->rootUrl() << this;
-    delete m_iconView;
-    delete m_detailsView;
-    delete m_columnView;
-    delete m_flowView;
-    delete m_navBar;
-    delete m_model;
 }
 
 void
@@ -148,21 +134,6 @@ ViewContainer::loadSettings()
 
 PathNavigator *ViewContainer::pathNav() { return m_navBar->pathNav(); }
 
-void ViewContainer::setModel(FS::Model *model) { VIEWS(setModel(model)); }
-
-QList<QAbstractItemView *>
-ViewContainer::views()
-{
-    return QList<QAbstractItemView *>() << m_iconView << m_detailsView << m_columnView << m_flowView;
-}
-
-void
-ViewContainer::setSelectionModel(QItemSelectionModel *selectionModel)
-{
-    m_selectModel = selectionModel;
-    VIEWS(setSelectionModel(selectionModel));
-}
-
 FS::Model *ViewContainer::model() { return m_model; }
 
 QItemSelectionModel *ViewContainer::selectionModel() { return m_selectModel; }
@@ -170,16 +141,8 @@ QItemSelectionModel *ViewContainer::selectionModel() { return m_selectModel; }
 void
 ViewContainer::setView(const View view, bool store)
 {
-    m_myView = view;
-    if (view == Icon)
-        m_viewStack->setCurrentWidget(m_iconView);
-    else if (view == Details)
-        m_viewStack->setCurrentWidget(m_detailsView);
-    else if (view == Columns)
-        m_viewStack->setCurrentWidget(m_columnView);
-    else if (view == Flow)
-        m_viewStack->setCurrentWidget(m_flowView);
-    m_currentView = static_cast<QAbstractItemView *>(m_viewStack->currentWidget());
+    m_currentView = view;
+    m_viewStack->setCurrentWidget(m_view[view]);
     emit viewChanged();
 
 #if defined(ISUNIX)
@@ -208,7 +171,7 @@ ViewContainer::setUrl(const QUrl &url)
             if (ok)
                 setView(view, false);
         }
-        m_detailsView->setItemsExpandable(false);
+        static_cast<DetailsView *>(m_view[Details])->setItemsExpandable(false);
         m_selectModel->clearSelection();
     }
 }
@@ -216,7 +179,7 @@ ViewContainer::setUrl(const QUrl &url)
 void
 ViewContainer::loadedUrl(const QUrl &url)
 {
-    m_detailsView->setItemsExpandable(true);
+    static_cast<DetailsView *>(m_view[Details])->setItemsExpandable(true);
 }
 
 void
@@ -249,8 +212,7 @@ void ViewContainer::refresh() { m_model->refresh(); }
 void
 ViewContainer::rename()
 {
-    if (m_currentView)
-        m_currentView->edit(m_currentView->currentIndex());
+    m_view[m_currentView]->edit(m_view[m_currentView]->currentIndex());
 }
 
 void
@@ -357,7 +319,7 @@ ViewContainer::createDirectory()
 QAbstractItemView
 *ViewContainer::currentView() const
 {
-    return m_currentView;
+    return m_view[m_currentView];
 }
 
 //void
@@ -370,7 +332,8 @@ QAbstractItemView
 void
 ViewContainer::setRootIndex(const QModelIndex &index)
 {
-    VIEWS(setRootIndex(index));
+    for (int i = 0; i < NViews; ++i)
+        m_view[i]->setRootIndex(index);
 }
 
 void
@@ -381,7 +344,7 @@ ViewContainer::genNewTabRequest(const QModelIndex &index)
         emit newTabRequest(QUrl::fromLocalFile(fi.filePath()));
 }
 
-Actions
+Action
 ViewContainer::viewAction(const View view)
 {
     switch (view)
@@ -407,5 +370,5 @@ NavBar *ViewContainer::breadCrumbs() { return m_navBar; }
 
 void ViewContainer::setPathEditable(const bool editable) { m_navBar->setEditable(editable); }
 
-void ViewContainer::animateIconSize(int start, int stop) { m_iconView->setNewSize(stop); }
-QSize ViewContainer::iconSize() { return m_iconView->iconSize(); }
+void ViewContainer::animateIconSize(int start, int stop) { static_cast<IconView *>(m_view[Icon])->setNewSize(stop); }
+const QSize ViewContainer::iconSize() const { return m_view[Icon]->iconSize(); }

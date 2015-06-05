@@ -92,7 +92,7 @@ FileItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
     const QString &oldName = index.data(Qt::EditRole).toString();
     edit->setText(oldName);
 
-    const bool isDir = static_cast<const FS::Model *>(index.model())->isDir(index);
+    const bool isDir = index.data(FS::FileIsDirRole).value<bool>();
     QTextCursor tc = edit->textCursor();
     const int last = (isDir||!oldName.contains("."))?oldName.size():oldName.lastIndexOf(".");
     tc.setPosition(last, QTextCursor::KeepAnchor);

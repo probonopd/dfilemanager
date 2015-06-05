@@ -35,7 +35,7 @@
 #include <QAbstractItemView>
 #include <QPainter>
 #include "viewcontainer.h"
-#include "filesystemmodel.h"
+#include "fsmodel.h"
 
 #if defined(HASMAGIC)
 #include <magic.h>
@@ -118,7 +118,7 @@ Ops::customActionTriggered()
     const QString &app = action.takeFirst();
     ViewContainer *container = MainWindow::currentContainer();
     FS::Model *fsModel = container->model();
-    QItemSelectionModel *isModel = container->selectionModel();
+    QItemSelectionModel *isModel = container->currentView()->selectionModel();
 
     if (isModel->hasSelection())
     {
@@ -451,7 +451,7 @@ Ops::getPathToClipBoard()
         role = FS::FileNameRole;
     ViewContainer *c = mw->activeContainer();
     FS::Model *m = c->model();
-    const QModelIndexList &selection = c->selectionModel()->selectedRows(0);
+    const QModelIndexList &selection = c->currentView()->selectionModel()->selectedRows(0);
     if (selection.isEmpty())
         QApplication::clipboard()->setText(m->index(m->rootUrl()).data(role).toString());
     else

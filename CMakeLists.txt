@@ -3,9 +3,6 @@ cmake_minimum_required(VERSION 2.8.11)
 project(dfm)
 option(QT5BUILD "build using qt5 instead of qt4" OFF)
 
-#unless somebody has a better way of getting the standard include path? (usually /usr/include)
-find_path(STD_INCLUDE_PATH NAMES stdio.h)
-
 #find qt...
 if (QT5BUILD)
     find_package(Qt5Widgets REQUIRED)
@@ -62,7 +59,7 @@ else (QT5BUILD)
         set(SOLID_FOUND ON)
         add_definitions(-DHASSOLID)
         message(STATUS "found solid ${SOLID_LIBRARY}")
-        find_path(SOLID_DIR NAMES solid/device.h)
+        find_path(SOLID_DIR NAMES device.h PATH_SUFFIXES solid)
         if (SOLID_DIR)
             message(STATUS "Found solid include dir: ${SOLID_DIR}")
             include_directories(${SOLID_DIR})

@@ -42,7 +42,6 @@ namespace FS
 class FileIconProvider : public QFileIconProvider
 {
 public:
-    FileIconProvider();
     QIcon icon(const QFileInfo &i) const;
     QIcon icon(IconType type) const;
     static QIcon fileIcon(const QFileInfo &fileInfo);
@@ -51,9 +50,9 @@ public:
 };
 
 class Model;
+class Node;
 namespace Worker {class Gatherer;}
 
-class Node;
 class Model : public QAbstractItemModel
 {
     Q_OBJECT
@@ -62,15 +61,8 @@ public:
     explicit Model(QObject *parent = 0);
     ~Model();
 
-    bool hasThumb(const QString &file) const;
-    bool hasThumb(const QModelIndex &index) const;
-
     Qt::ItemFlags flags(const QModelIndex &index) const;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
-    template <typename T> inline T tData(const QModelIndex &index, int role = Qt::DisplayRole) const
-    {
-        return data(index, role).value<T>();
-    }
     bool setData(const QModelIndex &index, const QVariant &value, int role);
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
@@ -80,7 +72,6 @@ public:
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
     QModelIndex parent(const QModelIndex &child) const;
     QModelIndex index(const QUrl &url);
-    QModelIndex indexForLocalFile(const QString &filePath);
 
     void fetchMore(const QModelIndex &parent);
     bool canFetchMore(const QModelIndex &parent) const;
@@ -98,7 +89,6 @@ public:
     QUrl rootUrl() const { return m_url; }
     Node *rootNode() const;
 
-    QIcon fileIcon(const QModelIndex &index) const;
     QString fileName(const QModelIndex &index) const;
     QUrl url(const QModelIndex &index) const;
     QUrl localUrl(const QModelIndex &index) const;
@@ -140,14 +130,12 @@ public:
 
     void sortNode(Node *n = 0);
 
-    QFont font() const { return static_cast<const QWidget *>(static_cast<const QObject *>(this)->parent())->font(); }
-
 protected:
     bool handleFileUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
     bool handleSearchUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
     bool handleApplicationsUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
     bool handleDevicesUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
-//    void beginInsertRows(const QModelIndex &parent, int first, int last);
+    bool handleTrashUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
 
 public slots:
     bool setUrl(QUrl url);
@@ -194,7 +182,6 @@ private:
     QUrl m_url;
     QList<QUrl> m_history[Forward+1];
     QTimer *m_timer;
-    QObject *m_parent;
     friend class FlowDataLoader;
     friend class Node;
     friend class Worker::Gatherer;

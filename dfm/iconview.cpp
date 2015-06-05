@@ -38,7 +38,6 @@
 #include <QPropertyAnimation>
 #include <QTransform>
 #include <QDebug>
-#include "filesystemmodel.h"
 #include "viewcontainer.h"
 #include "iconview.h"
 #include "viewcontainer.h"
@@ -47,6 +46,7 @@
 #include "viewanimator.h"
 #include "objects.h"
 #include "config.h"
+#include "fsmodel.h"
 
 #define TEXT index.data().toString()
 #define RECT option.rect
@@ -129,7 +129,7 @@ public:
     }
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        if (!m_model || !index.isValid() || !option.rect.isValid())
+        if (!index.isValid() || !option.rect.isValid())
             return;
 
         const QPen savedPen(painter->pen());
@@ -160,7 +160,7 @@ public:
 //        QApplication::style()->drawItemText(painter, textRect, Qt::AlignTop|Qt::AlignHCenter, PAL, option.state&QStyle::State_Enabled, text(option, index), selected?QPalette::HighlightedText:QPalette::Text);
         pixRect = QApplication::style()->itemPixmapRect(pixRect, Qt::AlignCenter, pixmap);
 
-        if (m_model->hasThumb(index))
+        if (index.data(FS::FileHasThumbRole).toBool())
             renderShadow(pixRect.adjusted(-(SHADOW-1), -(SHADOW-1), SHADOW-1, SHADOW), painter);
 
         QApplication::style()->drawItemPixmap(painter, pixRect, Qt::AlignCenter, pixmap);
@@ -168,7 +168,6 @@ public:
         painter->setBrush(savedBrush);
 //        painter->setFont(savedFont);
     }
-    inline void setModel(FS::Model *fsModel) { m_model = fsModel; }
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
         return m_iv->gridSize();
@@ -176,18 +175,18 @@ public:
     inline void clearData() { m_textData.clear(); m_pixData.clear(); }
     inline void clear(const QModelIndex &index)
     {
-        if (m_pixData.contains(index.internalPointer()))
-            m_pixData.remove(index.internalPointer());
-        if (m_textData.contains(index.internalPointer()))
-            m_textData.remove(index.internalPointer());
+        if (m_pixData.contains(index))
+            m_pixData.remove(index);
+        if (m_textData.contains(index))
+            m_textData.remove(index);
     }
     bool isHitted(const QModelIndex &index, const QPoint &p, const QRect &r = QRect()) const
     {
-        if (m_pixData.contains(index.internalPointer()) && static_cast<const FS::Model *>(index.model())->hasThumb(index))
+        if (m_pixData.contains(index) && index.data(FS::FileHasThumbRole).toBool())
         {
             QRect pixRect(r);
             pixRect.setBottom(pixRect.top()+m_iv->iconSize().height()+((SHADOW-3)*2));
-            return QApplication::style()->itemPixmapRect(pixRect, Qt::AlignCenter, m_pixData.value(index.internalPointer())).contains(p);
+            return QApplication::style()->itemPixmapRect(pixRect, Qt::AlignCenter, m_pixData.value(index)).contains(p);
         }
         QRect theRect(QPoint(0,0), m_iv->iconSize());
         theRect.moveCenter(QRect(r.topLeft(), QSize(r.width(), m_iv->iconSize().height()+2)).center());
@@ -196,14 +195,14 @@ public:
 protected:
     QPixmap pix(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        if (!index.isValid()||!index.internalPointer())
+        if (!index.isValid())
             return QPixmap();
 
-        if (m_pixData.contains(index.internalPointer()))
-            return m_pixData.value(index.internalPointer());
+        if (m_pixData.contains(index))
+            return m_pixData.value(index);
 
-        const QIcon &icon = m_model->fileIcon(index);
-        const bool isThumb = m_model->hasThumb(index);
+        const QIcon &icon = index.data(FS::FileIconRole).value<QIcon>();
+        const bool isThumb = index.data(FS::FileHasThumbRole).toBool();
 
         int newSize = icon.actualSize(DECOSIZE).height();
         if (!isThumb && icon.actualSize(DECOSIZE).height() < DECOSIZE.height())
@@ -229,16 +228,16 @@ protected:
             sz = DECOSIZE;
         if (pixmap.size() != DECOSIZE && pixmap.width()>sz.width() && pixmap.height()>sz.height())
             pixmap = pixmap.scaled(sz, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        m_pixData.insert(index.internalPointer(), pixmap);
+        m_pixData.insert(index, pixmap);
         return pixmap;
     }
     QString text(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        if (!index.isValid()||!index.internalPointer())
+        if (!index.isValid())
             return QString();
 
-        if (m_textData.contains(index.internalPointer()))
-            return m_textData.value(index.internalPointer());
+        if (m_textData.contains(index))
+            return m_textData.value(index);
         QFontMetrics fm(option.fontMetrics);
 
         QString spaces(TEXT.replace(".", QString(" ")));
@@ -291,7 +290,7 @@ protected:
             theText.append(QString("%1\n").arg(actualText));
         }
         textLayout.endLayout();
-        m_textData.insert(index.internalPointer(), theText);
+        m_textData.insert(index, theText);
         return theText;
     }
     static inline int textFlags() { return Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap; }
@@ -300,16 +299,14 @@ private:
     QPixmap m_shadowData[9];
     QColor m_mid;
     IconView *m_iv;
-    mutable QHash<void *, QString> m_textData;
-    mutable QHash<void *, QPixmap> m_pixData;
-    FS::Model *m_model;
+    mutable QHash<QModelIndex, QString> m_textData;
+    mutable QHash<QModelIndex, QPixmap> m_pixData;
 };
 
 IconView::IconView(QWidget *parent)
     : QAbstractItemView(parent)
     , m_newSize(0)
     , m_gridHeight(0)
-    , m_model(0)
     , m_horItems(0)
     , m_scrollTimer(new QTimer(this))
     , m_sizeTimer(new QTimer(this))
@@ -332,7 +329,6 @@ IconView::IconView(QWidget *parent)
     viewport()->setAcceptDrops(true);
     setDragEnabled(true);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-//    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setSelectionBehavior(QAbstractItemView::SelectRows);
 
     connect(verticalScrollBar(), SIGNAL(valueChanged(int)), viewport(), SLOT(update()));
@@ -354,7 +350,6 @@ IconView::~IconView()
 {
 
 }
-
 
 void
 IconView::setNewSize(const int size)
@@ -633,8 +628,7 @@ IconView::paintEvent(QPaintEvent *e)
                 continue;
 
             renderCategory(category, catRect, &p, cat);
-
-            const QModelIndexList &block(m_model->category(category));
+            const QModelIndexList &block(static_cast<FS::Model *>(model())->category(category));
             for (int i = 0; i < block.count(); ++i)
             {
                 const QModelIndex &index(block.at(i));
@@ -651,9 +645,9 @@ IconView::paintEvent(QPaintEvent *e)
     }
     else
     {
-        for (int i = 0; i < m_model->rowCount(rootIndex()); ++i)
+        for (int i = 0; i < model()->rowCount(rootIndex()); ++i)
         {
-            const QModelIndex &index(m_model->index(i, 0, rootIndex()));
+            const QModelIndex &index(model()->index(i, 0, rootIndex()));
             const QRect vr(visualRect(index));
             if (!e->rect().intersects(vr))
                 continue;
@@ -711,12 +705,12 @@ IconView::correctLayout()
 void
 IconView::updateLayout()
 {
-    if (!isVisible()||!m_model)
+    if (!isVisible()||!model())
         return;
 
     int contentsWidth = viewport()->width();
     int horItemCount = m_horItems = contentsWidth/(iconSize().width() + Store::config.views.iconView.textWidth*2);
-    const int rowCount = m_model->rowCount(rootIndex());
+    const int rowCount = model()->rowCount(rootIndex());
     if (rowCount < horItemCount && rowCount > 1 && !isCategorized())
         horItemCount = model()->rowCount(rootIndex());
     if (contentsWidth && horItemCount)
@@ -732,26 +726,30 @@ IconView::contextMenuEvent(QContextMenuEvent *e)
         mw->rightClick(file, e->globalPos());
 }
 
+void
+IconView::setRootIndex(const QModelIndex &index)
+{
+    clear();
+    QAbstractItemView::setRootIndex(index);
+}
 
 void
 IconView::setModel(QAbstractItemModel *model)
 {
     QAbstractItemView::setModel(model);
-    if (m_model = qobject_cast<FS::Model *>(model))
+    ViewAnimator::manage(this);
+    if (FS::Model *fsModel = static_cast<FS::Model *>(model))
     {
         m_layTimer->setInterval(50);
-        connect(m_model, SIGNAL(finishedWorking()), this, SLOT(updateLayout()));
-        connect(m_model, SIGNAL(urlLoaded(QUrl)), this, SLOT(updateLayout()));
-        connect(m_model, SIGNAL(finishedWorking()), m_layTimer, SLOT(stop()));
-        connect(m_model, SIGNAL(startedWorking()), m_layTimer, SLOT(start()));
-        connect(m_model, SIGNAL(urlChanged(QUrl)), this, SLOT(clear()));
-        connect(m_model, SIGNAL(sortingChanged(int,int)), this, SLOT(calculateRects()));
-        connect(m_model, SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(clear(QModelIndex,QModelIndex)));
-        connect(m_model, SIGNAL(layoutChanged()), this, SLOT(updateLayout()));
-        connect(m_model, SIGNAL(modelReset()), this, SLOT(updateLayout()));
-        static_cast<IconDelegate*>(itemDelegate())->setModel(m_model);
+        connect(fsModel, SIGNAL(finishedWorking()), this, SLOT(updateLayout()));
+        connect(fsModel, SIGNAL(urlLoaded(QUrl)), this, SLOT(updateLayout()));
+        connect(fsModel, SIGNAL(finishedWorking()), m_layTimer, SLOT(stop()));
+        connect(fsModel, SIGNAL(startedWorking()), m_layTimer, SLOT(start()));
+        connect(fsModel, SIGNAL(sortingChanged(int,int)), this, SLOT(calculateRects()));
+        connect(fsModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(clear(QModelIndex,QModelIndex)));
+        connect(fsModel, SIGNAL(layoutChanged()), this, SLOT(updateLayout()));
+        connect(fsModel, SIGNAL(modelReset()), this, SLOT(updateLayout()));
     }
-    ViewAnimator::manage(this);
 }
 
 void
@@ -781,9 +779,9 @@ IconView::visualRect(const QString &cat) const
 QModelIndex
 IconView::indexAt(const QPoint &p) const
 {
-    for (int i = 0; i < m_model->rowCount(rootIndex()); ++i)
+    for (int i = 0; i < model()->rowCount(rootIndex()); ++i)
     {
-        const QModelIndex &index(m_model->index(i, 0, rootIndex()));
+        const QModelIndex &index(model()->index(i, 0, rootIndex()));
         const QRect r(visualRect(index));
 //        if (!viewport()->rect().intersects(r))
 //            continue;
@@ -871,7 +869,7 @@ IconView::calculateRects()
 
     if (isCategorized())
     {
-        m_categories = m_model->categories();
+        m_categories = static_cast<FS::Model *>(model())->categories();
         QFont f(font());
         f.setBold(true);
         QFontMetrics fm(f);
@@ -882,7 +880,7 @@ IconView::calculateRects()
 
             m_contentsHeight+=fm.height();
             int col = -1;
-            const QModelIndexList &block(m_model->category(m_categories.at(cat)));
+            const QModelIndexList &block(static_cast<FS::Model *>(model())->category(m_categories.at(cat)));
             for (int i = 0; i < block.count(); ++i)
             {
                 if (col+1==m_horItems)
@@ -901,9 +899,9 @@ IconView::calculateRects()
     }
     else
     {
-        for (int i = 0; i < m_model->rowCount(rootIndex()); ++i)
+        for (int i = 0; i < model()->rowCount(rootIndex()); ++i)
         {
-            const QModelIndex &index(m_model->index(i, 0, rootIndex()));
+            const QModelIndex &index(model()->index(i, 0, rootIndex()));
             const int col = i % m_horItems;
             m_contentsHeight = vsz * (i / m_horItems);
             if (index.isValid()&&index.internalPointer())
@@ -916,7 +914,7 @@ IconView::calculateRects()
     else
         verticalScrollBar()->setRange(0, -1);
     viewport()->update();
-    if (!m_model->isWorking())
+    if (!static_cast<FS::Model *>(model())->isWorking())
         m_layTimer->stop();
 }
 
@@ -981,9 +979,9 @@ IconView::moveCursor(CursorAction cursorAction, Qt::KeyboardModifiers modifiers)
         break;
     }
     case MoveHome:
-        return m_model->index(0, 0, rootIndex());
+        return model()->index(0, 0, rootIndex());
     case MoveEnd:
-        return m_model->index(m_model->rowCount(rootIndex())-1, 0, rootIndex());
+        return model()->index(model()->rowCount(rootIndex())-1, 0, rootIndex());
     case MovePageUp:
         return indexAt(r.center()-QPoint(0, viewport()->height()));
     case MovePageDown:
@@ -999,9 +997,9 @@ void
 IconView::setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags)
 {
     QItemSelection selection;
-    for (int i = 0; i < m_model->rowCount(rootIndex()); ++i)
+    for (int i = 0; i < model()->rowCount(rootIndex()); ++i)
     {
-        const QModelIndex &index(m_model->index(i, 0, rootIndex()));
+        const QModelIndex &index(model()->index(i, 0, rootIndex()));
         const QRect vr(visualRect(index));
         if (rect.intersects(vr))
             selection.select(index, index);

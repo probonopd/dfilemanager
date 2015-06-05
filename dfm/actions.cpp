@@ -32,6 +32,8 @@
 #include "config.h"
 #include "placesview.h"
 #include "searchbox.h"
+#include "viewcontainer.h"
+#include "fsmodel.h"
 
 using namespace DFM;
 
@@ -310,16 +312,31 @@ MainWindow::createActions()
     m_actions[GetFileName] = new QAction(tr("Copy FileName(s) to ClipBoard"), this);
     m_actions[GetFileName]->setShortcut(QKeySequence("Ctrl+Shift+N"));
     m_actions[GetFileName]->setShortcutContext(Qt::ApplicationShortcut);
-    m_actions[GetFileName]->setObjectName("actionNewWindow");
     addAction(m_actions[GetFileName]);
     connect(m_actions[GetFileName], SIGNAL(triggered()), Ops::instance(), SLOT(getPathToClipBoard()));
 
     m_actions[GetFilePath] = new QAction(tr("Copy FilePath(s) to ClipBoard"), this);
     m_actions[GetFilePath]->setShortcut(QKeySequence("Ctrl+Shift+P"));
     m_actions[GetFilePath]->setShortcutContext(Qt::ApplicationShortcut);
-    m_actions[GetFilePath]->setObjectName("actionNewWindow");
     addAction(m_actions[GetFilePath]);
     connect(m_actions[GetFilePath], SIGNAL(triggered()), Ops::instance(), SLOT(getPathToClipBoard()));
+
+    m_actions[MoveToTrashAction] = new QAction(tr("Move Selected File(s) To trash"), this);
+    m_actions[MoveToTrashAction]->setShortcut(QKeySequence("Del"));
+    m_actions[MoveToTrashAction]->setShortcutContext(Qt::ApplicationShortcut);
+    m_actions[MoveToTrashAction]->setObjectName("actionMoveToTrash");
+    addAction(m_actions[MoveToTrashAction]);
+    connect(m_actions[MoveToTrashAction], SIGNAL(triggered()), this, SLOT(trash()));
+
+    m_actions[RestoreFromTrashAction] = new QAction(tr("Restore"), this);
+    m_actions[RestoreFromTrashAction]->setObjectName("actionRestoreFromTrash");
+    addAction(m_actions[RestoreFromTrashAction]);
+    connect(m_actions[RestoreFromTrashAction], SIGNAL(triggered()), this, SLOT(trash()));
+
+    m_actions[RemoveFromTrashAction] = new QAction(tr("Remove From Trash"), this);
+    m_actions[RemoveFromTrashAction]->setObjectName("actionRemoveFromTrash");
+    addAction(m_actions[RemoveFromTrashAction]);
+    connect(m_actions[RemoveFromTrashAction], SIGNAL(triggered()), this, SLOT(trash()));
 }
 
 void
@@ -393,42 +410,54 @@ static QAction *genSeparator(QObject *parent)
 }
 
 void
-MainWindow::rightClick(const QString &file, const QPoint &pos) const
+MainWindow::rightClick(const QString &file, const QPoint &pos)
 {
-    QMenu menu;
-    QList<QAction *> firstGroup;
-    firstGroup << m_actions[OpenInTab]
-            << m_actions[MkDir]
-            << genSeparator(&menu)
-            << m_actions[Paste]
-            << m_actions[Copy]
-            << m_actions[Cut]
-            << genSeparator(&menu)
-            << m_actions[DeleteSelection]
-            << m_actions[Rename];
-    QList<QAction *> secondGroup;
-    secondGroup << m_actions[GoUp]
-            << m_actions[GoBack]
-            << m_actions[GoForward]
-            << genSeparator(&menu)
-            << m_actions[Properties];
-
-    QMenu openWith;
-    openWith.setTitle("Open With");
-    QList<QAction *> owa = QList<QAction *>() << Store::openWithActions(file) << m_actions[CustomCommand];
-    openWith.addActions(owa);
-
-    if (!Store::customActions().isEmpty())
+    if (ViewContainer *vc = activeContainer())
     {
-        menu.addMenu(Store::customActionsMenu());
-        menu.addSeparator();
+        QMenu menu;
+        if (vc->model()->url(vc->currentView()->rootIndex()).scheme().toLower() == "trash")
+        {
+            menu.addActions(QList<QAction *>() << m_actions[RestoreFromTrashAction] << m_actions[RemoveFromTrashAction]);
+        }
+        else
+        {
+
+            QList<QAction *> firstGroup;
+            firstGroup << m_actions[OpenInTab]
+                       << m_actions[MkDir]
+                       << genSeparator(&menu)
+                       << m_actions[Paste]
+                       << m_actions[Copy]
+                       << m_actions[Cut]
+                       << genSeparator(&menu)
+                       << m_actions[MoveToTrashAction]
+                       << m_actions[DeleteSelection]
+                       << m_actions[Rename];
+            QList<QAction *> secondGroup;
+            secondGroup << m_actions[GoUp]
+                        << m_actions[GoBack]
+                        << m_actions[GoForward]
+                        << genSeparator(&menu)
+                        << m_actions[Properties];
+
+            QMenu *openWith = new QMenu("Open With", &menu);
+            QList<QAction *> owa = QList<QAction *>() << Store::openWithActions(file) << m_actions[CustomCommand];
+            openWith->addActions(owa);
+
+            if (!Store::customActions().isEmpty())
+            {
+                menu.addMenu(Store::customActionsMenu());
+                menu.addSeparator();
+            }
+            menu.addActions(firstGroup);
+            menu.addSeparator();
+            menu.addMenu(openWith);
+            menu.addSeparator();
+            menu.addActions(secondGroup);
+
+        }
+        menu.exec(pos);
     }
-    menu.addActions(firstGroup);
-    menu.addSeparator();
-    menu.addMenu(&openWith);
-    menu.addSeparator();
-    menu.addActions(secondGroup);
-    menu.exec(pos);
 }
 
 void

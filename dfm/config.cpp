@@ -367,7 +367,6 @@ Store::openWithActions(const QString &file)
         action->setData(var);
         actionList << action;
     }
-    return actionList;
 #else
     QFileInfo f(file);
     if (f.suffix().isEmpty()) //windows doesnt know files w/o suffix...
@@ -439,7 +438,6 @@ Store::openWithActions(const QString &file)
         action->setData(QVariant::fromValue(app));
         actionList << action;
     }
-
 #endif
     return actionList;
 }

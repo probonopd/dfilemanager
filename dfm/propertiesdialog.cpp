@@ -26,8 +26,9 @@
 #include "icondialog.h"
 #include "dataloader.h"
 #include "viewcontainer.h"
-#include "filesystemmodel.h"
+#include "fsmodel.h"
 #include "helpers.h"
+#include "globals.h"
 #include <QDateTime>
 #include <QGroupBox>
 #include <QProgressBar>
@@ -141,7 +142,7 @@ GeneralInfo::GeneralInfo(QWidget *parent, const QStringList &files)
     {
         window()->setWindowTitle(f.fileName());
         QToolButton *iconLabel = new QToolButton(this);
-        iconLabel->setIcon(fsModel->fileIcon(fsModel->index(QUrl::fromLocalFile(f.filePath()))));
+        iconLabel->setIcon(fsModel->index(QUrl::fromLocalFile(f.filePath())).data(DFM::FS::FileIconRole).value<QIcon>());
         iconLabel->setToolButtonStyle(Qt::ToolButtonIconOnly);
         iconLabel->setIconSize(QSize(32, 32));
         if (f.isDir())
@@ -267,7 +268,7 @@ PreViewWidget::PreViewWidget(QWidget *parent, const QStringList &files)
     const QString &file = files.first();
     DFM::FS::Model *fsModel = DFM::MainWindow::currentContainer()->model();
     const QModelIndex &index = fsModel->index(QUrl::fromLocalFile(file));
-    if (index.isValid() && fsModel->hasThumb(file))
+    if (index.isValid() && index.data(DFM::FS::FileHasThumbRole).toBool())
     {
         const QPixmap &pix = qvariant_cast<QPixmap>(fsModel->data(index, Qt::DecorationRole));
         if (!pix.isNull())

@@ -29,6 +29,21 @@ private:
 namespace DFM
 {
 
+class DTrash
+{
+public:
+    enum TrashPath { TrashFiles = 0, TrashInfo, TrashRoot, TrashNPaths };
+    static bool moveToTrash(const QStringList &files);
+    static bool restoreFromTrash(const QStringList &files);
+    static bool removeFromTrash(const QStringList &files);
+    static QString trashPath(const TrashPath &location = TrashRoot);
+
+protected:
+    static QString restorePath(QString file);
+    static QString trashInfoFile(QString file);
+    static QString trashFilePath(QString file);
+};
+
 class DViewBase
 {
 public:

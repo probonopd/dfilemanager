@@ -2,16 +2,8 @@
 #define THUMBSPDF_H
 
 #include <../../dfm/interfaces.h>
-#include <QStringList>
-#include <QImage>
-#include <QFileInfo>
-#if defined(POPPLER_VERSION)
-#if POPPLER_VERSION < 5
-#include <poppler-qt4.h>
-#else
-#include <poppler-qt5.h>
-#endif
-#endif
+
+namespace Poppler{class Document;}
 
 class ThumbsPDF : public QObject, ThumbInterface
 {
@@ -32,7 +24,7 @@ public:
     bool thumb(const QString &file, const QString &mime, QImage &thumb, const int size);
 
 private:
-    Poppler::Document* document;
+    Poppler::Document *document;
 };
 
 #endif // THUMBSPDF_H
