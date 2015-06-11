@@ -16,6 +16,7 @@ find_path(EXIV_INCLUDE_DIRS NAMES exiv2/exiv2.hpp)
 
 if (EXIV_LIBRARY AND EXIV_INCLUDE_DIRS)
     add_definitions(-DHASEXIV)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
     include_directories(${EXIV_INCLUDE_DIRS})
     target_link_libraries(thumbsimageplugin ${EXIV_LIBRARY})
     message(STATUS "Found exiv library at ${EXIV_LIBRARY} and exiv include dirs at ${EXIV_INCLUDE_DIRS}")

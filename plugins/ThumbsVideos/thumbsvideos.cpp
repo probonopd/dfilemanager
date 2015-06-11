@@ -15,12 +15,12 @@ ThumbsVideos::init()
 bool
 ThumbsVideos::thumb(const QString &file, const QString &mime, QImage &thumb, const int size)
 {
-    if (!canRead(mime))
+    if (!mime.startsWith("video"))
         return false;
     std::vector<uint8_t> pixels;
     try
     {
-        m_vt.generateThumbnail(file.toUtf8().constData(), Png, pixels);
+        m_vt.generateThumbnail(qPrintable(file), Png, pixels);
     }
     catch (const std::exception &ex)
     {
@@ -28,11 +28,4 @@ ThumbsVideos::thumb(const QString &file, const QString &mime, QImage &thumb, con
         return false;
     }
     return thumb.loadFromData(pixels.data(), pixels.size());
-}
-
-
-bool
-ThumbsVideos::canRead(const QString &mime) const
-{
-    return mime.startsWith("video");
 }

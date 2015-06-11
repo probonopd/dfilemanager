@@ -18,7 +18,6 @@ public:
     void init();
     ~ThumbsVideos(){}
 
-    bool canRead(const QString &file) const;
     bool thumb(const QString &file, const QString &mime, QImage &thumb, const int size);
 
     QString name() const { return tr("VideoThumbs"); }
