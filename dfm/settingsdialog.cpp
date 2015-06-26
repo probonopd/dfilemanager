@@ -231,6 +231,7 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
         foreach (ThumbInterface *plugin, dApp->thumbIfaces())
         {
             QCheckBox *box = new QCheckBox(plugin->name(), m_showThumbs);
+            box->setProperty("pluginName", plugin->name());
             box->setChecked(dApp->isActive(plugin));
             box->setToolTip(plugin->description());
             tL->addWidget(box);
@@ -381,9 +382,9 @@ SettingsDialog::accept()
     foreach (QCheckBox *box, m_viewWidget->m_showThumbs->findChildren<QCheckBox *>())
     {
         if (box->isChecked())
-            dApp->activateThumbInterface(box->text());
+            dApp->activateThumbInterface(box->property("pluginName").toString());
         else
-            dApp->deActivateThumbInterface(box->text());
+            dApp->deActivateThumbInterface(box->property("pluginName").toString());
     }
 
     Store::config.behaviour.hideTabBarWhenOnlyOneTab = m_behWidget->m_hideTabBar->isChecked();

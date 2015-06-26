@@ -114,6 +114,7 @@ ColumnView::ColumnView(QWidget *parent) : QAbstractItemView(parent)
     setTextElideMode(Qt::ElideRight);
     QAbstractItemDelegate *d = itemDelegate();
     setItemDelegate(new ColumnDelegate(this));
+    delete d;
     connect(horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateLayout()));
 }
 
@@ -376,10 +377,12 @@ ColumnView::visualRegionForSelection(const QItemSelection &selection) const
 Column::Column(QWidget *parent)
     : QListView(parent)
     , m_hasBeenShown(false)
+    , m_sizeTimer(new QTimer(this))
 {
     setSelectionRectVisible(true);
     setUniformItemSizes(true);
     ScrollAnimator::manage(this);
+    connect(m_sizeTimer, SIGNAL(timeout()), this, SLOT(saveWidth()));
 }
 
 void
@@ -391,13 +394,13 @@ Column::paintEvent(QPaintEvent *e)
         const QModelIndex &index = model()->index(i, 0, rootIndex());
         QStyleOptionViewItemV4 opt = viewOptions();
         opt.rect = visualRect(index);
-        if (opt.rect.width() > viewport()->width())
-            opt.rect.setWidth(viewport()->width());
         if (!opt.rect.intersects(viewport()->rect()))
             continue;
+        if (opt.rect.width() > viewport()->width())
+            opt.rect.setWidth(viewport()->width());
         if (opt.rect.contains(viewport()->mapFromGlobal(QCursor::pos())))
             opt.state |= QStyle::State_MouseOver;
-        if (selectedIndexes().contains(index))
+        if (selectionModel()->isSelected(index))
             opt.state |= QStyle::State_Selected;
         itemDelegate()->paint(&p, opt, index);
     }
@@ -518,10 +521,25 @@ void
 Column::resizeEvent(QResizeEvent *e)
 {
     QListView::resizeEvent(e);
-    if (Store::config.views.dirSettings && m_hasBeenShown)
-        Ops::writeDesktopValue<int>(QDir(rootIndex().data(FS::FilePathRole).toString()), KEY, size().width(), rootIndex().data(FS::UrlRole).toUrl().toString());
     if (e->size().width() != e->oldSize().width())
+    {
         static_cast<ColumnView *>(parent())->updateLayout();
+        if (!m_sizeTimer->isActive())
+            m_sizeTimer->start(250);
+    }
+}
+
+void
+Column::saveWidth()
+{
+    if (Store::config.views.dirSettings && m_hasBeenShown && m_savedWidth == width())
+    {
+        Ops::writeDesktopValue<int>(QDir(rootIndex().data(FS::FilePathRole).toString()), KEY, size().width(), rootIndex().data(FS::UrlRole).toUrl().toString());
+        m_savedWidth = -1;
+        m_sizeTimer->stop();
+        return;
+    }
+    m_savedWidth = width();
 }
 
 //---------------------------------------------------------------------------------------------------------

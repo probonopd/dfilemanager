@@ -26,6 +26,8 @@
 #include <QListView>
 #include "helpers.h"
 
+class QTimer;
+
 namespace DFM
 {
 
@@ -63,6 +65,9 @@ protected:
     void resizeEvent(QResizeEvent *e);
     void paintEvent(QPaintEvent *e);
 
+protected slots:
+    void saveWidth();
+
 signals:
     void newTabRequest(const QModelIndex &index);
     void opened(const QModelIndex &index);
@@ -70,6 +75,8 @@ signals:
 private:
     QModelIndex m_pressIdx;
     bool m_hasBeenShown;
+    int m_savedWidth;
+    QTimer *m_sizeTimer;
 };
 
 class ColumnView : public QAbstractItemView
