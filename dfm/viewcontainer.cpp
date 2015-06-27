@@ -48,6 +48,10 @@
 
 using namespace DFM;
 
+#define D_VIEW(_TYPE_, _METHOD_) _TYPE_##View *ViewContainer::_METHOD_##View() { return static_cast<_TYPE_##View *>(m_view[_TYPE_]); }
+    D_VIEW(Icon, icon) D_VIEW(Details, details) D_VIEW(Column, column) D_VIEW(Flow, flow)
+#undef D_VIEW
+
 ViewContainer::ViewContainer(QWidget *parent)
     : QFrame(parent)
     , m_model(0)
@@ -60,7 +64,7 @@ ViewContainer::ViewContainer(QWidget *parent)
 {
     m_view[Icon] = new IconView(this);
     m_view[Details] = new DetailsView(this);
-    m_view[Columns] = new ColumnView(this);
+    m_view[Column] = new ColumnView(this);
     m_view[Flow] = new FlowView(this);
 
     m_model = new FS::Model(this);
@@ -84,13 +88,13 @@ ViewContainer::ViewContainer(QWidget *parent)
 
     connect(m_selectModel, SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SIGNAL(selectionChanged()));
 
-    connect(static_cast<IconView *>(m_view[Icon]), SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)));
-    connect(static_cast<FlowView *>(m_view[Flow])->flow(), SIGNAL(centerIndexChanged(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
+    connect(iconView(), SIGNAL(iconSizeChanged(int)), this, SIGNAL(iconSizeChanged(int)));
+    connect(flowView()->flow(), SIGNAL(centerIndexChanged(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
 
-    connect(static_cast<IconView *>(m_view[Icon]), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
-    connect(static_cast<DetailsView *>(m_view[Details]), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
-    connect(static_cast<ColumnView *>(m_view[Columns]), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
-    connect(static_cast<FlowView *>(m_view[Flow]), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+    connect(iconView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+    connect(detailsView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+    connect(columnView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
+    connect(flowView(), SIGNAL(newTabRequest(QModelIndex)), this, SLOT(genNewTabRequest(QModelIndex)));
 
     m_viewStack = new QStackedLayout();
     m_viewStack->setSpacing(0);
@@ -171,7 +175,7 @@ ViewContainer::setUrl(const QUrl &url)
             if (ok)
                 setView(view, false);
         }
-        static_cast<DetailsView *>(m_view[Details])->setItemsExpandable(false);
+        detailsView()->setItemsExpandable(false);
         m_selectModel->clearSelection();
     }
 }
@@ -179,7 +183,7 @@ ViewContainer::setUrl(const QUrl &url)
 void
 ViewContainer::loadedUrl(const QUrl &url)
 {
-    static_cast<DetailsView *>(m_view[Details])->setItemsExpandable(true);
+    detailsView()->setItemsExpandable(true);
 }
 
 void
@@ -322,13 +326,6 @@ QAbstractItemView
     return m_view[m_currentView];
 }
 
-//void
-//ViewContainer::resizeEvent(QResizeEvent *e)
-//{
-//    QWidget::resizeEvent(e);
-//    m_searchIndicator->move(width()-256, height()-256);
-//}
-
 void
 ViewContainer::setRootIndex(const QModelIndex &index)
 {
@@ -351,12 +348,11 @@ ViewContainer::viewAction(const View view)
     {
     case ViewContainer::Icon: return Views_Icon;
     case ViewContainer::Details: return Views_Detail;
-    case ViewContainer::Columns: return Views_Column;
+    case ViewContainer::Column: return Views_Column;
     case ViewContainer::Flow: return Views_Flow;
     default: return Views_Icon;
     }
 }
-
 
 QModelIndex ViewContainer::indexAt(const QPoint &p) const { return currentView()->indexAt(mapFromParent(p)); }
 
@@ -370,5 +366,16 @@ NavBar *ViewContainer::breadCrumbs() { return m_navBar; }
 
 void ViewContainer::setPathEditable(const bool editable) { m_navBar->setEditable(editable); }
 
-void ViewContainer::animateIconSize(int start, int stop) { static_cast<IconView *>(m_view[Icon])->setNewSize(stop); }
+void ViewContainer::animateIconSize(int start, int stop)
+{
+    iconView()->setNewSize(stop);
+    for (int i = 1; i < NViews; ++i)
+    {
+        m_view[i]->setIconSize(QSize(stop, stop));
+        QList<QAbstractItemView *> kids(m_view[i]->findChildren<QAbstractItemView *>());
+        for (int i = 0; i < kids.count(); ++i)
+            kids.at(i)->setIconSize(QSize(stop, stop));
+    }
+}
+
 const QSize ViewContainer::iconSize() const { return m_view[Icon]->iconSize(); }

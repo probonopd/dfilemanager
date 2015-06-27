@@ -102,6 +102,7 @@ protected:
     void resizeEvent(QResizeEvent *e);
     void rowsAboutToBeRemoved(const QModelIndex &parent, int start, int end);
     bool edit(const QModelIndex &index, EditTrigger trigger, QEvent *event);
+    bool eventFilter(QObject *, QEvent *);
 
     /*pure virtuals*/
     int horizontalOffset() const;

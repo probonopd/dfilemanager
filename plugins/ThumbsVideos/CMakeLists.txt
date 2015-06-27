@@ -1,6 +1,5 @@
-set(FFMPEGTHUMB_PATH /usr/include/libffmpegthumbnailer /usr/local/include/libffmpegthumbnailer)
 find_library(FFMPEGTHUMB_LIBRARY NAMES ffmpegthumbnailer)
-find_path(FFMPEGTHUMB_INCLUDE_DIRS NAMES videothumbnailer.h PATHS ${FFMPEGTHUMB_PATH})
+find_path(FFMPEGTHUMB_INCLUDE_DIRS NAMES videothumbnailer.h PATH_SUFFIXES libffmpegthumbnailer)
 if (FFMPEGTHUMB_LIBRARY AND FFMPEGTHUMB_INCLUDE_DIRS)
     message(STATUS "found ffmpegthumbnailer library ${FFMPEGTHUMB_LIBRARY}, building plugin for thumbnailing videos")
     project(thumbsvideosplugin)

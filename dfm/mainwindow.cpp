@@ -486,7 +486,7 @@ void MainWindow::goForward() { activeContainer()->goForward(); }
 
 void MainWindow::setViewIcons() { activeContainer()->setView(ViewContainer::Icon); }
 void MainWindow::setViewDetails() { activeContainer()->setView(ViewContainer::Details); }
-void MainWindow::setViewCols() { activeContainer()->setView(ViewContainer::Columns); }
+void MainWindow::setViewCols() { activeContainer()->setView(ViewContainer::Column); }
 void MainWindow::flowView() { activeContainer()->setView(ViewContainer::Flow); }
 
 void
@@ -511,7 +511,7 @@ void
 MainWindow::checkViewAct()
 {
     m_actions[ViewContainer::viewAction(activeContainer()->currentViewType())]->setChecked(true);
-    m_iconSizeSlider->setVisible(activeContainer()->currentViewType() == ViewContainer::Icon);
+//    m_iconSizeSlider->setVisible(activeContainer()->currentViewType() == ViewContainer::Icon);
     emit viewChanged(activeContainer()->currentView());
     updateFilterBox();
 }

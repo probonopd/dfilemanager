@@ -25,6 +25,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QLabel>
+#include <QDynamicPropertyChangeEvent>
 #include <QScrollBar>
 #include "columnview.h"
 #include "viewcontainer.h"
@@ -58,7 +59,7 @@ public:
         }
 
         //icon
-        const QRect ir(option.rect.topLeft(), QSize(20, option.rect.height()));
+        const QRect ir(option.rect.topLeft(), QSize(view->iconSize().width()+4, option.rect.height()));
         const QIcon icon(index.data(FS::FileIconRole).value<QIcon>());
         if (!icon.isNull())
             icon.paint(painter, ir);
@@ -71,7 +72,7 @@ public:
             f.setBold(true);
             painter->setFont(f);
         }
-        const QRect tr(option.rect.left()+20, option.rect.top(), option.rect.width()-(20+isDir*20), option.rect.height());
+        const QRect tr(ir.right(), option.rect.top(), option.rect.width()-(20+isDir*20), option.rect.height());
         QApplication::style()->drawItemText(painter,
                                             tr,
                                             Qt::AlignLeft|Qt::AlignVCenter,
@@ -115,12 +116,25 @@ ColumnView::ColumnView(QWidget *parent) : QAbstractItemView(parent)
     QAbstractItemDelegate *d = itemDelegate();
     setItemDelegate(new ColumnDelegate(this));
     delete d;
+    installEventFilter(this);
     connect(horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateLayout()));
 }
 
 ColumnView::~ColumnView()
 {
 
+}
+
+bool
+ColumnView::eventFilter(QObject *o, QEvent *e)
+{
+    qDebug() << e->type();
+    if (e->type() == QEvent::DynamicPropertyChange)
+    {
+        QDynamicPropertyChangeEvent *dpce = static_cast<QDynamicPropertyChangeEvent *>(e);
+        qDebug() << dpce->propertyName();
+    }
+    return false;
 }
 
 void

@@ -25,7 +25,6 @@
 #include <QFrame>
 #include "globals.h"
 
-class QColumnView;
 class QStackedLayout;
 class QVBoxLayout;
 class QItemSelectionModel;
@@ -36,13 +35,17 @@ namespace DFM
 class Button;
 class NavBar;
 class PathNavigator;
+class FlowView;
+class ColumnView;
+class DetailsView;
+class IconView;
 namespace FS{class Model;}
 
 class ViewContainer : public QFrame
 {
     Q_OBJECT
 public:
-    enum View { Icon = 0, Details, Columns, Flow, NViews };
+    enum View { Icon = 0, Details, Column, Flow, NViews };
     static Action viewAction(const View view);
 
     explicit ViewContainer(QWidget *parent = 0);
@@ -74,6 +77,9 @@ public:
     QString currentFilter() const;
     void sort(const int column = 0, const Qt::SortOrder order = Qt::AscendingOrder);
     PathNavigator *pathNav();
+#define D_VIEW(_TYPE_, _METHOD_) _TYPE_##View *_METHOD_##View()
+    D_VIEW(Icon, icon); D_VIEW(Details, details); D_VIEW(Column, column); D_VIEW(Flow, flow);
+#undef D_VIEW
 
 protected:
     void leaveEvent(QEvent *) { emit leftView(); }
