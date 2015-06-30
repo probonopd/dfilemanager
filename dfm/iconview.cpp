@@ -330,6 +330,7 @@ IconView::IconView(QWidget *parent)
     setDragEnabled(true);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setSelectionBehavior(QAbstractItemView::SelectRows);
+    setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 
     connect(verticalScrollBar(), SIGNAL(valueChanged(int)), viewport(), SLOT(update()));
     connect(this, SIGNAL(iconSizeChanged(int)), this, SLOT(setGridHeight(int)));
@@ -764,10 +765,10 @@ IconView::setIconWidth(const int width)
 QRect
 IconView::visualRect(const QModelIndex &index) const
 {
-    if (!index.isValid()||index.column()||!m_horItems||!m_rects.contains(index.internalPointer()))
+    if (!index.isValid()||index.column()||!m_horItems||!m_rects.contains(index))
         return QRect();
 
-    return m_rects.value(index.internalPointer(), QRect()).translated(0, -verticalOffset());
+    return m_rects.value(index, QRect()).translated(0, -verticalOffset());
 }
 
 QRect
@@ -779,6 +780,8 @@ IconView::visualRect(const QString &cat) const
 QModelIndex
 IconView::indexAt(const QPoint &p) const
 {
+    if (!testAttribute(Qt::WA_WState_Created))
+        return QModelIndex();
     for (int i = 0; i < model()->rowCount(rootIndex()); ++i)
     {
         const QModelIndex &index(model()->index(i, 0, rootIndex()));
@@ -891,8 +894,8 @@ IconView::calculateRects()
                 else
                     ++col;
                 const QModelIndex &index(block.at(i));
-                if (index.isValid()&&index.internalPointer())
-                    m_rects.insert(index.internalPointer(), QRect(hsz*col, m_contentsHeight, hsz, vsz));
+                if (index.isValid())
+                    m_rects.insert(index, QRect(hsz*col, m_contentsHeight, hsz, vsz));
             }
             m_catRects.insert(m_categories.at(cat), QRect(0, startv, viewport()->width(), (m_contentsHeight+vsz)-startv));
         }
@@ -904,8 +907,8 @@ IconView::calculateRects()
             const QModelIndex &index(model()->index(i, 0, rootIndex()));
             const int col = i % m_horItems;
             m_contentsHeight = vsz * (i / m_horItems);
-            if (index.isValid()&&index.internalPointer())
-                m_rects.insert(index.internalPointer(), QRect(hsz*col, m_contentsHeight, hsz, vsz));
+            if (index.isValid())
+                m_rects.insert(index, QRect(hsz*col, m_contentsHeight, hsz, vsz));
         }
     }
     m_contentsHeight+=vsz;

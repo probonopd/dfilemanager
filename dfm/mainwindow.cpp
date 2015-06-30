@@ -315,7 +315,7 @@ MainWindow::setupStatusBar()
     connect (m_recentDock, SIGNAL(visibilityChanged(bool)), fr, SLOT(setFloating(bool)));
     connect (m_infoDock, SIGNAL(visibilityChanged(bool)), fb, SLOT(setFloating(bool)));
 
-    connect (m_iconSizeSlider, SIGNAL(sliderMoved(int)),this,SLOT(setViewIconSize(int)));
+//    connect (m_iconSizeSlider, SIGNAL(sliderMoved(int)),this,SLOT(setViewIconSize(int)));
     connect (m_iconSizeSlider, SIGNAL(valueChanged(int)),this,SLOT(setViewIconSize(int)));
 
     m_ioProgress = new QProgressBar(m_statusBar);

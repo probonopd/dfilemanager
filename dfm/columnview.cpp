@@ -228,6 +228,7 @@ ColumnView::initializeColumn(Column *column)
     column->setModel(model());
     column->setSelectionModel(selectionModel());
     column->setCornerWidget(new Grip(column));
+    connect(column, SIGNAL(viewportEntered()), this, SIGNAL(viewportEntered()));
 
     // set the delegate to be the columnview delegate
     QAbstractItemDelegate *delegate = column->itemDelegate();

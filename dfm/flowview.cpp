@@ -65,8 +65,8 @@ FlowView::FlowView(QWidget *parent)
     connect(m_splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(saveSplitter()));
     connect(m_dView, SIGNAL(entered(QModelIndex)), this, SIGNAL(entered(QModelIndex)));
     connect(m_dView, SIGNAL(opened(QModelIndex)), this, SIGNAL(opened(QModelIndex)));
+    connect(m_dView, SIGNAL(viewportEntered()), this, SIGNAL(viewportEntered()));
     connect(m_dView, SIGNAL(newTabRequest(QModelIndex)), this, SIGNAL(newTabRequest(QModelIndex)));
-
 }
 
 FlowView::~FlowView(){}
