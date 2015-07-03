@@ -38,7 +38,6 @@ public:
     inline QSize gridSize() const { return m_gridSize; }
     void scrollTo(const QModelIndex &index, ScrollHint hint = EnsureVisible);
     void setRootIndex(const QModelIndex &index);
-    inline QPixmap bgPix() const { return m_pix; }
 
 protected:
     void wheelEvent(QWheelEvent *);
@@ -92,7 +91,6 @@ private slots:
     void sizeTimerEvent();
 
 private:
-    QPixmap m_pix;
     QSize m_gridSize, m_prevSize;
     QStringList m_categories;
     QPoint m_startPos, m_pressPos;
@@ -102,7 +100,6 @@ private:
     bool m_slide, m_startSlide, m_hadSelection;
     QTimer *m_sizeTimer, *m_layTimer, *m_scrollTimer, *m_resizeTimer;
     QModelIndex m_firstIndex, m_pressedIndex;
-    QPixmap m_homePix, m_bgPix[2];
     int m_newSize, m_gridHeight, m_horItems, m_contentsHeight;
     QList<int> m_scrollValues;
 };

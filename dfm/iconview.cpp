@@ -919,6 +919,8 @@ IconView::calculateRects()
     viewport()->update();
     if (!static_cast<FS::Model *>(model())->isWorking())
         m_layTimer->stop();
+    verticalScrollBar()->setSingleStep(m_gridHeight);
+    verticalScrollBar()->setPageStep(viewport()->height());
 }
 
 //These two not needed at all for this?

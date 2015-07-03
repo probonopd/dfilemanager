@@ -116,25 +116,12 @@ ColumnView::ColumnView(QWidget *parent) : QAbstractItemView(parent)
     QAbstractItemDelegate *d = itemDelegate();
     setItemDelegate(new ColumnDelegate(this));
     delete d;
-    installEventFilter(this);
     connect(horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(updateLayout()));
 }
 
 ColumnView::~ColumnView()
 {
 
-}
-
-bool
-ColumnView::eventFilter(QObject *o, QEvent *e)
-{
-    qDebug() << e->type();
-    if (e->type() == QEvent::DynamicPropertyChange)
-    {
-        QDynamicPropertyChangeEvent *dpce = static_cast<QDynamicPropertyChangeEvent *>(e);
-        qDebug() << dpce->propertyName();
-    }
-    return false;
 }
 
 void
