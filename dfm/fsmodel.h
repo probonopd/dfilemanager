@@ -131,11 +131,10 @@ public:
     void sortNode(Node *n = 0);
 
 protected:
-    bool handleFileUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
-    bool handleSearchUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
-    bool handleApplicationsUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
-    bool handleDevicesUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
-    bool handleTrashUrl(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger);
+    bool (Model::*getUrlHandler(const QUrl &url))(QUrl &, int &);
+#define URLHANDLER(_VAR_) bool handle##_VAR_##Url(QUrl &url = defaultUrl, int &hasUrlReady = defaultInteger)
+    URLHANDLER(File); URLHANDLER(Search); URLHANDLER(Applications); URLHANDLER(Devices); URLHANDLER(Trash);
+#undef URLHANDLER
 
 public slots:
     bool setUrl(QUrl url);

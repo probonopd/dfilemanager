@@ -268,11 +268,6 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
 
     iconLay->addWidget(m_categorized, ++row, 0, 1, 3, left);
 
-    iconLay->addWidget(new QLabel(tr("Default size for icons:"), this), ++row, 0, right);
-    iconLay->addWidget(m_iconSlider, row, 1, right);
-    iconLay->addWidget(m_size, row, 2, right);
-
-
     iconLay->addWidget(new QLabel(tr("Extra width added to text:"), this), ++row, 0, right);
     iconLay->addWidget(m_iconWidth, row, 1, right);
     iconLay->addWidget(m_width, row, 2, right);
@@ -313,11 +308,19 @@ ViewsWidget::ViewsWidget(QWidget *parent) : QWidget(parent)
     defView->addStretch();
     defView->addWidget(m_viewBox);
 
+    QHBoxLayout *iconSize = new QHBoxLayout();
+    iconSize->addWidget(new QLabel(tr("Default size for icons:"), this));
+    iconSize->addStretch();
+    iconSize->addWidget(m_iconSlider);
+    iconSize->addWidget(m_size);
+
     QVBoxLayout *vLayout = new QVBoxLayout();
     vLayout->addWidget(m_showThumbs);
     vLayout->addWidget(m_singleClick);
     vLayout->addWidget(m_dirSettings);
+
     vLayout->addLayout(defView);
+    vLayout->addLayout(iconSize);
     vLayout->addWidget(gBox);
     vLayout->addWidget(detailsBox);
     vLayout->addWidget(colsBox);

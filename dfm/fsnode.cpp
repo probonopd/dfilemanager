@@ -29,6 +29,7 @@
 #include <QProcess>
 #include <QDirIterator>
 #include <QDateTime>
+#include <QDebug>
 
 using namespace DFM;
 using namespace FS;
@@ -150,9 +151,9 @@ Node::addChild(Node *node)
     if (!node->url().isLocalFile())
         m_model->m_nodes.insert(node->url(), node);
 
-    if (node->isHidden() && !m_model->showHidden())
+    if ((node->isHidden() && !m_model->showHidden()))
         m_children[Hidden] << node;
-    else if (!node->name().contains(m_filter, Qt::CaseInsensitive))
+    else if (!m_filter.isEmpty() && node->name().toLower().contains(m_filter))
         m_children[Filtered] << node;
     else
     {
@@ -416,7 +417,7 @@ Node
         while (--c > -1)
         {
             Node *node = child(c, i);
-            if (node && node->filePath() == path)
+            if (node && node->filePath() == path && (m_filter.isEmpty() || node->name().toLower().contains(m_filter)))
             {
                 if (i)
                 {
@@ -492,39 +493,39 @@ Node::clearVisible()
 {
     qDeleteAll(m_children[Visible]);
 }
-
+#include <unistd.h>
 void
 Node::setFilter(const QString &filter)
 {
-    if (filter == m_filter || model()->isWorking())
+    const QString low(filter.toLower());
+    if (low == m_filter || model()->isWorking())
         return;
 
+    m_filter = low;
     emit m_model->layoutAboutToBeChanged();
-    const QModelIndexList &oldList = m_model->persistentIndexList();
+    const QModelIndexList oldList(m_model->persistentIndexList());
     QList<QPair<int, Node *> > old;
     for (int i = 0; i < oldList.count(); ++i)
         old << QPair<int, Node *>(oldList.at(i).column(), m_model->node(oldList.at(i)));
-    m_filter = filter;
 
     m_mutex.lock();
+    //add unfiltered to filter...
+    if (!m_filter.isEmpty())
     for (int i = 0; i < Filtered; ++i)
     {
         int c = m_children[i].count();
         while (--c > -1)
-            if (!m_children[i].at(c)->name().contains(filter, Qt::CaseInsensitive))
+            if (!m_children[i].at(c)->name().toLower().contains(m_filter))
                 m_children[Filtered] << m_children[i].takeAt(c);
     }
+    //show previously filtered...
     int f = m_children[Filtered].count();
     while (--f > -1)
-        if (m_children[Filtered].at(f)->name().contains(filter, Qt::CaseInsensitive))
-        {
-            if (m_children[Filtered].at(f)->isHidden() && !showHidden())
-                m_children[Hidden] << m_children[Filtered].takeAt(f);
-            else if (m_children[Filtered].at(f)->isHidden() && showHidden())
-                m_children[Visible] << m_children[Filtered].takeAt(f);
-            else
-                m_children[Visible] << m_children[Filtered].takeAt(f);
-        }
+    {
+        Node *n(m_children[Filtered].at(f));
+        if (m_filter.isEmpty() || n->name().toLower().contains(m_filter))
+            m_children[n->isHidden() && !showHidden() ? Hidden : Visible] << m_children[Filtered].takeAt(f);
+    }
     m_mutex.unlock();
 
     QModelIndexList newList;
@@ -606,7 +607,7 @@ Node::rePopulate()
     m_isPopulated = true;
     m_mutex.unlock();
 
-    if (m_url == m_model->m_url)
+//    if (m_url == m_model->m_url)
         emit m_model->urlLoaded(url());
 
     for (int i = 0; i < childCount(); ++i)
@@ -730,12 +731,6 @@ TrashNode::trashPath()
 TrashNode::TrashNode(Model *model, Node *parent, const QUrl &url, const QString &filePath)
     : Node(model, url, parent, filePath, Trash)
 {
-}
-
-void
-TrashNode::addChild(Node *node)
-{
-    Node::addChild(node);
 }
 
 //-----------------------------------------------------------------------------

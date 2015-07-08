@@ -72,7 +72,7 @@ public:
     void refresh();
     void rename();
     void goHome();
-    void animateIconSize(int start, int stop);
+    void setIconSize(int stop);
     NavBar *breadCrumbs();
     QString currentFilter() const;
     void sort(const int column = 0, const Qt::SortOrder order = Qt::AscendingOrder);

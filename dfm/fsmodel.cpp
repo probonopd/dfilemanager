@@ -262,6 +262,22 @@ Model::handleTrashUrl(QUrl &url, int &hasUrlReady)
     return false;
 }
 
+bool (Model::*Model::getUrlHandler(const QUrl &url))(QUrl &, int &)
+{
+    if (url.scheme() == "file")
+        return &Model::handleFileUrl;
+    else if (url.scheme() == "search")
+        return &Model::handleSearchUrl;
+    else if (url.scheme() == "applications")
+        return &Model::handleApplicationsUrl;
+    else if (url.scheme() == "devices")
+        return &Model::handleDevicesUrl;
+    else if (url.scheme() == "trash")
+        return &Model::handleTrashUrl;
+    else
+        return 0;
+}
+
 bool
 Model::setUrl(QUrl url)
 {
@@ -271,26 +287,9 @@ Model::setUrl(QUrl url)
     if (url.scheme().isEmpty())
         url = QUrl::fromLocalFile(url.toString());
 
-    bool (Model::*urlHandler)(QUrl &, int &)(0);
-
-    if (url.scheme() == "file")
-        urlHandler = &Model::handleFileUrl;
-    else if (url.scheme() == "search")
-        urlHandler = &Model::handleSearchUrl;
-    else if (url.scheme() == "applications")
-        urlHandler = &Model::handleApplicationsUrl;
-    else if (url.scheme() == "devices")
-        urlHandler = &Model::handleDevicesUrl;
-    else if (url.scheme() == "trash")
-        urlHandler = &Model::handleTrashUrl;
-    else
-    {
-        qDebug() << "unsupported url:" << url;
-        return false;
-    }
-
+    bool (Model::*urlHandler)(QUrl &, int &)(getUrlHandler(url));
     int isReady(0);
-    if ((this->*urlHandler)(url, isReady))
+    if (urlHandler && (this->*urlHandler)(url, isReady))
     {
         DDataLoader::clearQueue();
         m_url = url;
@@ -303,6 +302,8 @@ Model::setUrl(QUrl url)
             emit urlLoaded(m_url);
         return true;
     }
+    else
+        qDebug() << "unsupported url" << url;
     return false;
 }
 
@@ -452,7 +453,6 @@ Model::newData(const QString &file)
 QVariant
 Model::data(const QModelIndex &index, int role) const
 {
-    //QMutexLocker locker(&m_mutex);
     if (!index.isValid()||index.column()>3||index.row()>100000)
         return QVariant();
 
@@ -493,7 +493,7 @@ Model::data(const QModelIndex &index, int role) const
     if (role == Qt::FontRole && !col)
     {
         QFont f(qApp->font());
-        f.setItalic(n->isSymLink());  //sometimes crashes on this.... cause of iconview painting
+        f.setItalic(n->isSymLink());
         f.setUnderline(n->isExec());
         return f;
     }
@@ -716,7 +716,7 @@ Model::sort(int column, Qt::SortOrder order)
     const bool orderChanged = bool(m_sortColumn!=column||m_sortOrder!=order);
     m_sortColumn = column;
     m_sortOrder = order;
-    qDebug() << "sort called" << m_url << column << order;
+//    qDebug() << "sort called" << m_url << column << order;
     sortNode();
     if (orderChanged)
         emit sortingChanged(column, (int)order);

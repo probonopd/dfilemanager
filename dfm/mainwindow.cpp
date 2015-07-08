@@ -329,13 +329,15 @@ MainWindow::setupStatusBar()
 void
 MainWindow::setSliderPos(int size)
 {
+    m_iconSizeSlider->blockSignals(true);
     m_iconSizeSlider->setValue(size/16);
+    m_iconSizeSlider->blockSignals(false);
 }
 
 void
 MainWindow::setViewIconSize(int size)
 {
-    activeContainer()->animateIconSize(activeContainer()->iconSize().width(), size*16);
+    activeContainer()->setIconSize(size*16);
     m_iconSizeSlider->setToolTip(QString("Size: %1 px").arg(QString::number(size*16)));
     QToolTip *tip;
     QPoint pt;
@@ -575,6 +577,7 @@ void
 MainWindow::addTab(const QUrl &url)
 {
     ViewContainer *container = new ViewContainer(this);
+    container->setIconSize(Store::config.views.iconView.iconSize*16);
     connectContainer(container);
     FS::Model *model = container->model();
     model->setUrl(url);

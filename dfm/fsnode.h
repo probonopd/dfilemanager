@@ -57,7 +57,7 @@ public:
     int row() const;
     int rowOf(const Node *node) const;
     int childCount(Children children = Visible) const;
-    virtual void addChild(Node *node);
+    void addChild(Node *node);
     Node *child(const int c, Children fromChildren = Visible) const;
     Node *child(const QString &name, const bool nameIsPath = true) const;
     Node *childFromUrl(const QUrl &url) const;
@@ -106,6 +106,7 @@ public:
     inline void setType(const Type t) { m_type = t; }
 
     Node *parent() const;
+    inline Node *operator[] (const int i) { return child(i); }
 
 private:
     mutable int m_isExe;
@@ -147,7 +148,6 @@ class TrashNode : public Node
 public:
     TrashNode(Model *model = 0, Node *parent = 0, const QUrl &url = QUrl(), const QString &filePath = QString());
     static QString trashPath();
-    void addChild(Node *node);
 };
 
 }

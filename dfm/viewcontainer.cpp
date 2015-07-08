@@ -119,7 +119,6 @@ ViewContainer::ViewContainer(QWidget *parent)
 
     setView((View)Store::config.behaviour.view, false);
     loadSettings();
-    emit iconSizeChanged(Store::config.views.iconView.iconSize*16);
 }
 
 ViewContainer::~ViewContainer()
@@ -366,7 +365,7 @@ NavBar *ViewContainer::breadCrumbs() { return m_navBar; }
 
 void ViewContainer::setPathEditable(const bool editable) { m_navBar->setEditable(editable); }
 
-void ViewContainer::animateIconSize(int start, int stop)
+void ViewContainer::setIconSize(int stop)
 {
     iconView()->setNewSize(stop);
     for (int i = 1; i < NViews; ++i)

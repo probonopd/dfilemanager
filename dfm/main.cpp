@@ -23,6 +23,7 @@
 #include "config.h"
 #include "iojob.h"
 #include "operations.h"
+#include <typeinfo>
 
 int main(int argc, char *argv[])
 {
