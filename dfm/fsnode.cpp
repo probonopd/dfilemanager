@@ -585,7 +585,7 @@ Node::rePopulate()
         {
             const QString &file = it.next();
             QString url = m_url.toString();
-            url.append(file.mid(file.lastIndexOf("/")));
+            url.append(file.mid(file.lastIndexOf("/")+(url.endsWith("/"))));
             if (!child(file))
                 new Node(m_model, QUrl(url), this, file);
         }
@@ -607,7 +607,8 @@ Node::rePopulate()
     m_isPopulated = true;
     m_mutex.unlock();
 
-//    if (m_url == m_model->m_url)
+//    qDebug() << m_url << m_model->m_url;
+    if (m_url.path() == m_model->m_url.path())
         emit m_model->urlLoaded(url());
 
     for (int i = 0; i < childCount(); ++i)
