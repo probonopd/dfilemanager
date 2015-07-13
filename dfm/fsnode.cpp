@@ -77,6 +77,7 @@ Node::Node(Model *model, const QUrl &url, Node *parent, const QString &filePath,
     , m_isExe(-1)
     , m_isDeleted(false)
     , m_type(t)
+    , m_invertFilter(false)
 {
     if (url.path().isEmpty() && !url.scheme().isEmpty())
         m_name = url.scheme();
@@ -106,6 +107,16 @@ Node::~Node()
         qDeleteAll(m_children[i]);
         m_children[i].clear();
     }
+}
+
+bool
+Node::isFiltered(const QString &name)
+{
+    if (m_filter.isEmpty())
+        return false;
+    if (m_invertFilter)
+        return name.toLower().contains(m_filter);
+    return !name.toLower().contains(m_filter);
 }
 
 void
@@ -153,7 +164,7 @@ Node::addChild(Node *node)
 
     if ((node->isHidden() && !m_model->showHidden()))
         m_children[Hidden] << node;
-    else if (!m_filter.isEmpty() && node->name().toLower().contains(m_filter))
+    else if (isFiltered(node->name()))
         m_children[Filtered] << node;
     else
     {
@@ -417,7 +428,7 @@ Node
         while (--c > -1)
         {
             Node *node = child(c, i);
-            if (node && node->filePath() == path && (m_filter.isEmpty() || node->name().toLower().contains(m_filter)))
+            if (node && node->filePath() == path && !isFiltered(node->name()))
             {
                 if (i)
                 {
@@ -502,6 +513,9 @@ Node::setFilter(const QString &filter)
         return;
 
     m_filter = low;
+    m_invertFilter = m_filter.startsWith("!");
+    if (m_invertFilter)
+        m_filter.remove(0, 1);
     emit m_model->layoutAboutToBeChanged();
     const QModelIndexList oldList(m_model->persistentIndexList());
     QList<QPair<int, Node *> > old;
@@ -515,7 +529,7 @@ Node::setFilter(const QString &filter)
     {
         int c = m_children[i].count();
         while (--c > -1)
-            if (!m_children[i].at(c)->name().toLower().contains(m_filter))
+            if (isFiltered(m_children[i].at(c)->name()))
                 m_children[Filtered] << m_children[i].takeAt(c);
     }
     //show previously filtered...
@@ -523,7 +537,7 @@ Node::setFilter(const QString &filter)
     while (--f > -1)
     {
         Node *n(m_children[Filtered].at(f));
-        if (m_filter.isEmpty() || n->name().toLower().contains(m_filter))
+        if (!isFiltered(n->name()))
             m_children[n->isHidden() && !showHidden() ? Hidden : Visible] << m_children[Filtered].takeAt(f);
     }
     m_mutex.unlock();

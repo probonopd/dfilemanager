@@ -47,6 +47,8 @@ public:
     Node(FS::Model *model = 0, const QUrl &url = QUrl(), Node *parent = 0, const QString &filePath = QString(), const Type t = File);
     virtual ~Node();
 
+    bool isFiltered(const QString &name);
+
     inline Model *model() const { return m_model; }
     Worker::Gatherer *gatherer() const;
 
@@ -112,7 +114,7 @@ private:
     mutable int m_isExe;
     mutable QMutex m_mutex;
 
-    bool m_isPopulated, m_isDeleted;
+    bool m_isPopulated, m_isDeleted, m_invertFilter;
     Nodes m_children[ChildrenTypeCount], m_toAdd;
     Node *m_parent;
     QString m_filePath, m_filter, m_name;
