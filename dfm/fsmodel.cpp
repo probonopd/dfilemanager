@@ -90,6 +90,8 @@ FileIconProvider::icon(const QFileInfo &i) const
 //    if (i.suffix().contains(QRegExp("r[0-9]{2}"))) //splitted rar files .r00, r01 etc...
 //        i.setFile(QString("%1%2.rar").arg(i.filePath(), i.baseName()));
     const QIcon &icon = QFileIconProvider::icon(i);
+    if (icon.isNull())
+        qDebug() << "failed to locate icon for file" << i.filePath();
     return QIcon::fromTheme(icon.name(), icon);
 }
 
@@ -462,32 +464,38 @@ Model::data(const QModelIndex &index, int role) const
     if (n == m_rootNode || n == m_currentRoot || (role == FileIconRole && col > 0))
         return QVariant();
 
-    if (role == FilePathRole)
+    switch (role)
+    {
+    case FilePathRole:
         return n->filePath();
-    if (role == FilePermissionsRole)
+    case FilePermissionsRole:
         return n->permissionsString();
-    if (role == FileIconRole)
+    case FileIconRole:
         return n->icon();
-    if (role == FileIsDirRole)
+    case FileIsDirRole:
         return n->isDir();
-    if (role == FileHasThumbRole)
-    if (Data *d = DDataLoader::data(n->filePath(), true))
-        return !d->thumb.isNull();
-    if (role == Qt::TextAlignmentRole)
+    case FileHasThumbRole:
+    {
+        if (Data *d = DDataLoader::data(n->filePath(), true))
+            return !d->thumb.isNull();
+        return false;
+    }
+    case Qt::TextAlignmentRole:
         return bool(col == 1) ? int(Qt::AlignVCenter|Qt::AlignRight) : int(Qt::AlignLeft|Qt::AlignVCenter);
-    if (role == CategoryRole)
+    case CategoryRole:
         return n->category();
-    if (role == MimeTypeRole)
+    case MimeTypeRole:
         return n->mimeType();
-    if (role == FileTypeRole)
+    case FileTypeRole:
         return n->fileType();
-    if (role == OwnderRole)
+    case OwnderRole:
         return n->owner();
-    if (role == UrlRole)
+    case UrlRole:
         return n->url();
-    if (role == LastModifiedRole)
+    case LastModifiedRole:
         return n->lastModified().toString();
-
+    default: break;
+    }
 
     if (!isWorking())
     if (role == Qt::FontRole && !col)

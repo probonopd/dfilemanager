@@ -24,6 +24,7 @@
 #include "iojob.h"
 #include "operations.h"
 #include <typeinfo>
+//#include <dsp/settings.h>
 
 int main(int argc, char *argv[])
 {
@@ -73,6 +74,11 @@ int main(int argc, char *argv[])
     }
     default: break;
     } //end t
+
+//    Settings::initiate();
+//    qDebug() << Settings::readVal(Settings::Inputgrad);
+
+
     return app.exec();
 }
 

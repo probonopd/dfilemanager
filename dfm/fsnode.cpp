@@ -250,16 +250,18 @@ Node::hasChildren() const
 QIcon
 Node::icon() const
 {
-//    if (this == static_cast<Node *>(&m_model->m_rootNode))
-//        return QIcon();
     if (Devices::instance()->mounts().contains(m_filePath))
         return FileIconProvider::typeIcon(FileIconProvider::Drive);
-    Data *d = moreData();
-    if (!d)
-        return FileIconProvider::fileIcon(*this);
-    if (!d->thumb.isNull())
-        return QIcon(QPixmap::fromImage(d->thumb));
-    return QIcon::fromTheme(d->iconName, FileIconProvider::fileIcon(*this));
+    QIcon icon = FileIconProvider::fileIcon(*this);
+    if (icon.pixmap(16).isNull())
+        icon = FileIconProvider::typeIcon(isDir()?FileIconProvider::Folder:FileIconProvider::File);
+    if (Data *d = moreData())
+    {
+        if (!d->thumb.isNull())
+            return QIcon(QPixmap::fromImage(d->thumb));
+        return QIcon::fromTheme(d->iconName, icon);
+    }
+    return icon;
 }
 
 bool

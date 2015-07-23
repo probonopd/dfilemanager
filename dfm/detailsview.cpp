@@ -40,7 +40,7 @@ public:
     DetailsDelegate(QObject *parent) : FileItemDelegate(parent) {}
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
-        if (!index.data().isValid())
+        if (!index.isValid())
             return;
         painter->save();
         const bool isHovered = option.state & QStyle::State_MouseOver;
