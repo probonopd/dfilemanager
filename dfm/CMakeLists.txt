@@ -5,18 +5,6 @@ file(GLOB DFM_HDRS *.h)
 
 add_executable(dfm ${DFM_SRCS} ${DFM_HDRS})
 
-
-
-
-find_library(DSP NAMES dspsettings_qt5)
-find_path(DSP_H NAMES settings.h PATH_SUFFIXES dsp)
-message(STATUS "dspfound ${DSP} ${DSP_H}")
-include_directories(${DSP_H})
-target_link_libraries(dfm ${DSP})
-
-
-
-
 if (QT5BUILD)
     target_link_libraries(dfm Qt5::Core Qt5::Gui Qt5::Widgets Qt5::DBus Qt5::Network Qt5::OpenGL Qt5::Xml Qt5X11Extras)
 else (QT5BUILD)
