@@ -497,6 +497,21 @@ Column::mouseDoubleClickEvent(QMouseEvent *e)
 }
 
 void
+Column::wheelEvent(QWheelEvent *e)
+{
+    if (e->modifiers() & Qt::CTRL)
+    {
+        MainWindow *mw = MainWindow::window(this);
+        if (QSlider *s = mw->iconSizeSlider())
+            s->setValue(s->value()+(e->delta()>0?1:-1));
+    }
+    else
+        QListView::wheelEvent(e);
+    e->accept();
+}
+
+
+void
 Column::contextMenuEvent(QContextMenuEvent *e)
 {
     const QString &file = indexAt(e->pos()).data(FS::FilePathRole).toString();

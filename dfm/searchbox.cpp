@@ -181,7 +181,7 @@ SearchBox::SearchBox(QWidget *parent)
     setPlaceholderText("Filter By Name");
 
 //    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-//    setMaximumWidth(222);
+    setMaximumWidth(256);
     setMouseTracking(true);
     setAlignment(Qt::AlignCenter);
 //    QFont f(font());

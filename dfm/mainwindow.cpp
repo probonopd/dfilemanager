@@ -772,17 +772,17 @@ void
 MainWindow::showEvent(QShowEvent *e)
 {
     QMainWindow::showEvent(e);
-    int w = m_placesView->viewport()->width();
-    if (QWidget *b = m_toolBar->widgetForAction(m_actions[GoBack]))
-        w -= b->width();
-    if (QWidget *b = m_toolBar->widgetForAction(m_actions[GoForward]))
-        w -= b->width();
-    w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
-    if (m_toolBarSpacer->width() != w)
-    {
-        const int width = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
-        m_toolBarSpacer->setFixedWidth(width);
-    }
+//    int w = m_placesView->viewport()->width();
+//    if (QWidget *b = m_toolBar->widgetForAction(m_actions[GoBack]))
+//        w -= b->width();
+//    if (QWidget *b = m_toolBar->widgetForAction(m_actions[GoForward]))
+//        w -= b->width();
+//    w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
+//    if (m_toolBarSpacer->width() != w)
+//    {
+//        const int width = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
+//        m_toolBarSpacer->setFixedWidth(width);
+//    }
 }
 
 void
@@ -830,16 +830,16 @@ MainWindow::readSettings()
 void
 MainWindow::updateToolbarSpacer()
 {
-    int w = m_placesView->viewport()->width();
+    int w = m_placesView->width();
 //    if (QWidget *b = m_toolBar->widgetForAction(m_actions[GoBack]))
 //        w -= b->geometry().right();
     if (QWidget *b = m_toolBar->widgetForAction(m_actions[GoForward]))
         w -= b->geometry().right();
-    w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
+//    w -= style()->pixelMetric(QStyle::PM_ToolBarSeparatorExtent);
     if (m_toolBarSpacer->width() != w)
     {
-        const int width = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
-        m_toolBarSpacer->setFixedWidth(width);
+        w = qMax(0, w + style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)/2);
+        m_toolBarSpacer->setFixedWidth(w);
     }
     QTimer::singleShot(0, m_toolBar, SLOT(update()));
 }

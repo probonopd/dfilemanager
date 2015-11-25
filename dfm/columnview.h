@@ -64,6 +64,7 @@ protected:
     void showEvent(QShowEvent *e);
     void resizeEvent(QResizeEvent *e);
     void paintEvent(QPaintEvent *e);
+    void wheelEvent(QWheelEvent *e);
 
 protected slots:
     void saveWidth();

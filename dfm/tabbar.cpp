@@ -1113,6 +1113,7 @@ TabManager::deleteTab(const int tab)
     if (ViewContainer *c = takeTab(tab))
         c->deleteLater();
     setCurrentIndex(m_tabBar->currentIndex());
+    window()->setWindowTitle(m_tabBar->tabText(m_tabBar->currentIndex()));
 }
 
 ViewContainer

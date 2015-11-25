@@ -25,6 +25,7 @@
 #include <QMessageBox>
 #include <QDirIterator>
 #include <QImageReader>
+#include <QDebug>
 
 using namespace DFM;
 
@@ -63,11 +64,18 @@ QString IconDialog::getIcon()
 {
     QList<QFileInfo> files;
     for (int i = 0; i < QIcon::themeSearchPaths().count(); i++)
-        files << QIcon::themeSearchPaths().at(i) + QIcon::themeName();
+    {
+        QString theme(QIcon::themeSearchPaths().at(i));
+#if QT_VERSION >= 0x050000
+        theme.append("/");
+#endif
+        theme.append(QIcon::themeName());
+        files << theme;
+    }
 
     if (files.isEmpty())
     {
-        QMessageBox::information(this,"Could not find any valid icontheme path!", "Cannot continue, exiting");
+        QMessageBox::information(this, "Could not find any valid icontheme path!", "Cannot continue, exiting");
         return QString();
     }
 

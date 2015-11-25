@@ -48,7 +48,7 @@ static short getRotation(const QString &file)
     }
     catch (Exiv2::AnyError& e)
     {
-        qDebug() << "Caught Exiv2 exception '" << e.what();
+        qDebug() << "Caught Exiv2 exception" << e.what();
     }
 #endif
     return 1;

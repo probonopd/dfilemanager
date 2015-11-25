@@ -48,6 +48,7 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *);
     void resizeEvent(QResizeEvent *event);
+    void wheelEvent(QWheelEvent *e);
     bool edit(const QModelIndex &index, EditTrigger trigger, QEvent *event);
 
 signals:

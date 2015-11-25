@@ -221,6 +221,20 @@ DetailsView::mousePressEvent(QMouseEvent *event)
 }
 
 void
+DetailsView::wheelEvent(QWheelEvent *e)
+{
+    if (e->modifiers() & Qt::CTRL)
+    {
+        MainWindow *mw = MainWindow::window(this);
+        if (QSlider *s = mw->iconSizeSlider())
+            s->setValue(s->value()+(e->delta()>0?1:-1));
+    }
+    else
+        QTreeView::wheelEvent(e);
+    e->accept();
+}
+
+void
 DetailsView::resizeEvent(QResizeEvent *event)
 {
     const int w = event->size().width();

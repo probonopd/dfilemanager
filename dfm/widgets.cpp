@@ -50,6 +50,7 @@ Button::Button(QWidget *parent)
     m_stepSize = 360/STEPS;
     connect(m_animTimer, SIGNAL(timeout()), this, SLOT(animate()));
     m_animIcon = IconProvider::icon(IconProvider::Animator, 16, palette().color(foregroundRole()), false);
+    setAttribute(Qt::WA_NoMousePropagation);
 }
 
 Button::~Button()
@@ -72,6 +73,7 @@ Button::setMenu(QMenu *menu)
 void
 Button::mousePressEvent(QMouseEvent *e)
 {
+    e->accept();
     QWidget::mousePressEvent(e);
     m_hasPress = true;
 }
@@ -79,6 +81,7 @@ Button::mousePressEvent(QMouseEvent *e)
 void
 Button::mouseReleaseEvent(QMouseEvent *e)
 {
+    e->accept();
     QWidget::mouseReleaseEvent(e);
     if (m_hasPress && rect().contains(e->pos()))
     {
