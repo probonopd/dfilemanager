@@ -6,7 +6,7 @@ file(GLOB DFM_HDRS *.h)
 add_executable(dfm ${DFM_SRCS} ${DFM_HDRS})
 
 if (QT5BUILD)
-    target_link_libraries(dfm Qt5::Core Qt5::Gui Qt5::Widgets Qt5::DBus Qt5::Network Qt5::OpenGL Qt5::Xml Qt5X11Extras)
+    target_link_libraries(dfm Qt5::Core Qt5::Gui Qt5::Widgets Qt5::DBus Qt5::Network Qt5::OpenGL Qt5::Xml)
 else (QT5BUILD)
     target_link_libraries(dfm ${QT_LIBRARIES} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTNETWORK_LIBRARY} ${QT_QTDBUS_LIBRARY} )
 endif (QT5BUILD)

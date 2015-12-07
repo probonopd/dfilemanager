@@ -567,7 +567,7 @@ MainWindow::connectContainer(ViewContainer *container)
     connect(container, SIGNAL(leftView()), this, SLOT(viewClearHover()));
     connect(container, SIGNAL(newTabRequest(QUrl)), this, SLOT(addTab(QUrl)));
     connect(container, SIGNAL(entered(QModelIndex)), m_infoWidget, SLOT(hovered(QModelIndex)));
-    connect(container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
+//    connect(container, SIGNAL(entered(QModelIndex)), this, SLOT(viewItemHovered(QModelIndex)));
     connect(container, SIGNAL(sortingChanged(int,int)), this, SLOT(sortingChanged(int,int)));
     connect(container, SIGNAL(hiddenVisibilityChanged(bool)), m_actions[ShowHidden], SLOT(setChecked(bool)));
     connect(this, SIGNAL(settingsChanged()), container, SLOT(loadSettings()));
