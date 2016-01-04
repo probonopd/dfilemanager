@@ -5,6 +5,8 @@
 #include <QVBoxLayout>
 #include <QDir>
 #include <QSettings>
+#include <QDebug>
+#include <QCompleter>
 
 static QMap<QString, QStringList> cmds;
 
@@ -39,6 +41,7 @@ CommandDialog::CommandDialog(QWidget *parent, const QString &file)
         }
         s_init = true;
     }
+
     connect(m_ok, SIGNAL(clicked(bool)), this, SLOT(accept()));
     connect(m_cancel, SIGNAL(clicked(bool)), this, SLOT(reject()));
     m_mime = DMimeProvider().getMimeType(file);
@@ -51,6 +54,11 @@ CommandDialog::CommandDialog(QWidget *parent, const QString &file)
     setLayout(l);
 
     m_box->setEditable(true);
+    QStringList complete;
+    const QStringList paths = QString(getenv("PATH")).split(":", QString::SkipEmptyParts);
+    for (int i = 0; i < paths.count(); ++i)
+        complete << QDir(paths.at(i)).entryList(QDir::Executable|QDir::Files);
+    m_box->setCompleter(new QCompleter(complete, m_box));
     if (cmds.contains(m_mime))
         m_box->addItems(cmds.value(m_mime));
 }
@@ -59,18 +67,20 @@ void
 CommandDialog::accept()
 {
     m_cmd = m_box->currentText();
-    QStringList history;
-    if (cmds.contains(m_mime))
-        history << cmds.value(m_mime);
-    if (!history.contains(m_cmd))
-        history << m_cmd;
-    cmds.insert(m_mime, history);
+    if (!m_cmd.isEmpty())
+    {
+        QStringList history;
+        if (cmds.contains(m_mime))
+            history << cmds.value(m_mime);
+        if (!history.contains(m_cmd))
+            history << m_cmd;
+        cmds.insert(m_mime, history);
 
-    QSettings settings(QString("%1/commandhistory.conf").arg(confPath()), QSettings::IniFormat);
-    QString mime = m_mime;
-    mime.replace("/", separator);
-    settings.setValue(mime, history);
-
+        QSettings settings(QString("%1/commandhistory.conf").arg(confPath()), QSettings::IniFormat);
+        QString mime = m_mime;
+        mime.replace("/", separator);
+        settings.setValue(mime, history);
+    }
     QDialog::accept();
 }
 
