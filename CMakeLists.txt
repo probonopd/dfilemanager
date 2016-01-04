@@ -15,7 +15,7 @@ if (QT5BUILD)
     find_package(Qt5DBus)
     include_directories(${Qt5Widgets_INCLUDE_DIRS} ${Qt5X11Extras_INCLUDE_DIRS} ${Qt5Network_INCLUDE_DIRS} ${Qt5OpenGL_INCLUDE_DIRS} ${Qt5Xml_INCLUDE_DIRS})
     add_definitions(${Qt5Widgets_DEFINITIONS})
-    
+
     find_Library(SOLID_LIBRARY NAMES KF5Solid)
     if (SOLID_LIBRARY)
         set(SOLID_FOUND ON)
@@ -31,7 +31,7 @@ if (QT5BUILD)
     else (SOLID_LIBRARY)
         message(STATUS "kf5solid not found, device management in bookmarksview bad at best")
     endif (SOLID_LIBRARY)
-    
+
     # uninstall target, stolen from http://www.cmake.org/Wiki/CMake_FAQ#Can_I_do_.22make_uninstall.22_with_CMake.3F
     configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
@@ -46,14 +46,14 @@ else (QT5BUILD)
     include(${QT_USE_FILE})
     include_directories(${QT_INCLUDES})
     add_definitions(${QT_DEFINITIONS} ${QT_QTDBUS_DEFINITIONS})
-    
+
     if (KDE4_FOUND)
 	add_definitions(${KDE4_DEFINITIONS} -DHASKDE4)
 	include_directories(${KDE4_INCLUDES})
 	include(KDE4Defaults)
 	include(MacroLibrary)
     endif (KDE4_FOUND)
-    
+
     find_Library(SOLID_LIBRARY NAMES solid)
     if (SOLID_LIBRARY)
         set(SOLID_FOUND ON)

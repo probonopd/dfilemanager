@@ -52,14 +52,14 @@ DockWidget::DockWidget(QWidget *parent, const QString &title, const Qt::WindowFl
 //    connect (this, SIGNAL(topLevelChanged(bool)), m_titleWidget,   SLOT(setIsFloating(bool)));
 //    m_mainWindow->installEventFilter(this);
     QTimer::singleShot(0, this, SLOT(postConstructorJobs()));
+    m_margins = contentsMargins();
+    if (style()->objectName() != "oxygen")
+        setContentsMargins(0, 0, 0, 0);
 }
 
 void
 DockWidget::postConstructorJobs()
 {
-    int l, t, r, b;
-    getContentsMargins(&l, &t, &r, &b);
-    m_margins = QMargins(l, t, r, b);
     setLocked(bool(Store::config.docks.lock & m_position));
 }
 

@@ -45,6 +45,7 @@
 #include "mainwindow.h"
 #include "config.h"
 #include "columnview.h"
+#include "commanddialog.h"
 
 using namespace DFM;
 
@@ -290,7 +291,9 @@ ViewContainer::customCommand()
     if (selectedItems.count() == 1)
         idx = selectedItems.first();
     bool ok;
-    QString text = QInputDialog::getText(this, tr("Open With"), tr("Custom Command:"), QLineEdit::Normal, QString(), &ok);
+    const QString file(m_model->url(idx).toLocalFile().isEmpty() ? m_model->rootUrl().toLocalFile() : m_model->url(idx).toLocalFile());
+//    QString text = QInputDialog::getText(this, tr("Open With"), tr("Custom Command:"), QLineEdit::Normal, QString(), &ok);
+    QString text = CommandDialog::getCommand(this, file, &ok);
     if (!ok)
         return;
 
