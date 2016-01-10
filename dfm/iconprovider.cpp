@@ -40,7 +40,7 @@ IconProvider::triangle(bool back, int size)
 const QIcon
 IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
 {
-    if(themeIcon)
+    if (themeIcon)
     {
         QString iconString;
         switch (type)
@@ -62,7 +62,7 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
         default : iconString = "";
         }
 
-        if(!QIcon::fromTheme(iconString).isNull())
+        if (!QIcon::fromTheme(iconString).isNull())
             return QIcon::fromTheme(iconString);
     }
 
@@ -161,6 +161,8 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
     }
     case GoHome :
     {
+#if 0
+        //head
         p.setRenderHint(QPainter::Antialiasing);
         p.scale(0.80, 0.80);
         p.translate(size*0.1, size*0.1);
@@ -175,6 +177,32 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
         const int a = size/16;
         r.adjust(a, a, -a, -a);
         p.drawEllipse(r);
+#endif
+        //house
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setBrush(color);
+        p.setPen(Qt::NoPen);
+        const int roofSize(size/2);
+        QPolygon pol;
+        static const int pts[] = { size/2,0, size,roofSize, 0,roofSize };
+        pol.setPoints(3, pts);
+        p.drawPolygon(pol);
+
+        p.setCompositionMode(QPainter::CompositionMode_DestinationOut);
+        p.drawPolygon(pol.translated(0, 3));
+        p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
+        QRect chimney(size-(size/3), 1, 2, 4);
+        p.fillRect(chimney, color);
+
+        QRect house(2, roofSize, size-4, size-(roofSize+1));
+        p.fillRect(house, color);
+        p.setCompositionMode(QPainter::CompositionMode_DestinationOut);
+        p.fillRect(house.adjusted(2, 0, -2, -2), color);
+        p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
+        QRect door(size/2-1, size-7, 3, 6);
+        p.fillRect(door, color);
         break;
     }
     case Search :
@@ -209,22 +237,29 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
     case Sort :
     {
         p.setBrush(color);
-        p.setPen(color);
-        int i = 0;
-        while (i < 4)
-        {
-            p.fillRect(0, i*4, size-i*4, 2, color);
-            ++i;
-        }
+        p.setPen(Qt::NoPen);
+        p.setRenderHint(QPainter::Antialiasing);
+        int i = -1;
+        while (++i < 4)
+            p.fillRect(0, i*4+1, size-7, 2, color);
+
+        QPolygon pol;
+        static const int pts[] = { 3,0, 6,6, 0,6 };
+        pol.setPoints(3, pts);
+        p.drawPolygon(pol.translated(size-6,1));
+        p.translate(rect.center());
+        p.rotate(180);
+        p.drawPolygon(pol.translated(-(size-7),-(size-8)));
         break;
     }
     case Hidden :
     {
-        p.setRenderHint(QPainter::Antialiasing);
+#if 0
+        p.setRenderHint(QPainter::Antialiasing2);
         p.setBrush(color);
         int i = 0, half = 0, h = size/2, z = size/4, _z = size/8;
         while (i < 4)
-        {
+        { 4
             if (i==1||i==3)
                 p.setOpacity(0.33);
             else
@@ -234,6 +269,36 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
                 half = h;
             ++i;
         }
+#endif
+//        p.setBrush(QColor(color.red(), color.green(), color.blue(), 63));
+        p.translate(0.5f, 0.5f);
+        p.setRenderHint(QPainter::Antialiasing);
+
+        QPainterPathStroker stroker;
+        stroker.setWidth(1.0f);
+        stroker.setJoinStyle(Qt::RoundJoin);
+        stroker.setCapStyle(Qt::RoundCap);
+        stroker.setDashPattern(QVector<qreal>() << 0.5f << 1.5f);
+
+        const int corner(5);
+        --size;
+        QPainterPath path;
+        path.moveTo(corner+1, 0);
+        path.lineTo(size-2, 0);
+        path.lineTo(size-2, size-1);
+        path.lineTo(1, size-1);
+        path.lineTo(1, corner);
+        path.lineTo(corner+1, 0);
+        path.lineTo(corner+1, corner);
+        path.lineTo(2, corner);
+        QPainterPath stroke = stroker.createStroke(path);
+        p.fillPath(stroke, color);
+//        p.setPen(Qt::NoPen);
+//        path.setFillRule(Qt::WindingFill);
+//        p.drawPath(path);
+//        QPen pen(color, 1.0f, Qt::DotLine, Qt::RoundCap, Qt::RoundJoin);
+//        p.setPen(pen);
+//        p.drawPath(path);
         break;
     }
     case Animator:

@@ -29,6 +29,7 @@ CommandDialog::CommandDialog(QWidget *parent, const QString &file)
     , m_ok(new QPushButton("Ok", this))
     , m_cancel(new QPushButton("Cancel", this))
 {
+    setMinimumWidth(256);
     if (!s_init)
     {
         QSettings settings(QString("%1/commandhistory.conf").arg(confPath()), QSettings::IniFormat);
@@ -47,9 +48,11 @@ CommandDialog::CommandDialog(QWidget *parent, const QString &file)
     m_mime = DMimeProvider().getMimeType(file);
     QVBoxLayout *l = new QVBoxLayout();
     l->addWidget(m_box);
-    QLayout *btns = new QHBoxLayout();
+    QHBoxLayout *btns = new QHBoxLayout();
+    btns->addStretch();
     btns->addWidget(m_ok);
     btns->addWidget(m_cancel);
+    btns->addStretch();
     l->addLayout(btns);
     setLayout(l);
 
@@ -104,5 +107,4 @@ CommandDialog::getCommand(QWidget *parent, const QString &file, bool *ok)
     } else {
         return QString();
     }
-
 }
