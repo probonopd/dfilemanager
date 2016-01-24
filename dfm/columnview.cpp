@@ -59,8 +59,9 @@ public:
         }
 
         //icon
-        const QRect ir(option.rect.topLeft(), QSize(view->iconSize().width()+4, option.rect.height()));
+        const QRect ir = QRect(option.rect.topLeft(), view->iconSize()).translated(2, option.rect.height()/2-view->iconSize().height()/2);
         const QIcon icon(index.data(FS::FileIconRole).value<QIcon>());
+
         if (!icon.isNull())
             icon.paint(painter, ir);
 
@@ -72,7 +73,7 @@ public:
             f.setBold(true);
             painter->setFont(f);
         }
-        const QRect tr(ir.right(), option.rect.top(), option.rect.width()-(20+isDir*20), option.rect.height());
+        const QRect tr(ir.right()+3, option.rect.top(), option.rect.width()-(20+isDir*20), option.rect.height());
         QApplication::style()->drawItemText(painter,
                                             tr,
                                             Qt::AlignLeft|Qt::AlignVCenter,
