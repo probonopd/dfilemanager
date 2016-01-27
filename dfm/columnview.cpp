@@ -59,11 +59,19 @@ public:
         }
 
         //icon
-        const QRect ir = QRect(option.rect.topLeft(), view->iconSize()).translated(2, option.rect.height()/2-view->iconSize().height()/2);
+        QStyle *style = QApplication::style();
         const QIcon icon(index.data(FS::FileIconRole).value<QIcon>());
+        QPixmap pix(icon.pixmap(view->iconSize().width()));
+        if (pix.height() > view->iconSize().height() || pix.width() > view->iconSize().width())
+            pix = pix.scaled(view->iconSize(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        const QRect ir = style->itemPixmapRect(QRect(option.rect.topLeft(), QSize(view->iconSize().width()+4, option.rect.height())), Qt::AlignCenter, pix);
 
-        if (!icon.isNull())
-            icon.paint(painter, ir);
+        if (!pix.isNull())
+            style->drawItemPixmap(painter, ir, Qt::AlignCenter, pix);
+
+        //thumbnail shadow
+        if (index.data(FS::FileHasThumbRole).toBool())
+            renderShadow(ir.adjusted(-(SHADOW-1), -(SHADOW-1), SHADOW-1, SHADOW-1), painter);
 
         //text
         const QFont savedFont(painter->font());
@@ -73,7 +81,7 @@ public:
             f.setBold(true);
             painter->setFont(f);
         }
-        const QRect tr(ir.right()+3, option.rect.top(), option.rect.width()-(20+isDir*20), option.rect.height());
+        const QRect tr(QPoint(ir.right()+4, option.rect.top()), QPoint(option.rect.right()-isDir*20, option.rect.bottom()+1));
         QApplication::style()->drawItemText(painter,
                                             tr,
                                             Qt::AlignLeft|Qt::AlignVCenter,
@@ -92,13 +100,19 @@ public:
             QApplication::style()->drawPrimitive(QStyle::PE_IndicatorArrowRight, &copy, painter, view);
         }
     }
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+    {
+        QSize sz(FileItemDelegate::sizeHint(option, index));
+        if (sz.height() < DECOSIZE.height())
+            sz.setHeight(DECOSIZE.height());
+        return sz;
+    }
 };
 
 //---------------------------------------------------------------------------------------------------------
 
 ColumnView::ColumnView(QWidget *parent) : QAbstractItemView(parent)
 {
-    setIconSize(QSize(16, 16));
     setDragDropMode(QAbstractItemView::DragDrop);
     setDropIndicatorShown(true);
     setDefaultDropAction(Qt::MoveAction);

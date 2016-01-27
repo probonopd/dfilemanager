@@ -22,6 +22,7 @@
 #include "viewanimator.h"
 #include "fsmodel.h"
 #include <QTreeView>
+#include <QScrollBar>
 
 QMap<QAbstractItemView *, ViewAnimator *> ViewAnimator::s_views;
 

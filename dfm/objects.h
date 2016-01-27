@@ -57,16 +57,30 @@ protected:
     bool m_quit;
 };
 
+#define SHADOW 5
+#define TEXT index.data().toString()
+#define RECT option.rect
+#define FM option.fontMetrics
+#define PAL option.palette
+#define DECOSIZE option.decorationSize
+
 class FileItemDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
 public:
-    explicit FileItemDelegate(QObject *parent = 0):QStyledItemDelegate(parent){}
+    enum ShadowPart { TopLeft = 0, Top, TopRight, Left, Center, Right, BottomLeft, Bottom, BottomRight };
+    explicit FileItemDelegate(QObject *parent = 0);
     QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
     void setEditorData(QWidget *editor, const QModelIndex &index) const;
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
     bool eventFilter(QObject *object, QEvent *event);
     void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+
+protected:
+    static QPixmap shadowPix();
+    static void genShadowData();
+    static void renderShadow(QRect rect, QPainter *painter);
+    static QPixmap *s_shadowData;
 };
 
 class ScrollAnimator : public QObject

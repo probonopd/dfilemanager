@@ -52,6 +52,7 @@ class Ops : public QObject
 {
     Q_OBJECT
 public:
+    static void expblur(QImage &img, int radius, Qt::Orientations o = Qt::Horizontal|Qt::Vertical );
     static QColor colorMid(const QColor c1, const QColor c2, int i1 = 1, int i2 = 1);
     static bool openFile(const QString &file);
     static Ops *instance();

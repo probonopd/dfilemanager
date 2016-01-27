@@ -48,79 +48,16 @@
 #include "config.h"
 #include "fsmodel.h"
 
-#define TEXT index.data().toString()
-#define RECT option.rect
-#define FM option.fontMetrics
-#define PAL option.palette
-#define DECOSIZE option.decorationSize
-#define SHADOW 5
-
 using namespace DFM;
 
 class IconDelegate : public FileItemDelegate
 {
 public:
-    enum ShadowPart { TopLeft = 0, Top, TopRight, Left, Center, Right, BottomLeft, Bottom, BottomRight };
     inline explicit IconDelegate(IconView *parent)
         : FileItemDelegate(parent)
         , m_iv(parent)
         , m_mid(Ops::colorMid(parent->palette().color(QPalette::Highlight), parent->palette().color(QPalette::Base)))
     {
-        genShadowData();
-    }
-    inline QPixmap shadowPix()
-    {
-        const int size((SHADOW*2)+1);
-        QPixmap pix(size, size);
-        pix.fill(Qt::transparent);
-        QPainter p(&pix);
-        p.translate(0.5f, 0.5f);
-        QRect r(pix.rect());
-        const float d = (float)r.height()/2.0f;
-        QRadialGradient rg(r.center(), d);
-    //    const QColor &c2(QColor(c.red(), c.green(), c.blue(), c.alpha()/4));
-    //    c.setAlpha(192);
-        QColor c(Qt::black);
-        rg.setColorAt(0.2f, c);
-        c.setAlpha(96);
-        rg.setColorAt(0.5f, c);
-        rg.setColorAt(0.9f, Qt::transparent);
-        p.setBrush(rg);
-        p.setPen(Qt::NoPen);
-        p.setRenderHint(QPainter::Antialiasing);
-        p.drawEllipse(r);
-        r.adjust(SHADOW-1, SHADOW-1, -(SHADOW-1), -SHADOW);
-        p.translate(-0.5f, -0.5f);
-        p.setCompositionMode(QPainter::CompositionMode_DestinationOut);
-        p.fillRect(r, Qt::black);
-        p.end();
-        return pix;
-    }
-    inline void genShadowData()
-    {
-        QPixmap shadow = shadowPix();
-
-        m_shadowData[TopLeft] = shadow.copy(0, 0, SHADOW, SHADOW);
-        m_shadowData[Top] = shadow.copy(SHADOW, 0, 1, SHADOW);
-        m_shadowData[TopRight] = shadow.copy(SHADOW, 0, SHADOW, SHADOW);
-        m_shadowData[Left] = shadow.copy(0, SHADOW, SHADOW, 1);
-        m_shadowData[Center] = QPixmap(); //no center...
-        m_shadowData[Right] = shadow.copy(shadow.width()-(SHADOW+1), SHADOW, SHADOW, 1);
-        m_shadowData[BottomLeft] = shadow.copy(0, SHADOW, SHADOW, SHADOW);
-        m_shadowData[Bottom] = shadow.copy(SHADOW, shadow.height()-(SHADOW+1), 1, SHADOW);
-        m_shadowData[BottomRight] = shadow.copy(SHADOW, SHADOW, SHADOW, SHADOW);
-    }
-    inline void renderShadow(QRect rect, QPainter *painter) const
-    {
-        const int x = rect.x(), y = rect.y(), r = rect.right(), b = rect.bottom(), w = rect.width(), h = rect.height();
-        painter->drawTiledPixmap(QRect(rect.topLeft(), m_shadowData[TopLeft].size()), m_shadowData[TopLeft]);
-        painter->drawTiledPixmap(QRect(QPoint(x+SHADOW, y), QSize(w-(SHADOW*2+1), m_shadowData[Top].height())), m_shadowData[Top]);
-        painter->drawTiledPixmap(QRect(QPoint(r-SHADOW, y), m_shadowData[TopRight].size()), m_shadowData[TopRight]);
-        painter->drawTiledPixmap(QRect(QPoint(x, y+SHADOW), QSize(m_shadowData[Left].width(), h-(SHADOW*2+1))), m_shadowData[Left]);
-        painter->drawTiledPixmap(QRect(QPoint(r-SHADOW, y+SHADOW), QSize(m_shadowData[Right].width(), h-(SHADOW*2+1))), m_shadowData[Right]);
-        painter->drawTiledPixmap(QRect(QPoint(x, b-SHADOW), m_shadowData[BottomLeft].size()), m_shadowData[BottomLeft]);
-        painter->drawTiledPixmap(QRect(QPoint(x+SHADOW, b-SHADOW), QSize(w-(SHADOW*2+1), m_shadowData[Bottom].height())), m_shadowData[Bottom]);
-        painter->drawTiledPixmap(QRect(QPoint(r-SHADOW, b-SHADOW), m_shadowData[BottomRight].size()), m_shadowData[BottomRight]);
     }
     void setEditorData(QWidget *editor, const QModelIndex &index) const
     {
@@ -134,8 +71,6 @@ public:
 
         const QPen savedPen(painter->pen());
         const QBrush savedBrush(painter->brush());
-//        const QFont savedFont(painter->font());
-
         const bool selected(option.state & QStyle::State_Selected);
         const int step(selected ? STEPS : ViewAnimator::hoverLevel(m_iv, index));
         if (step)
@@ -154,19 +89,14 @@ public:
         QRect textRect(RECT), pixRect(RECT);
         pixRect.setBottom(pixRect.top()+DECOSIZE.height()+((SHADOW-3)*2));
         textRect.setTop(pixRect.bottom());
-//        painter->setFont(index.data(Qt::FontRole).value<QFont>());
         painter->setPen(PAL.color(selected?QPalette::HighlightedText:QPalette::Text));
         painter->drawText(textRect, Qt::AlignTop|Qt::AlignHCenter, text(option, index));
-//        QApplication::style()->drawItemText(painter, textRect, Qt::AlignTop|Qt::AlignHCenter, PAL, option.state&QStyle::State_Enabled, text(option, index), selected?QPalette::HighlightedText:QPalette::Text);
         pixRect = QApplication::style()->itemPixmapRect(pixRect, Qt::AlignCenter, pixmap);
-
-        if (index.data(FS::FileHasThumbRole).toBool())
-            renderShadow(pixRect.adjusted(-(SHADOW-1), -(SHADOW-1), SHADOW-1, SHADOW), painter);
-
         QApplication::style()->drawItemPixmap(painter, pixRect, Qt::AlignCenter, pixmap);
+        if (index.data(FS::FileHasThumbRole).toBool())
+            renderShadow(pixRect.adjusted(-(SHADOW-1), -(SHADOW-1), SHADOW-1, SHADOW-1), painter);
         painter->setPen(savedPen);
         painter->setBrush(savedBrush);
-//        painter->setFont(savedFont);
     }
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
@@ -296,7 +226,6 @@ protected:
     static inline int textFlags() { return Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap; }
 
 private:
-    QPixmap m_shadowData[9];
     QColor m_mid;
     IconView *m_iv;
     mutable QHash<QModelIndex, QString> m_textData;

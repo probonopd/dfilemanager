@@ -22,6 +22,7 @@
 #include <QMessageBox>
 #include <QScrollBar>
 #include <QTimer>
+#include <QPainter>
 
 #include "fsworkers.h"
 #include "objects.h"
@@ -72,6 +73,14 @@ DThread::discontinue()
 
 //-------------------------------------------------------------------------------------------
 
+QPixmap *FileItemDelegate::s_shadowData(0);
+
+FileItemDelegate::FileItemDelegate(QObject *parent)
+    : QStyledItemDelegate(parent)
+{
+    if (!s_shadowData)
+        genShadowData();
+}
 
 QWidget
 *FileItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
@@ -129,6 +138,63 @@ FileItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewIt
     int frameWidth = QApplication::style()->pixelMetric(QStyle::PM_DefaultFrameWidth, &textOpt, editor);
     opt.rect = opt.rect.adjusted(-frameWidth, -frameWidth, frameWidth, frameWidth);
     QStyledItemDelegate::updateEditorGeometry(editor, opt, index);
+}
+
+QPixmap
+FileItemDelegate::shadowPix()
+{
+    const int size((SHADOW*2)+2);
+    QImage img(size, size, QImage::Format_ARGB32);
+    img.fill(Qt::transparent);
+    QPainter pt(&img);
+    QRectF rect(img.rect());
+    pt.setRenderHint(QPainter::Antialiasing);
+    pt.setBrush(Qt::NoBrush);
+    pt.setPen(Qt::NoPen);
+    pt.fillRect(rect.adjusted(2.75f, 3.0f, -2.75f, -2.5f), QColor(0, 0, 0, 170));
+    pt.end();
+    Ops::expblur(img, 1);
+    pt.begin(&img);
+    pt.fillRect(rect.adjusted(3, 3, -3, -3), QColor(0, 0, 0, 85));
+    pt.setCompositionMode(QPainter::CompositionMode_DestinationOut);
+    pt.fillRect(rect.adjusted(4, 4, -4, -4), Qt::black);
+    pt.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    pt.setPen(QColor(255, 255, 255, 63));
+    const QRect r = img.rect().adjusted(4, 4, -4, -4);
+    pt.drawLine(r.topLeft(), r.topRight());
+    pt.end();
+    QPixmap pix = QPixmap::fromImage(img);
+    return pix;
+}
+
+void
+FileItemDelegate::genShadowData()
+{
+    const QPixmap shadow = shadowPix();
+    s_shadowData = new QPixmap[9]();
+    s_shadowData[TopLeft] =     shadow.copy(0, 0, SHADOW, SHADOW);
+    s_shadowData[Top] =         shadow.copy(SHADOW, 0, 2, SHADOW);
+    s_shadowData[TopRight] =    shadow.copy(SHADOW+2, 0, SHADOW, SHADOW);
+    s_shadowData[Left] =        shadow.copy(0, SHADOW, SHADOW, 2);
+    s_shadowData[Center] =      QPixmap(); //no center...
+    s_shadowData[Right] =       shadow.copy(SHADOW+2, SHADOW, SHADOW, 2);
+    s_shadowData[BottomLeft] =  shadow.copy(0, SHADOW+2, SHADOW, SHADOW);
+    s_shadowData[Bottom] =      shadow.copy(SHADOW, SHADOW+2, 2, SHADOW);
+    s_shadowData[BottomRight] = shadow.copy(SHADOW+2, SHADOW+2, SHADOW, SHADOW);
+}
+
+void
+FileItemDelegate::renderShadow(QRect rect, QPainter *painter)
+{
+    const int x = rect.x(), y = rect.y(), w = rect.width(), h = rect.height(), r = x+w, b = y+h;
+    painter->drawTiledPixmap(QRect(QPoint(x, y),                QSize(SHADOW, SHADOW)),         s_shadowData[TopLeft]);
+    painter->drawTiledPixmap(QRect(QPoint(x+SHADOW, y),         QSize(w-(SHADOW*2), SHADOW)),   s_shadowData[Top]);
+    painter->drawTiledPixmap(QRect(QPoint(r-SHADOW, y),         QSize(SHADOW, SHADOW)),         s_shadowData[TopRight]);
+    painter->drawTiledPixmap(QRect(QPoint(x, y+SHADOW),         QSize(SHADOW, h-(SHADOW*2))),   s_shadowData[Left]);
+    painter->drawTiledPixmap(QRect(QPoint(r-SHADOW, y+SHADOW),  QSize(SHADOW, h-(SHADOW*2))),   s_shadowData[Right]);
+    painter->drawTiledPixmap(QRect(QPoint(x, b-SHADOW),         QSize(SHADOW, SHADOW)),         s_shadowData[BottomLeft]);
+    painter->drawTiledPixmap(QRect(QPoint(x+SHADOW, b-SHADOW),  QSize(w-(SHADOW*2), SHADOW)),   s_shadowData[Bottom]);
+    painter->drawTiledPixmap(QRect(QPoint(r-SHADOW, b-SHADOW),  QSize(SHADOW, SHADOW)),         s_shadowData[BottomRight]);
 }
 
 //-------------------------------------------------------------------------------------------
