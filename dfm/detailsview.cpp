@@ -67,7 +67,6 @@ DetailsView::DetailsView(QWidget *parent)
     setUniformRowHeights(true);
     setSelectionMode(ExtendedSelection);
     setSortingEnabled(true);
-    sortByColumn(0, Qt::AscendingOrder);
     setEditTriggers(SelectedClicked | EditKeyPressed);
     setExpandsOnDoubleClick(false);
     setDragDropMode(DragDrop);
@@ -78,6 +77,7 @@ DetailsView::DetailsView(QWidget *parent)
     setVerticalScrollMode(ScrollPerPixel);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setAlternatingRowColors(Store::config.views.detailsView.altRows);
+    header()->setSortIndicator(0, Qt::AscendingOrder);
 
     connect(this, SIGNAL(sortIndicatorChanged(int,int)), container(), SIGNAL(sortingChanged(int,int)));
     connect(header(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), this, SLOT(sortingChanged(int,Qt::SortOrder)));

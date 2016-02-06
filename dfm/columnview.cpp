@@ -51,11 +51,10 @@ public:
         //background
         if (option.state & (QStyle::State_Selected|QStyle::State_MouseOver) || childViews)
         {
-            QColor bg(option.palette.color(QPalette::Highlight));
-            if (!(option.state & QStyle::State_Selected))
-                bg.setAlpha(32);
             needBold = (option.state & QStyle::State_Selected)||childViews;
-            painter->fillRect(option.rect, bg);
+            if (needBold)
+                const_cast<QStyleOptionViewItem *>(&option)->state |= QStyle::State_MouseOver;
+            QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, painter, option.widget);
         }
 
         //icon

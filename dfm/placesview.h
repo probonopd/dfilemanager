@@ -102,10 +102,11 @@ protected:
     virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
     QSize sizeHint(const QStyleOptionViewItem & option, const QModelIndex & index) const
     {
+        QSize sz(QStyledItemDelegate::sizeHint(option, index));
          if (!isHeader(index))
-             return QSize(-1, option.decorationSize.height()+2);
+             return sz;
          else
-             return  QSize(-1, option.fontMetrics.height()*3/2);
+             return  sz + QSize(0, option.fontMetrics.height()/2);
     }
     inline bool isHeader(const QModelIndex &index) const { return !index.parent().isValid(); }
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;

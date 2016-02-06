@@ -56,7 +56,6 @@ public:
     inline explicit IconDelegate(IconView *parent)
         : FileItemDelegate(parent)
         , m_iv(parent)
-        , m_mid(Ops::colorMid(parent->palette().color(QPalette::Highlight), parent->palette().color(QPalette::Base)))
     {
     }
     void setEditorData(QWidget *editor, const QModelIndex &index) const
@@ -75,22 +74,24 @@ public:
         const int step(selected ? STEPS : ViewAnimator::hoverLevel(m_iv, index));
         if (step)
         {
-            QColor h(selected?PAL.color(QPalette::Highlight):m_mid);
+            QStyleOptionViewItem copy(option);
             if (!selected)
-                h.setAlpha((255.0f/(float)STEPS)*step);
-            painter->setPen(Qt::NoPen);
-            painter->setBrush(h);
-            const bool hadAA(painter->testRenderHint(QPainter::Antialiasing));
-            painter->setRenderHint(QPainter::Antialiasing);
-            painter->drawRoundedRect(RECT.adjusted(1, 1, 0, 0), 3, 3);
-            painter->setRenderHint(QPainter::Antialiasing, hadAA);
+                copy.state |= QStyle::State_MouseOver;
+            QPixmap pix(option.rect.size());
+            pix.fill(Qt::transparent);
+            QPainter p(&pix);
+            copy.rect = pix.rect().adjusted(1, 1, 0, 0);
+            QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, &p, copy.widget);
+            p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+            p.fillRect(pix.rect(), QColor(0, 0, 0, ((255.0f/(float)STEPS)*step)));
+            p.end();
+            painter->drawPixmap(option.rect, pix);
         }
         const QPixmap &pixmap = pix(option, index);
         QRect textRect(RECT), pixRect(RECT);
         pixRect.setBottom(pixRect.top()+DECOSIZE.height()+((SHADOW-3)*2));
         textRect.setTop(pixRect.bottom());
-        painter->setPen(PAL.color(selected?QPalette::HighlightedText:QPalette::Text));
-        painter->drawText(textRect, Qt::AlignTop|Qt::AlignHCenter, text(option, index));
+        QApplication::style()->drawItemText(painter, textRect, Qt::AlignTop|Qt::AlignHCenter, PAL, option.state & QStyle::State_Enabled, text(option, index), selected?QPalette::HighlightedText:QPalette::Text);
         pixRect = QApplication::style()->itemPixmapRect(pixRect, Qt::AlignCenter, pixmap);
         QApplication::style()->drawItemPixmap(painter, pixRect, Qt::AlignCenter, pixmap);
         if (index.data(FS::FileHasThumbRole).toBool())
@@ -226,7 +227,6 @@ protected:
     static inline int textFlags() { return Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap; }
 
 private:
-    QColor m_mid;
     IconView *m_iv;
     mutable QHash<QModelIndex, QString> m_textData;
     mutable QHash<QModelIndex, QPixmap> m_pixData;
@@ -584,6 +584,7 @@ IconView::paintEvent(QPaintEvent *e)
             QStyleOptionViewItemV4 option(viewOptions());
             option.rect=vr;
             option.widget=this;
+            option.decorationPosition = QStyleOptionViewItemV4::Top;
             if (selectionModel()->isSelected(index))
                 option.state|=QStyle::State_Selected;
             itemDelegate()->paint(&p, option, index);

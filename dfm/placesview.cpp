@@ -37,90 +37,11 @@
 
 using namespace DFM;
 
-inline static QLinearGradient simple(QRect rect, QColor color, int strength)
-{
-    QColor black(Qt::black), white(Qt::white);
-    black.setAlpha(color.alpha());
-    white.setAlpha(color.alpha());
-
-    QLinearGradient s(rect.topLeft(), rect.bottomLeft());
-    s.setColorAt(0, Ops::colorMid(color, white, 100, strength));
-    s.setColorAt(1, Ops::colorMid(color, black, 100, strength));
-    return s;
-}
-
-inline static QPolygon arrow(QRect rect, bool expanded)
-{
-    QPolygon a;
-    if (expanded)
-    {
-        rect.adjust(0, 1, 0, -1);
-        a << rect.topLeft() << rect.topRight() << QPoint(rect.center().x(), rect.bottom());
-    }
-    else
-    {
-        rect.adjust(1, 0, -1, 0);
-        a << rect.topLeft() << QPoint(rect.right(), rect.center().y()) << rect.bottomLeft();
-    }
-    return a;
-}
-
-inline static void renderArrow(QRect rect, QPainter *painter, QColor color, bool expanded)
-{
-    painter->save();
-    QPainterPath path;
-    path.addPolygon(arrow(rect, expanded));
-    painter->setBrush(color);
-    painter->setPen(Qt::NoPen);
-    painter->drawPath(path);
-    painter->restore();
-}
-
-inline void renderFrame(QRect rect, QPainter *painter, QColor color, uint pos = 15)
-{
-    QRect r(rect);
-    painter->save();
-    painter->translate(0.5, 0.5);
-    painter->setPen(color);
-    if (pos & 1) //top
-    {
-        painter->drawLine(r.topLeft(), r.topRight());
-        r.setTop(r.top()+1);
-    }
-    if (pos & 2) //bottom
-    {
-        painter->drawLine(r.bottomLeft(), r.bottomRight());
-        r.setBottom(r.bottom()-1);
-    }
-    if (pos & 4) //left
-        painter->drawLine(r.topLeft(), r.bottomLeft());
-    if (pos & 8) //right
-        painter->drawLine(r.topRight(), r.bottomRight());
-    painter->restore();
-}
-
 #define TEXT index.data().toString()
 #define RECT option.rect
 #define FM option.fontMetrics
 #define PAL option.palette
 #define DECOSIZE option.decorationSize
-
-inline static void drawDeviceUsage(const int usage, QPainter *painter, const QStyleOptionViewItem &option)
-{
-    painter->save();
-    QRect rect = RECT;
-    painter->setPen(Qt::NoPen);
-    rect.setTop(rect.top()+1);
-    rect.setBottom(rect.bottom()-1);
-    if (!(option.state & (QStyle::State_MouseOver | QStyle::State_Selected)))
-        renderFrame(rect, painter, QColor(0, 0, 0, 32), 15);
-    rect.setWidth(rect.width()*usage/100);
-    QColor progress(Ops::colorMid(Qt::green, Qt::red, 100-usage, usage));
-    progress.setAlpha(64);
-    painter->fillRect(rect, simple(rect, progress, 80));
-    renderFrame(rect.adjusted(1, 1, -1, -1), painter, QColor(255, 255, 255, 64));
-    painter->restore();
-}
 
 void
 PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
@@ -134,7 +55,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 
     const QPalette::ColorRole fgr = m_placesView->foregroundRole(), bgr = m_placesView->backgroundRole();
 
-    int step = selected ? 8 : ViewAnimator::hoverLevel(m_placesView, index);
+    int step = selected ? STEPS : ViewAnimator::hoverLevel(m_placesView, index);
 
     int textFlags = Qt::AlignVCenter | Qt::AlignLeft | Qt::TextSingleLine;
     int indent = DECOSIZE.height(), textMargin = indent + (isHeader(index) ? 0 : DECOSIZE.width());
@@ -154,15 +75,39 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 
     if (step && !isHeader(index))
     {
-        painter->setOpacity((1.0f/8.0f)*step);
-        m_placesView->style()->drawControl(QStyle::CE_ItemViewItem, &option, painter, m_placesView);
-        painter->setOpacity(1);
+        QStyleOptionViewItem copy(option);
+        if (!selected)
+            copy.state |= QStyle::State_MouseOver;
+        QPixmap pix(option.rect.size());
+        pix.fill(Qt::transparent);
+        copy.rect = pix.rect();
+        QPainter p(&pix);
+        QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, &p, m_placesView);
+        p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+        p.fillRect(pix.rect(), QColor(0, 0, 0, ((255.0f/(float)STEPS)*step)));
+        p.end();
+        painter->drawPixmap(option.rect, pix);
     }
 
     DeviceItem *d = m_placesView->itemFromIndex<DeviceItem *>(index);
-    if (Store::config.behaviour.devUsage)
-        if (d && d->isMounted() && d->totalBytes())
-            drawDeviceUsage(d->used(), painter, option);
+    if (Store::config.behaviour.devUsage && d && d->isMounted() && d->totalBytes())
+    {
+        QPixmap pix(RECT.size());
+        pix.fill(Qt::transparent);
+        QPainter p(&pix);
+        QStyleOptionProgressBarV2 opt;
+        opt.rect = pix.rect();
+        opt.maximum = 100;
+        opt.minimum = 0;
+        opt.progress = d->used();
+        opt.palette = option.palette;
+        opt.palette.setColor(QPalette::Highlight, Ops::colorMid(Qt::green, Qt::red, 100-d->used(), d->used()));
+        QApplication::style()->drawControl(QStyle::CE_ProgressBar, &opt, &p);
+        p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+        p.fillRect(pix.rect(), QColor(0, 0, 0, 127));
+        p.end();
+        painter->drawPixmap(option.rect, pix);
+    }
     if (d && d->isHidden())
         painter->setOpacity(0.5f);
 
@@ -190,7 +135,15 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
     {
         QRect arrowRect(0, 0, 10, 10);
         arrowRect.moveCenter(QPoint(RECT.x()+8, RECT.center().y()));
-        renderArrow(arrowRect, painter, selected ? PAL.color(QPalette::HighlightedText) : fg, bool(option.state & QStyle::State_Open));
+        QStyleOption copy;
+        copy.rect = arrowRect;
+        //this should trick most styles to draw the arrow w/ the right color...
+        copy.palette = fg;
+        copy.palette.setColor(QPalette::Text, fg);
+        copy.palette.setColor(QPalette::WindowText, fg);
+        painter->setPen(fg);
+        painter->setBrush(fg);
+        QApplication::style()->drawPrimitive(bool(option.state & QStyle::State_Open)?QStyle::PE_IndicatorArrowDown:QStyle::PE_IndicatorArrowRight, &copy, painter);
     }
     QRect iconRect(QPoint(RECT.x()+(indent*0.75f), RECT.y() + (RECT.height() - DECOSIZE.height())/2), DECOSIZE);
     QPixmap iconPix = qvariant_cast<QIcon>(index.data(Qt::DecorationRole)).pixmap(DECOSIZE.height());
@@ -507,6 +460,7 @@ PlacesView::PlacesView(QWidget *parent)
     setUniformRowHeights(false);
     setAllColumnsShowFocus(true);
     setItemDelegate(new PlacesViewDelegate(this));
+    setRootIsDecorated(true);
     setHeaderHidden(true);
     setItemsExpandable(true);
     setIndentation(0);
@@ -836,8 +790,8 @@ PlacesView::paintEvent(QPaintEvent *event)
     if (showDropIndicator() && state() == QAbstractItemView::DraggingState
             && viewport()->cursor().shape() != Qt::ForbiddenCursor && m_model->flags(index) & Qt::ItemIsDropEnabled)
     {
-        QStyleOption opt;
-        opt.init(this);
+        QStyleOption opt = viewOptions();
+//        opt.init(this);
         QRect rect(visualRect(index));
         if (dropIndicatorPosition() == AboveItem)
             rect.setBottom(rect.top()-1);

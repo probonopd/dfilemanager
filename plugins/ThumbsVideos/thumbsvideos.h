@@ -16,8 +16,6 @@ class ThumbsVideos : public QObject, ThumbInterface
 
 public:
     void init();
-    ~ThumbsVideos(){}
-
     bool thumb(const QString &file, const QString &mime, QImage &thumb, const int size);
 
     QString name() const { return tr("VideoThumbs"); }
