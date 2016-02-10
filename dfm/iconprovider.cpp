@@ -22,6 +22,9 @@
 #include "iconprovider.h"
 
 #include <QDebug>
+#include <QApplication>
+#include <QStyle>
+#include <QStyleOption>
 
 using namespace DFM;
 
@@ -119,11 +122,20 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
     }
     case GoBack :
     case GoForward :
-        p.setPen(Qt::NoPen);
-        p.setBrush(color);
-        p.setRenderHint(QPainter::Antialiasing);
-        p.drawPolygon(triangle(type == GoBack, size));
+    {
+//        p.setPen(Qt::NoPen);
+//        p.setBrush(color);
+//        p.setRenderHint(QPainter::Antialiasing);
+//        p.drawPolygon(triangle(type == GoBack, size));
+        QStyleOption opt;
+        opt.rect = QRect(0, 0, size, size);
+        opt.palette = color;
+        opt.palette.setColor(QPalette::WindowText, color);
+        opt.palette.setColor(QPalette::Text, color);
+        opt.palette.setColor(QPalette::ButtonText, color);
+        QApplication::style()->drawPrimitive(type == GoBack?QStyle::PE_IndicatorArrowLeft:QStyle::PE_IndicatorArrowRight, &opt, &p);
         break;
+    }
     case Configure : //somekinda gearwheel
     {
         p.setRenderHint(QPainter::Antialiasing);

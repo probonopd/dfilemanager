@@ -28,6 +28,9 @@
 #include <QTimer>
 #include <QLabel>
 #include <QToolBar>
+#include <QStyleOption>
+#include <QApplication>
+#include <QStyle>
 #include "widgets.h"
 #include "iconprovider.h"
 
@@ -115,14 +118,25 @@ Button::paintEvent(QPaintEvent *e)
     if (m_menu)
     {
         QRect r(width()-ARROW, (height()/2)-(ARROW/2), ARROW, ARROW);
-        static const int points[] = { r.left(),r.top(), r.right(),r.top(), r.center().x(),r.bottom() };
-        QPolygon pol(3, points);
-        p.setRenderHint(QPainter::Antialiasing);
-        p.setBrush(palette().color(foregroundRole()));
-        p.setPen(Qt::NoPen);
-        if (!underMouse())
-            p.setOpacity(0.5f);
-        p.drawPolygon(pol);
+
+        QStyleOption opt;
+        opt.rect = r;
+        const QColor color(palette().color(foregroundRole()));
+        opt.palette = color;
+        opt.palette.setColor(QPalette::WindowText, color);
+        opt.palette.setColor(QPalette::Text, color);
+        opt.palette.setColor(QPalette::ButtonText, color);
+        QApplication::style()->drawPrimitive(QStyle::PE_IndicatorArrowDown, &opt, &p);
+
+//        static const int points[] = { r.left(),r.top(), r.right(),r.top(), r.center().x(),r.bottom() };
+//        QPolygon pol(3, points);
+//        p.setRenderHint(QPainter::Antialiasing);
+//        p.setBrush(palette().color(foregroundRole()));
+//        p.setPen(Qt::NoPen);
+//        if (!underMouse())
+//            p.setOpacity(0.5f);
+//        p.drawPolygon(pol);
+
     }
     p.end();
 }
