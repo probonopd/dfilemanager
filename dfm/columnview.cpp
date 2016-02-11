@@ -54,7 +54,7 @@ public:
             needBold = (option.state & QStyle::State_Selected)||childViews;
             if (needBold)
                 const_cast<QStyleOptionViewItem *>(&option)->state |= QStyle::State_MouseOver;
-            QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, painter, option.widget);
+            QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, painter, view);
         }
 
         //icon
@@ -70,7 +70,7 @@ public:
 
         //thumbnail shadow
         if (index.data(FS::FileHasThumbRole).toBool())
-            renderShadow(ir.adjusted(-(SHADOW-1), -(SHADOW-1), SHADOW-1, SHADOW-1), painter);
+            drawShadow(ir.adjusted(-(shadowSize()-1), -(shadowSize()-1), shadowSize()-1, shadowSize()-1), painter);
 
         //text
         const QFont savedFont(painter->font());
@@ -102,8 +102,8 @@ public:
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
         QSize sz(FileItemDelegate::sizeHint(option, index));
-        if (sz.height() < DECOSIZE.height())
-            sz.setHeight(DECOSIZE.height());
+        if (sz.height() < option.decorationSize.height())
+            sz.setHeight(option.decorationSize.height());
         return sz;
     }
 };

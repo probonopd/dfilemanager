@@ -55,7 +55,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 
     const QPalette::ColorRole fgr = m_placesView->foregroundRole(), bgr = m_placesView->backgroundRole();
 
-    int step = selected ? STEPS : ViewAnimator::hoverLevel(m_placesView, index);
+    int step = selected ? Steps : ViewAnimator::hoverLevel(m_placesView, index);
 
     int textFlags = Qt::AlignVCenter | Qt::AlignLeft | Qt::TextSingleLine;
     int indent = DECOSIZE.height(), textMargin = indent + (isHeader(index) ? 0 : DECOSIZE.width());
@@ -84,7 +84,7 @@ PlacesViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
         QPainter p(&pix);
         QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, &p, m_placesView);
         p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-        p.fillRect(pix.rect(), QColor(0, 0, 0, ((255.0f/(float)STEPS)*step)));
+        p.fillRect(pix.rect(), QColor(0, 0, 0, ((255.0f/(float)Steps)*step)));
         p.end();
         painter->drawPixmap(option.rect, pix);
     }

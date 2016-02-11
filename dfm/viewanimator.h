@@ -26,9 +26,8 @@
 #include <QAbstractItemModel>
 #include <QTimer>
 #include <QEvent>
-
-#define STEPS 8
-
+namespace DFM
+{
 class ViewAnimator : public QObject
 {
     Q_OBJECT
@@ -56,5 +55,6 @@ private:
     QAbstractItemView *m_view;
     QModelIndex m_current;
 };
+} //end namespace
 
 #endif // VIEWANIMATOR_H

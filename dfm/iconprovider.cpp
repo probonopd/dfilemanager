@@ -253,15 +253,25 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
         p.setRenderHint(QPainter::Antialiasing);
         int i = -1;
         while (++i < 4)
-            p.fillRect(0, i*4+1, size-7, 2, color);
+            p.fillRect(0, i*4+1, size-8, 2, color);
 
-        QPolygon pol;
-        static const int pts[] = { 3,0, 6,6, 0,6 };
-        pol.setPoints(3, pts);
-        p.drawPolygon(pol.translated(size-6,1));
-        p.translate(rect.center());
-        p.rotate(180);
-        p.drawPolygon(pol.translated(-(size-7),-(size-8)));
+        QStyleOption opt;
+        opt.rect = QRect(size-6, 0, 5, 5);
+        opt.palette = color;
+        opt.palette.setColor(QPalette::WindowText, color);
+        opt.palette.setColor(QPalette::Text, color);
+        opt.palette.setColor(QPalette::ButtonText, color);
+        QApplication::style()->drawPrimitive(QStyle::PE_IndicatorArrowUp, &opt, &p);
+        opt.rect = QRect(size-6, size-7, 5, 5);
+        QApplication::style()->drawPrimitive(QStyle::PE_IndicatorArrowDown, &opt, &p);
+
+//        QPolygon pol;
+//        static const int pts[] = { 3,0, 6,6, 0,6 };
+//        pol.setPoints(3, pts);
+//        p.drawPolygon(pol.translated(size-6,1));
+//        p.translate(rect.center());
+//        p.rotate(180);
+//        p.drawPolygon(pol.translated(-(size-7),-(size-8)));
         break;
     }
     case Hidden :

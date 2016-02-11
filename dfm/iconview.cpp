@@ -71,7 +71,7 @@ public:
         const QPen savedPen(painter->pen());
         const QBrush savedBrush(painter->brush());
         const bool selected(option.state & QStyle::State_Selected);
-        const int step(selected ? STEPS : ViewAnimator::hoverLevel(m_iv, index));
+        const int step(selected ? Steps : ViewAnimator::hoverLevel(m_iv, index));
         if (step)
         {
             QStyleOptionViewItem copy(option);
@@ -81,21 +81,21 @@ public:
             pix.fill(Qt::transparent);
             QPainter p(&pix);
             copy.rect = pix.rect().adjusted(1, 1, 0, 0);
-            QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, &p, copy.widget);
+            QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &copy, &p, m_iv);
             p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-            p.fillRect(pix.rect(), QColor(0, 0, 0, ((255.0f/(float)STEPS)*step)));
+            p.fillRect(pix.rect(), QColor(0, 0, 0, ((255.0f/(float)Steps)*step)));
             p.end();
             painter->drawPixmap(option.rect, pix);
         }
         const QPixmap &pixmap = pix(option, index);
-        QRect textRect(RECT), pixRect(RECT);
-        pixRect.setBottom(pixRect.top()+DECOSIZE.height()+((SHADOW-3)*2));
+        QRect textRect(option.rect), pixRect(option.rect);
+        pixRect.setBottom(pixRect.top()+option.decorationSize.height()+((shadowSize()-3)*2));
         textRect.setTop(pixRect.bottom());
-        QApplication::style()->drawItemText(painter, textRect, Qt::AlignTop|Qt::AlignHCenter, PAL, option.state & QStyle::State_Enabled, text(option, index), selected?QPalette::HighlightedText:QPalette::Text);
+        QApplication::style()->drawItemText(painter, textRect, Qt::AlignTop|Qt::AlignHCenter, option.palette, option.state & QStyle::State_Enabled, text(option, index), selected?QPalette::HighlightedText:QPalette::Text);
         pixRect = QApplication::style()->itemPixmapRect(pixRect, Qt::AlignCenter, pixmap);
         QApplication::style()->drawItemPixmap(painter, pixRect, Qt::AlignCenter, pixmap);
         if (index.data(FS::FileHasThumbRole).toBool())
-            renderShadow(pixRect.adjusted(-(SHADOW-1), -(SHADOW-1), SHADOW-1, SHADOW-1), painter);
+            drawShadow(pixRect.adjusted(-(shadowSize()-1), -(shadowSize()-1), shadowSize()-1, shadowSize()-1), painter);
         painter->setPen(savedPen);
         painter->setBrush(savedBrush);
     }
@@ -116,7 +116,7 @@ public:
         if (m_pixData.contains(index) && index.data(FS::FileHasThumbRole).toBool())
         {
             QRect pixRect(r);
-            pixRect.setBottom(pixRect.top()+m_iv->iconSize().height()+((SHADOW-3)*2));
+            pixRect.setBottom(pixRect.top()+m_iv->iconSize().height()+((shadowSize()-3)*2));
             return QApplication::style()->itemPixmapRect(pixRect, Qt::AlignCenter, m_pixData.value(index)).contains(p);
         }
         QRect theRect(QPoint(0,0), m_iv->iconSize());
@@ -129,38 +129,38 @@ protected:
         if (!index.isValid())
             return QPixmap();
 
-        if (m_pixData.contains(index))
-            return m_pixData.value(index);
-
-        const QIcon &icon = index.data(FS::FileIconRole).value<QIcon>();
-        const bool isThumb = index.data(FS::FileHasThumbRole).toBool();
-
-        int newSize = icon.actualSize(DECOSIZE).height();
-        if (!isThumb && icon.actualSize(DECOSIZE).height() < DECOSIZE.height())
+        if (!m_pixData.contains(index))
         {
-            QList<int> il;
-            for (int i = 0; i < icon.availableSizes().count(); ++i)
-                il << icon.availableSizes().at(i).height();
+            const QIcon &icon = index.data(FS::FileIconRole).value<QIcon>();
+            const bool isThumb = index.data(FS::FileHasThumbRole).toBool();
 
-            if (il.count() > 1)
-                qSort(il);
+            int newSize = icon.actualSize(option.decorationSize).height();
+            if (!isThumb && icon.actualSize(option.decorationSize).height() < option.decorationSize.height())
+            {
+                QList<int> il;
+                for (int i = 0; i < icon.availableSizes().count(); ++i)
+                    il << icon.availableSizes().at(i).height();
 
-            int i = -1;
+                if (il.count() > 1)
+                    qSort(il);
 
-            while (newSize < DECOSIZE.height() && ++i<il.count())
-                newSize = il.at(i);
+                int i = -1;
+
+                while (newSize < option.decorationSize.height() && ++i<il.count())
+                    newSize = il.at(i);
+            }
+
+            QPixmap pixmap = icon.pixmap(isThumb?256:newSize);
+            QSize sz(pixmap.size());
+            if (isThumb)
+                sz.scale(option.rect.width()-((shadowSize()-2)*2), option.decorationSize.height()-shadowSize(), Qt::KeepAspectRatio);
+            else
+                sz = option.decorationSize;
+            if (pixmap.size() != option.decorationSize && pixmap.width()>sz.width() && pixmap.height()>sz.height())
+                pixmap = pixmap.scaled(sz, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            m_pixData.insert(index, pixmap);
         }
-
-        QPixmap pixmap = icon.pixmap(isThumb?256:newSize);
-        QSize sz(pixmap.size());
-        if (isThumb)
-            sz.scale(RECT.width()-((SHADOW-2)*2), DECOSIZE.height()-SHADOW, Qt::KeepAspectRatio);
-        else
-            sz = DECOSIZE;
-        if (pixmap.size() != DECOSIZE && pixmap.width()>sz.width() && pixmap.height()>sz.height())
-            pixmap = pixmap.scaled(sz, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        m_pixData.insert(index, pixmap);
-        return pixmap;
+        return m_pixData.value(index);
     }
     QString text(const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
@@ -171,7 +171,7 @@ protected:
             return m_textData.value(index);
         QFontMetrics fm(option.fontMetrics);
 
-        QString spaces(TEXT.replace(".", QString(" ")));
+        QString spaces(index.data().toString().replace(".", QString(" ")));
         spaces = spaces.replace("_", QString(" "));
         QString theText;
 
@@ -181,7 +181,7 @@ protected:
         opt.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
         textLayout.setTextOption(opt);
 
-        const int w = RECT.width();
+        const int w = option.rect.width();
 
         textLayout.beginLayout();
         while (++lineCount < Store::config.views.iconView.lineCount)
@@ -192,9 +192,9 @@ protected:
 
             line.setLineWidth(w);
             QString actualText;
-            actualText = TEXT.mid(line.textStart(), qMin(line.textLength(), TEXT.count()));
+            actualText = index.data().toString().mid(line.textStart(), qMin(line.textLength(), index.data().toString().count()));
             if (line.lineNumber() == Store::config.views.iconView.lineCount-1)
-                actualText = fm.elidedText(TEXT.mid(line.textStart(), TEXT.count()), Qt::ElideRight, w);
+                actualText = fm.elidedText(index.data().toString().mid(line.textStart(), index.data().toString().count()), Qt::ElideRight, w);
 
             //this should only happen if there
             //are actual dots or underscores...
@@ -214,9 +214,9 @@ protected:
                 int diff = width - oldw;
 
                 line.setLineWidth(w-diff);
-                actualText = TEXT.mid(line.textStart(), qMin(line.textLength(), TEXT.count()));
+                actualText = index.data().toString().mid(line.textStart(), qMin(line.textLength(), index.data().toString().count()));
                 if (line.lineNumber() == Store::config.views.iconView.lineCount-1)
-                    actualText = fm.elidedText(TEXT.mid(line.textStart(), TEXT.count()), Qt::ElideRight, w);
+                    actualText = fm.elidedText(index.data().toString().mid(line.textStart(), index.data().toString().count()), Qt::ElideRight, w);
             }
             theText.append(QString("%1\n").arg(actualText));
         }
@@ -623,13 +623,13 @@ IconView::paintEvent(QPaintEvent *e)
 void
 IconView::setGridHeight(int gh)
 {
-    m_gridHeight = gh + SHADOW*2-1 + (fontMetrics().height()+fontMetrics().leading())*Store::config.views.iconView.lineCount-fontMetrics().leading();
+    m_gridHeight = gh + FileItemDelegate::shadowSize()*2-1 + (fontMetrics().height()+fontMetrics().leading())*Store::config.views.iconView.lineCount-fontMetrics().leading();
 }
 
 void
 IconView::correctLayout()
 {
-    m_gridHeight = iconSize().height() + SHADOW*2-1 + (fontMetrics().height()+fontMetrics().leading())*Store::config.views.iconView.lineCount-fontMetrics().leading();
+    m_gridHeight = iconSize().height() + FileItemDelegate::shadowSize()*2-1 + (fontMetrics().height()+fontMetrics().leading())*Store::config.views.iconView.lineCount-fontMetrics().leading();
     updateLayout();
 }
 

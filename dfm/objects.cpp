@@ -143,7 +143,7 @@ FileItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewIt
 QPixmap
 FileItemDelegate::shadowPix()
 {
-    const int size((SHADOW*2)+2);
+    const int size((shadowSize()*2)+1);
     QImage img(size, size, QImage::Format_ARGB32);
     img.fill(Qt::transparent);
     QPainter pt(&img);
@@ -171,30 +171,31 @@ void
 FileItemDelegate::genShadowData()
 {
     const QPixmap shadow = shadowPix();
+    const int w(shadow.width()), h(shadow.height());
     s_shadowData = new QPixmap[9]();
-    s_shadowData[TopLeft] =     shadow.copy(0, 0, SHADOW, SHADOW);
-    s_shadowData[Top] =         shadow.copy(SHADOW, 0, 2, SHADOW);
-    s_shadowData[TopRight] =    shadow.copy(SHADOW+2, 0, SHADOW, SHADOW);
-    s_shadowData[Left] =        shadow.copy(0, SHADOW, SHADOW, 2);
+    s_shadowData[TopLeft] =     shadow.copy(0, 0, shadowSize(), shadowSize());
+    s_shadowData[Top] =         shadow.copy(shadowSize(), 0, 1, shadowSize());
+    s_shadowData[TopRight] =    shadow.copy(w-shadowSize(), 0, shadowSize(), shadowSize());
+    s_shadowData[Left] =        shadow.copy(0, shadowSize(), shadowSize(), 2);
     s_shadowData[Center] =      QPixmap(); //no center...
-    s_shadowData[Right] =       shadow.copy(SHADOW+2, SHADOW, SHADOW, 2);
-    s_shadowData[BottomLeft] =  shadow.copy(0, SHADOW+2, SHADOW, SHADOW);
-    s_shadowData[Bottom] =      shadow.copy(SHADOW, SHADOW+2, 2, SHADOW);
-    s_shadowData[BottomRight] = shadow.copy(SHADOW+2, SHADOW+2, SHADOW, SHADOW);
+    s_shadowData[Right] =       shadow.copy(w-shadowSize(), shadowSize(), shadowSize(), 1);
+    s_shadowData[BottomLeft] =  shadow.copy(0, h-shadowSize(), shadowSize(), shadowSize());
+    s_shadowData[Bottom] =      shadow.copy(shadowSize(), h-shadowSize(), 1, shadowSize());
+    s_shadowData[BottomRight] = shadow.copy(w-shadowSize(), h-shadowSize(), shadowSize(), shadowSize());
 }
 
 void
-FileItemDelegate::renderShadow(QRect rect, QPainter *painter)
+FileItemDelegate::drawShadow(QRect rect, QPainter *painter)
 {
     const int x = rect.x(), y = rect.y(), w = rect.width(), h = rect.height(), r = x+w, b = y+h;
-    painter->drawTiledPixmap(QRect(QPoint(x, y),                QSize(SHADOW, SHADOW)),         s_shadowData[TopLeft]);
-    painter->drawTiledPixmap(QRect(QPoint(x+SHADOW, y),         QSize(w-(SHADOW*2), SHADOW)),   s_shadowData[Top]);
-    painter->drawTiledPixmap(QRect(QPoint(r-SHADOW, y),         QSize(SHADOW, SHADOW)),         s_shadowData[TopRight]);
-    painter->drawTiledPixmap(QRect(QPoint(x, y+SHADOW),         QSize(SHADOW, h-(SHADOW*2))),   s_shadowData[Left]);
-    painter->drawTiledPixmap(QRect(QPoint(r-SHADOW, y+SHADOW),  QSize(SHADOW, h-(SHADOW*2))),   s_shadowData[Right]);
-    painter->drawTiledPixmap(QRect(QPoint(x, b-SHADOW),         QSize(SHADOW, SHADOW)),         s_shadowData[BottomLeft]);
-    painter->drawTiledPixmap(QRect(QPoint(x+SHADOW, b-SHADOW),  QSize(w-(SHADOW*2), SHADOW)),   s_shadowData[Bottom]);
-    painter->drawTiledPixmap(QRect(QPoint(r-SHADOW, b-SHADOW),  QSize(SHADOW, SHADOW)),         s_shadowData[BottomRight]);
+    painter->drawPixmap(QRect(x, y, shadowSize(), shadowSize()), s_shadowData[TopLeft]);
+    painter->drawTiledPixmap(QRect(x+shadowSize(), y, w-(shadowSize()*2), shadowSize()), s_shadowData[Top]);
+    painter->drawPixmap(QRect(r-shadowSize(), y, shadowSize(), shadowSize()), s_shadowData[TopRight]);
+    painter->drawTiledPixmap(QRect(x, y+shadowSize(), shadowSize(), h-(shadowSize()*2)), s_shadowData[Left]);
+    painter->drawTiledPixmap(QRect(r-shadowSize(), y+shadowSize(), shadowSize(), h-(shadowSize()*2)), s_shadowData[Right]);
+    painter->drawPixmap(QRect(x, b-shadowSize(), shadowSize(), shadowSize()), s_shadowData[BottomLeft]);
+    painter->drawTiledPixmap(QRect(x+shadowSize(), b-shadowSize(), w-(shadowSize()*2), shadowSize()), s_shadowData[Bottom]);
+    painter->drawPixmap(QRect(r-shadowSize(), b-shadowSize(), shadowSize(), shadowSize()), s_shadowData[BottomRight]);
 }
 
 //-------------------------------------------------------------------------------------------

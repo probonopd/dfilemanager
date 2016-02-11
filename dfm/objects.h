@@ -57,13 +57,6 @@ protected:
     bool m_quit;
 };
 
-#define SHADOW 5
-#define TEXT index.data().toString()
-#define RECT option.rect
-#define FM option.fontMetrics
-#define PAL option.palette
-#define DECOSIZE option.decorationSize
-
 class FileItemDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
@@ -75,11 +68,12 @@ public:
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
     bool eventFilter(QObject *object, QEvent *event);
     void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    static inline int shadowSize() { return 5; }
 
 protected:
     static QPixmap shadowPix();
     static void genShadowData();
-    static void renderShadow(QRect rect, QPainter *painter);
+    static void drawShadow(QRect rect, QPainter *painter);
     static QPixmap *s_shadowData;
 };
 

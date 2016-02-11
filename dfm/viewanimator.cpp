@@ -23,6 +23,9 @@
 #include "fsmodel.h"
 #include <QTreeView>
 #include <QScrollBar>
+#include "globals.h"
+
+using namespace DFM;
 
 QMap<QAbstractItemView *, ViewAnimator *> ViewAnimator::s_views;
 
@@ -81,7 +84,7 @@ ViewAnimator::animEvent()
         QModelIndex index(it.next().key());
         const bool mouse(index == m_current);
         const int val(it.value());
-        if (mouse && val < STEPS)
+        if (mouse && val < Steps)
         {
             needRunning = true;
             m_vals.insert(index, (val&~1)+2);

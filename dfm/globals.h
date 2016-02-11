@@ -105,6 +105,8 @@ enum Roles
 };
 }
 
+enum { Steps = 8 };
+
 struct IOJobData
 {
     QString inPaths, outPath; //used for interprocess communication
