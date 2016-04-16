@@ -130,7 +130,7 @@ Store::readConfiguration()
     }
     settings()->endGroup();
 
-    dApp->loadPlugins();
+//    dApp->loadPlugins();
 
 //    Configuration::settings()->beginGroup("Scripts");
 //    foreach (const QString &string, Configuration::settings()->childKeys())

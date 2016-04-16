@@ -402,19 +402,19 @@ PathBox::paintEvent(QPaintEvent *)
 //-----------------------------------------------------------------------------
 
 NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
-    : QFrame(parent)
+    : FakeView(parent)
     , m_pathNav(new PathNavigator(this, fsModel))
     , m_pathBox(new PathBox(this))
     , m_fsModel(fsModel)
     , m_schemeButton(new Button(this))
     , m_stack(new QStackedLayout())
-    , m_viewport(new QWidget(this))
     , m_dock(0)
 {
     setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
     m_pathBox->setInsertPolicy(QComboBox::InsertAtBottom);
     m_pathBox->setEditable(true);
     m_pathBox->setDuplicatesEnabled(false);
+    setFixedHeight(25);
 
     PathCompleter *completer = new PathCompleter(m_fsModel, m_pathBox);
     m_pathBox->setCompleter(completer);
@@ -437,15 +437,7 @@ NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
     layout->setSpacing(0);
     layout->addWidget(m_schemeButton);
     layout->addLayout(m_stack);
-
-    m_viewport->setLayout(layout);
-    m_viewport->setContentsMargins(4, 0, 0, 0);
-
-    QHBoxLayout *ml = new QHBoxLayout();
-    ml->setContentsMargins(0, 0, 0, 0);
-    ml->setSpacing(0);
-    ml->addWidget(m_viewport);
-    setLayout(ml);
+    viewport()->setLayout(layout);
 
     QTimer::singleShot(0, this, SLOT(paletteOps()));
     QTimer::singleShot(0, this, SLOT(postConstructorJobs()));
@@ -454,7 +446,7 @@ NavBar::NavBar(QWidget *parent, FS::Model *fsModel)
 void
 NavBar::postConstructorJobs()
 {
-    m_schemeButton->setIcon(IconProvider::icon(IconProvider::Circle, 16, m_viewport->palette().color(foregroundRole()), false));
+    m_schemeButton->setIcon(IconProvider::icon(IconProvider::Circle, 16, viewport()->palette().color(foregroundRole()), false));
 //    m_schemeButton->setMenu(m_fsModel->schemes());
     m_schemeButton->setFixedSize(16, 16);
 }
@@ -475,28 +467,30 @@ NavBar::paletteOps()
         m_dock->setMask(QRegion(rect())-rect().adjusted(4, 4, -4, -4));
         return;
     }
-    if (barStyle > -1)
+    QPalette::ColorRole bg = viewport()->backgroundRole(), fg = viewport()->foregroundRole();
+    if (barStyle == -1)
     {
-        m_viewport->setAutoFillBackground(true);
-        setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+        viewport()->setAutoFillBackground(false);
+        setFrameStyle(0);
     }
-    else
-        setContentsMargins(0, 0, 0, 0);
-
-    QPalette::ColorRole bg = backgroundRole(), fg = foregroundRole();
+    if (!viewport()->autoFillBackground())
+    {
+        bg = backgroundRole();
+        fg = foregroundRole();
+    }
+    setBackgroundRole(bg);
+    setForegroundRole(fg);
+    viewport()->setBackgroundRole(bg);
+    viewport()->setForegroundRole(fg);
     QPalette pal = palette();
     const QColor fgc = pal.color(fg), bgc = pal.color(bg);
-    if (barStyle == 0)
-    {
-        pal.setColor(bg, pal.color(QPalette::Base));
-        pal.setColor(fg, pal.color(QPalette::Text));
-    }
     if (barStyle == 1)
     {
+        viewport()->setAutoFillBackground(true);
         //base color... slight hihglight tint
         QColor midC = Ops::colorMid(pal.color(QPalette::Base), qApp->palette().color(QPalette::Highlight), 10, 1);
         pal.setColor(bg, Ops::colorMid(Qt::black, midC, 255-pal.color(QPalette::Window).value(), 255));
-        pal.setColor(fg, qApp->palette().color(QPalette::Text));
+        pal.setColor(fg, qApp->palette().color(fg));
     }
     else if (barStyle == 2)
     {
@@ -509,13 +503,7 @@ NavBar::paletteOps()
         pal.setColor(bg, Ops::colorMid(wtext, qApp->palette().color(QPalette::Highlight), 10, 1));
         pal.setColor(fg, w);
     }
-    pal.setBrush(bg, pal.color(bg));
-    m_viewport->setPalette(pal);
-
-    QPalette ppal(m_pathBox->palette());
-    ppal.setColor(QPalette::Text, pal.color(foregroundRole()));
-    ppal.setColor(QPalette::Base, pal.color(backgroundRole()));
-    m_pathBox->setPalette(ppal);
+    setPalette(pal);
 }
 
 void
@@ -572,12 +560,12 @@ NavBar::setEditable(const bool editable)
     if (!editable && url().isLocalFile())
     {
         m_stack->setCurrentWidget(m_pathNav);
-        m_schemeButton->setIcon(IconProvider::icon(IconProvider::Circle, 16, m_viewport->palette().color(foregroundRole()), false));
+        m_schemeButton->setIcon(IconProvider::icon(IconProvider::Circle, 16, viewport()->palette().color(foregroundRole()), false));
     }
     else
     {
         m_stack->setCurrentWidget(m_pathBox);
-        m_schemeButton->setIcon(IconProvider::icon(IconProvider::OK, 16, m_viewport->palette().color(foregroundRole()), false));
+        m_schemeButton->setIcon(IconProvider::icon(IconProvider::OK, 16, viewport()->palette().color(foregroundRole()), false));
     }
     currentWidget()->setFocus();     
 }

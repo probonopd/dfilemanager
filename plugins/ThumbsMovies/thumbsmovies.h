@@ -8,7 +8,7 @@
 #include <QEventLoop>
 #include <QTimer>
 #include <QDebug>
-
+class QNetworkConfigurationManager;
 class ThumbsMovies : public QObject, ThumbInterface
 {
     Q_OBJECT
@@ -20,7 +20,7 @@ class ThumbsMovies : public QObject, ThumbInterface
 public:
     ThumbsMovies();
     void init();
-    ~ThumbsMovies(){m_loopTimer->deleteLater();m_evLoop->deleteLater();m_mc->deleteLater();}
+    ~ThumbsMovies();
 
     bool canRead(const QString &file) const;
     bool thumb(const QString &file, const QString &mime, QImage &thumb, const int size);
@@ -34,8 +34,8 @@ private slots:
 private:
     MovieClient *m_mc;
     QImage m_image;
-    QEventLoop *m_evLoop;
-    QTimer *m_loopTimer;
+    QEventLoop *m_loop;
+    QNetworkConfigurationManager *m_mgr;
 };
 
 

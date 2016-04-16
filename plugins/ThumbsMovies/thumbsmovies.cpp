@@ -1,4 +1,5 @@
 #include "thumbsmovies.h"
+#include <QNetworkConfigurationManager>
 #include <QFileInfo>
 #include <QApplication>
 
@@ -6,31 +7,43 @@
 Q_EXPORT_PLUGIN2(thumbsmovies, ThumbsMovies)
 #endif
 
-ThumbsMovies::ThumbsMovies():m_mc(0),m_loopTimer(0),m_evLoop(0)
+ThumbsMovies::ThumbsMovies():m_mc(0),m_mgr(0)
 {
     connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(deleteLater()));
+}
+
+ThumbsMovies::~ThumbsMovies()
+{
+    m_loop->exit();
+    m_loop->deleteLater();
+    m_mgr->deleteLater();
+    m_mc->deleteLater();
 }
 
 void
 ThumbsMovies::init()
 {
     m_mc = new MovieClient();
-    m_evLoop = new QEventLoop();
-    m_loopTimer = new QTimer();
-    m_loopTimer->setSingleShot(true);
-    connect(m_mc, SIGNAL(slotPosterFinished(QImage)), this, SLOT(image(QImage)));
-    connect(m_loopTimer, SIGNAL(timeout()), m_evLoop, SLOT(quit()));
+    m_mgr = new QNetworkConfigurationManager();
+    m_loop = new QEventLoop();
+    connect(m_mc, SIGNAL(slotPosterFinished(QImage)), this, SLOT(image(QImage))/*, Qt::DirectConnection*/);
 }
 
 bool
 ThumbsMovies::thumb(const QString &file, const QString &mime, QImage &thumb, const int size)
 {
+    if (!m_mgr->isOnline())
+    {
+        qDebug() << "No network connection available";
+        return false;
+    }
     if (!canRead(file))
         return false;
+    m_mc->setSize(size);
     m_image = QImage();
     m_mc->addSearch(file);
-    m_loopTimer->start(50);
-    m_evLoop->exec();
+//    m_loop->exec();
+//    qDebug() << file;
     if (!m_image.isNull())
     {
         thumb = m_image;
@@ -45,8 +58,7 @@ void
 ThumbsMovies::image(const QImage &img)
 {
     m_image = img;
-    m_loopTimer->stop();
-    m_evLoop->quit();
+//    m_loop->exit();
 }
 
 #define END(_SUFFIX_) file.endsWith(_SUFFIX_, Qt::CaseInsensitive)

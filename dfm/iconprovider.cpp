@@ -128,7 +128,7 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
 //        p.setRenderHint(QPainter::Antialiasing);
 //        p.drawPolygon(triangle(type == GoBack, size));
         QStyleOption opt;
-        opt.rect = QRect(0, 0, size, size);
+        opt.rect = QRect(0, 0, size-1, size-1);
         opt.palette = color;
         opt.palette.setColor(QPalette::WindowText, color);
         opt.palette.setColor(QPalette::Text, color);
@@ -256,13 +256,13 @@ IconProvider::icon(Type type, int size, QColor color, bool themeIcon)
             p.fillRect(0, i*4+1, size-8, 2, color);
 
         QStyleOption opt;
-        opt.rect = QRect(size-6, 0, 5, 5);
+        opt.rect = QRect(size-7, 0, 6, 6);
         opt.palette = color;
         opt.palette.setColor(QPalette::WindowText, color);
         opt.palette.setColor(QPalette::Text, color);
         opt.palette.setColor(QPalette::ButtonText, color);
         QApplication::style()->drawPrimitive(QStyle::PE_IndicatorArrowUp, &opt, &p);
-        opt.rect = QRect(size-6, size-7, 5, 5);
+        opt.rect = QRect(size-7, size-7, 6, 6);
         QApplication::style()->drawPrimitive(QStyle::PE_IndicatorArrowDown, &opt, &p);
 
 //        QPolygon pol;

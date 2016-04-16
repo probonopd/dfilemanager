@@ -36,7 +36,7 @@ public:
 namespace DFM
 {
 
-class DDataLoader : public DThread
+class DDataLoader : public QThread
 {
     Q_OBJECT
 public:
@@ -46,17 +46,21 @@ public:
     static Data *data(const QString &file, const bool checkOnly = false);
 
 public slots:
-    void discontinue() { s_queue.clear(); DThread::discontinue(); }
+//    void discontinue() { s_queue.clear(); DThread::discontinue(); }
     void fileRenamed(const QString &path, const QString &oldName, const QString &newName);
     
 signals:
     void newData(const QString &file);
     void noLongerExists(const QString &file);
+    void dataRequested();
 
 protected:
     explicit DDataLoader(QObject *parent = 0);
-    void run();
     void getData(const QString &path);
+
+protected slots:
+    void loadData();
+    void init();
 
 private:
     int m_extent;

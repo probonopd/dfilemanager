@@ -54,7 +54,7 @@ using namespace DFM;
 #undef D_VIEW
 
 ViewContainer::ViewContainer(QWidget *parent)
-    : QFrame(parent)
+    : QWidget(parent)
     , m_model(0)
     , m_viewStack(0)
     , m_navBar(0)
@@ -77,7 +77,7 @@ ViewContainer::ViewContainer(QWidget *parent)
 
     m_navBar->setVisible(Store::settings()->value("pathVisible", true).toBool());
 
-    setFrameStyle(0/*QFrame::StyledPanel | QFrame::Sunken*/);
+//    setFrameStyle(0/*QFrame::StyledPanel | QFrame::Sunken*/);
     setAutoFillBackground(false);
 
     connect(m_model, SIGNAL(urlChanged(QUrl)), this, SIGNAL(urlChanged(QUrl)));

@@ -41,7 +41,7 @@ class DetailsView;
 class IconView;
 namespace FS{class Model;}
 
-class ViewContainer : public QFrame
+class ViewContainer : public QWidget
 {
     Q_OBJECT
 public:

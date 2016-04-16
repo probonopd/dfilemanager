@@ -29,6 +29,7 @@
 #include <QImageReader>
 #include <QWaitCondition>
 #include <QDateTime>
+#include <QDebug>
 
 using namespace DFM;
 
@@ -38,11 +39,21 @@ DQueue<QString> DDataLoader::s_queue;
 DMimeProvider DDataLoader::s_mimeProvider;
 
 DDataLoader::DDataLoader(QObject *parent) :
-    DThread(parent),
+    QThread(parent),
     m_extent(256)
 {
-    connect(dApp, SIGNAL(aboutToQuit()), this, SLOT(discontinue()));
+    connect(this, SIGNAL(started()), this, SLOT(init()));
+    connect(this, SIGNAL(dataRequested()), this, SLOT(loadData()), Qt::QueuedConnection);
+    moveToThread(this);
     start();
+}
+
+void
+DDataLoader::init()
+{
+    dApp->loadPlugins();
+    foreach (ThumbInterface *ti, dApp->thumbIfaces())
+        ti->init();
 }
 
 DDataLoader
@@ -81,8 +92,8 @@ Data
     }
     if (checkOnly)
         return 0;
-    if (s_queue.enqueue(file) && s_instance->isPaused())
-        s_instance->setPause(false);
+    if (s_queue.enqueue(file))
+        emit instance()->dataRequested();
     return 0;
 }
 
@@ -146,16 +157,8 @@ DDataLoader::getData(const QString &path)
 }
 
 void
-DDataLoader::run()
+DDataLoader::loadData()
 {
-    foreach (ThumbInterface *ti, dApp->thumbIfaces())
-        ti->init();
-
-    while (!m_quit)
-    {
-        while (!s_queue.isEmpty())
-            getData(s_queue.dequeue());
-        setPause(!m_quit);
-        pause();
-    }
+    while (!s_queue.isEmpty())
+        getData(s_queue.dequeue());
 }

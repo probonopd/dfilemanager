@@ -1061,17 +1061,17 @@ TabBar::paintEvent(QPaintEvent *event)
 QSize
 TabBar::tabSizeHint(int index) const
 {
-    if (expanding())
-        return QTabBar::tabSizeHint(index);
     if (Store::config.behaviour.gayWindow)
         return QSize(qMin(Store::config.behaviour.tabWidth,(width()/count())-(m_addButton?qCeil(((float)m_addButton->width()/(float)count())+2):0)), Store::config.behaviour.tabHeight/*QTabBar::tabSizeHint(index).height()+3*/);
+//    if (expanding())
+        return QTabBar::tabSizeHint(index);
 
-    int w = width();
-    if (m_addButton && m_addButton->isVisible())
-        w -= m_addButton->width();
-    if (m_closeButton && m_closeButton->isVisible())
-        w -= m_closeButton->width();
-    return QSize(qMin(150, w/count()), QTabBar::tabSizeHint(index).height());
+//    int w = width();
+//    if (m_addButton && m_addButton->isVisible())
+//        w -= m_addButton->width();
+//    if (m_closeButton && m_closeButton->isVisible())
+//        w -= m_closeButton->width();
+//    return QSize(qMin(150, w/count()), QTabBar::tabSizeHint(index).height());
 }
 
 void
@@ -1084,7 +1084,9 @@ TabBar::tabInserted(int index)
         connect(tc, SIGNAL(clicked()), this, SLOT(tabCloseRequest()));
         setTabButton(index, RightSide, tc);
     }
-    correctAddButtonPos();
+//    QMetaObject::invokeMethod(this, "correctAddButtonPos", Qt::QueuedConnection);
+//    correctAddButtonPos();
+    QTimer::singleShot(50, this, SLOT(correctAddButtonPos()));
 }
 
 void

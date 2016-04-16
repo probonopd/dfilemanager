@@ -194,7 +194,7 @@ Column
 *ColumnView::createColumn(const QModelIndex &rootIndex)
 {
 //    QAbstractItemView *column = QColumnView::createColumn(rootIndex);
-    Column *column = new Column(this);
+    Column *column = new Column(viewport());
     initializeColumn(column);
     column->setRootIndex(rootIndex);
     connect(column, SIGNAL(opened(QModelIndex)), this, SLOT(open(QModelIndex)));
@@ -240,7 +240,8 @@ ColumnView::initializeColumn(Column *column)
 void
 ColumnView::updateLayout()
 {
-    int x(0);
+//    const QPoint tl = viewport()->mapTo(this, QPoint());
+    int x = 0;
     for (int i = 0; i < m_columns.count(); ++i)
     {
         Column *c = m_columns.at(i);
@@ -248,9 +249,9 @@ ColumnView::updateLayout()
         c->resize(c->width(), viewport()->height());
         x += c->width();
     }
-    horizontalScrollBar()->setPageStep(width());
-    if (x > width())
-        horizontalScrollBar()->setRange(0, x-width());
+    horizontalScrollBar()->setPageStep(viewport()->width());
+    if (x > viewport()->width())
+        horizontalScrollBar()->setRange(0, x-viewport()->width());
     else
         horizontalScrollBar()->setRange(0, -1);
 }
@@ -554,7 +555,7 @@ Column::resizeEvent(QResizeEvent *e)
     QListView::resizeEvent(e);
     if (e->size().width() != e->oldSize().width())
     {
-        static_cast<ColumnView *>(parent())->updateLayout();
+        static_cast<ColumnView *>(parent()->parent())->updateLayout();
         if (!m_sizeTimer->isActive())
             m_sizeTimer->start(250);
     }

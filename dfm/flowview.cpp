@@ -59,7 +59,10 @@ FlowView::FlowView(QWidget *parent)
     m_splitter->restoreState(Store::config.views.flowSize);
     m_splitter->setFrameStyle(0);
     m_splitter->setContentsMargins(0,0,0,0);
-    m_splitter->setHandleWidth(style()->pixelMetric(QStyle::PM_SplitterWidth));
+//    m_splitter->setHandleWidth(style()->pixelMetric(QStyle::PM_SplitterWidth));
+
+    setFrameStyle(QFrame::NoFrame);
+    viewport()->setAutoFillBackground(false);
 
     connect(m_flow, SIGNAL(centerIndexChanged(QModelIndex)), this, SLOT(flowCurrentIndexChanged(QModelIndex)));
     connect(m_splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(saveSplitter()));

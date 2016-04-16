@@ -159,7 +159,16 @@ private:
 
 //-----------------------------------------------------------------------------
 
-class NavBar : public QFrame
+class FakeView : public QAbstractScrollArea
+{
+public:
+    FakeView(QWidget *parent = 0) : QAbstractScrollArea(parent) {}
+
+    QSize sizeHint() { return QSize(-1, 22); }
+    QSize minimumSizeHint() { return QSize(-1, 22); }
+};
+
+class NavBar : public FakeView
 {
     Q_OBJECT
 public:
@@ -193,7 +202,6 @@ private:
     FS::Model *m_fsModel;
     Button *m_schemeButton;
     QStackedLayout *m_stack;
-    QWidget *m_viewport;
     QDockWidget *m_dock;
 };
 
