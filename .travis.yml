@@ -16,6 +16,8 @@ script:
   - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DQT5BUILD=ON
   - make -j$(nproc)
   - make DESTDIR=appdir -j$(nproc) install ; find appdir/
+  - mkdir -p appdir/usr/share/icons/hicolor/128x128/apps/ # FIXME: CMake should do this
+  - wget -c "https://github.com/probonopd/filer/blob/master/filer/icons/filer-128.png?raw=true" -O appdir/usr/share/icons/hicolor/128x128/apps/folder.png # FIXME
   - wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
   - chmod a+x linuxdeployqt-continuous-x86_64.AppImage
   # export VERSION=... # linuxdeployqt uses this for naming the file
