@@ -18,9 +18,10 @@ There is also [StyleProject](https://sourceforge.net/projects/styleproject/), a 
 
 ## Building
 
-Building on Linux with Qt5:
+Building with Qt5 on Ubuntu:
 
 ```
+sudo apt-get -y install qt5-default qt5-qmake libqt5x11extra5-dev libffmpegthumnailer-dev libpoppler-qt5-dev libkf5solid-dev libmagic-dev
 cd dfilemanager
 mkdir build
 cd build
