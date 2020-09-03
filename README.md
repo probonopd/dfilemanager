@@ -14,6 +14,8 @@ Mirrored from https://sourceforge.net/p/dfilemanager/.
 * Breadcrumbs navigationbar
 * Tabs
 
+There is also [StyleProject](https://sourceforge.net/projects/styleproject/), a style that can go along with it for a Mac-like experience.
+
 ## Building
 
 Building on Linux with Qt5:
