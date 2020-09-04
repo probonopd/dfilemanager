@@ -22,6 +22,7 @@
 #include <QCompleter>
 #include <QMimeData>
 #include <QApplication>
+#include <QPainterPath>
 
 #include "pathnavigator.h"
 #include "mainwindow.h"
