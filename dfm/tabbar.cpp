@@ -31,6 +31,7 @@
 #include <QApplication>
 #include <QMimeData>
 #include <QUrl>
+#include <QPainterPath>
 
 #include "mainwindow.h"
 #include "viewcontainer.h"

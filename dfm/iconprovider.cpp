@@ -25,6 +25,7 @@
 #include <QApplication>
 #include <QStyle>
 #include <QStyleOption>
+#include <QPainterPath>
 
 using namespace DFM;
 

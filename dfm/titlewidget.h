@@ -30,6 +30,7 @@
 #include <QDebug>
 #include <QStatusBar>
 #include <QMouseEvent>
+#include <QPainterPath>
 #include "globals.h"
 
 namespace DFM
