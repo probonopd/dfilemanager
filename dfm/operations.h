@@ -32,10 +32,13 @@
 
 #include "globals.h"
 
+#include <sys/param.h> // for checking BSD definition
 #if  defined(HASSYS)
+#if !defined(BSD)
 #include <sys/statfs.h>
-#include <sys/types.h>
 #include <sys/vfs.h>
+#endif
+#include <sys/types.h>
 #include <sys/statvfs.h>
 #endif
 
@@ -144,8 +147,13 @@ public:
 #if defined(HASSYS)
         if (!QFileInfo(file).exists())
             return 0;
+#if defined(BSD)
+        struct statvfs sfs;
+        statvfs(file.toLatin1(),&sfs);
+#else
         struct statfs sfs;
         statfs(file.toLatin1(),&sfs);
+#endif
         const quint64 &fragsize = sfs.f_frsize,
                 &blocks = sfs.f_blocks,
                 &available = sfs.f_bavail;
